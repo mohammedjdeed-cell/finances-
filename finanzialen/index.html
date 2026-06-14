@@ -139,7 +139,8 @@
         importError: "Fehler beim Importieren der Datei. Bitte stellen Sie sicher, dass es sich um eine gültige JSON-Backup-Datei handelt.",
         deleteConfirmation: "Möchten Sie die Kategorie \"{{name}}\" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
         monthlyLeftover: "Monats-Restbetrag", // Dual Metric [2]
-        overallNetBalance: "Gesamtsaldo", // Dual Metric [2]
+        yearlyNetBalance: "Jahressaldo", // Annual Metric [1, 2]
+        overallNetBalance: "Gesamtsaldo", // Cumulative Metric [1, 2]
         allTimeScope: "Gesamter Zeitraum",
         months: {
           Jan: "Jan", Feb: "Feb", Mrz: "Mrz", Apr: "Apr", Mai: "Mai", Jun: "Jun",
@@ -215,7 +216,8 @@
         importError: "Failed to restore backup. Please ensure the file is a valid JSON backup format.",
         deleteConfirmation: "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
         monthlyLeftover: "Monthly Leftover", // Dual Metric [2]
-        overallNetBalance: "Overall Net Balance", // Dual Metric [2]
+        yearlyNetBalance: "Yearly Net Balance", // Annual Metric [1, 2]
+        overallNetBalance: "Overall Balance", // Cumulative Metric [1, 2]
         allTimeScope: "All-Time Timeline",
         months: {
           Jan: "Jan", Feb: "Feb", Mrz: "Mar", Apr: "Apr", Mai: "May", Jun: "Jun",
@@ -827,6 +829,42 @@
         return (totalExpenses / totalIncome) * 100;
       }, [totalIncome, totalExpenses]);
 
+      // Annual Net Balance Calculation Engine [1]
+      const yearlyNetBalance = useMemo(() => {
+        let totalIncomesYear = 0;
+        let totalExpensesYear = 0;
+        const yearData = data.values[selectedYear];
+        if (!yearData) return 0;
+
+        const monthsForYear = getMonthsForYear(selectedYear);
+
+        // Sum Incomes for the year [1]
+        if (yearData.incomes) {
+          data.categories.incomes.forEach(category => {
+            const monthsData = yearData.incomes[category];
+            if (monthsData) {
+              monthsForYear.forEach(m => {
+                totalIncomesYear += parseFloat(monthsData[m]) || 0;
+              });
+            }
+          });
+        }
+
+        // Sum Expenses for the year [1]
+        if (yearData.expenses) {
+          data.categories.expenses.forEach(category => {
+            const monthsData = yearData.expenses[category];
+            if (monthsData) {
+              monthsForYear.forEach(m => {
+                totalExpensesYear += parseFloat(monthsData[m]) || 0;
+              });
+            }
+          });
+        }
+
+        return totalIncomesYear - totalExpensesYear;
+      }, [data, selectedYear]);
+
       // Cumulative Global Net Balance Calculation Engine [1]
       const overallNetBalance = useMemo(() => {
         let totalIncomesGlobal = 0;
@@ -836,7 +874,7 @@
           const yearData = data.values[year];
           if (!yearData) return;
 
-          // Global Incomes Accumulation
+          // Global Incomes Accumulation [1]
           if (yearData.incomes) {
             data.categories.incomes.forEach(category => {
               const monthsData = yearData.incomes[category];
@@ -848,7 +886,7 @@
             });
           }
 
-          // Global Expenses Accumulation
+          // Global Expenses Accumulation [1]
           if (yearData.expenses) {
             data.categories.expenses.forEach(category => {
               const monthsData = yearData.expenses[category];
@@ -1049,8 +1087,8 @@
               </button>
             </div>
 
-            {/* Dual Net Metrics Card Status Panel [2] */}
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+            {/* Triple Net Metrics Panel [2] */}
+            <section className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
               {/* Metric 1: Monthly Leftover */}
               <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
                 saldo >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
@@ -1070,7 +1108,26 @@
                 </div>
               </div>
 
-              {/* Metric 2: Overall Net Balance (Cumulative) */}
+              {/* Metric 2: Yearly Net Balance [1, 2] */}
+              <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
+                yearlyNetBalance >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
+              }`}>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className={`text-xs font-bold uppercase tracking-wider ${yearlyNetBalance >= 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
+                      {t('yearlyNetBalance')}
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {selectedYear}
+                    </p>
+                  </div>
+                  <div className={`text-2xl font-black ${yearlyNetBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {yearlyNetBalance < 0 ? "-" : ""}{formatCurrency(Math.abs(yearlyNetBalance))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Metric 3: Overall Balance [1, 2] */}
               <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
                 overallNetBalance >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
               }`}>
