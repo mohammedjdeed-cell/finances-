@@ -137,6 +137,7 @@
         importBackup: "Backup importieren (JSON)",
         importSuccess: "Daten erfolgreich aus Backup importiert!",
         importError: "Fehler beim Importieren der Datei. Bitte stellen Sie sicher, dass es sich um eine gültige JSON-Backup-Datei handelt.",
+        deleteConfirmation: "Möchten Sie die Kategorie \"{{name}}\" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
         months: {
           Jan: "Jan", Feb: "Feb", Mrz: "Mrz", Apr: "Apr", Mai: "Mai", Jun: "Jun",
           Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Okt", Nov: "Nov", Dez: "Dez"
@@ -209,6 +210,7 @@
         importBackup: "Import Backup (JSON)",
         importSuccess: "Database restored successfully from backup!",
         importError: "Failed to restore backup. Please ensure the file is a valid JSON backup format.",
+        deleteConfirmation: "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
         months: {
           Jan: "Jan", Feb: "Feb", Mrz: "Mar", Apr: "Apr", Mai: "May", Jun: "Jun",
           Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Oct", Nov: "Nov", Dez: "Dec"
@@ -687,6 +689,61 @@
         await saveStateAndDispatch(updatedData, Date.now());
       };
 
+      // Secure Category Deletion Engine with Historical Data Preservation [1, 2]
+      const handleDeleteCategory = async (type, item) => {
+        // Find human-readable translated name [4]
+        const key = t(`categories.${item}`);
+        let cleanName = key.replace('categories.', '');
+        cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+
+        const confirmMsg = t('deleteConfirmation').replace('{{name}}', cleanName);
+        if (!window.confirm(confirmMsg)) return;
+
+        const updatedData = { ...data };
+        const fallbackKey = "Sonstiges";
+
+        // Check if category holds non-zero values across years and months [2]
+        let hasData = false;
+        Object.keys(updatedData.values).forEach(year => {
+          const yearVals = updatedData.values[year]?.[type]?.[item];
+          if (yearVals) {
+            Object.keys(yearVals).forEach(month => {
+              if (yearVals[month] !== 0) {
+                hasData = true;
+              }
+            });
+          }
+        });
+
+        // Other Fallback data migration logic [2]
+        if (hasData) {
+          Object.keys(updatedData.values).forEach(year => {
+            if (!updatedData.values[year][type][fallbackKey]) {
+              updatedData.values[year][type][fallbackKey] = {};
+              getMonthsForYear(parseInt(year)).forEach(m => {
+                updatedData.values[year][type][fallbackKey][m] = 0;
+              });
+            }
+
+            const deletedVals = updatedData.values[year]?.[type]?.[item] || {};
+            getMonthsForYear(parseInt(year)).forEach(m => {
+              const deletedVal = deletedVals[m] || 0;
+              updatedData.values[year][type][fallbackKey][m] = (updatedData.values[year][type][fallbackKey][m] || 0) + deletedVal;
+            });
+          });
+        }
+
+        // Clean out schema structures securely [2]
+        updatedData.categories[type] = updatedData.categories[type].filter(cat => cat !== item);
+        Object.keys(updatedData.values).forEach(year => {
+          if (updatedData.values[year]?.[type]) {
+            delete updatedData.values[year][type][item];
+          }
+        });
+
+        await saveStateAndDispatch(updatedData, Date.now());
+      };
+
       const handleResetData = async () => {
         if (window.confirm(t('confirmClear'))) {
           const freshData = generateInitialState();
@@ -1043,9 +1100,23 @@
                         let cleanName = key.replace('categories.', '');
                         cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
 
+                        // Deletion identification check
+                        const isCustom = !INITIAL_CATEGORIES.incomes.includes(item);
+
                         return (
                           <tr key={item} className="hover:bg-slate-50 transition border-l-4 border-emerald-500">
-                            <td className="p-3 font-medium text-slate-700">{cleanName}</td>
+                            <td className="p-3 font-medium text-slate-700 flex items-center justify-between group">
+                              <span>{cleanName}</span>
+                              {isCustom && activeTab === "edit" && (
+                                <button 
+                                  onClick={() => handleDeleteCategory('incomes', item)}
+                                  className="text-slate-400 hover:text-rose-600 transition p-1 opacity-0 group-hover:opacity-100 focus:opacity-100 ml-2"
+                                  title={i18n.language === 'de' ? 'Kategorie löschen' : 'Delete category'}
+                                >
+                                  <i className="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+                              )}
+                            </td>
                             <td className="p-3 text-right">
                               {activeTab === "view" ? (
                                 <span className="font-bold text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
@@ -1126,9 +1197,23 @@
                         let cleanName = key.replace('categories.', '');
                         cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
 
+                        // Deletion identification check
+                        const isCustom = !INITIAL_CATEGORIES.expenses.includes(item);
+
                         return (
                           <tr key={item} className={`hover:bg-slate-50 transition ${borderClass}`}>
-                            <td className="p-3 font-medium text-slate-700">{cleanName}</td>
+                            <td className="p-3 font-medium text-slate-700 flex items-center justify-between group">
+                              <span>{cleanName}</span>
+                              {isCustom && activeTab === "edit" && (
+                                <button 
+                                  onClick={() => handleDeleteCategory('expenses', item)}
+                                  className="text-slate-400 hover:text-rose-600 transition p-1 opacity-0 group-hover:opacity-100 focus:opacity-100 ml-2"
+                                  title={i18n.language === 'de' ? 'Kategorie löschen' : 'Delete category'}
+                                >
+                                  <i className="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+                              )}
+                            </td>
                             <td className="p-3 text-right">
                               {activeTab === "view" ? (
                                 <span className="font-bold text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
