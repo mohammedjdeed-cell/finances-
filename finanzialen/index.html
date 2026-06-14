@@ -43,7 +43,7 @@
 
     const ALL_MONTHS = ["Jan", "Feb", "Mrz", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 
-    // Timeline logic [5]
+    // Timeline logic starting explicitly in May 2026 [5]
     const getMonthsForYear = (year) => {
       if (year === 2026) {
         return ["Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
@@ -84,6 +84,18 @@
       ]
     };
 
+    // Smart Categorization Rules helper
+    const getExpenseBracket = (posten) => {
+      const housing = ["Hause mieten", "Hause kaution", "strom ⚡", "Gas/ Heißung", "radio", "internet/ Handy"];
+      const living = ["Lebensmittel 🍞🍲", "Hausrat 🛋️", "transport/ tickets", "kleidung"];
+      const professional = ["Ausbildung B2 exam", "Versicherung Care concept", "bank", "Sparkasse card fee", "Swan Schule", "FSP exam registration", "Gesundheit ❤️(beauty, medical items)"];
+      
+      if (housing.includes(posten)) return 'housing';
+      if (living.includes(posten)) return 'living';
+      if (professional.includes(posten)) return 'professional';
+      return 'leisure'; // default fallback for discretionary / custom entries
+    };
+
     // Translation Dictionaries [4]
     const translations = {
       de: {
@@ -105,20 +117,27 @@
         posten: "Posten",
         resultYtd: "Ergebnis (YTD)",
         avgSchnitt: "Ø Schnitt",
-        clearAll: "Daten zurücksetzen",
-        confirmClear: "Sind Sie sicher, dass Sie alle Daten löschen möchten?",
-        analyticsHeader: "Visuelle Analysen (Einkünfte vs. Ausgaben)",
+        clearAll: "Alle Anwendungsdaten löschen",
+        confirmClear: "Sind Sie sicher, dass Sie alle eingegebenen Daten unwiderruflich löschen möchten?",
+        analyticsHeader: "Budgetstruktur (Einkünfte vs. Ausgaben nach Brackets)",
         addCustomIncome: "Neue Einkommensquelle hinzufügen",
         addCustomExpense: "Neue Ausgabenkategorie hinzufügen",
         addPlaceholder: "Kategoriename...",
         duplicateCategoryAlert: "Diese Kategorie existiert bereits.",
+        options: "Optionen & Sicherheit",
+        selectYear: "Jahr wählen",
+        selectLanguage: "Sprache wählen",
+        bracketHousing: "Wohnen & Fixkosten",
+        bracketLiving: "Alltag & Logistik",
+        bracketLeisure: "Freizeit & Extras",
+        bracketProfessional: "Beruf, Gesundheit & Vorsorge",
         months: {
           Jan: "Jan", Feb: "Feb", Mrz: "Mrz", Apr: "Apr", Mai: "Mai", Jun: "Jun",
           Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Okt", Nov: "Nov", Dez: "Dez"
         },
         categories: {
-          "mohammed sperrkonto installmant": "Sperrkonto Rate (Mohammed)",
-          "mai sperrkonto installmant": "Sperrkonto Rate (Mai)",
+          "mohammed sperrkonto installmant": "Sperrkonto-Rate (Mohammed)",
+          "mai sperrkonto installmant": "Sperrkonto-Rate (Mai)", // Mai (Name) distinct from calendar month logic
           "side income": "Nebeneinkommen",
           "savings": "Ersparnisse",
           "Hause mieten": "Hause mieten",
@@ -154,7 +173,7 @@
         synced: "Cloud Updated",
         pending_sync: "Sync Pending",
         totalIncome: "Monthly Income",
-        totalExpenses: "Monthly Expenses",
+        totalExpenses: "Total Monthly Expenses",
         saldo: "Net Balance",
         spentRatio: "Spent Ratio (Exp/Inc)",
         incomesHeader: "Incomes",
@@ -163,20 +182,27 @@
         posten: "Category / Item",
         resultYtd: "Result (YTD)",
         avgSchnitt: "Monthly Avg",
-        clearAll: "Reset Data",
-        confirmClear: "Are you sure you want to reset all data?",
-        analyticsHeader: "Visual Analytics (Income vs. Expenses)",
+        clearAll: "Delete All Data",
+        confirmClear: "Are you sure you want to permanently clear all data?",
+        analyticsHeader: "Budget Structure (Income vs. Bracket Expenses)",
         addCustomIncome: "Add Custom Income Type",
         addCustomExpense: "Add Custom Expense Category",
         addPlaceholder: "Category name...",
         duplicateCategoryAlert: "This category already exists.",
+        options: "Options & Safety",
+        selectYear: "Select Year",
+        selectLanguage: "Select Language",
+        bracketHousing: "Housing & Fixed Costs",
+        bracketLiving: "Daily Living & Logistics",
+        bracketLeisure: "Leisure & Discretionary",
+        bracketProfessional: "Professional & Insurance",
         months: {
           Jan: "Jan", Feb: "Feb", Mrz: "Mar", Apr: "Apr", Mai: "May", Jun: "Jun",
           Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Oct", Nov: "Nov", Dez: "Dec"
         },
         categories: {
           "mohammed sperrkonto installmant": "Blocked Account Installment (Mohammed)",
-          "mai sperrkonto installmant": "Blocked Account Installment (Mai)",
+          "mai sperrkonto installmant": "Blocked Account Installment (Mai)", // Corrected from calendar "May" to name "Mai"
           "side income": "Side Income",
           "savings": "Savings",
           "Hause mieten": "Rent",
@@ -245,7 +271,7 @@
 
     const useTranslation = () => useContext(LanguageContext);
 
-    // Multi-Year database layout generator
+    // Initial state generation
     const generateInitialState = () => {
       const state = {
         categories: {
@@ -254,7 +280,6 @@
         },
         values: {}
       };
-      // Populate 2026, 2027, and 2028 explicitly on initialization
       ["2026", "2027", "2028"].forEach(year => {
         state.values[year] = { incomes: {}, expenses: {} };
         state.categories.incomes.forEach(item => {
@@ -269,7 +294,7 @@
       return state;
     };
 
-    // State Migration to avoid compatibility errors with previous versions
+    // Schema migrations for consistency
     const migrateData = (oldData) => {
       if (oldData && oldData.values && oldData.categories) {
         return oldData;
@@ -298,7 +323,7 @@
       return newState;
     };
 
-    // IndexedDB Caching Client [1]
+    // IndexedDB driver [1]
     const IDB = {
       dbName: 'BudgetDatabase_v2',
       dbVersion: 1,
@@ -357,6 +382,7 @@
       const [selectedMonth, setSelectedMonth] = useState("Jun");
       const [isOnline, setIsOnline] = useState(navigator.onLine);
       const [syncStatus, setSyncStatus] = useState("initialized");
+      const [isBurgerOpen, setIsBurgerOpen] = useState(false); // Burger drawer state [4]
 
       const [customIncomeInput, setCustomIncomeInput] = useState("");
       const [customExpenseInput, setCustomExpenseInput] = useState("");
@@ -364,7 +390,6 @@
       const chartRef = useRef(null);
       const chartInstanceRef = useRef(null);
 
-      // Verify selected month availability when changing selectedYear [5]
       useEffect(() => {
         const validMonths = getMonthsForYear(selectedYear);
         if (!validMonths.includes(selectedMonth)) {
@@ -372,7 +397,7 @@
         }
       }, [selectedYear]);
 
-      // Handle Initial Setup and Real-time Snapshot sync from Firestore [1, 3]
+      // Seed local storage caching data [1, 3]
       useEffect(() => {
         async function loadInitialData() {
           try {
@@ -405,7 +430,6 @@
         return () => unsubscribe();
       }, []);
 
-      // Online connectivity tracking and synchronization [2]
       useEffect(() => {
         const handleOnline = async () => {
           setIsOnline(true);
@@ -421,14 +445,13 @@
         };
       }, [data]);
 
-      // Charting Integration Layer
+      // Side-by-side grouped stacked visual chart logic [2]
       useEffect(() => {
         if (!chartRef.current) return;
         const ctx = chartRef.current.getContext('2d');
         const monthsForYear = getMonthsForYear(selectedYear);
 
         const incomeData = monthsForYear.map(m => getMonthlyTotal('incomes', m));
-        const expenseData = monthsForYear.map(m => getMonthlyTotal('expenses', m));
         const translatedLabels = monthsForYear.map(m => t(`months.${m}`));
 
         if (chartInstanceRef.current) {
@@ -443,13 +466,36 @@
               {
                 label: t('incomesHeader'),
                 data: incomeData,
-                backgroundColor: '#10b981',
+                backgroundColor: '#10b981', // Green
+                stack: 'Stack0',
                 borderRadius: 4,
               },
               {
-                label: t('expensesHeader'),
-                data: expenseData,
-                backgroundColor: '#f43f5e',
+                label: t('bracketHousing'),
+                data: monthsForYear.map(m => getBracketMonthlyTotal('housing', m)),
+                backgroundColor: '#475569', // Warm Slate / Navy Blue
+                stack: 'Stack1',
+                borderRadius: 4,
+              },
+              {
+                label: t('bracketLiving'),
+                data: monthsForYear.map(m => getBracketMonthlyTotal('living', m)),
+                backgroundColor: '#f59e0b', // Soft Amber / Orange
+                stack: 'Stack1',
+                borderRadius: 4,
+              },
+              {
+                label: t('bracketLeisure'),
+                data: monthsForYear.map(m => getBracketMonthlyTotal('leisure', m)),
+                backgroundColor: '#6366f1', // Subtle Purple / Indigo
+                stack: 'Stack1',
+                borderRadius: 4,
+              },
+              {
+                label: t('bracketProfessional'),
+                data: monthsForYear.map(m => getBracketMonthlyTotal('professional', m)),
+                backgroundColor: '#14b8a6', // Teal / Cyan
+                stack: 'Stack1',
                 borderRadius: 4,
               }
             ]
@@ -558,7 +604,6 @@
         await saveStateAndDispatch(updatedData, Date.now());
       };
 
-      // Custom Category Extensibility [6]
       const handleAddCategory = async (type, name, inputSetter) => {
         if (!name.trim()) return;
         const trimmedName = name.trim();
@@ -616,6 +661,15 @@
         }, 0);
       };
 
+      const getBracketMonthlyTotal = (bracketKey, month) => {
+        if (!data.values[selectedYear]) return 0;
+        const items = data.categories.expenses.filter(posten => getExpenseBracket(posten) === bracketKey);
+        return items.reduce((sum, posten) => {
+          const val = data.values[selectedYear].expenses[posten]?.[month];
+          return sum + (val || 0);
+        }, 0);
+      };
+
       const totalIncome = useMemo(() => getMonthlyTotal('incomes', selectedMonth), [data, selectedMonth, selectedYear]);
       const totalExpenses = useMemo(() => getMonthlyTotal('expenses', selectedMonth), [data, selectedMonth, selectedYear]);
       const saldo = useMemo(() => totalIncome - totalExpenses, [totalIncome, totalExpenses]);
@@ -630,76 +684,107 @@
           const val = data.values[selectedYear]?.[type]?.[posten]?.[m];
           return sum + (val || 0);
         }, 0);
-        // Average adjusts dynamically based on available months (8 months for 2026, 12 for 2027+) [5]
         const average = ytdTotal / monthsForYear.length;
         return { ytdTotal, average };
       };
 
       return (
         <div className="flex flex-col min-h-screen">
-          {/* Header Layout */}
+          
+          {/* Header Layout with Burger menu logic [4] */}
           <header className="bg-indigo-700 text-white shadow-md sticky top-0 z-40">
-            <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
               <div className="flex items-center space-x-2">
                 <i className="fa-solid fa-wallet text-2xl"></i>
                 <h1 className="text-xl font-bold tracking-tight">{t('title')}</h1>
               </div>
 
-              {/* Navigation Filters & Toggles */}
-              <div className="flex flex-wrap items-center gap-3 text-xs font-semibold">
-                {/* Year Selection list */}
-                <div className="flex items-center space-x-1 bg-indigo-800 rounded-lg p-1">
-                  {[2026, 2027, 2028].map(yr => (
-                    <button
-                      key={yr}
-                      onClick={() => setSelectedYear(yr)}
-                      className={`px-2.5 py-1 rounded text-xs transition font-bold ${selectedYear === yr ? 'bg-indigo-600 text-white' : 'text-indigo-200 hover:text-white'}`}
-                    >
-                      {yr}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Language Switch */}
-                <div className="flex items-center space-x-1 bg-indigo-800 rounded-lg p-1">
-                  <button 
-                    onClick={() => i18n.changeLanguage('de')} 
-                    className={`px-2 py-1 rounded text-xs transition font-bold ${i18n.language === 'de' ? 'bg-indigo-600 text-white' : 'text-indigo-200 hover:text-white'}`}
-                  >
-                    DE
-                  </button>
-                  <span className="text-indigo-400 text-xs font-bold">|</span>
-                  <button 
-                    onClick={() => i18n.changeLanguage('en')} 
-                    className={`px-2 py-1 rounded text-xs transition font-bold ${i18n.language === 'en' ? 'bg-indigo-600 text-white' : 'text-indigo-200 hover:text-white'}`}
-                  >
-                    EN
-                  </button>
-                </div>
-
-                {/* Network & sync states */}
-                {syncStatus === "syncing" && (
-                  <span className="bg-blue-600 text-white px-2.5 py-1 rounded-full flex items-center gap-1">
-                    <i className="fa-solid fa-arrows-rotate animate-spin"></i> {t('syncing')}
-                  </span>
-                )}
-                {syncStatus === "synced" && (
-                  <span className="bg-emerald-600 text-white px-2.5 py-1 rounded-full flex items-center gap-1">
-                    <i className="fa-solid fa-cloud-arrow-up"></i> {t('synced')}
-                  </span>
-                )}
-                {syncStatus === "pending_sync" && (
-                  <span className="bg-amber-600 text-white px-2.5 py-1 rounded-full flex items-center gap-1 animate-pulse">
-                    <i className="fa-solid fa-clock-rotate-left"></i> {t('pending_sync')}
-                  </span>
-                )}
-                <span className={`px-2.5 py-1 rounded-full flex items-center gap-1 ${isOnline ? 'bg-indigo-500' : 'bg-rose-600'}`}>
+              <div className="flex items-center space-x-3">
+                {/* Visual sync state indicators */}
+                <span className={`px-2.5 py-1 text-xs rounded-full flex items-center gap-1 hidden md:inline-flex ${isOnline ? 'bg-indigo-500' : 'bg-rose-600'}`}>
                   <span className={`w-1.5 h-1.5 rounded-full bg-white ${isOnline ? 'animate-ping' : ''}`}></span>
                   <span>{isOnline ? t('online') : t('offline')}</span>
                 </span>
+                
+                {/* Interactive Navigation Toggle [4] */}
+                <button 
+                  onClick={() => setIsBurgerOpen(true)} 
+                  className="w-10 h-10 rounded-lg hover:bg-indigo-600 transition flex items-center justify-center text-xl outline-none"
+                >
+                  <i className="fa-solid fa-bars"></i>
+                </button>
               </div>
             </div>
           </header>
+
+          {/* Sliding Options Drawer [4] */}
+          {isBurgerOpen && (
+            <div 
+              onClick={() => setIsBurgerOpen(false)} 
+              className="fixed inset-0 bg-slate-950/40 z-50 backdrop-blur-sm transition-opacity" 
+            />
+          )}
+          <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isBurgerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className="p-5 flex flex-col h-full justify-between">
+              <div>
+                <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+                  <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
+                    <i className="fa-solid fa-shield-halved text-indigo-600"></i> {t('options')}
+                  </h3>
+                  <button onClick={() => setIsBurgerOpen(false)} className="text-slate-400 hover:text-slate-600 transition">
+                    <i className="fa-solid fa-xmark text-lg"></i>
+                  </button>
+                </div>
+                
+                <div className="py-6 space-y-6">
+                  {/* Select Year */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('selectYear')}</p>
+                    <div className="flex gap-2">
+                      {[2026, 2027, 2028].map(yr => (
+                        <button
+                          key={yr}
+                          onClick={() => { setSelectedYear(yr); setIsBurgerOpen(false); }}
+                          className={`px-3 py-1.5 rounded text-xs transition font-bold ${selectedYear === yr ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                        >
+                          {yr}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Select Language */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('selectLanguage')}</p>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => { i18n.changeLanguage('de'); setIsBurgerOpen(false); }} 
+                        className={`px-3 py-1.5 rounded text-xs transition font-bold ${i18n.language === 'de' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`}
+                      >
+                        DE
+                      </button>
+                      <button 
+                        onClick={() => { i18n.changeLanguage('en'); setIsBurgerOpen(false); }} 
+                        className={`px-3 py-1.5 rounded text-xs transition font-bold ${i18n.language === 'en' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`}
+                      >
+                        EN
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Secure Reset Data Link [4] */}
+              <div className="pt-4 border-t border-slate-100">
+                <button 
+                  onClick={() => { handleResetData(); setIsBurgerOpen(false); }}
+                  className="text-slate-400 hover:text-rose-600 transition duration-200 text-xs underline flex items-center gap-2 py-2 w-full text-left font-medium"
+                >
+                  <i className="fa-solid fa-triangle-exclamation"></i> {t('clearAll')}
+                </button>
+              </div>
+            </div>
+          </div>
 
           {/* Month Navigation */}
           <nav className="bg-white border-b border-slate-200 sticky top-[52px] z-30 shadow-sm">
@@ -723,7 +808,7 @@
           {/* Main Layout Area */}
           <main className="flex-grow max-w-7xl mx-auto w-full px-4 py-6 space-y-6">
             
-            {/* Aggregate Metric Cards */}
+            {/* Aggregate Metrics Grid */}
             <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
                 <div>
@@ -775,12 +860,12 @@
               </div>
             </section>
 
-            {/* Visual Analytics section */}
+            {/* Side-by-Side Stacked Analytics Chart */}
             <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
               <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
                 <i className="fa-solid fa-chart-simple text-indigo-600"></i> {t('analyticsHeader')} - {selectedYear}
               </h3>
-              <div className="h-[260px] relative w-full">
+              <div className="h-[280px] relative w-full">
                 <canvas ref={chartRef}></canvas>
               </div>
             </section>
@@ -813,7 +898,7 @@
                         const { ytdTotal, average } = getItemStats('incomes', item);
                         const val = data.values[selectedYear]?.incomes[item]?.[selectedMonth];
                         return (
-                          <tr key={item} className="hover:bg-slate-50 transition">
+                          <tr key={item} className="hover:bg-slate-50 transition border-l-4 border-emerald-500">
                             <td className="p-3 font-medium text-slate-700">{t(`categories.${item}`)}</td>
                             <td className="p-3">
                               <input
@@ -834,7 +919,6 @@
                   </table>
                 </div>
 
-                {/* Inline Custom Income Input */}
                 <div className="p-3 bg-slate-50 border-t border-slate-100 flex gap-2">
                   <input
                     type="text"
@@ -876,8 +960,17 @@
                       {data.categories.expenses.map((item) => {
                         const { ytdTotal, average } = getItemStats('expenses', item);
                         const val = data.values[selectedYear]?.expenses[item]?.[selectedMonth];
+                        
+                        // Dynamically assign left-border tag by category bracket
+                        const bracket = getExpenseBracket(item);
+                        const borderClass = 
+                          bracket === 'housing' ? 'border-l-4 border-slate-500' : // Warm Slate / Navy Blue
+                          bracket === 'living' ? 'border-l-4 border-amber-500' :  // Soft Amber / Orange
+                          bracket === 'professional' ? 'border-l-4 border-teal-500' : // Teal / Cyan
+                          'border-l-4 border-indigo-500'; // Subtle Purple / Indigo
+
                         return (
-                          <tr key={item} className="hover:bg-slate-50 transition">
+                          <tr key={item} className={`hover:bg-slate-50 transition ${borderClass}`}>
                             <td className="p-3 font-medium text-slate-700">{t(`categories.${item}`)}</td>
                             <td className="p-3">
                               <input
@@ -898,7 +991,6 @@
                   </table>
                 </div>
 
-                {/* Inline Custom Expense Input */}
                 <div className="p-3 bg-slate-50 border-t border-slate-100 flex gap-2">
                   <input
                     type="text"
@@ -916,16 +1008,6 @@
                 </div>
               </section>
 
-            </div>
-
-            {/* Global Reset Button */}
-            <div className="flex justify-center pt-4">
-              <button 
-                onClick={handleResetData}
-                className="bg-slate-200 text-slate-700 hover:bg-rose-600 hover:text-white transition duration-200 px-6 py-2 rounded-lg font-bold text-sm shadow-sm flex items-center gap-2"
-              >
-                <i className="fa-solid fa-trash-can"></i> {t('clearAll')}
-              </button>
             </div>
           </main>
         </div>
