@@ -1,123 +1,1209 @@
-/* Service Worker Offline Cache & Synchronization Manager */
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finanzplaner - Advanced Cloud Sync & Analytics</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & Babel CDNs -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Chart.js CDN for Visual Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Firebase Compat SDKs [3] -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4f46e5">
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+  <div id="root"></div>
 
-// Preserved Firebase Web App configuration [3]
-const firebaseConfig = {
-  apiKey: "AIzaSyCvKICFZCwQz5e70HTLDA_eDD4Us8XqNas",
-  authDomain: "finances-ed83f.firebaseapp.com",
-  projectId: "finances-ed83f",
-  storageBucket: "finances-ed83f.firebasestorage.app",
-  messagingSenderId: "707569388994",
-  appId: "1:707569388994:web:f23232e15d439df1ba5a5b",
-  measurementId: "G-6SNL4MJZVK"
-};
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, createContext, useContext, useRef } = React;
 
-// Import compat Firebase modules inside worker thread [3]
-importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js');
+    // Preserved Firebase Configuration [3]
+    const firebaseConfig = {
+      apiKey: "AIzaSyCvKICFZCwQz5e70HTLDA_eDD4Us8XqNas",
+      authDomain: "finances-ed83f.firebaseapp.com",
+      projectId: "finances-ed83f",
+      storageBucket: "finances-ed83f.firebasestorage.app",
+      messagingSenderId: "707569388994",
+      appId: "1:707569388994:web:f23232e15d439df1ba5a5b",
+      measurementId: "G-6SNL4MJZVK"
+    };
 
-const CACHE_NAME = 'budget-tracker-cloud-cache-v6';
-const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './manifest.json',
-  'https://cdn.tailwindcss.com',
-  'https://unpkg.com/react@18/umd/react.production.min.js',
-  'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
-  'https://unpkg.com/@babel/standalone/babel.min.js',
-  'https://cdn.jsdelivr.net/npm/chart.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-  'https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js',
-  'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js'
-];
+    // Initialize Firebase Services [3]
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-// Open IndexedDB inside Worker context [1]
-function openIDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open('BudgetDatabase_v2', 1);
-    request.onsuccess = (e) => resolve(e.target.result);
-    request.onerror = (e) => reject(e.target.error);
-  });
-}
+    const ALL_MONTHS = ["Jan", "Feb", "Mrz", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 
-function getQueueItem(dbInstance, key) {
-  return new Promise((resolve, reject) => {
-    const tx = dbInstance.transaction('queue', 'readonly');
-    const store = tx.objectStore('queue');
-    const request = store.get(key);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-function deleteQueueItem(dbInstance, key) {
-  return new Promise((resolve, reject) => {
-    const tx = dbInstance.transaction('queue', 'readwrite');
-    const store = tx.objectStore('queue');
-    const request = store.delete(key);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
-  });
-}
-
-// Background Sync Task Handler [2]
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-budget') {
-    event.waitUntil(syncLocalStoreToCloud());
-  }
-});
-
-async function syncLocalStoreToCloud() {
-  try {
-    const idbInstance = await openIDB();
-    const queueItem = await getQueueItem(idbInstance, 'pending_sync');
-    
-    if (queueItem) {
-      if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
+    // Timeline logic starting explicitly in May 2026 [5]
+    const getMonthsForYear = (year) => {
+      if (year === 2026) {
+        return ["Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
       }
-      const firestoreDb = firebase.firestore();
+      return ALL_MONTHS;
+    };
+
+    const INITIAL_CATEGORIES = {
+      incomes: [
+        "mohammed sperrkonto installmant",
+        "mai sperrkonto installmant",
+        "side income",
+        "savings",
+        "Sonstiges"
+      ],
+      expenses: [
+        "Hause mieten",
+        "Hause kaution",
+        "Lebensmittel 🍞🍲",
+        "Hausrat 🛋️",
+        "strom ⚡",
+        "Gas/ Heißung",
+        "Unterhaltung 🎊",
+        "essen im freien 🍔",
+        "Geschenke",
+        "Gesundheit ❤️(beauty, medical items)",
+        "Ausbildung B2 exam",
+        "Versicherung Care concept",
+        "kleidung",
+        "radio",
+        "internet/ Handy",
+        "transport/ tickets",
+        "bank",
+        "Sparkasse card fee",
+        "Swan Schule",
+        "FSP exam registration",
+        "Sonstiges"
+      ]
+    };
+
+    const getExpenseBracket = (posten) => {
+      const housing = ["Hause mieten", "Hause kaution", "strom ⚡", "Gas/ Heißung", "radio", "internet/ Handy"];
+      const living = ["Lebensmittel 🍞🍲", "Hausrat 🛋️", "transport/ tickets", "kleidung"];
+      const professional = ["Ausbildung B2 exam", "Versicherung Care concept", "bank", "Sparkasse card fee", "Swan Schule", "FSP exam registration", "Gesundheit ❤️(beauty, medical items)"];
       
-      // Locked collection paths [1]
-      const docRef = firestoreDb.collection('monthly_logs').doc('house_finanzen_state');
-      
-      const doc = await docRef.get();
-      if (!doc.exists || queueItem.updatedAt > doc.data().updatedAt) {
-        await docRef.set({
-          payload: queueItem.payload,
-          updatedAt: queueItem.updatedAt
+      if (housing.includes(posten)) return 'housing';
+      if (living.includes(posten)) return 'living';
+      if (professional.includes(posten)) return 'professional';
+      return 'leisure'; 
+    };
+
+    // Bilingual translation dictionaries [4]
+    const translations = {
+      de: {
+        title: "Finanzplaner",
+        cloudSync: "Cloud-Sync",
+        active: "Aktiv",
+        online: "Netzwerk Online",
+        offline: "Offline Modus",
+        syncing: "Synchronisiere...",
+        synced: "Cloud Aktuell",
+        pending_sync: "Sync Warteschleife",
+        totalIncome: "Monatliche Einkünfte",
+        totalExpenses: "Monatliche Ausgaben",
+        saldo: "Saldo",
+        spentRatio: "Ausgabenquote",
+        incomesHeader: "Einkünfte",
+        expensesHeader: "Ausgaben",
+        sum: "Summe",
+        posten: "Posten",
+        resultYtd: "Ergebnis (YTD)",
+        avgSchnitt: "Ø Schnitt",
+        clearAll: "Alle Anwendungsdaten löschen",
+        confirmClear: "Sind Sie sicher, dass Sie alle eingegebenen Daten unwiderruflich löschen möchten?",
+        analyticsHeader: "Budgetstruktur (Einkünfte vs. Ausgaben nach Brackets)",
+        addCustomIncome: "Neue Einkommensquelle hinzufügen",
+        addCustomExpense: "Neue Ausgabenkategorie hinzufügen",
+        addPlaceholder: "Kategoriename...",
+        duplicateCategoryAlert: "Diese Kategorie existiert bereits.",
+        options: "Optionen & Sicherung",
+        selectYear: "Jahr wählen",
+        selectLanguage: "Sprache wählen",
+        bracketHousing: "Wohnen & Fixkosten",
+        bracketLiving: "Alltag & Logistik",
+        bracketLeisure: "Freizeit & Extras",
+        bracketProfessional: "Beruf, Gesundheit & Vorsorge",
+        viewTab: "Details & Ansicht",
+        editTab: "Werte bearbeiten",
+        backupSection: "Sicherheits-Backup",
+        exportBackup: "Backup exportieren (JSON)",
+        importBackup: "Backup importieren (JSON)",
+        importSuccess: "Daten erfolgreich aus Backup importiert!",
+        importError: "Fehler beim Importieren der Datei. Bitte stellen Sie sicher, dass es sich um eine gültige JSON-Backup-Datei handelt.",
+        months: {
+          Jan: "Jan", Feb: "Feb", Mrz: "Mrz", Apr: "Apr", Mai: "Mai", Jun: "Jun",
+          Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Okt", Nov: "Nov", Dez: "Dez"
+        },
+        categories: {
+          "mohammed sperrkonto installmant": "Sperrkonto-Rate (Mohammed)",
+          "mai sperrkonto installmant": "Sperrkonto-Rate (Mai)", 
+          "side income": "Nebeneinkommen",
+          "savings": "Ersparnisse",
+          "Hause mieten": "Hause mieten",
+          "Hause kaution": "Hause kaution",
+          "Lebensmittel 🍞🍲": "Lebensmittel 🍞🍲",
+          "Hausrat 🛋️": "Hausrat 🛋️",
+          "strom ⚡": "Strom ⚡",
+          "Gas/ Heißung": "Gas/ Heizung",
+          "Unterhaltung 🎊": "Unterhaltung 🎊",
+          "essen im freien 🍔": "Auswärts essen 🍔",
+          "Geschenke": "Geschenke",
+          "Gesundheit ❤️(beauty, medical items)": "Gesundheit ❤️ (Kosmetik, Medizinisches)",
+          "Ausbildung B2 exam": "Ausbildung B2 Prüfung",
+          "Versicherung Care concept": "Care Concept Versicherung",
+          "kleidung": "Kleidung",
+          "radio": "Rundfunkbeitrag (Radio)",
+          "internet/ Handy": "Internet / Handy",
+          "transport/ tickets": "Transport / Tickets",
+          "bank": "Bankgebühren",
+          "Sparkasse card fee": "Sparkasse Kartengebühr",
+          "Swan Schule": "Swan Schule",
+          "FSP exam registration": "FSP Prüfungsanmeldung",
+          "Sonstiges": "Sonstiges"
+        }
+      },
+      en: {
+        title: "Finance Planner",
+        cloudSync: "Cloud Sync",
+        active: "Active",
+        online: "Network Online",
+        offline: "Offline Mode",
+        syncing: "Syncing...",
+        synced: "Cloud Updated",
+        pending_sync: "Sync Pending",
+        totalIncome: "Monthly Income",
+        totalExpenses: "Total Monthly Expenses",
+        saldo: "Net Balance",
+        spentRatio: "Spent Ratio (Exp/Inc)",
+        incomesHeader: "Incomes",
+        expensesHeader: "Expenses",
+        sum: "Total",
+        posten: "Category / Item",
+        resultYtd: "Result (YTD)",
+        avgSchnitt: "Monthly Avg",
+        clearAll: "Delete All Data",
+        confirmClear: "Are you sure you want to permanently clear all data?",
+        analyticsHeader: "Budget Structure (Income vs. Bracket Expenses)",
+        addCustomIncome: "Add Custom Income Type",
+        addCustomExpense: "Add Custom Expense Category",
+        addPlaceholder: "Category name...",
+        duplicateCategoryAlert: "This category already exists.",
+        options: "Options & Backups",
+        selectYear: "Select Year",
+        selectLanguage: "Select Language",
+        bracketHousing: "Housing & Fixed Costs",
+        bracketLiving: "Daily Living & Logistics",
+        bracketLeisure: "Leisure & Discretionary",
+        bracketProfessional: "Professional & Insurance",
+        viewTab: "Details & View",
+        editTab: "Edit Values",
+        backupSection: "Data Backup Panel",
+        exportBackup: "Export Backup (JSON)",
+        importBackup: "Import Backup (JSON)",
+        importSuccess: "Database restored successfully from backup!",
+        importError: "Failed to restore backup. Please ensure the file is a valid JSON backup format.",
+        months: {
+          Jan: "Jan", Feb: "Feb", Mrz: "Mar", Apr: "Apr", Mai: "May", Jun: "Jun",
+          Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Oct", Nov: "Nov", Dez: "Dec"
+        },
+        categories: {
+          "mohammed sperrkonto installmant": "Blocked Account Installment (Mohammed)",
+          "mai sperrkonto installmant": "Blocked Account Installment (Mai)", 
+          "side income": "Side Income",
+          "savings": "Savings",
+          "Hause mieten": "Rent",
+          "Hause kaution": "House Deposit",
+          "Lebensmittel 🍞🍲": "Groceries 🍞🍲",
+          "Hausrat 🛋️": "Household Goods 🛋️",
+          "strom ⚡": "Electricity ⚡",
+          "Gas/ Heißung": "Gas/ Heating",
+          "Unterhaltung 🎊": "Entertainment 🎊",
+          "essen im freien 🍔": "Dining Out 🍔",
+          "Geschenke": "Gifts",
+          "Gesundheit ❤️(beauty, medical items)": "Health ❤️ (Beauty, Medical)",
+          "Ausbildung B2 exam": "B2 Exam Training",
+          "Versicherung Care concept": "Care Concept Insurance",
+          "kleidung": "Clothing",
+          "radio": "Radio / TV Tax",
+          "internet/ Handy": "Internet / Mobile",
+          "transport/ tickets": "Transport / Tickets",
+          "bank": "Bank Fees",
+          "Sparkasse card fee": "Sparkasse Card Fee",
+          "Swan Schule": "Swan School",
+          "FSP exam registration": "FSP Exam Registration",
+          "Sonstiges": "Miscellaneous"
+        }
+      }
+    };
+
+    const LanguageContext = createContext();
+
+    function LanguageProvider({ children }) {
+      const [lang, setLang] = useState(() => localStorage.getItem('budget_app_lang') || 'de');
+
+      const changeLanguage = (newLang) => {
+        setLang(newLang);
+        localStorage.setItem('budget_app_lang', newLang);
+      };
+
+      const t = (path) => {
+        const keys = path.split('.');
+        let translation = translations[lang];
+        for (const key of keys) {
+          if (translation && translation[key] !== undefined) {
+            translation = translation[key];
+          } else {
+            let fallback = translations['en'];
+            for (const fallbackKey of keys) {
+              if (fallback && fallback[fallbackKey] !== undefined) {
+                fallback = fallback[fallbackKey];
+              } else {
+                fallback = null;
+                break;
+              }
+            }
+            return fallback || path;
+          }
+        }
+        return translation;
+      };
+
+      return (
+        <LanguageContext.Provider value={{ t, i18n: { language: lang, changeLanguage } }}>
+          {children}
+        </LanguageContext.Provider>
+      );
+    }
+
+    const useTranslation = () => useContext(LanguageContext);
+
+    // Initial basic structural state generator [1]
+    const generateInitialState = () => {
+      const state = {
+        categories: {
+          incomes: [...INITIAL_CATEGORIES.incomes],
+          expenses: [...INITIAL_CATEGORIES.expenses]
+        },
+        values: {}
+      };
+      ["2026", "2027", "2028"].forEach(year => {
+        state.values[year] = { incomes: {}, expenses: {} };
+        state.categories.incomes.forEach(item => {
+          state.values[year].incomes[item] = {};
+          getMonthsForYear(parseInt(year)).forEach(m => state.values[year].incomes[item][m] = 0);
+        });
+        state.categories.expenses.forEach(item => {
+          state.values[year].expenses[item] = {};
+          getMonthsForYear(parseInt(year)).forEach(m => state.values[year].expenses[item][m] = 0);
+        });
+      });
+      return state;
+    };
+
+    // Non-destructive safe merging logic [1]
+    const mergeAndLockState = (loadedState) => {
+      if (!loadedState) return generateInitialState();
+
+      const merged = {
+        categories: {
+          incomes: [...(loadedState.categories?.incomes || INITIAL_CATEGORIES.incomes)],
+          expenses: [...(loadedState.categories?.expenses || INITIAL_CATEGORIES.expenses)]
+        },
+        values: { ...(loadedState.values || {}) }
+      };
+
+      // Non-destructively append any missing base categories to ensure safe structural initialization
+      INITIAL_CATEGORIES.incomes.forEach(item => {
+        if (!merged.categories.incomes.includes(item)) {
+          merged.categories.incomes.push(item);
+        }
+      });
+      INITIAL_CATEGORIES.expenses.forEach(item => {
+        if (!merged.categories.expenses.includes(item)) {
+          merged.categories.expenses.push(item);
+        }
+      });
+
+      // Synchronize month properties safely across active year scopes
+      ["2026", "2027", "2028"].forEach(year => {
+        if (!merged.values[year]) {
+          merged.values[year] = { incomes: {}, expenses: {} };
+        }
+        if (!merged.values[year].incomes) merged.values[year].incomes = {};
+        if (!merged.values[year].expenses) merged.values[year].expenses = {};
+
+        merged.categories.incomes.forEach(item => {
+          if (!merged.values[year].incomes[item]) {
+            merged.values[year].incomes[item] = {};
+          }
+          getMonthsForYear(parseInt(year)).forEach(m => {
+            if (merged.values[year].incomes[item][m] === undefined) {
+              merged.values[year].incomes[item][m] = 0;
+            }
+          });
+        });
+
+        merged.categories.expenses.forEach(item => {
+          if (!merged.values[year].expenses[item]) {
+            merged.values[year].expenses[item] = {};
+          }
+          getMonthsForYear(parseInt(year)).forEach(m => {
+            if (merged.values[year].expenses[item][m] === undefined) {
+              merged.values[year].expenses[item][m] = 0;
+            }
+          });
+        });
+      });
+
+      return merged;
+    };
+
+    // Local IndexedDB caching driver [1]
+    const IDB = {
+      dbName: 'BudgetDatabase_v2',
+      dbVersion: 1,
+      open() {
+        return new Promise((resolve, reject) => {
+          const request = indexedDB.open(this.dbName, this.dbVersion);
+          request.onupgradeneeded = (e) => {
+            const database = e.target.result;
+            if (!database.objectStoreNames.contains('state')) {
+              database.createObjectStore('state', { keyPath: 'id' });
+            }
+            if (!database.objectStoreNames.contains('queue')) {
+              database.createObjectStore('queue', { keyPath: 'id' });
+            }
+          };
+          request.onsuccess = (e) => resolve(e.target.result);
+          request.onerror = (e) => reject(e.target.error);
+        });
+      },
+      async get(storeName, key) {
+        const database = await this.open();
+        return new Promise((resolve, reject) => {
+          const tx = database.transaction(storeName, 'readonly');
+          const store = tx.objectStore(storeName);
+          const request = store.get(key);
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+      },
+      async set(storeName, value) {
+        const database = await this.open();
+        return new Promise((resolve, reject) => {
+          const tx = database.transaction(storeName, 'readwrite');
+          const store = tx.objectStore(storeName);
+          const request = store.put(value);
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+        });
+      },
+      async delete(storeName, key) {
+        const database = await this.open();
+        return new Promise((resolve, reject) => {
+          const tx = database.transaction(storeName, 'readwrite');
+          const store = tx.objectStore(storeName);
+          const request = store.delete(key);
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
         });
       }
-      await deleteQueueItem(idbInstance, 'pending_sync');
-      console.log('[SW] Background Synchronization complete.');
+    };
+
+    function MainAppContent() {
+      const { t, i18n } = useTranslation();
+      const [data, setData] = useState(generateInitialState());
+      const [selectedYear, setSelectedYear] = useState(2026);
+      const [selectedMonth, setSelectedMonth] = useState("Jun");
+      const [isOnline, setIsOnline] = useState(navigator.onLine);
+      const [syncStatus, setSyncStatus] = useState("initialized");
+      const [isBurgerOpen, setIsBurgerOpen] = useState(false); 
+      const [activeTab, setActiveTab] = useState("view"); 
+
+      const [customIncomeInput, setCustomIncomeInput] = useState("");
+      const [customExpenseInput, setCustomExpenseInput] = useState("");
+
+      const chartRef = useRef(null);
+      const chartInstanceRef = useRef(null);
+      const fileInputRef = useRef(null);
+
+      useEffect(() => {
+        const validMonths = getMonthsForYear(selectedYear);
+        if (!validMonths.includes(selectedMonth)) {
+          setSelectedMonth(validMonths[0]);
+        }
+      }, [selectedYear]);
+
+      // Seed local cache safely, subscribe securely to frozen cloud paths [1, 3]
+      useEffect(() => {
+        async function loadInitialData() {
+          try {
+            const cached = await IDB.get('state', 'budget_data');
+            if (cached) {
+              setData(mergeAndLockState(cached.payload));
+            }
+          } catch (e) {
+            console.warn("Failed to load local IndexedDB state", e);
+          }
+        }
+        loadInitialData();
+
+        // Lock database references to prevent structural siloing [1]
+        const unsubscribe = db.collection('monthly_logs').doc('house_finanzen_state')
+          .onSnapshot(async (doc) => {
+            if (doc.exists) {
+              const remote = doc.data();
+              const localCached = await IDB.get('state', 'budget_data');
+              
+              // Apply remote configurations only if remote is chronologically newer [1]
+              if (!localCached || remote.updatedAt > localCached.updatedAt) {
+                const merged = mergeAndLockState(remote.payload);
+                setData(merged);
+                await IDB.set('state', { id: 'budget_data', payload: merged, updatedAt: remote.updatedAt });
+                setSyncStatus("synced");
+              }
+            }
+          }, (err) => {
+            console.warn("Firestore connection offline or restricted:", err);
+          });
+
+        return () => unsubscribe();
+      }, []);
+
+      // Connectivity sync triggers [2]
+      useEffect(() => {
+        const handleOnline = async () => {
+          setIsOnline(true);
+          await triggerLocalToCloudSync();
+        };
+        const handleOffline = () => setIsOnline(false);
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+        return () => {
+          window.removeEventListener('online', handleOnline);
+          window.removeEventListener('offline', handleOffline);
+        };
+      }, [data]);
+
+      // Side-by-side grouped stacked visual chart logic [2]
+      useEffect(() => {
+        if (!chartRef.current) return;
+        const ctx = chartRef.current.getContext('2d');
+        const monthsForYear = getMonthsForYear(selectedYear);
+
+        const incomeData = monthsForYear.map(m => getMonthlyTotal('incomes', m));
+        const translatedLabels = monthsForYear.map(m => t(`months.${m}`));
+
+        if (chartInstanceRef.current) {
+          chartInstanceRef.current.destroy();
+        }
+
+        chartInstanceRef.current = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: translatedLabels,
+            datasets: [
+              {
+                label: t('incomesHeader'),
+                data: incomeData,
+                backgroundColor: '#10b981', 
+                stack: 'Stack0',
+                borderRadius: 4,
+              },
+              {
+                label: t('bracketHousing'),
+                data: monthsForYear.map(m => getBracketMonthlyTotal('housing', m)),
+                backgroundColor: '#475569', 
+                stack: 'Stack1',
+                borderRadius: 4,
+              },
+              {
+                label: t('bracketLiving'),
+                data: monthsForYear.map(m => getBracketMonthlyTotal('living', m)),
+                backgroundColor: '#f59e0b', 
+                stack: 'Stack1',
+                borderRadius: 4,
+              },
+              {
+                label: t('bracketLeisure'),
+                data: monthsForYear.map(m => getBracketMonthlyTotal('leisure', m)),
+                backgroundColor: '#6366f1', 
+                stack: 'Stack1',
+                borderRadius: 4,
+              },
+              {
+                label: t('bracketProfessional'),
+                data: monthsForYear.map(m => getBracketMonthlyTotal('professional', m)),
+                backgroundColor: '#14b8a6', 
+                stack: 'Stack1',
+                borderRadius: 4,
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function(value) {
+                    return value.toLocaleString(i18n.language === 'de' ? 'de-DE' : 'en-US', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+                  }
+                }
+              }
+            },
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    let label = context.dataset.label || '';
+                    if (label) label += ': ';
+                    if (context.parsed.y !== null) {
+                      label += new Intl.NumberFormat(i18n.language === 'de' ? 'de-DE' : 'en-US', { style: 'currency', currency: 'EUR' }).format(context.parsed.y);
+                    }
+                    return label;
+                  }
+                }
+              }
+            }
+          }
+        });
+
+        return () => {
+          if (chartInstanceRef.current) {
+            chartInstanceRef.current.destroy();
+          }
+        };
+      }, [data, selectedYear, i18n.language]);
+
+      const triggerLocalToCloudSync = async () => {
+        setSyncStatus("syncing");
+        try {
+          const queueItem = await IDB.get('queue', 'pending_sync');
+          if (queueItem) {
+            const docRef = db.collection('monthly_logs').doc('house_finanzen_state');
+            const doc = await docRef.get();
+            if (!doc.exists || queueItem.updatedAt > doc.data().updatedAt) {
+              await docRef.set({
+                payload: queueItem.payload,
+                updatedAt: queueItem.updatedAt
+              });
+            }
+            await IDB.delete('queue', 'pending_sync');
+          }
+          setSyncStatus("synced");
+        } catch (e) {
+          setSyncStatus("pending_sync");
+        }
+      };
+
+      const saveStateAndDispatch = async (updatedData, timestamp) => {
+        setData(updatedData);
+        await IDB.set('state', { id: 'budget_data', payload: updatedData, updatedAt: timestamp });
+        await IDB.set('queue', { id: 'pending_sync', payload: updatedData, updatedAt: timestamp });
+
+        if (navigator.onLine) {
+          setSyncStatus("syncing");
+          try {
+            await db.collection('monthly_logs').doc('house_finanzen_state').set({
+              payload: updatedData,
+              updatedAt: timestamp
+            });
+            await IDB.delete('queue', 'pending_sync');
+            setSyncStatus("synced");
+          } catch (e) {
+            setSyncStatus("pending_sync");
+          }
+        } else {
+          setSyncStatus("pending_sync");
+          if ('serviceWorker' in navigator && 'SyncManager' in window) {
+            const reg = await navigator.serviceWorker.ready;
+            try {
+              await reg.sync.register('sync-budget');
+            } catch (err) {
+              console.warn("Background Sync registration rejected: ", err);
+            }
+          }
+        }
+      };
+
+      const handleValueChange = async (type, posten, month, val) => {
+        const parsedValue = val === '' ? 0 : parseFloat(val);
+        const updatedVal = isNaN(parsedValue) ? 0 : parsedValue;
+
+        const updatedData = { ...data };
+        if (!updatedData.values[selectedYear]) {
+          updatedData.values[selectedYear] = { incomes: {}, expenses: {} };
+        }
+        if (!updatedData.values[selectedYear][type][posten]) {
+          updatedData.values[selectedYear][type][posten] = {};
+        }
+        updatedData.values[selectedYear][type][posten][month] = updatedVal;
+
+        await saveStateAndDispatch(updatedData, Date.now());
+      };
+
+      const handleAddCategory = async (type, name, inputSetter) => {
+        if (!name.trim()) return;
+        const trimmedName = name.trim();
+
+        if (data.categories[type].includes(trimmedName)) {
+          alert(t('duplicateCategoryAlert'));
+          return;
+        }
+
+        const updatedCategories = {
+          ...data.categories,
+          [type]: [...data.categories[type], trimmedName]
+        };
+
+        const updatedValues = { ...data.values };
+        Object.keys(updatedValues).forEach(y => {
+          if (!updatedValues[y][type][trimmedName]) {
+            updatedValues[y][type][trimmedName] = {};
+          }
+          getMonthsForYear(parseInt(y)).forEach(m => {
+            if (updatedValues[y][type][trimmedName][m] === undefined) {
+              updatedValues[y][type][trimmedName][m] = 0;
+            }
+          });
+        });
+
+        const updatedData = {
+          categories: updatedCategories,
+          values: updatedValues
+        };
+
+        inputSetter("");
+        await saveStateAndDispatch(updatedData, Date.now());
+      };
+
+      const handleResetData = async () => {
+        if (window.confirm(t('confirmClear'))) {
+          const freshData = generateInitialState();
+          await saveStateAndDispatch(freshData, Date.now());
+        }
+      };
+
+      // Backup JSON utilities [2]
+      const handleExportBackup = () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `finanzen_backup_${selectedYear}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+      };
+
+      const handleImportBackup = (event) => {
+        const fileReader = new FileReader();
+        fileReader.onload = async (e) => {
+          try {
+            const importedState = JSON.parse(e.target.result);
+            if (importedState && importedState.categories && importedState.values) {
+              await saveStateAndDispatch(mergeAndLockState(importedState), Date.now());
+              alert(t('importSuccess'));
+            } else {
+              alert(t('importError'));
+            }
+          } catch (err) {
+            alert(t('importError'));
+          }
+        };
+        if (event.target.files[0]) {
+          fileReader.readAsText(event.target.files[0]);
+        }
+      };
+
+      const triggerFileSelector = () => {
+        if (fileInputRef.current) {
+          fileInputRef.current.click();
+        }
+      };
+
+      const formatCurrency = (val) => {
+        return new Intl.NumberFormat(i18n.language === 'de' ? 'de-DE' : 'en-US', { 
+          style: 'currency', 
+          currency: 'EUR' 
+        }).format(val || 0);
+      };
+
+      const getMonthlyTotal = (type, targetMonth) => {
+        if (!data.values[selectedYear]) return 0;
+        return data.categories[type].reduce((sum, posten) => {
+          const val = data.values[selectedYear][type][posten]?.[targetMonth];
+          return sum + (val || 0);
+        }, 0);
+      };
+
+      const getBracketMonthlyTotal = (bracketKey, month) => {
+        if (!data.values[selectedYear]) return 0;
+        const items = data.categories.expenses.filter(posten => getExpenseBracket(posten) === bracketKey);
+        return items.reduce((sum, posten) => {
+          const val = data.values[selectedYear].expenses[posten]?.[month];
+          return sum + (val || 0);
+        }, 0);
+      };
+
+      const totalIncome = useMemo(() => getMonthlyTotal('incomes', selectedMonth), [data, selectedMonth, selectedYear]);
+      const totalExpenses = useMemo(() => getMonthlyTotal('expenses', selectedMonth), [data, selectedMonth, selectedYear]);
+      const saldo = useMemo(() => totalIncome - totalExpenses, [totalIncome, totalExpenses]);
+      const percentageSpent = useMemo(() => {
+        if (totalIncome === 0) return 0;
+        return (totalExpenses / totalIncome) * 100;
+      }, [totalIncome, totalExpenses]);
+
+      const getItemStats = (type, posten) => {
+        const monthsForYear = getMonthsForYear(selectedYear);
+        const ytdTotal = monthsForYear.reduce((sum, m) => {
+          const val = data.values[selectedYear]?.[type]?.[posten]?.[m];
+          return sum + (val || 0);
+        }, 0);
+        const average = ytdTotal / monthsForYear.length;
+        return { ytdTotal, average };
+      };
+
+      return (
+        <div className="flex flex-col min-h-screen">
+          
+          {/* Header Layout with Burger Drawer toggle [4] */}
+          <header className="bg-indigo-700 text-white shadow-md sticky top-0 z-40">
+            <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+              <div className="flex items-center space-x-2">
+                <i className="fa-solid fa-wallet text-2xl"></i>
+                <h1 className="text-xl font-bold tracking-tight">{t('title')} <span className="text-xs bg-indigo-500 px-2 py-1 rounded ml-1">{t('cloudSync')}</span></h1>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                {/* Visual sync state indicators */}
+                {syncStatus === "syncing" && (
+                  <span className="bg-blue-600 text-white px-2.5 py-1 text-xs rounded-full flex items-center gap-1 hidden md:inline-flex">
+                    <i className="fa-solid fa-arrows-rotate animate-spin"></i> {t('syncing')}
+                  </span>
+                )}
+                {syncStatus === "synced" && (
+                  <span className="bg-emerald-600 text-white px-2.5 py-1 text-xs rounded-full flex items-center gap-1 hidden md:inline-flex">
+                    <i className="fa-solid fa-cloud-arrow-up"></i> {t('synced')}
+                  </span>
+                )}
+                {syncStatus === "pending_sync" && (
+                  <span className="bg-amber-600 text-white px-2.5 py-1 text-xs rounded-full flex items-center gap-1 animate-pulse hidden md:inline-flex">
+                    <i className="fa-solid fa-clock-rotate-left"></i> {t('pending_sync')}
+                  </span>
+                )}
+                <span className={`px-2.5 py-1 text-xs rounded-full flex items-center gap-1 ${isOnline ? 'bg-indigo-500' : 'bg-rose-600'}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full bg-white ${isOnline ? 'animate-ping' : ''}`}></span>
+                  <span>{isOnline ? t('online') : t('offline')}</span>
+                </span>
+                
+                {/* Burger Icon Toggle Trigger [4] */}
+                <button 
+                  onClick={() => setIsBurgerOpen(true)} 
+                  className="w-10 h-10 rounded-lg hover:bg-indigo-600 transition flex items-center justify-center text-xl outline-none"
+                >
+                  <i className="fa-solid fa-bars"></i>
+                </button>
+              </div>
+            </div>
+          </header>
+
+          {/* Sliding Options Drawer [4] */}
+          {isBurgerOpen && (
+            <div 
+              onClick={() => setIsBurgerOpen(false)} 
+              className="fixed inset-0 bg-slate-950/40 z-50 backdrop-blur-sm transition-opacity" 
+            />
+          )}
+          <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isBurgerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className="p-5 flex flex-col h-full justify-between">
+              <div className="space-y-6">
+                <div className="flex justify-between items-center pb-4 border-b border-slate-100">
+                  <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
+                    <i className="fa-solid fa-shield-halved text-indigo-600"></i> {t('options')}
+                  </h3>
+                  <button onClick={() => setIsBurgerOpen(false)} className="text-slate-400 hover:text-slate-600 transition">
+                    <i className="fa-solid fa-xmark text-lg"></i>
+                  </button>
+                </div>
+                
+                {/* Select Year */}
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('selectYear')}</p>
+                  <div className="flex gap-2">
+                    {[2026, 2027, 2028].map(yr => (
+                      <button
+                        key={yr}
+                        onClick={() => { setSelectedYear(yr); setIsBurgerOpen(false); }}
+                        className={`px-3 py-1.5 rounded text-xs transition font-bold ${selectedYear === yr ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                      >
+                        {yr}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Select Language */}
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('selectLanguage')}</p>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => { i18n.changeLanguage('de'); setIsBurgerOpen(false); }} 
+                      className={`px-3 py-1.5 rounded text-xs transition font-bold ${i18n.language === 'de' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`}
+                    >
+                      DE
+                    </button>
+                    <button 
+                      onClick={() => { i18n.changeLanguage('en'); setIsBurgerOpen(false); }} 
+                      className={`px-3 py-1.5 rounded text-xs transition font-bold ${i18n.language === 'en' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`}
+                    >
+                      EN
+                    </button>
+                  </div>
+                </div>
+
+                {/* Backup configuration interface [2] */}
+                <div className="space-y-2 pt-4 border-t border-slate-100">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('backupSection')}</p>
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={handleExportBackup}
+                      className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2 px-3 rounded-lg text-xs flex items-center justify-center gap-2 transition"
+                    >
+                      <i className="fa-solid fa-file-export"></i> {t('exportBackup')}
+                    </button>
+                    <button
+                      onClick={triggerFileSelector}
+                      className="bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold py-2 px-3 rounded-lg text-xs flex items-center justify-center gap-2 transition"
+                    >
+                      <i className="fa-solid fa-file-import"></i> {t('importBackup')}
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".json"
+                      onChange={handleImportBackup}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Secure Reset Data Link [4] */}
+              <div className="pt-4 border-t border-slate-100">
+                <button 
+                  onClick={() => { handleResetData(); setIsBurgerOpen(false); }}
+                  className="text-slate-400 hover:text-rose-600 transition duration-200 text-xs underline flex items-center gap-2 py-2 w-full text-left font-medium"
+                >
+                  <i className="fa-solid fa-triangle-exclamation"></i> {t('clearAll')}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Month Navigation */}
+          <nav className="bg-white border-b border-slate-200 sticky top-[52px] z-30 shadow-sm">
+            <div className="max-w-7xl mx-auto px-4 overflow-x-auto whitespace-nowrap scrollbar-none flex">
+              {getMonthsForYear(selectedYear).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setSelectedMonth(m)}
+                  className={`flex-1 min-w-[70px] py-4 text-center font-semibold text-sm transition-all border-b-2 outline-none ${
+                    selectedMonth === m
+                      ? 'border-indigo-600 text-indigo-600 bg-indigo-5/50'
+                      : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                  }`}
+                >
+                  {t(`months.${m}`)}
+                </button>
+              ))}
+            </div>
+          </nav>
+
+          {/* Main Layout Area */}
+          <main className="flex-grow max-w-7xl mx-auto w-full px-4 py-6 space-y-6">
+
+            {/* Segmented view/edit toggle [6] */}
+            <div className="flex bg-slate-200/60 p-1 rounded-xl max-w-sm mx-auto shadow-inner">
+              <button 
+                onClick={() => setActiveTab('view')}
+                className={`flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 ${activeTab === 'view' ? 'bg-white text-indigo-700 shadow' : 'text-slate-600 hover:text-slate-800'}`}
+              >
+                <i className="fa-solid fa-eye text-sm"></i> {t('viewTab')}
+              </button>
+              <button 
+                onClick={() => setActiveTab('edit')}
+                className={`flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 ${activeTab === 'edit' ? 'bg-white text-indigo-700 shadow' : 'text-slate-600 hover:text-slate-800'}`}
+              >
+                <i className="fa-solid fa-pen-to-square text-sm"></i> {t('editTab')}
+              </button>
+            </div>
+            
+            {/* Aggregate Metrics Grid */}
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                <div>
+                  <p className="text-xs font-bold text-emerald-800 uppercase">{t('totalIncome')}</p>
+                  <p className="text-2xl font-black text-emerald-900 mt-1">{formatCurrency(totalIncome)}</p>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                  <i className="fa-solid fa-circle-arrow-down text-xl"></i>
+                </div>
+              </div>
+
+              <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                <div>
+                  <p className="text-xs font-bold text-rose-800 uppercase">{t('totalExpenses')}</p>
+                  <p className="text-2xl font-black text-rose-900 mt-1">{formatCurrency(totalExpenses)}</p>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
+                  <i className="fa-solid fa-circle-arrow-up text-xl"></i>
+                </div>
+              </div>
+
+              <div className={`border rounded-2xl p-4 flex items-center justify-between shadow-sm transition-colors ${
+                saldo >= 0 ? 'bg-indigo-50 border-indigo-200' : 'bg-amber-50 border-amber-200'
+              }`}>
+                <div>
+                  <p className={`text-xs font-bold uppercase ${saldo >= 0 ? 'text-indigo-800' : 'text-amber-800'}`}>{t('saldo')} ({t(`months.${selectedMonth}`)})</p>
+                  <p className={`text-2xl font-black mt-1 ${saldo >= 0 ? 'text-indigo-900' : 'text-amber-900'}`}>{formatCurrency(saldo)}</p>
+                </div>
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                  saldo >= 0 ? 'bg-indigo-100 text-indigo-600' : 'bg-amber-100 text-amber-600'
+                }`}>
+                  <i className={`fa-solid text-xl ${saldo >= 0 ? 'fa-scale-balanced' : 'fa-triangle-exclamation'}`}></i>
+                </div>
+              </div>
+
+              <div className="bg-slate-100 border border-slate-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                <div>
+                  <p className="text-xs font-bold text-slate-700 uppercase">{t('spentRatio')}</p>
+                  <p className="text-2xl font-black text-slate-900 mt-1">{percentageSpent.toFixed(1)}%</p>
+                </div>
+                <div className="w-full max-w-[80px] bg-slate-200 rounded-full h-2.5 ml-2">
+                  <div 
+                    className={`h-2.5 rounded-full transition-all duration-300 ${
+                      percentageSpent > 100 ? 'bg-rose-600' : percentageSpent > 85 ? 'bg-amber-500' : 'bg-indigo-600'
+                    }`} 
+                    style={{ width: `${Math.min(percentageSpent, 100)}%` }}
+                  ></div>
+                </div>
+              </div>
+            </section>
+
+            {/* Side-by-Side Grouped Stacked Analytics Chart [2] */}
+            <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+              <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                <i className="fa-solid fa-chart-simple text-indigo-600"></i> {t('analyticsHeader')} - {selectedYear}
+              </h3>
+              <div className="h-[280px] relative w-full">
+                <canvas ref={chartRef}></canvas>
+              </div>
+            </section>
+
+            {/* Ledger Tables */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              
+              {/* TABLE A: EINKÜNFTE */}
+              <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                <div className="p-4 border-b border-slate-200 bg-emerald-50/50 flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-emerald-900 flex items-center gap-2">
+                    <i className="fa-solid fa-money-bill-trend-up text-emerald-600"></i> {t('incomesHeader')}
+                  </h3>
+                  <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full">
+                    {t('sum')}: {formatCurrency(totalIncome)}
+                  </span>
+                </div>
+                <div className="overflow-x-auto flex-grow">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-100 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
+                        <th className="p-3">{t('posten')}</th>
+                        <th className="p-3 w-32 text-right">{t(`months.${selectedMonth}`)} (€)</th>
+                        <th className="p-3 w-28 text-right">{t('resultYtd')}</th>
+                        <th className="p-3 w-28 text-right">{t('avgSchnitt')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-sm">
+                      {data.categories.incomes.map((item) => {
+                        const { ytdTotal, average } = getItemStats('incomes', item);
+                        const val = data.values[selectedYear]?.incomes[item]?.[selectedMonth];
+                        
+                        // Database Object Parsing sanitation step
+                        const key = t(`categories.${item}`);
+                        let cleanName = key.replace('categories.', '');
+                        cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+
+                        return (
+                          <tr key={item} className="hover:bg-slate-50 transition border-l-4 border-emerald-500">
+                            <td className="p-3 font-medium text-slate-700">{cleanName}</td>
+                            <td className="p-3 text-right">
+                              {activeTab === "view" ? (
+                                <span className="font-bold text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
+                              ) : (
+                                <input
+                                  type="number"
+                                  step="any"
+                                  value={val !== undefined && val !== 0 ? val : ''}
+                                  placeholder="0"
+                                  onChange={(e) => handleValueChange('incomes', item, selectedMonth, e.target.value)}
+                                  className="w-full text-right bg-slate-50 focus:bg-white border border-slate-200 focus:border-indigo-500 rounded px-2 py-1 outline-none font-semibold transition"
+                                />
+                              )}
+                            </td>
+                            <td className="p-3 text-right text-slate-600 font-medium">{formatCurrency(ytdTotal)}</td>
+                            <td className="p-3 text-right text-slate-500 text-xs">{formatCurrency(average)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {activeTab === "edit" && (
+                  <div className="p-3 bg-slate-50 border-t border-slate-100 flex gap-2">
+                    <input
+                      type="text"
+                      value={customIncomeInput}
+                      onChange={(e) => setCustomIncomeInput(e.target.value)}
+                      placeholder={t('addPlaceholder')}
+                      className="flex-grow bg-white border border-slate-200 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition"
+                    />
+                    <button
+                      onClick={() => handleAddCategory('incomes', customIncomeInput, setCustomIncomeInput)}
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-bold transition flex items-center gap-1 shrink-0"
+                    >
+                      <i className="fa-solid fa-plus"></i> Add
+                    </button>
+                  </div>
+                )}
+              </section>
+
+              {/* TABLE B: AUSGABEN */}
+              <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                <div className="p-4 border-b border-slate-200 bg-rose-50/50 flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-rose-900 flex items-center gap-2">
+                    <i className="fa-solid fa-cart-shopping text-rose-600"></i> {t('expensesHeader')}
+                  </h3>
+                  <span className="text-xs font-semibold px-2.5 py-1 bg-rose-100 text-rose-800 rounded-full">
+                    {t('sum')}: {formatCurrency(totalExpenses)}
+                  </span>
+                </div>
+                <div className="overflow-x-auto max-h-[500px] overflow-y-auto flex-grow">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="sticky top-0 bg-slate-100 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase z-10">
+                      <tr>
+                        <th className="p-3 bg-slate-100">{t('posten')}</th>
+                        <th className="p-3 w-32 text-right bg-slate-100">{t(`months.${selectedMonth}`)} (€)</th>
+                        <th className="p-3 w-28 text-right bg-slate-100">{t('resultYtd')}</th>
+                        <th className="p-3 w-28 text-right bg-slate-100">{t('avgSchnitt')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-sm">
+                      {data.categories.expenses.map((item) => {
+                        const { ytdTotal, average } = getItemStats('expenses', item);
+                        const val = data.values[selectedYear]?.expenses[item]?.[selectedMonth];
+                        
+                        // dynamic left-border tags mapped by category bracket
+                        const bracket = getExpenseBracket(item);
+                        const borderClass = 
+                          bracket === 'housing' ? 'border-l-4 border-slate-500' : 
+                          bracket === 'living' ? 'border-l-4 border-amber-500' :  
+                          bracket === 'professional' ? 'border-l-4 border-teal-500' : 
+                          'border-l-4 border-indigo-500'; 
+
+                        // Database Object Parsing sanitation step
+                        const key = t(`categories.${item}`);
+                        let cleanName = key.replace('categories.', '');
+                        cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+
+                        return (
+                          <tr key={item} className={`hover:bg-slate-50 transition ${borderClass}`}>
+                            <td className="p-3 font-medium text-slate-700">{cleanName}</td>
+                            <td className="p-3 text-right">
+                              {activeTab === "view" ? (
+                                <span className="font-bold text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
+                              ) : (
+                                <input
+                                  type="number"
+                                  step="any"
+                                  value={val !== undefined && val !== 0 ? val : ''}
+                                  placeholder="0"
+                                  onChange={(e) => handleValueChange('expenses', item, selectedMonth, e.target.value)}
+                                  className="w-full text-right bg-slate-50 focus:bg-white border border-slate-200 focus:border-indigo-500 rounded px-2 py-1 outline-none font-semibold transition"
+                                />
+                              )}
+                            </td>
+                            <td className="p-3 text-right text-slate-600 font-medium">{formatCurrency(ytdTotal)}</td>
+                            <td className="p-3 text-right text-slate-500 text-xs">{formatCurrency(average)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {activeTab === "edit" && (
+                  <div className="p-3 bg-slate-50 border-t border-slate-100 flex gap-2">
+                    <input
+                      type="text"
+                      value={customExpenseInput}
+                      onChange={(e) => setCustomExpenseInput(e.target.value)}
+                      placeholder={t('addPlaceholder')}
+                      className="flex-grow bg-white border border-slate-200 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition"
+                    />
+                    <button
+                      onClick={() => handleAddCategory('expenses', customExpenseInput, setCustomExpenseInput)}
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-bold transition flex items-center gap-1 shrink-0"
+                    >
+                      <i className="fa-solid fa-plus"></i> Add
+                    </button>
+                  </div>
+                )}
+              </section>
+
+            </div>
+          </main>
+        </div>
+      );
     }
-  } catch (error) {
-    console.error('[SW] Background synchronization failed:', error);
-    throw error; // Let browser reschedule sync retry [2]
-  }
-}
 
-// Service worker cache strategies
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(ASSETS_TO_CACHE))
-      .then(() => self.skipWaiting())
-  );
-});
+    function App() {
+      return (
+        <LanguageProvider>
+          <MainAppContent />
+        </LanguageProvider>
+      );
+    }
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => Promise.all(
-      keys.map((key) => {
-        if (key !== CACHE_NAME) return caches.delete(key);
-      })
-    )).then(() => self.clients.claim())
-  );
-});
+    const container = document.getElementById('root');
+    const root = ReactDOM.createRoot(container);
+    root.render(<App />);
 
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((cachedResponse) => cachedResponse || fetch(event.request))
-  );
-});
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(async (reg) => {
+            if ('SyncManager' in window) {
+              try {
+                await reg.sync.register('sync-budget');
+              } catch (e) {
+                console.warn('Sync registration failed: ', e);
+              }
+            }
+          })
+          .catch(err => console.error('SW registration error:', err));
+      });
+    }
+  </script>
+</body>
+</html>
