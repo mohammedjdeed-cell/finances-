@@ -15,7 +15,7 @@ const firebaseConfig = {
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js');
 
-const CACHE_NAME = 'budget-tracker-cloud-cache-v5';
+const CACHE_NAME = 'budget-tracker-cloud-cache-v6';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -76,17 +76,17 @@ async function syncLocalStoreToCloud() {
         firebase.initializeApp(firebaseConfig);
       }
       const firestoreDb = firebase.firestore();
-      const docRef = firestoreDb.collection('budgets').doc('default_budget_v2');
+      
+      // Locked collection paths [1]
+      const docRef = firestoreDb.collection('monthly_logs').doc('house_finanzen_state');
       
       const doc = await docRef.get();
-      // Only push newer local data [3]
       if (!doc.exists || queueItem.updatedAt > doc.data().updatedAt) {
         await docRef.set({
           payload: queueItem.payload,
           updatedAt: queueItem.updatedAt
         });
       }
-      // Clear offline mutations cache [1, 2]
       await deleteQueueItem(idbInstance, 'pending_sync');
       console.log('[SW] Background Synchronization complete.');
     }
