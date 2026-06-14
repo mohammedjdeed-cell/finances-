@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Finanzplaner - Lokale Speicherung & Analyse</title>
+  <title>Finanzplaner - Advanced Cloud Sync & Analytics</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- React & Babel CDNs -->
@@ -12,6 +12,9 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <!-- Chart.js CDN for Visual Analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Firebase Compat SDKs [3] -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="manifest" href="manifest.json">
@@ -23,7 +26,21 @@
   <script type="text/babel">
     const { useState, useEffect, useMemo, createContext, useContext, useRef } = React;
 
-    const LOCAL_STORAGE_KEY = 'de_haus_finanzen_v1';
+    // Integrated Web App's Firebase configuration [3]
+    const firebaseConfig = {
+      apiKey: "AIzaSyCvKICFZCwQz5e70HTLDA_eDD4Us8XqNas",
+      authDomain: "finances-ed83f.firebaseapp.com",
+      projectId: "finances-ed83f",
+      storageBucket: "finances-ed83f.firebasestorage.app",
+      messagingSenderId: "707569388994",
+      appId: "1:707569388994:web:f23232e15d439df1ba5a5b",
+      measurementId: "G-6SNL4MJZVK"
+    };
+
+    // Initialize Firebase Services [3]
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
     const ALL_MONTHS = ["Jan", "Feb", "Mrz", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 
     // Timeline logic starting explicitly in May 2026 [5]
@@ -67,7 +84,7 @@
       ]
     };
 
-    // Category mapping logic for color brackets
+    // Smart Categorization Rules helper
     const getExpenseBracket = (posten) => {
       const housing = ["Hause mieten", "Hause kaution", "strom ⚡", "Gas/ Heißung", "radio", "internet/ Handy"];
       const living = ["Lebensmittel 🍞🍲", "Hausrat 🛋️", "transport/ tickets", "kleidung"];
@@ -83,10 +100,13 @@
     const translations = {
       de: {
         title: "Finanzplaner",
+        cloudSync: "Cloud-Sync",
         active: "Aktiv",
-        online: "Offline Betriebsbereit",
-        offline: "Offline Betriebsbereit",
-        localActive: "Lokale Speicherung Aktiv",
+        online: "Netzwerk Online",
+        offline: "Offline Modus",
+        syncing: "Synchronisiere...",
+        synced: "Cloud Aktuell",
+        pending_sync: "Sync Warteschleife",
         totalIncome: "Monatliche Einkünfte",
         totalExpenses: "Monatliche Ausgaben",
         saldo: "Saldo",
@@ -113,7 +133,7 @@
         bracketProfessional: "Beruf, Gesundheit & Vorsorge",
         viewTab: "Details & Ansicht",
         editTab: "Werte bearbeiten",
-        backupSection: "Daten-Sicherung",
+        backupSection: "Sicherheits-Backup",
         exportBackup: "Backup exportieren (JSON)",
         importBackup: "Backup importieren (JSON)",
         importSuccess: "Daten erfolgreich aus Backup importiert!",
@@ -124,7 +144,7 @@
         },
         categories: {
           "mohammed sperrkonto installmant": "Sperrkonto-Rate (Mohammed)",
-          "mai sperrkonto installmant": "Sperrkonto-Rate (Mai)", // Contextual Name Corrected to Mai
+          "mai sperrkonto installmant": "Sperrkonto-Rate (Mai)", // Mai (Name) distinct from calendar month logic [4]
           "side income": "Nebeneinkommen",
           "savings": "Ersparnisse",
           "Hause mieten": "Hause mieten",
@@ -152,10 +172,13 @@
       },
       en: {
         title: "Finance Planner",
+        cloudSync: "Cloud Sync",
         active: "Active",
-        online: "Offline Ready",
-        offline: "Offline Ready",
-        localActive: "Local Storage Active",
+        online: "Network Online",
+        offline: "Offline Mode",
+        syncing: "Syncing...",
+        synced: "Cloud Updated",
+        pending_sync: "Sync Pending",
         totalIncome: "Monthly Income",
         totalExpenses: "Total Monthly Expenses",
         saldo: "Net Balance",
@@ -193,7 +216,7 @@
         },
         categories: {
           "mohammed sperrkonto installmant": "Blocked Account Installment (Mohammed)",
-          "mai sperrkonto installmant": "Blocked Account Installment (Mai)", // Contextual Name Corrected from May to Mai
+          "mai sperrkonto installmant": "Blocked Account Installment (Mai)", // Corrected from calendar "May" to name "Mai" [4]
           "side income": "Side Income",
           "savings": "Savings",
           "Hause mieten": "Rent",
@@ -262,7 +285,7 @@
 
     const useTranslation = () => useContext(LanguageContext);
 
-    // Locked schema initializer [1]
+    // Initial state generation
     const generateInitialState = () => {
       const state = {
         categories: {
@@ -285,7 +308,7 @@
       return state;
     };
 
-    // Structural migration controller [1]
+    // State Migration to prevent data structure loss during layout changes
     const migrateData = (oldData) => {
       if (oldData && oldData.values && oldData.categories) {
         return oldData;
@@ -314,12 +337,67 @@
       return newState;
     };
 
+    // Local IndexedDB caching driver [1]
+    const IDB = {
+      dbName: 'BudgetDatabase_v2',
+      dbVersion: 1,
+      open() {
+        return new Promise((resolve, reject) => {
+          const request = indexedDB.open(this.dbName, this.dbVersion);
+          request.onupgradeneeded = (e) => {
+            const database = e.target.result;
+            if (!database.objectStoreNames.contains('state')) {
+              database.createObjectStore('state', { keyPath: 'id' });
+            }
+            if (!database.objectStoreNames.contains('queue')) {
+              database.createObjectStore('queue', { keyPath: 'id' });
+            }
+          };
+          request.onsuccess = (e) => resolve(e.target.result);
+          request.onerror = (e) => reject(e.target.error);
+        });
+      },
+      async get(storeName, key) {
+        const database = await this.open();
+        return new Promise((resolve, reject) => {
+          const tx = database.transaction(storeName, 'readonly');
+          const store = tx.objectStore(storeName);
+          const request = store.get(key);
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+      },
+      async set(storeName, value) {
+        const database = await this.open();
+        return new Promise((resolve, reject) => {
+          const tx = database.transaction(storeName, 'readwrite');
+          const store = tx.objectStore(storeName);
+          const request = store.put(value);
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+        });
+      },
+      async delete(storeName, key) {
+        const database = await this.open();
+        return new Promise((resolve, reject) => {
+          const tx = database.transaction(storeName, 'readwrite');
+          const store = tx.objectStore(storeName);
+          const request = store.delete(key);
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+        });
+      }
+    };
+
     function MainAppContent() {
       const { t, i18n } = useTranslation();
+      const [data, setData] = useState(generateInitialState());
       const [selectedYear, setSelectedYear] = useState(2026);
       const [selectedMonth, setSelectedMonth] = useState("Jun");
-      const [isBurgerOpen, setIsBurgerOpen] = useState(false); 
-      const [activeTab, setActiveTab] = useState("view"); 
+      const [isOnline, setIsOnline] = useState(navigator.onLine);
+      const [syncStatus, setSyncStatus] = useState("initialized");
+      const [isBurgerOpen, setIsBurgerOpen] = useState(false); // Burger drawer state [4]
+      const [activeTab, setActiveTab] = useState("view"); // Segmented UI view controller [6]
 
       const [customIncomeInput, setCustomIncomeInput] = useState("");
       const [customExpenseInput, setCustomExpenseInput] = useState("");
@@ -328,21 +406,6 @@
       const chartInstanceRef = useRef(null);
       const fileInputRef = useRef(null);
 
-      // Load data strictly from localStorage variable key [1]
-      const [data, setData] = useState(() => {
-        const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (raw) {
-          try {
-            return migrateData(JSON.parse(raw));
-          } catch (e) {
-            console.error("Local Storage parsing failed:", e);
-          }
-        }
-        const fresh = generateInitialState();
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(fresh));
-        return fresh;
-      });
-
       useEffect(() => {
         const validMonths = getMonthsForYear(selectedYear);
         if (!validMonths.includes(selectedMonth)) {
@@ -350,7 +413,57 @@
         }
       }, [selectedYear]);
 
-      // Chart.js render updates
+      // Seed local cache, establish live cloud listening subscription [1, 3]
+      useEffect(() => {
+        async function loadInitialData() {
+          try {
+            const cached = await IDB.get('state', 'budget_data');
+            if (cached) {
+              setData(migrateData(cached.payload));
+            }
+          } catch (e) {
+            console.warn("Failed to load local IndexedDB state", e);
+          }
+        }
+        loadInitialData();
+
+        // Establish real-time listener targeting Cloud Firestore [3]
+        const unsubscribe = db.collection('budgets').doc('default_budget_v2')
+          .onSnapshot(async (doc) => {
+            if (doc.exists) {
+              const remote = doc.data();
+              const localCached = await IDB.get('state', 'budget_data');
+              if (!localCached || remote.updatedAt > localCached.updatedAt) {
+                const migrated = migrateData(remote.payload);
+                setData(migrated);
+                await IDB.set('state', { id: 'budget_data', payload: migrated, updatedAt: remote.updatedAt });
+                setSyncStatus("synced");
+              }
+            }
+          }, (err) => {
+            console.warn("Firestore connection offline or permission restricted:", err);
+          });
+
+        return () => unsubscribe();
+      }, []);
+
+      // Online connectivity tracking and queued background synchronization [2]
+      useEffect(() => {
+        const handleOnline = async () => {
+          setIsOnline(true);
+          await triggerLocalToCloudSync();
+        };
+        const handleOffline = () => setIsOnline(false);
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+        return () => {
+          window.removeEventListener('online', handleOnline);
+          window.removeEventListener('offline', handleOffline);
+        };
+      }, [data]);
+
+      // Side-by-side grouped stacked visual chart logic [2]
       useEffect(() => {
         if (!chartRef.current) return;
         const ctx = chartRef.current.getContext('2d');
@@ -378,28 +491,28 @@
               {
                 label: t('bracketHousing'),
                 data: monthsForYear.map(m => getBracketMonthlyTotal('housing', m)),
-                backgroundColor: '#475569', // Slate
+                backgroundColor: '#475569', 
                 stack: 'Stack1',
                 borderRadius: 4,
               },
               {
                 label: t('bracketLiving'),
                 data: monthsForYear.map(m => getBracketMonthlyTotal('living', m)),
-                backgroundColor: '#f59e0b', // Amber
+                backgroundColor: '#f59e0b', 
                 stack: 'Stack1',
                 borderRadius: 4,
               },
               {
                 label: t('bracketLeisure'),
                 data: monthsForYear.map(m => getBracketMonthlyTotal('leisure', m)),
-                backgroundColor: '#6366f1', // Indigo
+                backgroundColor: '#6366f1', 
                 stack: 'Stack1',
                 borderRadius: 4,
               },
               {
                 label: t('bracketProfessional'),
                 data: monthsForYear.map(m => getBracketMonthlyTotal('professional', m)),
-                backgroundColor: '#14b8a6', // Teal
+                backgroundColor: '#14b8a6', 
                 stack: 'Stack1',
                 borderRadius: 4,
               }
@@ -442,13 +555,58 @@
         };
       }, [data, selectedYear, i18n.language]);
 
-      // Direct write operation wrapper [1]
-      const persistData = (updatedData) => {
-        setData(updatedData);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedData));
+      const triggerLocalToCloudSync = async () => {
+        setSyncStatus("syncing");
+        try {
+          const queueItem = await IDB.get('queue', 'pending_sync');
+          if (queueItem) {
+            const docRef = db.collection('budgets').doc('default_budget_v2');
+            const doc = await docRef.get();
+            if (!doc.exists || queueItem.updatedAt > doc.data().updatedAt) {
+              await docRef.set({
+                payload: queueItem.payload,
+                updatedAt: queueItem.updatedAt
+              });
+            }
+            await IDB.delete('queue', 'pending_sync');
+          }
+          setSyncStatus("synced");
+        } catch (e) {
+          setSyncStatus("pending_sync");
+        }
       };
 
-      const handleValueChange = (type, posten, month, val) => {
+      const saveStateAndDispatch = async (updatedData, timestamp) => {
+        setData(updatedData);
+        await IDB.set('state', { id: 'budget_data', payload: updatedData, updatedAt: timestamp });
+        await IDB.set('queue', { id: 'pending_sync', payload: updatedData, updatedAt: timestamp });
+
+        if (navigator.onLine) {
+          setSyncStatus("syncing");
+          try {
+            await db.collection('budgets').doc('default_budget_v2').set({
+              payload: updatedData,
+              updatedAt: timestamp
+            });
+            await IDB.delete('queue', 'pending_sync');
+            setSyncStatus("synced");
+          } catch (e) {
+            setSyncStatus("pending_sync");
+          }
+        } else {
+          setSyncStatus("pending_sync");
+          if ('serviceWorker' in navigator && 'SyncManager' in window) {
+            const reg = await navigator.serviceWorker.ready;
+            try {
+              await reg.sync.register('sync-budget');
+            } catch (err) {
+              console.warn("Background Sync registration rejected: ", err);
+            }
+          }
+        }
+      };
+
+      const handleValueChange = async (type, posten, month, val) => {
         const parsedValue = val === '' ? 0 : parseFloat(val);
         const updatedVal = isNaN(parsedValue) ? 0 : parsedValue;
 
@@ -461,10 +619,11 @@
         }
         updatedData.values[selectedYear][type][posten][month] = updatedVal;
 
-        persistData(updatedData);
+        await saveStateAndDispatch(updatedData, Date.now());
       };
 
-      const handleAddCategory = (type, name, inputSetter) => {
+      // Custom Category Extensibility [6]
+      const handleAddCategory = async (type, name, inputSetter) => {
         if (!name.trim()) return;
         const trimmedName = name.trim();
 
@@ -496,17 +655,17 @@
         };
 
         inputSetter("");
-        persistData(updatedData);
+        await saveStateAndDispatch(updatedData, Date.now());
       };
 
-      const handleResetData = () => {
+      const handleResetData = async () => {
         if (window.confirm(t('confirmClear'))) {
           const freshData = generateInitialState();
-          persistData(freshData);
+          await saveStateAndDispatch(freshData, Date.now());
         }
       };
 
-      // Integrated Backup Utilities [2]
+      // Backup JSON Utility Panel exports [2]
       const handleExportBackup = () => {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
         const downloadAnchor = document.createElement('a');
@@ -519,11 +678,11 @@
 
       const handleImportBackup = (event) => {
         const fileReader = new FileReader();
-        fileReader.onload = (e) => {
+        fileReader.onload = async (e) => {
           try {
             const importedState = JSON.parse(e.target.result);
             if (importedState && importedState.categories && importedState.values) {
-              persistData(importedState);
+              await saveStateAndDispatch(importedState, Date.now());
               alert(t('importSuccess'));
             } else {
               alert(t('importError'));
@@ -581,6 +740,7 @@
           const val = data.values[selectedYear]?.[type]?.[posten]?.[m];
           return sum + (val || 0);
         }, 0);
+        // Average adjusts dynamically based on available months (8 months for 2026, 12 for 2027+) [5]
         const average = ytdTotal / monthsForYear.length;
         return { ytdTotal, average };
       };
@@ -588,21 +748,37 @@
       return (
         <div className="flex flex-col min-h-screen">
           
-          {/* Header Bar */}
+          {/* Header Layout with Burger Menu logic [4] */}
           <header className="bg-indigo-700 text-white shadow-md sticky top-0 z-40">
             <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
               <div className="flex items-center space-x-2">
                 <i className="fa-solid fa-wallet text-2xl"></i>
-                <h1 className="text-xl font-bold tracking-tight">{t('title')}</h1>
+                <h1 className="text-xl font-bold tracking-tight">{t('title')} <span className="text-xs bg-indigo-500 px-2 py-1 rounded ml-1">{t('cloudSync')}</span></h1>
               </div>
 
               <div className="flex items-center space-x-3">
-                <span className="px-2.5 py-1 text-xs rounded-full flex items-center gap-1 bg-indigo-500 font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span>{t('localActive')}</span>
+                {/* Visual sync state indicators */}
+                {syncStatus === "syncing" && (
+                  <span className="bg-blue-600 text-white px-2.5 py-1 text-xs rounded-full flex items-center gap-1 hidden md:inline-flex">
+                    <i className="fa-solid fa-arrows-rotate animate-spin"></i> {t('syncing')}
+                  </span>
+                )}
+                {syncStatus === "synced" && (
+                  <span className="bg-emerald-600 text-white px-2.5 py-1 text-xs rounded-full flex items-center gap-1 hidden md:inline-flex">
+                    <i className="fa-solid fa-cloud-arrow-up"></i> {t('synced')}
+                  </span>
+                )}
+                {syncStatus === "pending_sync" && (
+                  <span className="bg-amber-600 text-white px-2.5 py-1 text-xs rounded-full flex items-center gap-1 animate-pulse hidden md:inline-flex">
+                    <i className="fa-solid fa-clock-rotate-left"></i> {t('pending_sync')}
+                  </span>
+                )}
+                <span className={`px-2.5 py-1 text-xs rounded-full flex items-center gap-1 ${isOnline ? 'bg-indigo-500' : 'bg-rose-600'}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full bg-white ${isOnline ? 'animate-ping' : ''}`}></span>
+                  <span>{isOnline ? t('online') : t('offline')}</span>
                 </span>
                 
-                {/* Burger Icon [4] */}
+                {/* Burger Icon Toggle Trigger [4] */}
                 <button 
                   onClick={() => setIsBurgerOpen(true)} 
                   className="w-10 h-10 rounded-lg hover:bg-indigo-600 transition flex items-center justify-center text-xl outline-none"
@@ -694,7 +870,7 @@
                 </div>
               </div>
 
-              {/* Reset link safe zone [4] */}
+              {/* Secure Reset Data Link [4] */}
               <div className="pt-4 border-t border-slate-100">
                 <button 
                   onClick={() => { handleResetData(); setIsBurgerOpen(false); }}
@@ -725,10 +901,10 @@
             </div>
           </nav>
 
-          {/* Main Workspace Layout */}
+          {/* Main Layout Area */}
           <main className="flex-grow max-w-7xl mx-auto w-full px-4 py-6 space-y-6">
 
-            {/* Segmented view/edit toggle */}
+            {/* View/Edit segmented tab bar controller [6] */}
             <div className="flex bg-slate-200/60 p-1 rounded-xl max-w-sm mx-auto shadow-inner">
               <button 
                 onClick={() => setActiveTab('view')}
@@ -744,7 +920,7 @@
               </button>
             </div>
             
-            {/* Metric Metrics Grid */}
+            {/* Aggregate Metrics Grid */}
             <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
                 <div>
@@ -796,7 +972,7 @@
               </div>
             </section>
 
-            {/* Visual Analytics stack chart */}
+            {/* Side-by-Side Grouped Stacked Analytics Chart [2] */}
             <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
               <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
                 <i className="fa-solid fa-chart-simple text-indigo-600"></i> {t('analyticsHeader')} - {selectedYear}
@@ -806,7 +982,7 @@
               </div>
             </section>
 
-            {/* Tables Container */}
+            {/* Ledger Tables */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               
               {/* TABLE A: EINKÜNFTE */}
@@ -836,9 +1012,9 @@
                         return (
                           <tr key={item} className="hover:bg-slate-50 transition border-l-4 border-emerald-500">
                             <td className="p-3 font-medium text-slate-700">{t(`categories.${item}`)}</td>
-                            <td className="p-3 text-right font-semibold">
+                            <td className="p-3 text-right">
                               {activeTab === "view" ? (
-                                <span className="text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
+                                <span className="font-bold text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
                               ) : (
                                 <input
                                   type="number"
@@ -903,7 +1079,7 @@
                         const { ytdTotal, average } = getItemStats('expenses', item);
                         const val = data.values[selectedYear]?.expenses[item]?.[selectedMonth];
                         
-                        // dynamic left-border tags by category bracket
+                        // dynamic left-border tags mapped by category bracket
                         const bracket = getExpenseBracket(item);
                         const borderClass = 
                           bracket === 'housing' ? 'border-l-4 border-slate-500' : 
@@ -914,9 +1090,9 @@
                         return (
                           <tr key={item} className={`hover:bg-slate-50 transition ${borderClass}`}>
                             <td className="p-3 font-medium text-slate-700">{t(`categories.${item}`)}</td>
-                            <td className="p-3 text-right font-semibold">
+                            <td className="p-3 text-right">
                               {activeTab === "view" ? (
-                                <span className="text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
+                                <span className="font-bold text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
                               ) : (
                                 <input
                                   type="number"
@@ -977,6 +1153,15 @@
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
+          .then(async (reg) => {
+            if ('SyncManager' in window) {
+              try {
+                await reg.sync.register('sync-budget');
+              } catch (e) {
+                console.warn('Sync registration failed: ', e);
+              }
+            }
+          })
           .catch(err => console.error('SW registration error:', err));
       });
     }
