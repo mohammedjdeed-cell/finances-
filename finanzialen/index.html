@@ -138,6 +138,9 @@
         importSuccess: "Daten erfolgreich aus Backup importiert!",
         importError: "Fehler beim Importieren der Datei. Bitte stellen Sie sicher, dass es sich um eine gültige JSON-Backup-Datei handelt.",
         deleteConfirmation: "Möchten Sie die Kategorie \"{{name}}\" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+        monthlyLeftover: "Monats-Restbetrag", // Dual Metric [2]
+        overallNetBalance: "Gesamtsaldo", // Dual Metric [2]
+        allTimeScope: "Gesamter Zeitraum",
         months: {
           Jan: "Jan", Feb: "Feb", Mrz: "Mrz", Apr: "Apr", Mai: "Mai", Jun: "Jun",
           Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Okt", Nov: "Nov", Dez: "Dez"
@@ -211,6 +214,9 @@
         importSuccess: "Database restored successfully from backup!",
         importError: "Failed to restore backup. Please ensure the file is a valid JSON backup format.",
         deleteConfirmation: "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+        monthlyLeftover: "Monthly Leftover", // Dual Metric [2]
+        overallNetBalance: "Overall Net Balance", // Dual Metric [2]
+        allTimeScope: "All-Time Timeline",
         months: {
           Jan: "Jan", Feb: "Feb", Mrz: "Mar", Apr: "Apr", Mai: "May", Jun: "Jun",
           Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Oct", Nov: "Nov", Dez: "Dec"
@@ -691,7 +697,6 @@
 
       // Secure Category Deletion Engine with Historical Data Preservation [1, 2]
       const handleDeleteCategory = async (type, item) => {
-        // Find human-readable translated name [4]
         const key = t(`categories.${item}`);
         let cleanName = key.replace('categories.', '');
         cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
@@ -814,11 +819,50 @@
 
       const totalIncome = useMemo(() => getMonthlyTotal('incomes', selectedMonth), [data, selectedMonth, selectedYear]);
       const totalExpenses = useMemo(() => getMonthlyTotal('expenses', selectedMonth), [data, selectedMonth, selectedYear]);
+      
+      // Reactive Net Balance Calculation Engine [1]
       const saldo = useMemo(() => totalIncome - totalExpenses, [totalIncome, totalExpenses]);
       const percentageSpent = useMemo(() => {
         if (totalIncome === 0) return 0;
         return (totalExpenses / totalIncome) * 100;
       }, [totalIncome, totalExpenses]);
+
+      // Cumulative Global Net Balance Calculation Engine [1]
+      const overallNetBalance = useMemo(() => {
+        let totalIncomesGlobal = 0;
+        let totalExpensesGlobal = 0;
+
+        Object.keys(data.values).forEach(year => {
+          const yearData = data.values[year];
+          if (!yearData) return;
+
+          // Global Incomes Accumulation
+          if (yearData.incomes) {
+            data.categories.incomes.forEach(category => {
+              const monthsData = yearData.incomes[category];
+              if (monthsData) {
+                Object.keys(monthsData).forEach(m => {
+                  totalIncomesGlobal += parseFloat(monthsData[m]) || 0;
+                });
+              }
+            });
+          }
+
+          // Global Expenses Accumulation
+          if (yearData.expenses) {
+            data.categories.expenses.forEach(category => {
+              const monthsData = yearData.expenses[category];
+              if (monthsData) {
+                Object.keys(monthsData).forEach(m => {
+                  totalExpensesGlobal += parseFloat(monthsData[m]) || 0;
+                });
+              }
+            });
+          }
+        });
+
+        return totalIncomesGlobal - totalExpensesGlobal;
+      }, [data]);
 
       const getItemStats = (type, posten) => {
         const monthsForYear = getMonthsForYear(selectedYear);
@@ -1004,6 +1048,47 @@
                 <i className="fa-solid fa-pen-to-square text-sm"></i> {t('editTab')}
               </button>
             </div>
+
+            {/* Dual Net Metrics Card Status Panel [2] */}
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+              {/* Metric 1: Monthly Leftover */}
+              <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
+                saldo >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
+              }`}>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className={`text-xs font-bold uppercase tracking-wider ${saldo >= 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
+                      {t('monthlyLeftover')}
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {t(`months.${selectedMonth}`)} {selectedYear}
+                    </p>
+                  </div>
+                  <div className={`text-2xl font-black ${saldo >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {saldo < 0 ? "-" : ""}{formatCurrency(Math.abs(saldo))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Metric 2: Overall Net Balance (Cumulative) */}
+              <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
+                overallNetBalance >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
+              }`}>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className={`text-xs font-bold uppercase tracking-wider ${overallNetBalance >= 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
+                      {t('overallNetBalance')}
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {t('allTimeScope')}
+                    </p>
+                  </div>
+                  <div className={`text-2xl font-black ${overallNetBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {overallNetBalance < 0 ? "-" : ""}{formatCurrency(Math.abs(overallNetBalance))}
+                  </div>
+                </div>
+              </div>
+            </section>
             
             {/* Aggregate Metrics Grid */}
             <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1214,7 +1299,7 @@
                                 </button>
                               )}
                             </td>
-                            <td className="p-3 text-right">
+                            <td className="p-3 text-right font-semibold">
                               {activeTab === "view" ? (
                                 <span className="font-bold text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
                               ) : (
