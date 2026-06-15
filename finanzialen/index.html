@@ -6,6 +6,12 @@
   <title>Finanzplaner - Advanced Cloud Sync & Analytics</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind Config for Dark Mode class support -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class'
+    }
+  </script>
   <!-- React & Babel CDNs -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -30,6 +36,13 @@
     input[type="number"] {
         -moz-appearance: textfield;
     }
+    /* Dynamic Form Input Numeric Overflow Fix [5] */
+    .num-input-fix {
+      width: 100% !important;
+      min-width: 130px !important;
+      box-sizing: border-box !important;
+      padding: 0.375rem 0.75rem !important;
+    }
     /* Simple custom scrollbar wrapper */
     .scrollbar-none::-webkit-scrollbar {
       display: none;
@@ -40,7 +53,7 @@
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+<body class="bg-slate-50 dark:bg-zinc-950 text-slate-800 dark:text-zinc-100 font-sans min-h-screen transition-colors duration-300">
   <div id="root"></div>
 
   <script type="text/babel">
@@ -104,7 +117,16 @@
       ]
     };
 
+    // Auto-scan subscription rules [2]
+    const isSubscription = (posten) => {
+      const p = posten.toLowerCase();
+      const subKeywords = ["netflix", "google", "amazon", "xiaomi", "spotify", "cloud", "abo", "subscription", "youtube", "disney", "prime"];
+      return subKeywords.some(kw => p.includes(kw));
+    };
+
     const getExpenseBracket = (posten) => {
+      if (isSubscription(posten)) return 'subscriptions'; // Subscriptions [2]
+      
       const housing = ["Hause mieten", "Hause kaution", "strom ⚡", "Gas/ Heißung", "radio", "internet/ Handy"];
       const living = ["Lebensmittel 🍞🍲", "Hausrat 🛋️", "transport/ tickets", "kleidung"];
       const professional = ["Ausbildung B2 exam", "Versicherung Care concept", "bank", "Sparkasse card fee", "Swan Schule", "FSP exam registration", "Gesundheit ❤️(beauty, medical items)"];
@@ -150,6 +172,7 @@
         bracketLiving: "Alltag & Logistik",
         bracketLeisure: "Freizeit & Extras",
         bracketProfessional: "Beruf, Gesundheit & Vorsorge",
+        bracketSubscriptions: "Abonnements", // Subscriptions [2]
         viewTab: "Details & Ansicht",
         editTab: "Werte bearbeiten",
         backupSection: "Sicherheits-Backup",
@@ -168,14 +191,20 @@
         accumulatedIncome: "Gesamteinnahmen", // Refactored [2]
         accumulatedExpenses: "Gesamtausgaben", // Refactored [2]
         initialSavingsLabel: "Startkapital (Foundation)",
-        runningCashBalance: "Endbestand / Kontostand", // Reordered Metric Card [1, 2]
-        endOf: "Ende", // dynamic sublabel [2]
-        annualOverview: "Jahresanalyse", // Annual tab [2]
+        runningCashBalance: "Endbestand / Kontostand", 
+        endOf: "Ende", 
+        annualOverview: "Jahresanalyse", 
         savingsRate: "Sparsatz des Jahres",
         peakSpendingCategory: "Höchste Ausgabenkategorie",
         highestExpenseMonth: "Ausgabenstärkster Monat",
         noData: "Keine Daten vorhanden",
         oneTimeOverride: "Gruppierung anpassen", // Custom override [3]
+        setRecurringBudget: "Monatlich budgetieren", // Recurring [1]
+        durationInMonths: "Anzahl der Monate",
+        themeLabel: "Design-Modus", // Theme Engine [4]
+        themeLight: "Hell",
+        themeDark: "Dunkel",
+        themeSystem: "System-Standard",
         months: {
           Jan: "Jan", Feb: "Feb", Mrz: "Mrz", Apr: "Apr", Mai: "Mai", Jun: "Jun",
           Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Okt", Nov: "Nov", Dez: "Dez"
@@ -241,6 +270,7 @@
         bracketLiving: "Daily Living & Logistics",
         bracketLeisure: "Leisure & Discretionary",
         bracketProfessional: "Professional & Insurance",
+        bracketSubscriptions: "Subscriptions", // Subscriptions [2]
         viewTab: "Details & View",
         editTab: "Edit Values",
         backupSection: "Data Backup Panel",
@@ -259,14 +289,20 @@
         accumulatedIncome: "Total Accumulated Income", // Refactored [2]
         accumulatedExpenses: "Total Accumulated Expenses", // Refactored [2]
         initialSavingsLabel: "Start Capital (Savings)",
-        runningCashBalance: "Running Cash Balance", // Reordered Metric Card [1, 2]
-        endOf: "End of", // dynamic sublabel [2]
-        annualOverview: "Annual Overview", // Annual tab [2]
+        runningCashBalance: "Running Cash Balance", 
+        endOf: "End of", 
+        annualOverview: "Annual Overview", 
         savingsRate: "Yearly Savings Rate",
         peakSpendingCategory: "Peak Spending Category",
         highestExpenseMonth: "Highest Spending Month",
         noData: "No Data Recorded",
         oneTimeOverride: "Override Color Bracket", // Custom override [3]
+        setRecurringBudget: "Set as Recurring Budget", // Recurring [1]
+        durationInMonths: "Duration in Months",
+        themeLabel: "App Theme", // Theme Engine [4]
+        themeLight: "Light",
+        themeDark: "Dark",
+        themeSystem: "System Default",
         months: {
           Jan: "Jan", Feb: "Feb", Mrz: "Mar", Apr: "Apr", Mai: "May", Jun: "Jun",
           Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Oct", Nov: "Nov", Dez: "Dec"
@@ -488,7 +524,10 @@
       const [syncStatus, setSyncStatus] = useState("initialized");
       const [isBurgerOpen, setIsBurgerOpen] = useState(false); 
       const [activeTab, setActiveTab] = useState("view"); 
-      const [isAuditOpen, setIsAuditOpen] = useState(false); // Collapsible Audit panel state [3]
+      const [isAuditOpen, setIsAuditOpen] = useState(false); 
+
+      // Tri-State Theme Engine [4]
+      const [theme, setTheme] = useState(() => localStorage.getItem('budget_app_theme') || 'system');
 
       const [customIncomeInput, setCustomIncomeInput] = useState("");
       const [customExpenseInput, setCustomExpenseInput] = useState("");
@@ -496,9 +535,13 @@
       const [editingCategory, setEditingCategory] = useState(null); 
       const [editCategoryValue, setEditCategoryValue] = useState("");
 
+      // Recurring budget wizard configuration [1]
+      const [recurringSetup, setRecurringSetup] = useState(null); // { type, item, value }
+      const [recurringMonths, setRecurringMonths] = useState(3);
+
       const chartRef = useRef(null);
       const chartInstanceRef = useRef(null);
-      const annualChartRef = useRef(null); // Ref for annual report view [2]
+      const annualChartRef = useRef(null); 
       const annualChartInstanceRef = useRef(null);
       const fileInputRef = useRef(null);
 
@@ -510,8 +553,36 @@
         return getExpenseBracket(posten);
       };
 
+      // App Theme Engine bootstrap hook [4]
       useEffect(() => {
-        if (selectedMonth === "AnnualOverview") return; // Keep tab intact [2]
+        localStorage.setItem('budget_app_theme', theme);
+        const applyTheme = (val) => {
+          const rootEl = document.documentElement;
+          if (val === 'dark' || (val === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            rootEl.classList.add('dark');
+          } else {
+            rootEl.classList.remove('dark');
+          }
+        };
+        applyTheme(theme);
+
+        if (theme === 'system') {
+          const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+          const handleChange = (e) => {
+            const rootEl = document.documentElement;
+            if (e.matches) {
+              rootEl.classList.add('dark');
+            } else {
+              rootEl.classList.remove('dark');
+            }
+          };
+          mediaQuery.addEventListener('change', handleChange);
+          return () => mediaQuery.removeEventListener('change', handleChange);
+        }
+      }, [theme]);
+
+      useEffect(() => {
+        if (selectedMonth === "AnnualOverview") return; 
         const validMonths = getMonthsForYear(selectedYear);
         if (!validMonths.includes(selectedMonth)) {
           setSelectedMonth(validMonths[0]);
@@ -636,6 +707,10 @@
           chartInstanceRef.current.destroy();
         }
 
+        const isDarkTheme = document.documentElement.classList.contains('dark');
+        const axisColor = isDarkTheme ? '#94a3b8' : '#475569';
+        const gridColor = isDarkTheme ? '#27272a' : '#f1f5f9';
+
         chartInstanceRef.current = new Chart(ctx, {
           type: 'bar',
           data: {
@@ -663,9 +738,16 @@
                 borderRadius: 4,
               },
               {
+                label: t('bracketSubscriptions'),
+                data: monthsForYear.map(m => getBracketMonthlyTotal('subscriptions', m)),
+                backgroundColor: '#7c3aed', // Subscriptions purple [2]
+                stack: 'Stack1',
+                borderRadius: 4,
+              },
+              {
                 label: t('bracketLeisure'),
                 data: monthsForYear.map(m => getBracketMonthlyTotal('leisure', m)),
-                backgroundColor: '#6366f1', 
+                backgroundColor: '#ec4899', // Leisure pink [3]
                 stack: 'Stack1',
                 borderRadius: 4,
               },
@@ -682,16 +764,25 @@
             responsive: true,
             maintainAspectRatio: false,
             scales: {
+              x: {
+                ticks: { color: axisColor },
+                grid: { color: gridColor }
+              },
               y: {
                 beginAtZero: true,
                 ticks: {
+                  color: axisColor,
                   callback: function(value) {
                     return value.toLocaleString(i18n.language === 'de' ? 'de-DE' : 'en-US', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
                   }
-                }
+                },
+                grid: { color: gridColor }
               }
             },
             plugins: {
+              legend: {
+                labels: { color: axisColor }
+              },
               tooltip: {
                 callbacks: {
                   label: function(context) {
@@ -713,7 +804,7 @@
             chartInstanceRef.current.destroy();
           }
         };
-      }, [data, selectedYear, selectedMonth, i18n.language]);
+      }, [data, selectedYear, selectedMonth, i18n.language, theme]);
 
       // Annual overview analytics compiling layer [2]
       const annualOverviewData = useMemo(() => {
@@ -793,18 +884,22 @@
         });
         const datasetValues = activeExpenditures.map(e => e.total);
 
-        // Assign bracket aligned background colors for aesthetic consistency
+        // Assign bracket aligned background colors for aesthetic consistency [3]
         const backgroundColors = activeExpenditures.map(e => {
           const bracket = getEffectiveExpenseBracket(e.category);
           if (bracket === 'housing') return '#475569';
           if (bracket === 'living') return '#f59e0b';
+          if (bracket === 'subscriptions') return '#7c3aed';
           if (bracket === 'professional') return '#14b8a6';
-          return '#6366f1';
+          return '#ec4899';
         });
 
         if (annualChartInstanceRef.current) {
           annualChartInstanceRef.current.destroy();
         }
+
+        const isDarkTheme = document.documentElement.classList.contains('dark');
+        const textColor = isDarkTheme ? '#94a3b8' : '#475569';
 
         annualChartInstanceRef.current = new Chart(ctx, {
           type: 'doughnut',
@@ -814,7 +909,7 @@
               data: datasetValues,
               backgroundColor: backgroundColors,
               borderWidth: 1,
-              borderColor: '#ffffff'
+              borderColor: isDarkTheme ? '#27272a' : '#ffffff'
             }]
           },
           options: {
@@ -825,7 +920,8 @@
                 position: 'right',
                 labels: {
                   boxWidth: 12,
-                  font: { size: 10 }
+                  font: { size: 10 },
+                  color: textColor
                 }
               }
             }
@@ -837,7 +933,7 @@
             annualChartInstanceRef.current.destroy();
           }
         };
-      }, [data, selectedYear, selectedMonth, i18n.language, annualOverviewData]);
+      }, [data, selectedYear, selectedMonth, i18n.language, annualOverviewData, theme]);
 
       const triggerLocalToCloudSync = async () => {
         setSyncStatus("syncing");
@@ -938,6 +1034,36 @@
         };
 
         inputSetter("");
+        await saveStateAndDispatch(updatedData, Date.now());
+      };
+
+      // Multi-Month Recurring copy transaction script [1]
+      const handleApplyRecurring = async (type, item, startMonth, startYear, monthsCount, value) => {
+        const updatedData = { ...data };
+        const timeline = [];
+        
+        [2026, 2027, 2028].forEach(yr => {
+          getMonthsForYear(yr).forEach(mo => {
+            timeline.push({ year: yr, month: mo });
+          });
+        });
+
+        const startIndex = timeline.findIndex(t => t.year === parseInt(startYear) && t.month === startMonth);
+        if (startIndex !== -1) {
+          for (let i = 0; i < monthsCount; i++) {
+            const targetIndex = startIndex + i;
+            if (targetIndex < timeline.length) {
+              const { year, month } = timeline[targetIndex];
+              if (!updatedData.values[year]) {
+                updatedData.values[year] = { incomes: {}, expenses: {} };
+              }
+              if (!updatedData.values[year][type][item]) {
+                updatedData.values[year][type][item] = {};
+              }
+              updatedData.values[year][type][item][month] = value;
+            }
+          }
+        }
         await saveStateAndDispatch(updatedData, Date.now());
       };
 
@@ -1124,7 +1250,7 @@
       // Semantic Sorting Clustering engine helper [3]
       const getClusteredCategories = (categories, type) => {
         if (type === 'incomes') return categories; 
-        const bracketOrder = ['housing', 'living', 'leisure', 'professional'];
+        const bracketOrder = ['housing', 'living', 'subscriptions', 'leisure', 'professional']; // Clustered Subscriptions bracket added [2]
         return [...categories].sort((a, b) => {
           const bracketA = getEffectiveExpenseBracket(a);
           const bracketB = getEffectiveExpenseBracket(b);
@@ -1141,11 +1267,6 @@
         if (totalIncome === 0) return 0;
         return (totalExpenses / totalIncome) * 100;
       }, [totalIncome, totalExpenses]);
-
-      // Adaptive Month-to-Month Liquidity Rollovers [1]
-      const activeLiquidityResult = useMemo(() => {
-        return chronologicalTimelineResult[`${selectedYear}-${selectedMonth}`] || { availableFunds: 0, leftover: 0, prevGuthaben: 0 };
-      }, [chronologicalTimelineResult, selectedYear, selectedMonth]);
 
       // Bounded Annual Net Balance Calculation [1]
       const yearlyNetBalance = useMemo(() => {
@@ -1219,6 +1340,11 @@
 
         return totalIncomesGlobal - totalExpensesGlobal;
       }, [data]);
+
+      // Adaptive Month-to-Month Liquidity Rollovers [1]
+      const activeLiquidityResult = useMemo(() => {
+        return chronologicalTimelineResult[`${selectedYear}-${selectedMonth}`] || { availableFunds: 0, leftover: 0, prevGuthaben: 0 };
+      }, [chronologicalTimelineResult, selectedYear, selectedMonth]);
 
       // Audit Breakdown transparency data compiler (Removed Deductions/Buffer) [1, 3]
       const auditBreakdown = useMemo(() => {
@@ -1321,11 +1447,11 @@
               className="fixed inset-0 bg-slate-950/40 z-50 backdrop-blur-sm transition-opacity" 
             />
           )}
-          <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isBurgerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+          <div className={`fixed top-0 right-0 h-full w-80 bg-white dark:bg-zinc-900 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isBurgerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
             <div className="p-5 flex flex-col h-full justify-between overflow-y-auto">
               <div className="space-y-6">
-                <div className="flex justify-between items-center pb-4 border-b border-slate-100">
-                  <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
+                <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-zinc-800">
+                  <h3 className="font-bold text-slate-800 dark:text-zinc-100 text-base flex items-center gap-2">
                     <i className="fa-solid fa-shield-halved text-indigo-600"></i> {t('options')}
                   </h3>
                   <button onClick={() => setIsBurgerOpen(false)} className="text-slate-400 hover:text-slate-600 transition">
@@ -1335,7 +1461,7 @@
 
                 {/* Capital Setup Input Block [1] */}
                 <div className="space-y-2 pt-2">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('initialSavingsLabel')}</p>
+                  <p className="text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">{t('initialSavingsLabel')}</p>
                   <input
                     type="number"
                     value={data.initialSavingsBase !== undefined ? data.initialSavingsBase : 5000}
@@ -1347,20 +1473,20 @@
                       };
                       saveStateAndDispatch(updated, Date.now());
                     }}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-semibold outline-none focus:border-indigo-500 transition"
+                    className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-800 dark:text-zinc-100 outline-none focus:border-indigo-500 transition"
                     placeholder="0.00"
                   />
                 </div>
                 
                 {/* Select Year */}
-                <div className="space-y-2 border-t border-slate-100 pt-4">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('selectYear')}</p>
+                <div className="space-y-2 border-t border-slate-100 dark:border-zinc-800 pt-4">
+                  <p className="text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">{t('selectYear')}</p>
                   <div className="flex gap-2">
                     {[2026, 2027, 2028].map(yr => (
                       <button
                         key={yr}
                         onClick={() => { setSelectedYear(yr); setIsBurgerOpen(false); }}
-                        className={`px-3 py-1.5 rounded text-xs transition font-bold ${selectedYear === yr ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                        className={`px-3 py-1.5 rounded text-xs transition font-bold ${selectedYear === yr ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'}`}
                       >
                         {yr}
                       </button>
@@ -1368,19 +1494,39 @@
                   </div>
                 </div>
 
+                {/* Tri-State Theme Toggler Control [4] */}
+                <div className="space-y-2 border-t border-slate-100 dark:border-zinc-800 pt-4">
+                  <p className="text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">{t('themeLabel')}</p>
+                  <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-zinc-800 rounded-lg p-1">
+                    {['light', 'dark', 'system'].map(mode => (
+                      <button
+                        key={mode}
+                        onClick={() => setTheme(mode)}
+                        className={`px-2 py-1.5 rounded-md text-[10px] transition font-bold ${
+                          theme === mode 
+                            ? 'bg-white dark:bg-zinc-700 text-indigo-700 dark:text-indigo-200 shadow-sm' 
+                            : 'text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200'
+                        }`}
+                      >
+                        {t(`theme${mode.charAt(0).toUpperCase() + mode.slice(1)}`)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Select Language */}
-                <div className="space-y-2 border-t border-slate-100 pt-4">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('selectLanguage')}</p>
+                <div className="space-y-2 border-t border-slate-100 dark:border-zinc-800 pt-4">
+                  <p className="text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">{t('selectLanguage')}</p>
                   <div className="flex gap-2">
                     <button 
                       onClick={() => { i18n.changeLanguage('de'); setIsBurgerOpen(false); }} 
-                      className={`px-3 py-1.5 rounded text-xs transition font-bold ${i18n.language === 'de' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`}
+                      className={`px-3 py-1.5 rounded text-xs transition font-bold ${i18n.language === 'de' ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300'}`}
                     >
                       DE
                     </button>
                     <button 
                       onClick={() => { i18n.changeLanguage('en'); setIsBurgerOpen(false); }} 
-                      className={`px-3 py-1.5 rounded text-xs transition font-bold ${i18n.language === 'en' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`}
+                      className={`px-3 py-1.5 rounded text-xs transition font-bold ${i18n.language === 'en' ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300'}`}
                     >
                       EN
                     </button>
@@ -1388,8 +1534,8 @@
                 </div>
 
                 {/* Backup configuration interface [2] */}
-                <div className="space-y-2 pt-4 border-t border-slate-100">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('backupSection')}</p>
+                <div className="space-y-2 pt-4 border-t border-slate-100 dark:border-zinc-800">
+                  <p className="text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">{t('backupSection')}</p>
                   <div className="flex flex-col gap-2">
                     <button
                       onClick={handleExportBackup}
@@ -1415,7 +1561,7 @@
               </div>
 
               {/* Secure Reset Data Link [4] */}
-              <div className="pt-4 border-t border-slate-100">
+              <div className="pt-4 border-t border-slate-100 dark:border-zinc-800">
                 <button 
                   onClick={() => { handleResetData(); setIsBurgerOpen(false); }}
                   className="text-slate-400 hover:text-rose-600 transition duration-200 text-xs underline flex items-center gap-2 py-2 w-full text-left font-medium"
@@ -1427,7 +1573,7 @@
           </div>
 
           {/* Month Navigation Tabs with AnnualOverview Trigger [2] */}
-          <nav className="bg-white border-b border-slate-200 sticky top-[52px] z-30 shadow-sm">
+          <nav className="bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 sticky top-[52px] z-30 shadow-sm transition-colors">
             <div className="max-w-7xl mx-auto px-4 overflow-x-auto whitespace-nowrap scrollbar-none flex items-center">
               <div className="flex overflow-x-auto scrollbar-none flex-grow">
                 {getMonthsForYear(selectedYear).map((m) => (
@@ -1436,8 +1582,8 @@
                     onClick={() => setSelectedMonth(m)}
                     className={`flex-1 min-w-[70px] py-4 text-center font-semibold text-sm transition-all border-b-2 outline-none ${
                       selectedMonth === m
-                        ? 'border-indigo-600 text-indigo-600 bg-indigo-5/50'
-                        : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                        ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-indigo-5/50 dark:bg-indigo-950/20'
+                        : 'border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800/30'
                     }`}
                   >
                     {t(`months.${m}`)}
@@ -1448,8 +1594,8 @@
                 onClick={() => setSelectedMonth("AnnualOverview")}
                 className={`py-4 px-6 text-center font-bold text-sm transition-all border-b-2 border-transparent outline-none flex items-center gap-1.5 shrink-0 ml-4 ${
                   selectedMonth === "AnnualOverview"
-                    ? 'border-indigo-600 text-indigo-600 bg-indigo-5/50'
-                    : 'text-indigo-600 hover:bg-slate-50'
+                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-indigo-5/50 dark:bg-indigo-950/20'
+                    : 'text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 dark:hover:bg-zinc-800/30'
                 }`}
               >
                 <i className="fa-solid fa-chart-line"></i> {t('annualOverview')}
@@ -1465,62 +1611,62 @@
               <div className="space-y-6 animate-fadeIn">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Metric 1: Savings Rate */}
-                  <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                  <div className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 rounded-2xl p-5 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-indigo-800 uppercase tracking-wider">{t('savingsRate')}</p>
-                      <p className="text-2xl font-black text-indigo-900 mt-1">{annualOverviewData.savingsRate.toFixed(1)}%</p>
+                      <p className="text-xs font-bold text-indigo-800 dark:text-indigo-400 uppercase tracking-wider">{t('savingsRate')}</p>
+                      <p className="text-2xl font-black text-indigo-900 dark:text-indigo-200 mt-1">{annualOverviewData.savingsRate.toFixed(1)}%</p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                    <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-300">
                       <i className="fa-solid fa-percent text-xl"></i>
                     </div>
                   </div>
 
                   {/* Metric 2: Peak Spending Category */}
-                  <div className="bg-rose-50 border border-rose-200 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                  <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900 rounded-2xl p-5 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-rose-800 uppercase tracking-wider">{t('peakSpendingCategory')}</p>
-                      <p className="text-base font-black text-rose-900 mt-2 truncate max-w-[170px]">
+                      <p className="text-xs font-bold text-rose-800 dark:text-rose-400 uppercase tracking-wider">{t('peakSpendingCategory')}</p>
+                      <p className="text-base font-black text-rose-900 dark:text-rose-200 mt-2 truncate max-w-[170px]">
                         {annualOverviewData.peakCategory ? t(`categories.${annualOverviewData.peakCategory}`).replace('categories.', '') : t('noData')}
                       </p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
+                    <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-300">
                       <i className="fa-solid fa-fire text-xl"></i>
                     </div>
                   </div>
 
                   {/* Metric 3: Highest Spent Month */}
-                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                  <div className="bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-5 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('highestExpenseMonth')}</p>
-                      <p className="text-2xl font-black text-slate-900 mt-1">
+                      <p className="text-xs font-bold text-slate-700 dark:text-zinc-400 uppercase tracking-wider">{t('highestExpenseMonth')}</p>
+                      <p className="text-2xl font-black text-slate-900 dark:text-zinc-100 mt-1">
                         {annualOverviewData.highestMonth ? `${t(`months.${annualOverviewData.highestMonth}`)} ${selectedYear}` : t('noData')}
                       </p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                    <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-600 dark:text-zinc-400">
                       <i className="fa-solid fa-calendar-days text-xl"></i>
                     </div>
                   </div>
                 </div>
 
                 {/* Pie/Doughnut Chart Expense Breakdown */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm p-5 grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">{t('analyticsHeader')}</h3>
-                    <p className="text-xs text-slate-400 mb-4">Prozentuale Verteilung aller Ausgaben im Jahr {selectedYear}</p>
+                    <h3 className="text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2 uppercase tracking-wider">{t('analyticsHeader')}</h3>
+                    <p className="text-xs text-slate-400 dark:text-zinc-500 mb-4">Prozentuale Verteilung aller Ausgaben im Jahr {selectedYear}</p>
                     <div className="h-[260px] relative w-full flex justify-center">
                       <canvas ref={annualChartRef}></canvas>
                     </div>
                   </div>
 
-                  <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto scrollbar-none">
                     {annualOverviewData.sortedExpenses.map(({ category, total }) => {
                       const cleanCatName = t(`categories.${category}`).replace('categories.', '');
                       const share = annualOverviewData.totalYearlyEx > 0 ? (total / annualOverviewData.totalYearlyEx) * 100 : 0;
                       if (total === 0) return null;
                       return (
-                        <div key={category} className="flex justify-between items-center text-xs border-b border-slate-100 pb-2">
-                          <span className="font-semibold text-slate-600">{cleanCatName}</span>
-                          <span className="font-bold text-slate-700">{formatCurrency(total)} ({share.toFixed(1)}%)</span>
+                        <div key={category} className="flex justify-between items-center text-xs border-b border-slate-100 dark:border-zinc-800 pb-2">
+                          <span className="font-semibold text-slate-600 dark:text-zinc-400">{cleanCatName}</span>
+                          <span className="font-bold text-slate-700 dark:text-zinc-200">{formatCurrency(total)} ({share.toFixed(1)}%)</span>
                         </div>
                       );
                     })}
@@ -1528,31 +1674,31 @@
                 </div>
 
                 {/* 12-Month transaction grid view */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-                    <h3 className="font-bold text-slate-700 text-sm">{selectedYear} - Datasheet</h3>
+                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+                  <div className="p-4 border-b border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-850 flex justify-between items-center">
+                    <h3 className="font-bold text-slate-700 dark:text-zinc-300 text-sm">{selectedYear} - Datasheet</h3>
                   </div>
                   <div className="overflow-x-auto scrollbar-none">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="bg-slate-100 border-b border-slate-200 font-bold text-slate-600 uppercase">
+                        <tr className="bg-slate-100 dark:bg-zinc-800 border-b border-slate-200 dark:border-zinc-800 font-bold text-slate-600 dark:text-zinc-400 uppercase">
                           <th className="p-3">Month</th>
                           <th className="p-3 text-right">Incomes</th>
                           <th className="p-3 text-right">Expenses</th>
                           <th className="p-3 text-right">Savings Net</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium">
+                      <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-medium">
                         {getMonthsForYear(selectedYear).map(m => {
                           const income = annualOverviewData.monthTotals[m]?.income || 0;
                           const expenses = annualOverviewData.monthTotals[m]?.expenses || 0;
                           const net = income - expenses;
                           return (
-                            <tr key={m} className="hover:bg-slate-50">
-                              <td className="p-3 font-semibold text-slate-700">{t(`months.${m}`)}</td>
-                              <td className="p-3 text-right text-emerald-600">{formatCurrency(income)}</td>
-                              <td className="p-3 text-right text-rose-600">{formatCurrency(expenses)}</td>
-                              <td className={`p-3 text-right font-bold ${net >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            <tr key={m} className="hover:bg-slate-50 dark:hover:bg-zinc-800/40">
+                              <td className="p-3 font-semibold text-slate-700 dark:text-zinc-300">{t(`months.${m}`)}</td>
+                              <td className="p-3 text-right text-emerald-600 dark:text-emerald-400">{formatCurrency(income)}</td>
+                              <td className="p-3 text-right text-rose-600 dark:text-rose-400">{formatCurrency(expenses)}</td>
+                              <td className={`p-3 text-right font-bold ${net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                                 {net < 0 ? "-" : ""}{formatCurrency(Math.abs(net))}
                               </td>
                             </tr>
@@ -1567,18 +1713,18 @@
               /* TRADITIONAL MONTHLY BUDGET LAYOUT VIEW */
               <div className="space-y-6">
                 {/* Segmented view/edit toggle [6] */}
-                <div className="flex bg-slate-200/60 p-1 rounded-xl max-w-sm mx-auto shadow-inner">
+                <div className="flex bg-slate-200/60 dark:bg-zinc-800 p-1 rounded-xl max-w-sm mx-auto shadow-inner">
                   <button 
                     onClick={() => setActiveTab('view')}
-                    className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 bg-white text-indigo-700 shadow"
-                    style={{ backgroundColor: activeTab === 'view' ? '#ffffff' : 'transparent', color: activeTab === 'view' ? '#4338ca' : '#475569' }}
+                    className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 bg-white dark:bg-zinc-700 text-indigo-700 dark:text-indigo-200 shadow"
+                    style={{ backgroundColor: activeTab === 'view' ? '' : 'transparent' }}
                   >
                     <i className="fa-solid fa-eye text-sm"></i> {t('viewTab')}
                   </button>
                   <button 
                     onClick={() => setActiveTab('edit')}
-                    className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2"
-                    style={{ backgroundColor: activeTab === 'edit' ? '#ffffff' : 'transparent', color: activeTab === 'edit' ? '#4338ca' : '#475569' }}
+                    className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 dark:text-zinc-400"
+                    style={{ backgroundColor: activeTab === 'edit' ? '' : 'transparent' }}
                   >
                     <i className="fa-solid fa-pen-to-square text-sm"></i> {t('editTab')}
                   </button>
@@ -1588,14 +1734,14 @@
                 <section className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
                   {/* Metric 1: Monthly Leftover */}
                   <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
-                    saldo >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
+                    saldo >= 0 ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/15 dark:border-emerald-900' : 'bg-rose-50 border-rose-200 dark:bg-rose-950/15 dark:border-rose-900'
                   }`}>
                     <div className="flex justify-between items-center">
                       <div>
-                        <h2 className={`text-xs font-bold uppercase tracking-wider ${saldo >= 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
+                        <h2 className={`text-xs font-bold uppercase tracking-wider ${saldo >= 0 ? 'text-emerald-800 dark:text-emerald-400' : 'text-rose-800 dark:text-rose-400'}`}>
                           {t('monthlyLeftover')}
                         </h2>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-slate-500 dark:text-zinc-500 mt-1">
                           {t(`months.${selectedMonth}`)} {selectedYear}
                         </p>
                       </div>
@@ -1607,14 +1753,14 @@
 
                   {/* Metric 2: Yearly Net Balance [1, 2] */}
                   <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
-                    yearlyNetBalance >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
+                    yearlyNetBalance >= 0 ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/15 dark:border-emerald-900' : 'bg-rose-50 border-rose-200 dark:bg-rose-950/15 dark:border-rose-900'
                   }`}>
                     <div className="flex justify-between items-center">
                       <div>
-                        <h2 className={`text-xs font-bold uppercase tracking-wider ${yearlyNetBalance >= 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
+                        <h2 className={`text-xs font-bold uppercase tracking-wider ${yearlyNetBalance >= 0 ? 'text-emerald-800 dark:text-emerald-400' : 'text-rose-800 dark:text-rose-400'}`}>
                           {t('yearlyNetBalance')}
                         </h2>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-slate-500 dark:text-zinc-500 mt-1">
                           {selectedYear}
                         </p>
                       </div>
@@ -1626,20 +1772,19 @@
 
                   {/* Metric 3: Strict Chronological Running Cash Balance [1, 2] */}
                   <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
-                    activeLiquidityResult.leftover >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
+                    activeLiquidityResult.leftover >= 0 ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/15 dark:border-emerald-900' : 'bg-rose-50 border-rose-200 dark:bg-rose-950/15 dark:border-rose-900'
                   }`}>
                     <div className="flex justify-between items-center">
                       <div>
                         {/* Renamed card label [1] */}
-                        <h2 className={`text-xs font-bold uppercase tracking-wider ${activeLiquidityResult.leftover >= 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
+                        <h2 className={`text-xs font-bold uppercase tracking-wider ${activeLiquidityResult.leftover >= 0 ? 'text-emerald-800 dark:text-emerald-400' : 'text-rose-800 dark:text-rose-400'}`}>
                           {t('runningCashBalance')}
                         </h2>
-                        {/* Changed sublabel to dynamic end of selected month [1] */}
-                        <p className="text-xs text-slate-500 mt-1">
+                        {/* Changed sublabel to end of selected month [1] */}
+                        <p className="text-xs text-slate-500 dark:text-zinc-500 mt-1">
                           {t('endOf')} {t(`months.${selectedMonth}`)} {selectedYear}
                         </p>
                       </div>
-                      {/* Bold metric value with visual green/red color-coding [1, 2, 3] */}
                       <div className={`text-2xl font-black ${activeLiquidityResult.leftover >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                         {activeLiquidityResult.leftover < 0 ? "-" : ""}{formatCurrency(Math.abs(activeLiquidityResult.leftover))}
                       </div>
@@ -1647,12 +1792,12 @@
                   </div>
                 </section>
 
-                {/* Audit Breakdown Transparency Drawer (Removed Deductions/Buffer Card) [2, 3] */}
+                {/* Audit Breakdown Transparency Drawer [2, 3] */}
                 <div className="space-y-2">
                   <div className="flex justify-end px-1">
                     <button 
                       onClick={() => setIsAuditOpen(!isAuditOpen)} 
-                      className="text-indigo-600 hover:text-indigo-800 text-xs font-bold flex items-center gap-1.5 transition outline-none"
+                      className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-xs font-bold flex items-center gap-1.5 transition outline-none"
                     >
                       <i className={`fa-solid ${isAuditOpen ? 'fa-square-minus' : 'fa-square-plus'}`}></i>
                       <span>{isAuditOpen ? t('hideAudit') : t('showAudit')}</span>
@@ -1660,19 +1805,19 @@
                   </div>
 
                   {isAuditOpen && (
-                    <div className="bg-slate-100 border border-slate-200 rounded-2xl p-4 text-xs space-y-2 animate-fadeIn transition-all duration-300">
-                      <h4 className="font-bold text-slate-700 uppercase tracking-wide border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
+                    <div className="bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-4 text-xs space-y-2 animate-fadeIn transition-all duration-300">
+                      <h4 className="font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wide border-b border-slate-200 dark:border-zinc-800 pb-1.5 flex items-center gap-1.5">
                         <i className="fa-solid fa-calculator text-indigo-500"></i> {t('auditTitle')}
                       </h4>
                       {/* Clean side-by-side Dual Net Metrics Panel [2] */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-1">
-                        <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200">
-                          <span className="text-slate-500 font-medium">{t('accumulatedIncome')}:</span>
-                          <span className="font-bold text-emerald-600">+ {formatCurrency(auditBreakdown.accIncome)}</span>
+                        <div className="flex justify-between items-center bg-white dark:bg-zinc-800 p-3 rounded-xl border border-slate-200 dark:border-zinc-700">
+                          <span className="text-slate-500 dark:text-zinc-400 font-medium">{t('accumulatedIncome')}:</span>
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400">+ {formatCurrency(auditBreakdown.accIncome)}</span>
                         </div>
-                        <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200">
-                          <span className="text-slate-500 font-medium">{t('accumulatedExpenses')}:</span>
-                          <span className="font-bold text-rose-600">- {formatCurrency(auditBreakdown.accExpense)}</span>
+                        <div className="flex justify-between items-center bg-white dark:bg-zinc-800 p-3 rounded-xl border border-slate-200 dark:border-zinc-700">
+                          <span className="text-slate-500 dark:text-zinc-400 font-medium">{t('accumulatedExpenses')}:</span>
+                          <span className="font-bold text-rose-600 dark:text-rose-400">- {formatCurrency(auditBreakdown.accExpense)}</span>
                         </div>
                       </div>
                     </div>
@@ -1681,46 +1826,46 @@
                 
                 {/* Aggregate Metrics Grid */}
                 <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                  <div className="bg-emerald-50 dark:bg-emerald-950/15 border border-emerald-200 dark:border-emerald-900 rounded-2xl p-4 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-emerald-800 uppercase">{t('totalIncome')}</p>
-                      <p className="text-2xl font-black text-emerald-900 mt-1">{formatCurrency(totalIncome)}</p>
+                      <p className="text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase">{t('totalIncome')}</p>
+                      <p className="text-2xl font-black text-emerald-900 dark:text-emerald-200 mt-1">{formatCurrency(totalIncome)}</p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                    <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-300">
                       <i className="fa-solid fa-circle-arrow-down text-xl"></i>
                     </div>
                   </div>
 
-                  <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                  <div className="bg-rose-50 dark:bg-rose-950/15 border border-rose-200 dark:border-rose-900 rounded-2xl p-4 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-rose-800 uppercase">{t('totalExpenses')}</p>
-                      <p className="text-2xl font-black text-rose-900 mt-1">{formatCurrency(totalExpenses)}</p>
+                      <p className="text-xs font-bold text-rose-800 dark:text-rose-400 uppercase">{t('totalExpenses')}</p>
+                      <p className="text-2xl font-black text-rose-900 dark:text-rose-200 mt-1">{formatCurrency(totalExpenses)}</p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
+                    <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-300">
                       <i className="fa-solid fa-circle-arrow-up text-xl"></i>
                     </div>
                   </div>
 
-                  <div className={`border rounded-2xl p-4 flex items-center justify-between shadow-sm transition-colors ${
-                    saldo >= 0 ? 'bg-indigo-50 border-indigo-200' : 'bg-amber-50 border-amber-200'
+                  <div className={`border rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all ${
+                    saldo >= 0 ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-950/15 dark:border-indigo-900' : 'bg-amber-50 border-amber-200 dark:bg-amber-950/15 dark:border-amber-900'
                   }`}>
                     <div>
-                      <p className={`text-xs font-bold uppercase ${saldo >= 0 ? 'text-indigo-800' : 'text-amber-800'}`}>{t('saldo')} ({t(`months.${selectedMonth}`)})</p>
-                      <p className={`text-2xl font-black mt-1 ${saldo >= 0 ? 'text-indigo-900' : 'text-amber-900'}`}>{formatCurrency(saldo)}</p>
+                      <p className={`text-xs font-bold uppercase ${saldo >= 0 ? 'text-indigo-800 dark:text-indigo-400' : 'text-amber-800 dark:text-amber-400'}`}>{t('saldo')} ({t(`months.${selectedMonth}`)})</p>
+                      <p className={`text-2xl font-black mt-1 ${saldo >= 0 ? 'text-indigo-900 dark:text-indigo-200' : 'text-amber-900 dark:text-amber-200'}`}>{formatCurrency(saldo)}</p>
                     </div>
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      saldo >= 0 ? 'bg-indigo-100 text-indigo-600' : 'bg-amber-100 text-amber-600'
+                      saldo >= 0 ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-300'
                     }`}>
                       <i className={`fa-solid text-xl ${saldo >= 0 ? 'fa-scale-balanced' : 'fa-triangle-exclamation'}`}></i>
                     </div>
                   </div>
 
-                  <div className="bg-slate-100 border border-slate-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                  <div className="bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-4 flex items-center justify-between shadow-sm transition-colors">
                     <div>
-                      <p className="text-xs font-bold text-slate-700 uppercase">{t('spentRatio')}</p>
-                      <p className="text-2xl font-black text-slate-900 mt-1">{percentageSpent.toFixed(1)}%</p>
+                      <p className="text-xs font-bold text-slate-700 dark:text-zinc-400 uppercase">{t('spentRatio')}</p>
+                      <p className="text-2xl font-black text-slate-900 dark:text-zinc-100 mt-1">{percentageSpent.toFixed(1)}%</p>
                     </div>
-                    <div className="w-full max-w-[80px] bg-slate-200 rounded-full h-2.5 ml-2">
+                    <div className="w-full max-w-[80px] bg-slate-200 dark:bg-zinc-800 rounded-full h-2.5 ml-2">
                       <div 
                         className={`h-2.5 rounded-full transition-all duration-300 ${
                           percentageSpent > 100 ? 'bg-rose-600' : percentageSpent > 85 ? 'bg-amber-500' : 'bg-indigo-600'
@@ -1732,8 +1877,8 @@
                 </section>
 
                 {/* Side-by-Side Grouped Stacked Analytics Chart [2] */}
-                <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-                  <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm p-4 transition-colors">
+                  <h3 className="text-sm font-bold text-slate-700 dark:text-zinc-300 mb-3 flex items-center gap-2">
                     <i className="fa-solid fa-chart-simple text-indigo-600"></i> {t('analyticsHeader')} - {selectedYear}
                   </h3>
                   <div className="h-[280px] relative w-full">
@@ -1745,26 +1890,26 @@
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                   
                   {/* TABLE A: EINKÜNFTE */}
-                  <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                    <div className="p-4 border-b border-slate-200 bg-emerald-50/50 flex items-center justify-between">
-                      <h3 className="text-lg font-bold text-emerald-900 flex items-center gap-2">
+                  <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden flex flex-col transition-colors">
+                    <div className="p-4 border-b border-slate-200 dark:border-zinc-800 bg-emerald-50/50 dark:bg-emerald-950/10 flex items-center justify-between">
+                      <h3 className="text-lg font-bold text-emerald-900 dark:text-emerald-400 flex items-center gap-2">
                         <i className="fa-solid fa-money-bill-trend-up text-emerald-600"></i> {t('incomesHeader')}
                       </h3>
-                      <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full">
+                      <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 rounded-full">
                         {t('sum')}: {formatCurrency(totalIncome)}
                       </span>
                     </div>
                     <div className="overflow-x-auto flex-grow">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="bg-slate-100 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
-                            <th className="p-3">{t('posten')}</th>
+                          <tr className="bg-slate-100 dark:bg-zinc-800/80 border-b border-slate-200 dark:border-zinc-800 text-xs font-semibold text-slate-600 dark:text-zinc-400 uppercase">
+                            <th className="p-3">Posten</th>
                             <th className="p-3 w-32 text-right">{t(`months.${selectedMonth}`)} (€)</th>
                             <th className="p-3 w-28 text-right">{t('resultYtd')}</th>
                             <th className="p-3 w-28 text-right">{t('avgSchnitt')}</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 text-sm">
+                        <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 text-sm">
                           {(activeTab === "view" ? getClusteredCategories(data.categories.incomes, 'incomes') : data.categories.incomes).map((item, idx, arr) => {
                             const { ytdTotal, average } = getItemStats('incomes', item);
                             const val = data.values[selectedYear]?.incomes[item]?.[selectedMonth];
@@ -1779,8 +1924,8 @@
                             const isRenaming = editingCategory && editingCategory.type === 'incomes' && editingCategory.name === item;
 
                             return (
-                              <tr key={item} className="hover:bg-slate-50 transition border-l-4 border-emerald-500">
-                                <td className="p-3 font-medium text-slate-700 flex items-center justify-between group min-h-[52px]">
+                              <tr key={item} className="hover:bg-slate-50 dark:hover:bg-zinc-800/40 transition border-l-4 border-emerald-500">
+                                <td className="p-3 font-medium text-slate-700 dark:text-zinc-300 flex items-center justify-between group min-h-[52px]">
                                   {isRenaming ? (
                                     <input 
                                       type="text" 
@@ -1788,7 +1933,7 @@
                                       onChange={(e) => setEditCategoryValue(e.target.value)}
                                       onBlur={handleSaveRename}
                                       onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }}
-                                      className="bg-white border border-indigo-500 rounded px-2 py-0.5 text-slate-800 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full max-w-[160px]"
+                                      className="bg-white dark:bg-zinc-800 border border-indigo-500 rounded px-2 py-0.5 text-slate-800 dark:text-zinc-100 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full max-w-[160px]"
                                       autoFocus
                                     />
                                   ) : (
@@ -1837,7 +1982,7 @@
                                 </td>
                                 <td className="p-3 text-right">
                                   {activeTab === "view" ? (
-                                    <span className="font-bold text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
+                                    <span className="font-bold text-slate-700 dark:text-zinc-300 block pr-2">{formatCurrency(val || 0)}</span>
                                   ) : (
                                     <input
                                       type="number"
@@ -1845,12 +1990,12 @@
                                       value={val !== undefined && val !== 0 ? val : ''}
                                       placeholder="0"
                                       onChange={(e) => handleValueChange('incomes', item, selectedMonth, e.target.value)}
-                                      className="w-full text-right bg-slate-50 focus:bg-white border border-slate-200 focus:border-indigo-500 rounded px-2 py-1 outline-none font-semibold transition animate-none"
+                                      className="num-input-fix text-right bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg outline-none focus:border-indigo-500 font-semibold transition"
                                     />
                                   )}
                                 </td>
-                                <td className="p-3 text-right text-slate-600 font-medium">{formatCurrency(ytdTotal)}</td>
-                                <td className="p-3 text-right text-slate-500 text-xs">
+                                <td className="p-3 text-right text-slate-600 dark:text-zinc-400 font-medium">{formatCurrency(ytdTotal)}</td>
+                                <td className="p-3 text-right text-slate-500 dark:text-zinc-500 text-xs">
                                   {formatCurrency(average)}
                                 </td>
                               </tr>
@@ -1861,13 +2006,13 @@
                     </div>
 
                     {activeTab === "edit" && (
-                      <div className="p-3 bg-slate-50 border-t border-slate-100 flex gap-2">
+                      <div className="p-3 bg-slate-50 dark:bg-zinc-850 border-t border-slate-100 dark:border-zinc-800 flex gap-2">
                         <input
                           type="text"
                           value={customIncomeInput}
                           onChange={(e) => setCustomIncomeInput(e.target.value)}
                           placeholder={t('addPlaceholder')}
-                          className="flex-grow bg-white border border-slate-200 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition"
+                          className="flex-grow bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition text-slate-800 dark:text-zinc-100"
                         />
                         <button
                           onClick={() => handleAddCategory('incomes', customIncomeInput, setCustomIncomeInput)}
@@ -1880,26 +2025,26 @@
                   </section>
 
                   {/* TABLE B: AUSGABEN */}
-                  <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                    <div className="p-4 border-b border-slate-200 bg-rose-50/50 flex items-center justify-between">
-                      <h3 className="text-lg font-bold text-rose-900 flex items-center gap-2">
+                  <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden flex flex-col transition-colors">
+                    <div className="p-4 border-b border-slate-200 dark:border-zinc-800 bg-rose-50/50 dark:bg-rose-950/10 flex items-center justify-between">
+                      <h3 className="text-lg font-bold text-rose-900 dark:text-rose-400 flex items-center gap-2">
                         <i className="fa-solid fa-cart-shopping text-rose-600"></i> {t('expensesHeader')}
                       </h3>
-                      <span className="text-xs font-semibold px-2.5 py-1 bg-rose-100 text-rose-800 rounded-full">
+                      <span className="text-xs font-semibold px-2.5 py-1 bg-rose-100 dark:bg-rose-900/50 text-rose-800 dark:text-rose-300 rounded-full">
                         {t('sum')}: {formatCurrency(totalExpenses)}
                       </span>
                     </div>
                     <div className="overflow-x-auto max-h-[500px] overflow-y-auto flex-grow">
                       <table className="w-full text-left border-collapse">
-                        <thead className="sticky top-0 bg-slate-100 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase z-10">
+                        <thead className="sticky top-0 bg-slate-100 dark:bg-zinc-800 border-b border-slate-200 dark:border-zinc-800 text-xs font-semibold text-slate-600 dark:text-zinc-400 uppercase z-10">
                           <tr>
-                            <th className="p-3 bg-slate-100">Posten</th>
-                            <th className="p-3 bg-slate-100 w-32 text-right">{t(`months.${selectedMonth}`)} (€)</th>
-                            <th className="p-3 bg-slate-100 w-28 text-right">{t('resultYtd')}</th>
-                            <th className="p-3 bg-slate-100 w-28 text-right">{t('avgSchnitt')}</th>
+                            <th className="p-3 bg-slate-100 dark:bg-zinc-800">Posten</th>
+                            <th className="p-3 bg-slate-100 dark:bg-zinc-800 w-32 text-right">{t(`months.${selectedMonth}`)} (€)</th>
+                            <th className="p-3 bg-slate-100 dark:bg-zinc-800 w-28 text-right">{t('resultYtd')}</th>
+                            <th className="p-3 bg-slate-100 dark:bg-zinc-800 w-28 text-right">{t('avgSchnitt')}</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 text-sm">
+                        <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 text-sm">
                           {(activeTab === "view" ? getClusteredCategories(data.categories.expenses, 'expenses') : data.categories.expenses).map((item, idx, arr) => {
                             const { ytdTotal, average } = getItemStats('expenses', item);
                             const val = data.values[selectedYear]?.expenses[item]?.[selectedMonth];
@@ -1909,10 +2054,11 @@
                             
                             // Semantically defined clustering background colors [3]
                             const rowClass = 
-                              bracket === 'housing' ? 'bg-slate-50/50 hover:bg-slate-100 border-l-4 border-slate-500' : 
-                              bracket === 'living' ? 'bg-amber-50/30 hover:bg-amber-100/50 border-l-4 border-amber-500' :  
-                              bracket === 'professional' ? 'bg-teal-50/30 hover:bg-teal-100/50 border-l-4 border-teal-500' : 
-                              'bg-indigo-50/20 hover:bg-indigo-100/50 border-l-4 border-indigo-500'; 
+                              bracket === 'housing' ? 'bg-slate-50/50 hover:bg-slate-100 dark:bg-slate-900/20 dark:hover:bg-slate-800/40 border-l-4 border-slate-500 dark:border-slate-400' : 
+                              bracket === 'living' ? 'bg-amber-50/30 hover:bg-amber-100/50 dark:bg-amber-950/10 dark:hover:bg-amber-900/20 border-l-4 border-amber-500 dark:border-amber-400' :  
+                              bracket === 'subscriptions' ? 'bg-indigo-50/20 hover:bg-indigo-100/50 dark:bg-indigo-950/15 dark:hover:bg-indigo-900/30 border-l-4 border-indigo-500 dark:border-indigo-400' : // Subscriptions [2]
+                              bracket === 'professional' ? 'bg-teal-50/30 hover:bg-teal-100/50 dark:bg-teal-950/10 dark:hover:bg-teal-900/20 border-l-4 border-teal-500 dark:border-teal-400' : 
+                              'bg-purple-50/20 hover:bg-purple-100/50 dark:bg-purple-950/10 dark:hover:bg-purple-900/20 border-l-4 border-purple-500 dark:border-purple-400'; // Leisure pink
 
                             // Database Object Parsing sanitation step
                             const key = t(`categories.${item}`);
@@ -1925,7 +2071,7 @@
 
                             return (
                               <tr key={item} className={`transition ${rowClass}`}>
-                                <td className="p-3 font-medium text-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between group gap-2">
+                                <td className="p-3 font-medium text-slate-700 dark:text-zinc-300 flex flex-col sm:flex-row sm:items-center sm:justify-between group gap-2">
                                   <div className="flex items-center gap-1.5 overflow-hidden">
                                     {isRenaming ? (
                                       <input 
@@ -1934,7 +2080,7 @@
                                         onChange={(e) => setEditCategoryValue(e.target.value)}
                                         onBlur={handleSaveRename}
                                         onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }}
-                                        className="bg-white border border-indigo-500 rounded px-2 py-0.5 text-slate-800 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full max-w-[160px]"
+                                        className="bg-white dark:bg-zinc-800 border border-indigo-500 rounded px-2 py-0.5 text-slate-800 dark:text-zinc-100 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full max-w-[160px]"
                                         autoFocus
                                       />
                                     ) : (
@@ -1969,11 +2115,12 @@
                                           };
                                           saveStateAndDispatch(updated, Date.now());
                                         }}
-                                        className="bg-white border border-slate-200 rounded px-2 py-0.5 text-[10px] text-slate-600 outline-none focus:border-indigo-500 max-w-[85px] transition"
+                                        className="bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded px-2 py-0.5 text-[10px] text-slate-600 dark:text-zinc-400 outline-none focus:border-indigo-500 max-w-[85px] transition"
                                       >
                                         <option value="auto">Auto 🤖</option>
                                         <option value="housing">Wohnen 🏠</option>
                                         <option value="living">Alltag 🍎</option>
+                                        <option value="subscriptions">Abonnement 🎟️</option>
                                         <option value="leisure">Freizeit 🎭</option>
                                         <option value="professional">Beruf 🎓</option>
                                       </select>
@@ -2007,22 +2154,32 @@
                                     </div>
                                   )}
                                 </td>
-                                <td className="p-3 text-right font-semibold">
+                                <td className="p-3 text-right font-semibold flex items-center justify-end gap-1.5 min-h-[52px]">
                                   {activeTab === "view" ? (
-                                    <span className="text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
+                                    <span className="text-slate-700 dark:text-zinc-300 block pr-2">{formatCurrency(val || 0)}</span>
                                   ) : (
-                                    <input
-                                      type="number"
-                                      step="any"
-                                      value={val !== undefined && val !== 0 ? val : ''}
-                                      placeholder="0"
-                                      onChange={(e) => handleValueChange('expenses', item, selectedMonth, e.target.value)}
-                                      className="w-full text-right bg-slate-50 focus:bg-white border border-slate-200 focus:border-indigo-500 rounded px-2 py-1 outline-none font-semibold transition animate-none"
-                                    />
+                                    <React.Fragment>
+                                      <input
+                                        type="number"
+                                        step="any"
+                                        value={val !== undefined && val !== 0 ? val : ''}
+                                        placeholder="0"
+                                        onChange={(e) => handleValueChange('expenses', item, selectedMonth, e.target.value)}
+                                        className="num-input-fix text-right bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg outline-none focus:border-indigo-500 font-semibold transition animate-none"
+                                      />
+                                      {/* Set as Recurring Budget configuration utility [1] */}
+                                      <button
+                                        onClick={() => setRecurringSetup({ type: 'expenses', item, value: val || 0 })}
+                                        className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1.5 transition outline-none shrink-0"
+                                        title={t('setRecurringBudget')}
+                                      >
+                                        <i className="fa-solid fa-arrows-spin"></i>
+                                      </button>
+                                    </React.Fragment>
                                   )}
                                 </td>
-                                <td className="p-3 text-right text-slate-600 font-medium">{formatCurrency(ytdTotal)}</td>
-                                <td className="p-3 text-right text-slate-500 text-xs">
+                                <td className="p-3 text-right text-slate-600 dark:text-zinc-400 font-medium">{formatCurrency(ytdTotal)}</td>
+                                <td className="p-3 text-right text-slate-500 dark:text-zinc-500 text-xs">
                                   {formatCurrency(average)}
                                 </td>
                               </tr>
@@ -2033,13 +2190,13 @@
                     </div>
 
                     {activeTab === "edit" && (
-                      <div className="p-3 bg-slate-50 border-t border-slate-100 flex gap-2">
+                      <div className="p-3 bg-slate-50 dark:bg-zinc-850 border-t border-slate-100 dark:border-zinc-800 flex gap-2">
                         <input
                           type="text"
                           value={customExpenseInput}
                           onChange={(e) => setCustomExpenseInput(e.target.value)}
                           placeholder={t('addPlaceholder')}
-                          className="flex-grow bg-white border border-slate-200 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition"
+                          className="flex-grow bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition text-slate-800 dark:text-zinc-100"
                         />
                         <button
                           onClick={() => handleAddCategory('expenses', customExpenseInput, setCustomExpenseInput)}
@@ -2055,6 +2212,55 @@
               </div>
             )}
           </main>
+
+          {/* Automated Multi-Month Recurring Budget overlay/wizard [1] */}
+          {recurringSetup && (
+            <div className="fixed inset-0 bg-slate-950/40 z-50 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 p-6 max-w-sm w-full shadow-2xl space-y-4">
+                <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-zinc-800">
+                  <h3 className="font-bold text-slate-800 dark:text-zinc-100 text-sm flex items-center gap-1.5">
+                    <i className="fa-solid fa-arrows-spin text-indigo-500"></i> {t('setRecurringBudget')}
+                  </h3>
+                  <button onClick={() => setRecurringSetup(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-400">
+                    <i className="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-zinc-400 capitalize">
+                  {t('categories.' + recurringSetup.item).replace('categories.', '')}: <span className="font-bold text-slate-700 dark:text-zinc-200">{formatCurrency(recurringSetup.value)}</span>
+                </p>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">{t('durationInMonths')}</label>
+                  <select
+                    value={recurringMonths}
+                    onChange={(e) => setRecurringMonths(parseInt(e.target.value))}
+                    className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-zinc-100 outline-none focus:border-indigo-500 transition font-semibold"
+                  >
+                    <option value={3}>3 {i18n.language === 'de' ? 'Monate' : 'months'}</option>
+                    <option value={6}>6 {i18n.language === 'de' ? 'Monate' : 'months'}</option>
+                    <option value={12}>12 {i18n.language === 'de' ? 'Monate' : 'months'}</option>
+                  </select>
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={() => setRecurringSetup(null)}
+                    className="flex-1 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 font-bold py-2 rounded-lg text-xs transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await handleApplyRecurring(recurringSetup.type, recurringSetup.item, selectedMonth, selectedYear, recurringMonths, recurringSetup.value);
+                      setRecurringSetup(null);
+                    }}
+                    className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-lg text-xs transition"
+                  >
+                    Apply
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       );
     }
@@ -2089,3 +2295,6 @@
   </script>
 </body>
 </html>
+
+The system calculations, theme triggers, and data migration modules are cleanly
+deployed and backward-compatible with your existing partitions [1, 2, 3, 4].
