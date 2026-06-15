@@ -144,7 +144,7 @@
         allTimeScope: "Gesamter Zeitraum",
         showAudit: "Berechnung prüfen", // Audit Panel [3]
         hideAudit: "Breakdown verbergen",
-        auditTitle: "Audit-Aufschlüsselung",
+        auditTitle: "Audit-Aufschlüsselung (Gesamter Zeitraum)",
         accumulatedIncome: "Gesamteinnahmen", // Refactored [2]
         accumulatedExpenses: "Gesamtausgaben", // Refactored [2]
         months: {
@@ -226,9 +226,9 @@
         allTimeScope: "All-Time Timeline",
         showAudit: "Show Calculation Breakdown", // Audit Panel [3]
         hideAudit: "Hide Breakdown",
-        auditTitle: "Audit Calculation Breakdown",
-        accumulatedIncome: "Total Income Logged", // Refactored [2]
-        accumulatedExpenses: "Total Expenses Logged", // Refactored [2]
+        auditTitle: "Audit Calculation Breakdown (All-Time)",
+        accumulatedIncome: "Total Accumulated Income", // Refactored [2]
+        accumulatedExpenses: "Total Accumulated Expenses", // Refactored [2]
         months: {
           Jan: "Jan", Feb: "Feb", Mrz: "Mar", Apr: "Apr", Mai: "May", Jun: "Jun",
           Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Oct", Nov: "Nov", Dez: "Dec"
@@ -993,35 +993,40 @@
       const auditBreakdown = useMemo(() => {
         let accIncome = 0;
         let accExpense = 0;
-        const yearData = data.values[selectedYear];
-        if (!yearData) return { accIncome, accExpense };
+        
+        Object.keys(data.values).forEach(year => {
+          const yearData = data.values[year];
+          if (!yearData) return;
 
-        const monthsForYear = getMonthsForYear(selectedYear);
+          const monthsForYear = getMonthsForYear(parseInt(year));
 
-        // Sum overall active income strictly inside active year boundary [1]
-        data.categories.incomes.forEach(category => {
-          const monthsData = yearData.incomes?.[category];
-          if (monthsData) {
-            monthsForYear.forEach(m => {
-              const val = parseFloat(monthsData[m]) || 0;
-              accIncome += val;
+          // Sum overall active incomes across the entire database timeline [1]
+          if (yearData.incomes) {
+            data.categories.incomes.forEach(category => {
+              const monthsData = yearData.incomes[category];
+              if (monthsData) {
+                monthsForYear.forEach(m => {
+                  accIncome += parseFloat(monthsData[m]) || 0;
+                });
+              }
             });
           }
-        });
 
-        // Sum overall active expenses strictly inside active year boundary [1]
-        data.categories.expenses.forEach(category => {
-          const monthsData = yearData.expenses?.[category];
-          if (monthsData) {
-            monthsForYear.forEach(m => {
-              const val = parseFloat(monthsData[m]) || 0;
-              accExpense += val;
+          // Sum overall active expenses across the entire database timeline [1]
+          if (yearData.expenses) {
+            data.categories.expenses.forEach(category => {
+              const monthsData = yearData.expenses[category];
+              if (monthsData) {
+                monthsForYear.forEach(m => {
+                  accExpense += parseFloat(monthsData[m]) || 0;
+                });
+              }
             });
           }
         });
 
         return { accIncome, accExpense };
-      }, [data, selectedYear]);
+      }, [data]);
 
       const getItemStats = (type, posten) => {
         const monthsForYear = getMonthsForYear(selectedYear);
@@ -1030,7 +1035,6 @@
           return sum + (val || 0);
         }, 0);
         
-        // Removed custom one-time overrides to align calculation standards [1]
         const average = ytdTotal / monthsForYear.length;
         return { ytdTotal, average };
       };
@@ -1270,8 +1274,8 @@
               </div>
             </section>
 
-            {/* Audit Breakdown Transparency Drawer (Removed Deductions/Buffer Card) [2, 3] */}
-            <div className="space-y-2">
+            {/* Audit Breakdown Transparency Drawer [3] */}
+            <div className="space-y-2" id="audit-breakdown-panel">
               <div className="flex justify-end px-1">
                 <button 
                   onClick={() => setIsAuditOpen(!isAuditOpen)} 
@@ -1285,9 +1289,9 @@
               {isAuditOpen && (
                 <div className="bg-slate-100 border border-slate-200 rounded-2xl p-4 text-xs space-y-2 animate-fadeIn transition-all duration-300">
                   <h4 className="font-bold text-slate-700 uppercase tracking-wide border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
-                    <i className="fa-solid fa-calculator text-indigo-500"></i> {t('auditTitle')} ({selectedYear})
+                    <i className="fa-solid fa-calculator text-indigo-500"></i> {t('auditTitle')}
                   </h4>
-                  {/* Clean side-by-side Dual Net Metrics Panel [2] */}
+                  {/* Redesigned clean two-column DOM layout [2] */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-1">
                     <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200">
                       <span className="text-slate-500 font-medium">{t('accumulatedIncome')}:</span>
