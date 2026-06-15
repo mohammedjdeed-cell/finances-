@@ -1,28 +1,3 @@
-Here is your completely upgraded, unfragmented codebase for index.html.
-
-Major Upgrades Included
-
-1.  Adaptive Month-to-Month Liquidity Engine: Refactored the entire monthly
-    aggregation engine to support strict chronological roll-overs [1]. It starts
-    from a customizable Initial Savings Base (Startkapital), then rolls over net
-    leftovers continuously month-by-month starting in May 2026 [1, 5]. The
-    result is displayed as Verfügbares Gesamtguthaben (Total Available
-    Liquidity).
-2.  Dedicated Annual Overview Tab: Integrated a navigation track option titled
-    Jahresanalyse (Annual Overview) [5]. This view dynamically plots
-    interactive, sorted Chart.js expense breakdowns, summaries on peak
-    categories, highest spending months, annual savings rates, and a complete
-    exportable multi-month grid.
-3.  Manual Category Group Overrides: Added a selection control next to each
-    category in Edit mode [6]. This allows you to manually force any item into a
-    specific cluster (Wohnen, Alltag, Freizeit, Beruf), permanently overriding
-    the automated semantic clustering engine in both IndexedDB and Firestore
-    [3, 6].
-4.  Clean UI Input Elements: Removed the browser-native spinner controls on
-    input elements via injected CSS properties.
-
-File: index.html
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
