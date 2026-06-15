@@ -1289,4 +1289,313 @@
               
               {/* TABLE A: EINKÜNFTE */}
               <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                <div className="p-4 border-b border-slate-200 bg-emerald-50/50 flex items-center justify
+                <div className="p-4 border-b border-slate-200 bg-emerald-50/50 flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-emerald-900 flex items-center gap-2">
+                    <i className="fa-solid fa-money-bill-trend-up text-emerald-600"></i> {t('incomesHeader')}
+                  </h3>
+                  <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full">
+                    {t('sum')}: {formatCurrency(totalIncome)}
+                  </span>
+                </div>
+                <div className="overflow-x-auto flex-grow">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-100 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
+                        <th className="p-3">{t('posten')}</th>
+                        <th className="p-3 w-32 text-right">{t(`months.${selectedMonth}`)} (€)</th>
+                        <th className="p-3 w-28 text-right">{t('resultYtd')}</th>
+                        <th className="p-3 w-28 text-right">{t('avgSchnitt')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-sm">
+                      {(activeTab === "view" ? getClusteredCategories(data.categories.incomes, 'incomes') : data.categories.incomes).map((item, idx, arr) => {
+                        const { ytdTotal, average } = getItemStats('incomes', item);
+                        const val = data.values[selectedYear]?.incomes[item]?.[selectedMonth];
+                        
+                        // Database Object Parsing sanitation step
+                        const key = t(`categories.${item}`);
+                        let cleanName = key.replace('categories.', '');
+                        cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+
+                        // Deletion identification check
+                        const isCustom = !INITIAL_CATEGORIES.incomes.includes(item);
+                        const isRenaming = editingCategory && editingCategory.type === 'incomes' && editingCategory.name === item;
+
+                        return (
+                          <tr key={item} className="hover:bg-slate-50 transition border-l-4 border-emerald-500">
+                            <td className="p-3 font-medium text-slate-700 flex items-center justify-between group min-h-[52px]">
+                              {isRenaming ? (
+                                <input 
+                                  type="text" 
+                                  value={editCategoryValue} 
+                                  onChange={(e) => setEditCategoryValue(e.target.value)}
+                                  onBlur={handleSaveRename}
+                                  onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }}
+                                  className="bg-white border border-indigo-500 rounded px-2 py-0.5 text-slate-800 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full max-w-[160px]"
+                                  autoFocus
+                                />
+                              ) : (
+                                <div className="flex items-center gap-1.5 overflow-hidden">
+                                  <span className="truncate">{cleanName}</span>
+                                  {activeTab === "edit" && (
+                                    <button 
+                                      onClick={() => handleStartRename('incomes', item)}
+                                      className="text-slate-400 hover:text-indigo-600 transition p-1 opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                      title="Rename"
+                                    >
+                                      <i className="fa-solid fa-pen text-[10px]"></i>
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {/* Reordering caret selectors inside Edit tab [1] */}
+                              {activeTab === "edit" && (
+                                <div className="flex items-center space-x-1 shrink-0 ml-2">
+                                  <button 
+                                    onClick={() => handleMoveCategory('incomes', idx, 'up')}
+                                    disabled={idx === 0}
+                                    className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
+                                  >
+                                    <i className="fa-solid fa-caret-up"></i>
+                                  </button>
+                                  <button 
+                                    onClick={() => handleMoveCategory('incomes', idx, 'down')}
+                                    disabled={idx === arr.length - 1}
+                                    className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
+                                  >
+                                    <i className="fa-solid fa-caret-down"></i>
+                                  </button>
+                                  {isCustom && (
+                                    <button 
+                                      onClick={() => handleDeleteCategory('incomes', item)}
+                                      className="text-slate-400 hover:text-rose-600 transition p-1"
+                                      title={i18n.language === 'de' ? 'Kategorie löschen' : 'Delete category'}
+                                    >
+                                      <i className="fa-solid fa-trash-can text-xs"></i>
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </td>
+                            <td className="p-3 text-right">
+                              {activeTab === "view" ? (
+                                <span className="font-bold text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
+                              ) : (
+                                <input
+                                  type="number"
+                                  step="any"
+                                  value={val !== undefined && val !== 0 ? val : ''}
+                                  placeholder="0"
+                                  onChange={(e) => handleValueChange('incomes', item, selectedMonth, e.target.value)}
+                                  className="w-full text-right bg-slate-50 focus:bg-white border border-slate-200 focus:border-indigo-500 rounded px-2 py-1 outline-none font-semibold transition"
+                                />
+                              )}
+                            </td>
+                            <td className="p-3 text-right text-slate-600 font-medium">{formatCurrency(ytdTotal)}</td>
+                            <td className="p-3 text-right text-slate-500 text-xs">{formatCurrency(average)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {activeTab === "edit" && (
+                  <div className="p-3 bg-slate-50 border-t border-slate-100 flex gap-2">
+                    <input
+                      type="text"
+                      value={customIncomeInput}
+                      onChange={(e) => setCustomIncomeInput(e.target.value)}
+                      placeholder={t('addPlaceholder')}
+                      className="flex-grow bg-white border border-slate-200 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition"
+                    />
+                    <button
+                      onClick={() => handleAddCategory('incomes', customIncomeInput, setCustomIncomeInput)}
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-bold transition flex items-center gap-1 shrink-0"
+                    >
+                      <i className="fa-solid fa-plus"></i> Add
+                    </button>
+                  </div>
+                )}
+              </section>
+
+              {/* TABLE B: AUSGABEN */}
+              <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                <div className="p-4 border-b border-slate-200 bg-rose-50/50 flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-rose-900 flex items-center gap-2">
+                    <i className="fa-solid fa-cart-shopping text-rose-600"></i> {t('expensesHeader')}
+                  </h3>
+                  <span className="text-xs font-semibold px-2.5 py-1 bg-rose-100 text-rose-800 rounded-full">
+                    {t('sum')}: {formatCurrency(totalExpenses)}
+                  </span>
+                </div>
+                <div className="overflow-x-auto max-h-[600px] overflow-y-auto flex-grow">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="sticky top-0 bg-slate-100 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase z-10">
+                      <tr>
+                        <th className="p-3 bg-slate-100">{t('posten')}</th>
+                        <th className="p-3 w-32 text-right bg-slate-100">{t(`months.${selectedMonth}`)} (€)</th>
+                        <th className="p-3 w-28 text-right bg-slate-100">{t('resultYtd')}</th>
+                        <th className="p-3 w-28 text-right bg-slate-100">{t('avgSchnitt')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-sm">
+                      {(activeTab === "view" ? getClusteredCategories(data.categories.expenses, 'expenses') : data.categories.expenses).map((item, idx, arr) => {
+                        const { ytdTotal, average } = getItemStats('expenses', item);
+                        const val = data.values[selectedYear]?.expenses[item]?.[selectedMonth];
+                        
+                        // dynamic left-border tags mapped by category bracket [3]
+                        const bracket = getExpenseBracket(item);
+                        
+                        // Semantically defined clustering background colors [3]
+                        const rowClass = 
+                          bracket === 'housing' ? 'bg-slate-50/50 hover:bg-slate-100 border-l-4 border-slate-500' : // Warm Slate
+                          bracket === 'living' ? 'bg-amber-50/30 hover:bg-amber-100/50 border-l-4 border-amber-500' :  // Soft Amber
+                          bracket === 'professional' ? 'bg-teal-50/30 hover:bg-teal-100/50 border-l-4 border-teal-500' : // Soft Teal
+                          'bg-indigo-50/20 hover:bg-indigo-100/50 border-l-4 border-indigo-500'; // Soft Purple
+
+                        // Database Object Parsing sanitation step
+                        const key = t(`categories.${item}`);
+                        let cleanName = key.replace('categories.', '');
+                        cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+
+                        // Deletion identification check
+                        const isCustom = !INITIAL_CATEGORIES.expenses.includes(item);
+                        const isRenaming = editingCategory && editingCategory.type === 'expenses' && editingCategory.name === item;
+
+                        return (
+                          <tr key={item} className={`transition ${rowClass}`}>
+                            <td className="p-3 font-medium text-slate-700 flex items-center justify-between group min-h-[52px]">
+                              {isRenaming ? (
+                                <input 
+                                  type="text" 
+                                  value={editCategoryValue} 
+                                  onChange={(e) => setEditCategoryValue(e.target.value)}
+                                  onBlur={handleSaveRename}
+                                  onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }}
+                                  className="bg-white border border-indigo-500 rounded px-2 py-0.5 text-slate-800 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full max-w-[160px]"
+                                  autoFocus
+                                />
+                              ) : (
+                                <div className="flex items-center gap-1.5 overflow-hidden">
+                                  <span className="truncate">{cleanName}</span>
+                                  {activeTab === "edit" && (
+                                    <button 
+                                      onClick={() => handleStartRename('expenses', item)}
+                                      className="text-slate-400 hover:text-indigo-600 transition p-1 opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                      title="Rename"
+                                    >
+                                      <i className="fa-solid fa-pen text-[10px]"></i>
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {/* Reordering caret selectors inside Edit tab [1] */}
+                              {activeTab === "edit" && (
+                                <div className="flex items-center space-x-1 shrink-0 ml-2">
+                                  <button 
+                                    onClick={() => handleMoveCategory('expenses', idx, 'up')}
+                                    disabled={idx === 0}
+                                    className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
+                                  >
+                                    <i className="fa-solid fa-caret-up"></i>
+                                  </button>
+                                  <button 
+                                    onClick={() => handleMoveCategory('expenses', idx, 'down')}
+                                    disabled={idx === arr.length - 1}
+                                    className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
+                                  >
+                                    <i className="fa-solid fa-caret-down"></i>
+                                  </button>
+                                  {isCustom && (
+                                    <button 
+                                      onClick={() => handleDeleteCategory('expenses', item)}
+                                      className="text-slate-400 hover:text-rose-600 transition p-1"
+                                      title={i18n.language === 'de' ? 'Kategorie löschen' : 'Delete category'}
+                                    >
+                                      <i className="fa-solid fa-trash-can text-xs"></i>
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </td>
+                            <td className="p-3 text-right font-semibold">
+                              {activeTab === "view" ? (
+                                <span className="text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
+                              ) : (
+                                <input
+                                  type="number"
+                                  step="any"
+                                  value={val !== undefined && val !== 0 ? val : ''}
+                                  placeholder="0"
+                                  onChange={(e) => handleValueChange('expenses', item, selectedMonth, e.target.value)}
+                                  className="w-full text-right bg-slate-50 focus:bg-white border border-slate-200 focus:border-indigo-500 rounded px-2 py-1 outline-none font-semibold transition"
+                                />
+                              )}
+                            </td>
+                            <td className="p-3 text-right text-slate-600 font-medium">{formatCurrency(ytdTotal)}</td>
+                            <td className="p-3 text-right text-slate-500 text-xs">{formatCurrency(average)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {activeTab === "edit" && (
+                  <div className="p-3 bg-slate-50 border-t border-slate-100 flex gap-2">
+                    <input
+                      type="text"
+                      value={customExpenseInput}
+                      onChange={(e) => setCustomExpenseInput(e.target.value)}
+                      placeholder={t('addPlaceholder')}
+                      className="flex-grow bg-white border border-slate-200 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition"
+                    />
+                    <button
+                      onClick={() => handleAddCategory('expenses', customExpenseInput, setCustomExpenseInput)}
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-bold transition flex items-center gap-1 shrink-0"
+                    >
+                      <i className="fa-solid fa-plus"></i> Add
+                    </button>
+                  </div>
+                )}
+              </section>
+
+            </div>
+          </main>
+        </div>
+      );
+    }
+
+    function App() {
+      return (
+        <LanguageProvider>
+          <MainAppContent />
+        </LanguageProvider>
+      );
+    }
+
+    const container = document.getElementById('root');
+    const root = ReactDOM.createRoot(container);
+    root.render(<App />);
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(async (reg) => {
+            if ('SyncManager' in window) {
+              try {
+                await reg.sync.register('sync-budget');
+              } catch (e) {
+                console.warn('Sync registration failed: ', e);
+              }
+            }
+          })
+          .catch(err => console.error('SW registration error:', err));
+      });
+    }
+  </script>
+</body>
+</html>
