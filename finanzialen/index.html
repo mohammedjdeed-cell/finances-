@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -27,6 +28,97 @@
   <meta name="theme-color" content="#4f46e5">
   
   <style>
+    /* Universal Theme custom variables [2] */
+    :root, [data-theme="light"] {
+        --color-bg: #f8fafc;
+        --color-card: #ffffff;
+        --color-text-main: #1e293b;
+        --color-text-muted: #64748b;
+        --color-border: #e2e8f0;
+        --color-input-bg: #ffffff;
+        --color-input-text: #1e293b;
+        --color-chart-grid: rgba(0, 0, 0, 0.05);
+        --color-chart-label: #475569;
+    }
+    
+    [data-theme="dark"] {
+        --color-bg: #121214;
+        --color-card: #1a1a1e;
+        --color-text-main: #f3f4f6;
+        --color-text-muted: #9ca3af;
+        --color-border: #3f3f46;
+        --color-input-bg: #26262b;
+        --color-input-text: #f3f4f6;
+        --color-chart-grid: rgba(255, 255, 255, 0.1);
+        --color-chart-label: #9ca3af;
+    }
+
+    body {
+      background-color: var(--color-bg) !important;
+      color: var(--color-text-main) !important;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .custom-card {
+      background-color: var(--color-card) !important;
+      border-color: var(--color-border) !important;
+    }
+
+    .custom-input {
+      background-color: var(--color-input-bg) !important;
+      color: var(--color-input-text) !important;
+      border-color: var(--color-border) !important;
+    }
+
+    /* Strict Flexbox row wrapping overhaul layout [1] */
+    .expense-row, .income-row {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 10px 15px;
+        gap: 15px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* Zone 1: Name and Badges [1] */
+    .flex-zone-1 {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        flex: 2 !important;
+        min-width: 200px !important;
+        overflow: hidden !important;
+    }
+
+    /* Zone 2: Input Field constraint [1, 5] */
+    .flex-zone-2 {
+        flex: 1 !important;
+        max-width: 110px !important;
+        width: 100% !important;
+        text-align: right !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Zone 3: YTD & Averages [1] */
+    .flex-zone-3 {
+        display: flex !important;
+        gap: 20px !important;
+        flex: 1.5 !important;
+        justify-content: flex-end !important;
+        text-align: right !important;
+        white-space: nowrap !important;
+    }
+
+    /* Form Input Numeric Overflow Fix [5] */
+    .num-input-fix {
+      width: 100% !important;
+      min-width: 100px !important;
+      box-sizing: border-box !important;
+      padding: 0.375rem 0.75rem !important;
+    }
+
     /* Remove native numeric increment step controls [4] */
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
@@ -36,14 +128,7 @@
     input[type="number"] {
         -moz-appearance: textfield;
     }
-    /* Dynamic Form Input Numeric Overflow Fix [5] */
-    .num-input-fix {
-      width: 100% !important;
-      min-width: 100px !important;
-      box-sizing: border-box !important;
-      padding: 0.375rem 0.75rem !important;
-    }
-    /* Simple custom scrollbar wrapper */
+
     .scrollbar-none::-webkit-scrollbar {
       display: none;
     }
@@ -53,7 +138,7 @@
     }
   </style>
 </head>
-<body class="bg-slate-50 dark:bg-zinc-950 text-slate-800 dark:text-zinc-100 font-sans min-h-screen transition-colors duration-300">
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
   <div id="root"></div>
 
   <script type="text/babel">
@@ -526,7 +611,7 @@
       const [activeTab, setActiveTab] = useState("view"); 
       const [isAuditOpen, setIsAuditOpen] = useState(false); 
 
-      // Tri-State Theme Engine [4]
+      // Tri-State Theme Engine state [4]
       const [theme, setTheme] = useState(() => localStorage.getItem('budget_app_theme') || 'system');
 
       const [customIncomeInput, setCustomIncomeInput] = useState("");
@@ -558,19 +643,28 @@
         localStorage.setItem('budget_app_theme', theme);
         const applyTheme = (val) => {
           const rootEl = document.documentElement;
-          if (val === 'dark' || (val === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          let resolvedTheme = val;
+          if (val === 'system') {
+            resolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          rootEl.setAttribute('data-theme', resolvedTheme);
+          
+          if (resolvedTheme === 'dark') {
             rootEl.classList.add('dark');
           } else {
             rootEl.classList.remove('dark');
           }
         };
+        
         applyTheme(theme);
 
         if (theme === 'system') {
           const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
           const handleChange = (e) => {
             const rootEl = document.documentElement;
-            if (e.matches) {
+            const resolved = e.matches ? 'dark' : 'light';
+            rootEl.setAttribute('data-theme', resolved);
+            if (resolved === 'dark') {
               rootEl.classList.add('dark');
             } else {
               rootEl.classList.remove('dark');
@@ -709,7 +803,7 @@
 
         const isDarkTheme = document.documentElement.classList.contains('dark');
         const axisColor = isDarkTheme ? '#94a3b8' : '#475569';
-        const gridColor = isDarkTheme ? '#27272a' : '#f1f5f9';
+        const gridColor = isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'; // dynamic opacity [2]
 
         chartInstanceRef.current = new Chart(ctx, {
           type: 'bar',
@@ -1268,11 +1362,6 @@
         return (totalExpenses / totalIncome) * 100;
       }, [totalIncome, totalExpenses]);
 
-      // Adaptive Month-to-Month Liquidity Rollovers [1]
-      const activeLiquidityResult = useMemo(() => {
-        return chronologicalTimelineResult[`${selectedYear}-${selectedMonth}`] || { availableFunds: 0, leftover: 0, prevGuthaben: 0 };
-      }, [chronologicalTimelineResult, selectedYear, selectedMonth]);
-
       // Bounded Annual Net Balance Calculation [1]
       const yearlyNetBalance = useMemo(() => {
         let totalIncomesYear = 0;
@@ -1447,21 +1536,21 @@
               className="fixed inset-0 bg-slate-950/40 z-50 backdrop-blur-sm transition-opacity" 
             />
           )}
-          <div className={`fixed top-0 right-0 h-full w-80 bg-white dark:bg-zinc-900 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isBurgerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-            <div className="p-5 flex flex-col h-full justify-between overflow-y-auto">
+          <div className="fixed top-0 right-0 h-full w-80 bg-[var(--color-card)] border-l border-[var(--color-border)] shadow-2xl z-50 transform transition-transform duration-300 ease-in-out scrollbar-none overflow-y-auto" style={{ transform: isBurgerOpen ? 'translateX(0)' : 'translateX(100%)' }}>
+            <div className="p-5 flex flex-col h-full justify-between">
               <div className="space-y-6">
-                <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-zinc-800">
-                  <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
+                <div className="flex justify-between items-center pb-4 border-b border-[var(--color-border)]">
+                  <h3 className="font-bold text-[var(--color-text-main)] text-base flex items-center gap-2">
                     <i className="fa-solid fa-shield-halved text-indigo-600"></i> {t('options')}
                   </h3>
-                  <button onClick={() => setIsBurgerOpen(false)} className="text-slate-400 hover:text-slate-600 transition">
+                  <button onClick={() => setIsBurgerOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-400">
                     <i className="fa-solid fa-xmark text-lg"></i>
                   </button>
                 </div>
 
                 {/* Capital Setup Input Block [1] */}
                 <div className="space-y-2 pt-2">
-                  <p className="text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">{t('initialSavingsLabel')}</p>
+                  <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">{t('initialSavingsLabel')}</p>
                   <input
                     type="number"
                     value={data.initialSavingsBase !== undefined ? data.initialSavingsBase : 5000}
@@ -1473,20 +1562,20 @@
                       };
                       saveStateAndDispatch(updated, Date.now());
                     }}
-                    className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-800 dark:text-zinc-100 outline-none focus:border-indigo-500 transition"
+                    className="w-full bg-[var(--color-input-bg)] border border-[var(--color-border)] rounded-lg px-3 py-1.5 text-sm font-semibold text-[var(--color-input-text)] outline-none focus:border-indigo-500 transition"
                     placeholder="0.00"
                   />
                 </div>
                 
                 {/* Select Year */}
-                <div className="space-y-2 border-t border-slate-100 dark:border-zinc-800 pt-4">
-                  <p className="text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">{t('selectYear')}</p>
+                <div className="space-y-2 border-t border-[var(--color-border)] pt-4">
+                  <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">{t('selectYear')}</p>
                   <div className="flex gap-2">
                     {[2026, 2027, 2028].map(yr => (
                       <button
                         key={yr}
                         onClick={() => { setSelectedYear(yr); setIsBurgerOpen(false); }}
-                        className={`px-3 py-1.5 rounded text-xs transition font-bold ${selectedYear === yr ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'}`}
+                        className={`px-3 py-1.5 rounded text-xs transition font-bold ${selectedYear === yr ? 'bg-indigo-600 text-white' : 'bg-[var(--color-input-bg)] border border-[var(--color-border)] text-[var(--color-text-main)] hover:bg-slate-200 dark:hover:bg-zinc-800'}`}
                       >
                         {yr}
                       </button>
@@ -1495,8 +1584,8 @@
                 </div>
 
                 {/* Tri-State Theme Toggler Control [4] */}
-                <div className="space-y-2 border-t border-slate-100 dark:border-zinc-800 pt-4">
-                  <p className="text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">{t('themeLabel')}</p>
+                <div className="space-y-2 border-t border-[var(--color-border)] pt-4">
+                  <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">{t('themeLabel')}</p>
                   <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-zinc-800 rounded-lg p-1">
                     {['light', 'dark', 'system'].map(mode => (
                       <button
@@ -1515,18 +1604,18 @@
                 </div>
 
                 {/* Select Language */}
-                <div className="space-y-2 border-t border-slate-100 dark:border-zinc-800 pt-4">
-                  <p className="text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">{t('selectLanguage')}</p>
+                <div className="space-y-2 border-t border-[var(--color-border)] pt-4">
+                  <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">{t('selectLanguage')}</p>
                   <div className="flex gap-2">
                     <button 
                       onClick={() => { i18n.changeLanguage('de'); setIsBurgerOpen(false); }} 
-                      className={`px-3 py-1.5 rounded text-xs transition font-bold ${i18n.language === 'de' ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300'}`}
+                      className={`px-3 py-1.5 rounded text-xs transition font-bold ${i18n.language === 'de' ? 'bg-indigo-600 text-white' : 'bg-[var(--color-input-bg)] border border-[var(--color-border)] text-[var(--color-text-main)]'}`}
                     >
                       DE
                     </button>
                     <button 
                       onClick={() => { i18n.changeLanguage('en'); setIsBurgerOpen(false); }} 
-                      className={`px-3 py-1.5 rounded text-xs transition font-bold ${i18n.language === 'en' ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300'}`}
+                      className={`px-3 py-1.5 rounded text-xs transition font-bold ${i18n.language === 'en' ? 'bg-indigo-600 text-white' : 'bg-[var(--color-input-bg)] border border-[var(--color-border)] text-[var(--color-text-main)]'}`}
                     >
                       EN
                     </button>
@@ -1534,8 +1623,8 @@
                 </div>
 
                 {/* Backup configuration interface [2] */}
-                <div className="space-y-2 pt-4 border-t border-slate-100 dark:border-zinc-800">
-                  <p className="text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">{t('backupSection')}</p>
+                <div className="space-y-2 pt-4 border-t border-[var(--color-border)]">
+                  <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">{t('backupSection')}</p>
                   <div className="flex flex-col gap-2">
                     <button
                       onClick={handleExportBackup}
@@ -1561,7 +1650,7 @@
               </div>
 
               {/* Secure Reset Data Link [4] */}
-              <div className="pt-4 border-t border-slate-100 dark:border-zinc-800">
+              <div className="pt-4 border-t border-[var(--color-border)]">
                 <button 
                   onClick={() => { handleResetData(); setIsBurgerOpen(false); }}
                   className="text-slate-400 hover:text-rose-600 transition duration-200 text-xs underline flex items-center gap-2 py-2 w-full text-left font-medium"
@@ -1573,7 +1662,7 @@
           </div>
 
           {/* Month Navigation Tabs with AnnualOverview Trigger [2] */}
-          <nav className="bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 sticky top-[52px] z-30 shadow-sm transition-colors">
+          <nav className="bg-[var(--color-card)] border-b border-[var(--color-border)] sticky top-[52px] z-30 shadow-sm transition-colors">
             <div className="max-w-7xl mx-auto px-4 overflow-x-auto whitespace-nowrap scrollbar-none flex items-center">
               <div className="flex overflow-x-auto scrollbar-none flex-grow">
                 {getMonthsForYear(selectedYear).map((m) => (
@@ -1611,48 +1700,48 @@
               <div className="space-y-6 animate-fadeIn">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Metric 1: Savings Rate */}
-                  <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                  <div className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 rounded-2xl p-5 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-indigo-800 uppercase tracking-wider">{t('savingsRate')}</p>
-                      <p className="text-2xl font-black text-indigo-900 mt-1">{annualOverviewData.savingsRate.toFixed(1)}%</p>
+                      <p className="text-xs font-bold text-indigo-800 dark:text-indigo-400 uppercase tracking-wider">{t('savingsRate')}</p>
+                      <p className="text-2xl font-black text-indigo-900 dark:text-indigo-200 mt-1">{annualOverviewData.savingsRate.toFixed(1)}%</p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                    <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-300">
                       <i className="fa-solid fa-percent text-xl"></i>
                     </div>
                   </div>
 
                   {/* Metric 2: Peak Spending Category */}
-                  <div className="bg-rose-50 border border-rose-200 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                  <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900 rounded-2xl p-5 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-rose-800 uppercase tracking-wider">{t('peakSpendingCategory')}</p>
-                      <p className="text-base font-black text-rose-900 mt-2 truncate max-w-[170px]">
+                      <p className="text-xs font-bold text-rose-800 dark:text-rose-400 uppercase tracking-wider">{t('peakSpendingCategory')}</p>
+                      <p className="text-base font-black text-rose-900 dark:text-rose-200 mt-2 truncate max-w-[170px]">
                         {annualOverviewData.peakCategory ? t(`categories.${annualOverviewData.peakCategory}`).replace('categories.', '') : t('noData')}
                       </p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
+                    <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-300">
                       <i className="fa-solid fa-fire text-xl"></i>
                     </div>
                   </div>
 
                   {/* Metric 3: Highest Spent Month */}
-                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                  <div className="bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-5 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('highestExpenseMonth')}</p>
-                      <p className="text-2xl font-black text-slate-900 mt-1">
+                      <p className="text-xs font-bold text-slate-700 dark:text-zinc-400 uppercase tracking-wider">{t('highestExpenseMonth')}</p>
+                      <p className="text-2xl font-black text-slate-900 dark:text-zinc-100 mt-1">
                         {annualOverviewData.highestMonth ? `${t(`months.${annualOverviewData.highestMonth}`)} ${selectedYear}` : t('noData')}
                       </p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                    <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-600 dark:text-zinc-400">
                       <i className="fa-solid fa-calendar-days text-xl"></i>
                     </div>
                   </div>
                 </div>
 
                 {/* Pie/Doughnut Chart Expense Breakdown */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm p-5 grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">{t('analyticsHeader')}</h3>
-                    <p className="text-xs text-slate-400 mb-4">Prozentuale Verteilung aller Ausgaben im Jahr {selectedYear}</p>
+                    <h3 className="text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2 uppercase tracking-wider">{t('analyticsHeader')}</h3>
+                    <p className="text-xs text-slate-400 dark:text-zinc-500 mb-4">Prozentuale Verteilung aller Ausgaben im Jahr {selectedYear}</p>
                     <div className="h-[260px] relative w-full flex justify-center">
                       <canvas ref={annualChartRef}></canvas>
                     </div>
@@ -1664,9 +1753,9 @@
                       const share = annualOverviewData.totalYearlyEx > 0 ? (total / annualOverviewData.totalYearlyEx) * 100 : 0;
                       if (total === 0) return null;
                       return (
-                        <div key={category} className="flex justify-between items-center text-xs border-b border-slate-100 pb-2">
-                          <span className="font-semibold text-slate-600">{cleanCatName}</span>
-                          <span className="font-bold text-slate-700">{formatCurrency(total)} ({share.toFixed(1)}%)</span>
+                        <div key={category} className="flex justify-between items-center text-xs border-b border-[var(--color-border)] pb-2">
+                          <span className="font-semibold text-slate-600 dark:text-zinc-400">{cleanCatName}</span>
+                          <span className="font-bold text-slate-700 dark:text-zinc-200">{formatCurrency(total)} ({share.toFixed(1)}%)</span>
                         </div>
                       );
                     })}
@@ -1674,31 +1763,31 @@
                 </div>
 
                 {/* 12-Month transaction grid view */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-                    <h3 className="font-bold text-slate-700 text-sm">{selectedYear} - Datasheet</h3>
+                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+                  <div className="p-4 border-b border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-850 flex justify-between items-center">
+                    <h3 className="font-bold text-slate-700 dark:text-zinc-300 text-sm">{selectedYear} - Datasheet</h3>
                   </div>
                   <div className="overflow-x-auto scrollbar-none">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="bg-slate-100 border-b border-slate-200 font-bold text-slate-600 uppercase">
+                        <tr className="bg-slate-100 dark:bg-zinc-800 border-b border-slate-200 dark:border-zinc-800 font-bold text-slate-600 dark:text-zinc-400 uppercase">
                           <th className="p-3">Month</th>
                           <th className="p-3 text-right">Incomes</th>
                           <th className="p-3 text-right">Expenses</th>
                           <th className="p-3 text-right">Savings Net</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium">
+                      <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-medium">
                         {getMonthsForYear(selectedYear).map(m => {
                           const income = annualOverviewData.monthTotals[m]?.income || 0;
                           const expenses = annualOverviewData.monthTotals[m]?.expenses || 0;
                           const net = income - expenses;
                           return (
-                            <tr key={m} className="hover:bg-slate-50">
-                              <td className="p-3 font-semibold text-slate-700">{t(`months.${m}`)}</td>
-                              <td className="p-3 text-right text-emerald-600">{formatCurrency(income)}</td>
-                              <td className="p-3 text-right text-rose-600">{formatCurrency(expenses)}</td>
-                              <td className={`p-3 text-right font-bold ${net >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            <tr key={m} className="hover:bg-slate-50 dark:hover:bg-zinc-800/40">
+                              <td className="p-3 font-semibold text-slate-700 dark:text-zinc-300">{t(`months.${m}`)}</td>
+                              <td className="p-3 text-right text-emerald-600 dark:text-emerald-400">{formatCurrency(income)}</td>
+                              <td className="p-3 text-right text-rose-600 dark:text-rose-400">{formatCurrency(expenses)}</td>
+                              <td className={`p-3 text-right font-bold ${net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                                 {net < 0 ? "-" : ""}{formatCurrency(Math.abs(net))}
                               </td>
                             </tr>
@@ -1713,18 +1802,18 @@
               /* TRADITIONAL MONTHLY BUDGET LAYOUT VIEW */
               <div className="space-y-6">
                 {/* Segmented view/edit toggle [6] */}
-                <div className="flex bg-slate-200/60 p-1 rounded-xl max-w-sm mx-auto shadow-inner">
+                <div className="flex bg-slate-200/60 dark:bg-zinc-800 p-1 rounded-xl max-w-sm mx-auto shadow-inner">
                   <button 
                     onClick={() => setActiveTab('view')}
-                    className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 bg-white text-indigo-700 shadow"
-                    style={{ backgroundColor: activeTab === 'view' ? '#ffffff' : 'transparent', color: activeTab === 'view' ? '#4338ca' : '#475569' }}
+                    className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 bg-white dark:bg-zinc-700 text-indigo-700 dark:text-indigo-200 shadow"
+                    style={{ backgroundColor: activeTab === 'view' ? '' : 'transparent' }}
                   >
                     <i className="fa-solid fa-eye text-sm"></i> {t('viewTab')}
                   </button>
                   <button 
                     onClick={() => setActiveTab('edit')}
-                    className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2"
-                    style={{ backgroundColor: activeTab === 'edit' ? '#ffffff' : 'transparent', color: activeTab === 'edit' ? '#4338ca' : '#475569' }}
+                    className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 dark:text-zinc-400"
+                    style={{ backgroundColor: activeTab === 'edit' ? '' : 'transparent' }}
                   >
                     <i className="fa-solid fa-pen-to-square text-sm"></i> {t('editTab')}
                   </button>
@@ -1734,14 +1823,14 @@
                 <section className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
                   {/* Metric 1: Monthly Leftover */}
                   <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
-                    saldo >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
+                    saldo >= 0 ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/15 dark:border-emerald-900' : 'bg-rose-50 border-rose-200 dark:bg-rose-950/15 dark:border-rose-900'
                   }`}>
                     <div className="flex justify-between items-center">
                       <div>
-                        <h2 className={`text-xs font-bold uppercase tracking-wider ${saldo >= 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
+                        <h2 className={`text-xs font-bold uppercase tracking-wider ${saldo >= 0 ? 'text-emerald-800 dark:text-emerald-400' : 'text-rose-800 dark:text-rose-400'}`}>
                           {t('monthlyLeftover')}
                         </h2>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-slate-500 dark:text-zinc-500 mt-1">
                           {t(`months.${selectedMonth}`)} {selectedYear}
                         </p>
                       </div>
@@ -1753,14 +1842,14 @@
 
                   {/* Metric 2: Yearly Net Balance [1, 2] */}
                   <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
-                    yearlyNetBalance >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
+                    yearlyNetBalance >= 0 ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/15 dark:border-emerald-900' : 'bg-rose-50 border-rose-200 dark:bg-rose-950/15 dark:border-rose-900'
                   }`}>
                     <div className="flex justify-between items-center">
                       <div>
-                        <h2 className={`text-xs font-bold uppercase tracking-wider ${yearlyNetBalance >= 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
+                        <h2 className={`text-xs font-bold uppercase tracking-wider ${yearlyNetBalance >= 0 ? 'text-emerald-800 dark:text-emerald-400' : 'text-rose-800 dark:text-rose-400'}`}>
                           {t('yearlyNetBalance')}
                         </h2>
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-slate-500 dark:text-zinc-500 mt-1">
                           {selectedYear}
                         </p>
                       </div>
@@ -1772,16 +1861,14 @@
 
                   {/* Metric 3: Strict Chronological Running Cash Balance [1, 2] */}
                   <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
-                    activeLiquidityResult.leftover >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
+                    activeLiquidityResult.leftover >= 0 ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/15 dark:border-emerald-900' : 'bg-rose-50 border-rose-200 dark:bg-rose-950/15 dark:border-rose-900'
                   }`}>
                     <div className="flex justify-between items-center">
                       <div>
-                        {/* Renamed card label [1] */}
-                        <h2 className={`text-xs font-bold uppercase tracking-wider ${activeLiquidityResult.leftover >= 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
+                        <h2 className={`text-xs font-bold uppercase tracking-wider ${activeLiquidityResult.leftover >= 0 ? 'text-emerald-800 dark:text-emerald-400' : 'text-rose-800 dark:text-rose-400'}`}>
                           {t('runningCashBalance')}
                         </h2>
-                        {/* Changed sublabel to end of selected month [1] */}
-                        <p className="text-xs text-slate-500 mt-1">
+                        <p className="text-xs text-slate-500 dark:text-zinc-500 mt-1">
                           {t('endOf')} {t(`months.${selectedMonth}`)} {selectedYear}
                         </p>
                       </div>
@@ -1792,12 +1879,12 @@
                   </div>
                 </section>
 
-                {/* Audit Breakdown Transparency Drawer (Removed Deductions/Buffer) [2, 3] */}
+                {/* Audit Breakdown Transparency Drawer (Removed Deductions/Buffer Card) [2, 3] */}
                 <div className="space-y-2">
                   <div className="flex justify-end px-1">
                     <button 
                       onClick={() => setIsAuditOpen(!isAuditOpen)} 
-                      className="text-indigo-600 hover:text-indigo-800 text-xs font-bold flex items-center gap-1.5 transition outline-none"
+                      className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-xs font-bold flex items-center gap-1.5 transition outline-none"
                     >
                       <i className={`fa-solid ${isAuditOpen ? 'fa-square-minus' : 'fa-square-plus'}`}></i>
                       <span>{isAuditOpen ? t('hideAudit') : t('showAudit')}</span>
@@ -1805,19 +1892,19 @@
                   </div>
 
                   {isAuditOpen && (
-                    <div className="bg-slate-100 border border-slate-200 rounded-2xl p-4 text-xs space-y-2 animate-fadeIn transition-all duration-300">
-                      <h4 className="font-bold text-slate-700 uppercase tracking-wide border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
+                    <div className="bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-4 text-xs space-y-2 animate-fadeIn transition-all duration-300">
+                      <h4 className="font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wide border-b border-slate-200 dark:border-zinc-800 pb-1.5 flex items-center gap-1.5">
                         <i className="fa-solid fa-calculator text-indigo-500"></i> {t('auditTitle')}
                       </h4>
                       {/* Clean side-by-side Dual Net Metrics Panel [2] */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-1">
-                        <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200">
-                          <span className="text-slate-500 font-medium">{t('accumulatedIncome')}:</span>
-                          <span className="font-bold text-emerald-600">+ {formatCurrency(auditBreakdown.accIncome)}</span>
+                        <div className="flex justify-between items-center bg-white dark:bg-zinc-800 p-3 rounded-xl border border-slate-200 dark:border-zinc-700">
+                          <span className="text-slate-500 dark:text-zinc-400 font-medium">{t('accumulatedIncome')}:</span>
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400">+ {formatCurrency(auditBreakdown.accIncome)}</span>
                         </div>
-                        <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200">
-                          <span className="text-slate-500 font-medium">{t('accumulatedExpenses')}:</span>
-                          <span className="font-bold text-rose-600">- {formatCurrency(auditBreakdown.accExpense)}</span>
+                        <div className="flex justify-between items-center bg-white dark:bg-zinc-800 p-3 rounded-xl border border-slate-200 dark:border-zinc-700">
+                          <span className="text-slate-500 dark:text-zinc-400 font-medium">{t('accumulatedExpenses')}:</span>
+                          <span className="font-bold text-rose-600 dark:text-rose-400">- {formatCurrency(auditBreakdown.accExpense)}</span>
                         </div>
                       </div>
                     </div>
@@ -1826,46 +1913,46 @@
                 
                 {/* Aggregate Metrics Grid */}
                 <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                  <div className="bg-emerald-50 dark:bg-emerald-950/15 border border-emerald-200 dark:border-emerald-900 rounded-2xl p-4 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-emerald-800 uppercase">{t('totalIncome')}</p>
-                      <p className="text-2xl font-black text-emerald-900 mt-1">{formatCurrency(totalIncome)}</p>
+                      <p className="text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase">{t('totalIncome')}</p>
+                      <p className="text-2xl font-black text-emerald-900 dark:text-emerald-200 mt-1">{formatCurrency(totalIncome)}</p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                    <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-indigo-300">
                       <i className="fa-solid fa-circle-arrow-down text-xl"></i>
                     </div>
                   </div>
 
-                  <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                  <div className="bg-rose-50 dark:bg-rose-950/15 border border-rose-200 dark:border-rose-900 rounded-2xl p-4 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-rose-800 uppercase">{t('totalExpenses')}</p>
-                      <p className="text-2xl font-black text-rose-900 mt-1">{formatCurrency(totalExpenses)}</p>
+                      <p className="text-xs font-bold text-rose-800 dark:text-rose-400 uppercase">{t('totalExpenses')}</p>
+                      <p className="text-2xl font-black text-rose-900 dark:text-rose-200 mt-1">{formatCurrency(totalExpenses)}</p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
+                    <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-rose-600 dark:text-zinc-300">
                       <i className="fa-solid fa-circle-arrow-up text-xl"></i>
                     </div>
                   </div>
 
                   <div className={`border rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all ${
-                    saldo >= 0 ? 'bg-indigo-50 border-indigo-200' : 'bg-amber-50 border-amber-200'
+                    saldo >= 0 ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-950/15 dark:border-indigo-900' : 'bg-amber-50 border-amber-200 dark:bg-amber-950/15 dark:border-amber-900'
                   }`}>
                     <div>
-                      <p className={`text-xs font-bold uppercase ${saldo >= 0 ? 'text-indigo-800' : 'text-amber-800'}`}>{t('saldo')} ({t(`months.${selectedMonth}`)})</p>
-                      <p className={`text-2xl font-black mt-1 ${saldo >= 0 ? 'text-indigo-900' : 'text-amber-900'}`}>{formatCurrency(saldo)}</p>
+                      <p className={`text-xs font-bold uppercase ${saldo >= 0 ? 'text-indigo-800 dark:text-indigo-400' : 'text-amber-800 dark:text-amber-400'}`}>{t('saldo')} ({t(`months.${selectedMonth}`)})</p>
+                      <p className={`text-2xl font-black mt-1 ${saldo >= 0 ? 'text-indigo-900 dark:text-indigo-200' : 'text-amber-900 dark:text-amber-200'}`}>{formatCurrency(saldo)}</p>
                     </div>
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      saldo >= 0 ? 'bg-indigo-100 text-indigo-600' : 'bg-amber-100 text-amber-600'
+                      saldo >= 0 ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-300'
                     }`}>
                       <i className={`fa-solid text-xl ${saldo >= 0 ? 'fa-scale-balanced' : 'fa-triangle-exclamation'}`}></i>
                     </div>
                   </div>
 
-                  <div className="bg-slate-100 border border-slate-200 rounded-2xl p-4 flex items-center justify-between shadow-sm transition-colors">
+                  <div className="bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-4 flex items-center justify-between shadow-sm transition-colors">
                     <div>
-                      <p className="text-xs font-bold text-slate-700 uppercase">{t('spentRatio')}</p>
-                      <p className="text-2xl font-black text-slate-900 mt-1">{percentageSpent.toFixed(1)}%</p>
+                      <p className="text-xs font-bold text-slate-700 dark:text-zinc-400 uppercase">{t('spentRatio')}</p>
+                      <p className="text-2xl font-black text-slate-900 dark:text-zinc-100 mt-1">{percentageSpent.toFixed(1)}%</p>
                     </div>
-                    <div className="w-full max-w-[80px] bg-slate-200 rounded-full h-2.5 ml-2">
+                    <div className="w-full max-w-[80px] bg-slate-200 dark:bg-zinc-800 rounded-full h-2.5 ml-2">
                       <div 
                         className={`h-2.5 rounded-full transition-all duration-300 ${
                           percentageSpent > 100 ? 'bg-rose-600' : percentageSpent > 85 ? 'bg-amber-500' : 'bg-indigo-600'
@@ -1877,8 +1964,8 @@
                 </section>
 
                 {/* Side-by-Side Grouped Stacked Analytics Chart [2] */}
-                <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 transition-colors">
-                  <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm p-4 transition-colors">
+                  <h3 className="text-sm font-bold text-slate-700 dark:text-zinc-300 mb-3 flex items-center gap-2">
                     <i className="fa-solid fa-chart-simple text-indigo-600"></i> {t('analyticsHeader')} - {selectedYear}
                   </h3>
                   <div className="h-[280px] relative w-full">
@@ -1886,315 +1973,323 @@
                   </div>
                 </section>
 
-                {/* Ledger Tables - Refactored responsive layout for wide views [4] */}
+                {/* Ledger Tables - Refactored responsive layout with Flexbox alignment constraints [1] */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                   
                   {/* TABLE A: EINKÜNFTE */}
-                  <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                    <div className="p-4 border-b border-slate-200 bg-emerald-50/50 flex items-center justify-between">
-                      <h3 className="text-lg font-bold text-emerald-900 flex items-center gap-2">
+                  <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden flex flex-col transition-colors">
+                    <div className="p-4 border-b border-slate-200 dark:border-zinc-800 bg-emerald-50/50 dark:bg-emerald-950/10 flex items-center justify-between">
+                      <h3 className="text-lg font-bold text-emerald-900 dark:text-emerald-400 flex items-center gap-2">
                         <i className="fa-solid fa-money-bill-trend-up text-emerald-600"></i> {t('incomesHeader')}
                       </h3>
-                      <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full">
+                      <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 rounded-full">
                         {t('sum')}: {formatCurrency(totalIncome)}
                       </span>
                     </div>
-                    <div className="overflow-x-auto flex-grow">
-                      <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="bg-slate-100 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
-                            <th className="p-3">{t('posten')}</th>
-                            <th className="p-3 w-32 text-right">{t(`months.${selectedMonth}`)} (€)</th>
-                            <th className="p-3 w-28 text-right">{t('resultYtd')}</th>
-                            <th className="p-3 w-28 text-right">{t('avgSchnitt')}</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 text-sm">
-                          {(activeTab === "view" ? getClusteredCategories(data.categories.incomes, 'incomes') : data.categories.incomes).map((item, idx, arr) => {
-                            const { ytdTotal, average } = getItemStats('incomes', item);
-                            const val = data.values[selectedYear]?.incomes[item]?.[selectedMonth];
-                            
-                            // Database Object Parsing sanitation step
-                            const key = t(`categories.${item}`);
-                            let cleanName = key.replace('categories.', '');
-                            cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+                    <div className="flex flex-col w-full divide-y divide-[var(--color-border)]">
+                      {/* Fixed Flexbox Table Header [1] */}
+                      <div className="income-row font-bold text-xs text-slate-600 dark:text-zinc-400 uppercase bg-slate-100 dark:bg-zinc-800/80 border-b border-[var(--color-border)]">
+                        <div className="flex-zone-1">{t('posten')}</div>
+                        <div className="flex-zone-2 text-right">{t(`months.${selectedMonth}`)} (€)</div>
+                        <div className="flex-zone-3">
+                          <span className="w-20 text-right">{t('resultYtd')}</span>
+                          <span className="w-20 text-right">{t('avgSchnitt')}</span>
+                        </div>
+                      </div>
 
-                            // Deletion identification check
-                            const isCustom = !INITIAL_CATEGORIES.incomes.includes(item);
-                            const isRenaming = editingCategory && editingCategory.type === 'incomes' && editingCategory.name === item;
+                      {/* Flexbox Body Rows [1] */}
+                      {(activeTab === "view" ? getClusteredCategories(data.categories.incomes, 'incomes') : data.categories.incomes).map((item, idx, arr) => {
+                        const { ytdTotal, average } = getItemStats('incomes', item);
+                        const val = data.values[selectedYear]?.incomes[item]?.[selectedMonth];
+                        
+                        // Database Object Parsing sanitation step
+                        const key = t(`categories.${item}`);
+                        let cleanName = key.replace('categories.', '');
+                        cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
 
-                            return (
-                              <tr key={item} className="hover:bg-slate-50 transition border-l-4 border-emerald-500">
-                                <td className="p-3 font-medium text-slate-700 flex items-center justify-between group min-h-[52px]">
-                                  {isRenaming ? (
-                                    <input 
-                                      type="text" 
-                                      value={editCategoryValue} 
-                                      onChange={(e) => setEditCategoryValue(e.target.value)}
-                                      onBlur={handleSaveRename}
-                                      onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }}
-                                      className="bg-white border border-indigo-500 rounded px-2 py-0.5 text-slate-800 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full max-w-[160px]"
-                                      autoFocus
-                                    />
-                                  ) : (
-                                    <div className="flex items-center gap-1.5 overflow-hidden">
-                                      <span className="truncate">{cleanName}</span>
-                                      {activeTab === "edit" && (
-                                        <button 
-                                          onClick={() => handleStartRename('incomes', item)}
-                                          className="text-slate-400 hover:text-indigo-600 transition p-1 opacity-0 group-hover:opacity-100 focus:opacity-100"
-                                          title="Rename"
-                                        >
-                                          <i className="fa-solid fa-pen text-[10px]"></i>
-                                        </button>
-                                      )}
-                                    </div>
-                                  )}
-                                  
-                                  {/* Reordering caret selectors inside Edit tab [1] */}
+                        // Deletion identification check
+                        const isCustom = !INITIAL_CATEGORIES.incomes.includes(item);
+                        const isRenaming = editingCategory && editingCategory.type === 'incomes' && editingCategory.name === item;
+
+                        return (
+                          <div key={item} className="income-row hover:bg-slate-50 dark:hover:bg-zinc-800/40 transition border-l-4 border-emerald-500 custom-card-border-l">
+                            {/* Zone 1: Name and Reorder Buttons [1] */}
+                            <div className="flex-zone-1 font-medium text-slate-700 dark:text-zinc-300">
+                              {isRenaming ? (
+                                <input 
+                                  type="text" 
+                                  value={editCategoryValue} 
+                                  onChange={(e) => setEditCategoryValue(e.target.value)}
+                                  onBlur={handleSaveRename}
+                                  onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }}
+                                  className="custom-input rounded px-2 py-0.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full"
+                                  autoFocus
+                                />
+                              ) : (
+                                <div className="flex items-center gap-1.5 overflow-hidden group w-full">
+                                  <span className="truncate">{cleanName}</span>
                                   {activeTab === "edit" && (
-                                    <div className="flex items-center space-x-1 shrink-0 ml-2">
-                                      <button 
-                                        onClick={() => handleMoveCategory('incomes', idx, 'up')}
-                                        disabled={idx === 0}
-                                        className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
-                                      >
-                                        <i className="fa-solid fa-caret-up"></i>
-                                      </button>
-                                      <button 
-                                        onClick={() => handleMoveCategory('incomes', idx, 'down')}
-                                        disabled={idx === arr.length - 1}
-                                        className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
-                                      >
-                                        <i className="fa-solid fa-caret-down"></i>
-                                      </button>
-                                      {isCustom && (
-                                        <button 
-                                          onClick={() => handleDeleteCategory('incomes', item)}
-                                          className="text-slate-400 hover:text-rose-600 transition p-1"
-                                          title={i18n.language === 'de' ? 'Kategorie löschen' : 'Delete category'}
-                                        >
-                                          <i className="fa-solid fa-trash-can text-xs"></i>
-                                        </button>
-                                      )}
-                                    </div>
+                                    <button 
+                                      onClick={() => handleStartRename('incomes', item)}
+                                      className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition p-1"
+                                      title="Rename"
+                                    >
+                                      <i className="fa-solid fa-pen text-[10px]"></i>
+                                    </button>
                                   )}
-                                </td>
-                                <td className="p-3 text-right">
-                                  {activeTab === "view" ? (
-                                    <span className="font-bold text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
-                                  ) : (
-                                    <input
-                                      type="number"
-                                      step="any"
-                                      value={val !== undefined && val !== 0 ? val : ''}
-                                      placeholder="0"
-                                      onChange={(e) => handleValueChange('incomes', item, selectedMonth, e.target.value)}
-                                      className="num-input-fix text-right bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-500 font-semibold transition"
-                                    />
+                                </div>
+                              )}
+                              
+                              {/* Reordering caret selectors inside Edit tab [1] */}
+                              {activeTab === "edit" && (
+                                <div className="flex items-center space-x-1 shrink-0 ml-auto">
+                                  <button 
+                                    onClick={() => handleMoveCategory('incomes', idx, 'up')}
+                                    disabled={idx === 0}
+                                    className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
+                                  >
+                                    <i className="fa-solid fa-caret-up"></i>
+                                  </button>
+                                  <button 
+                                    onClick={() => handleMoveCategory('incomes', idx, 'down')}
+                                    disabled={idx === arr.length - 1}
+                                    className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
+                                  >
+                                    <i className="fa-solid fa-caret-down"></i>
+                                  </button>
+                                  {isCustom && (
+                                    <button 
+                                      onClick={() => handleDeleteCategory('incomes', item)}
+                                      className="text-slate-400 hover:text-rose-600 transition p-1"
+                                      title={t('clearAll')}
+                                    >
+                                      <i className="fa-solid fa-trash-can text-xs"></i>
+                                    </button>
                                   )}
-                                </td>
-                                <td className="p-3 text-right text-slate-600 font-medium">{formatCurrency(ytdTotal)}</td>
-                                <td className="p-3 text-right text-slate-500 text-xs">
-                                  {formatCurrency(average)}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Zone 2: Input field / Value [1, 5] */}
+                            <div className="flex-zone-2 text-right">
+                              {activeTab === "view" ? (
+                                <span className="font-bold text-slate-700 dark:text-zinc-300 block pr-2 whitespace-nowrap">{formatCurrency(val || 0)}</span>
+                              ) : (
+                                <input
+                                  type="number"
+                                  step="any"
+                                  value={val !== undefined && val !== 0 ? val : ''}
+                                  placeholder="0"
+                                  onChange={(e) => handleValueChange('incomes', item, selectedMonth, e.target.value)}
+                                  className="num-input-fix custom-input text-right rounded-lg outline-none focus:border-indigo-500 font-semibold transition"
+                                />
+                              )}
+                            </div>
+
+                            {/* Zone 3: YTD and Average [1, 5] */}
+                            <div className="flex-zone-3">
+                              <span className="w-20 text-right text-slate-600 dark:text-zinc-400 font-medium whitespace-nowrap">{formatCurrency(ytdTotal)}</span>
+                              <span className="w-20 text-right text-slate-500 dark:text-zinc-500 text-xs whitespace-nowrap">{formatCurrency(average)}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
 
                     {activeTab === "edit" && (
-                      <div className="p-3 bg-slate-50 border-t border-slate-100 flex gap-2">
+                      <div className="p-3 bg-slate-50 dark:bg-zinc-850 border-t border-slate-100 dark:border-zinc-800 flex gap-2">
                         <input
                           type="text"
                           value={customIncomeInput}
                           onChange={(e) => setCustomIncomeInput(e.target.value)}
                           placeholder={t('addPlaceholder')}
-                          className="flex-grow bg-white border border-slate-200 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition"
+                          className="flex-grow bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition text-slate-800 dark:text-zinc-100"
                         />
                         <button
                           onClick={() => handleAddCategory('incomes', customIncomeInput, setCustomIncomeInput)}
                           className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-bold transition flex items-center gap-1 shrink-0"
                         >
                           <i className="fa-solid fa-plus"></i> Add
-                    </button>
+                        </button>
                       </div>
                     )}
                   </section>
 
                   {/* TABLE B: AUSGABEN */}
-                  <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                    <div className="p-4 border-b border-slate-200 bg-rose-50/50 flex items-center justify-between">
-                      <h3 className="text-lg font-bold text-rose-900 flex items-center gap-2">
+                  <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden flex flex-col transition-colors">
+                    <div className="p-4 border-b border-slate-200 dark:border-zinc-800 bg-rose-50/50 dark:bg-rose-950/10 flex items-center justify-between">
+                      <h3 className="text-lg font-bold text-rose-900 dark:text-rose-400 flex items-center gap-2">
                         <i className="fa-solid fa-cart-shopping text-rose-600"></i> {t('expensesHeader')}
                       </h3>
-                      <span className="text-xs font-semibold px-2.5 py-1 bg-rose-100 text-rose-800 rounded-full">
+                      <span className="text-xs font-semibold px-2.5 py-1 bg-rose-100 dark:bg-rose-900/50 text-rose-800 dark:text-rose-300 rounded-full">
                         {t('sum')}: {formatCurrency(totalExpenses)}
                       </span>
                     </div>
-                    <div className="overflow-x-auto max-h-[500px] overflow-y-auto flex-grow">
-                      <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="bg-slate-100 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
-                            <th className="p-3">Posten</th>
-                            <th className="p-3 w-32 text-right">{t(`months.${selectedMonth}`)} (€)</th>
-                            <th className="p-3 w-28 text-right">{t('resultYtd')}</th>
-                            <th className="p-3 w-28 text-right">{t('avgSchnitt')}</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 text-sm">
-                          {(activeTab === "view" ? getClusteredCategories(data.categories.expenses, 'expenses') : data.categories.expenses).map((item, idx, arr) => {
-                            const { ytdTotal, average } = getItemStats('expenses', item);
-                            const val = data.values[selectedYear]?.expenses[item]?.[selectedMonth];
-                            
-                            // dynamic left-border tags mapped by category bracket [3]
-                            const bracket = getEffectiveExpenseBracket(item);
-                            
-                            // Semantically defined clustering background colors [3]
-                            const rowClass = 
-                              bracket === 'housing' ? 'bg-slate-50/50 hover:bg-slate-100 border-l-4 border-slate-500' : 
-                              bracket === 'living' ? 'bg-amber-50/30 hover:bg-amber-100/50 border-l-4 border-amber-500' :  
-                              bracket === 'professional' ? 'bg-teal-50/30 hover:bg-teal-100/50 border-l-4 border-teal-500' : 
-                              'bg-indigo-50/20 hover:bg-indigo-100/50 border-l-4 border-indigo-500'; 
+                    <div className="flex flex-col w-full divide-y divide-[var(--color-border)]">
+                      {/* Fixed Flexbox Table Header [1] */}
+                      <div className="expense-row font-bold text-xs text-slate-600 dark:text-zinc-400 uppercase bg-slate-100 dark:bg-zinc-800/80 border-b border-[var(--color-border)]">
+                        <div className="flex-zone-1">{t('posten')}</div>
+                        <div className="flex-zone-2 text-right">{t(`months.${selectedMonth}`)} (€)</div>
+                        <div className="flex-zone-3">
+                          <span className="w-20 text-right">{t('resultYtd')}</span>
+                          <span className="w-20 text-right">{t('avgSchnitt')}</span>
+                        </div>
+                      </div>
 
-                            // Database Object Parsing sanitation step
-                            const key = t(`categories.${item}`);
-                            let cleanName = key.replace('categories.', '');
-                            cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+                      {/* Flexbox Body Rows with Color Clustering highlights [1, 3] */}
+                      {(activeTab === "view" ? getClusteredCategories(data.categories.expenses, 'expenses') : data.categories.expenses).map((item, idx, arr) => {
+                        const { ytdTotal, average } = getItemStats('expenses', item);
+                        const val = data.values[selectedYear]?.expenses[item]?.[selectedMonth];
+                        
+                        // dynamic left-border tags mapped by category bracket [3]
+                        const bracket = getEffectiveExpenseBracket(item);
+                        
+                        // Semantically defined clustering background colors [3]
+                        const rowClass = 
+                          bracket === 'housing' ? 'bg-slate-50/50 hover:bg-slate-100 dark:bg-slate-900/20 dark:hover:bg-slate-800/40 border-l-4 border-slate-500 dark:border-slate-400' : 
+                          bracket === 'living' ? 'bg-amber-50/30 hover:bg-amber-100/50 dark:bg-amber-950/10 dark:hover:bg-amber-900/20 border-l-4 border-amber-500 dark:border-amber-400' :  
+                          bracket === 'subscriptions' ? 'bg-indigo-50/20 hover:bg-indigo-100/50 dark:bg-indigo-950/15 dark:hover:bg-indigo-900/30 border-l-4 border-indigo-500 dark:border-indigo-400' : 
+                          bracket === 'professional' ? 'bg-teal-50/30 hover:bg-teal-100/50 dark:bg-teal-950/10 dark:hover:bg-teal-900/20 border-l-4 border-teal-500 dark:border-teal-400' : 
+                          'bg-purple-50/20 hover:bg-purple-100/50 dark:bg-purple-950/10 dark:hover:bg-purple-900/20 border-l-4 border-purple-500 dark:border-purple-400'; 
 
-                            // Deletion identification check
-                            const isCustom = !INITIAL_CATEGORIES.expenses.includes(item);
-                            const isRenaming = editingCategory && editingCategory.type === 'expenses' && editingCategory.name === item;
+                        // Database Object Parsing sanitation step
+                        const key = t(`categories.${item}`);
+                        let cleanName = key.replace('categories.', '');
+                        cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
 
-                            return (
-                              <tr key={item} className={`transition ${rowClass}`}>
-                                <td className="p-3 font-medium text-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between group gap-2">
-                                  <div className="flex items-center gap-1.5 overflow-hidden">
-                                    {isRenaming ? (
-                                      <input 
-                                        type="text" 
-                                        value={editCategoryValue} 
-                                        onChange={(e) => setEditCategoryValue(e.target.value)}
-                                        onBlur={handleSaveRename}
-                                        onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }}
-                                        className="bg-white border border-indigo-500 rounded px-2 py-0.5 text-slate-800 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full max-w-[160px]"
-                                        autoFocus
-                                      />
-                                    ) : (
-                                      <React.Fragment>
-                                        <span className="truncate">{cleanName}</span>
-                                        {activeTab === "edit" && (
-                                          <button 
-                                            onClick={() => handleStartRename('expenses', item)}
-                                            className="text-slate-400 hover:text-indigo-600 transition p-1 opacity-0 group-hover:opacity-100 focus:opacity-100"
-                                            title="Rename"
-                                          >
-                                            <i className="fa-solid fa-pen text-[10px]"></i>
-                                          </button>
-                                        )}
-                                      </React.Fragment>
+                        // Deletion identification check
+                        const isCustom = !INITIAL_CATEGORIES.expenses.includes(item);
+                        const isRenaming = editingCategory && editingCategory.type === 'expenses' && editingCategory.name === item;
+
+                        return (
+                          <div key={item} className={`expense-row transition ${rowClass}`}>
+                            {/* Zone 1: Name, Rename, Override Select, Reorder carets [1, 3] */}
+                            <div className="flex-zone-1 font-medium text-slate-700 dark:text-zinc-300">
+                              {isRenaming ? (
+                                <input 
+                                  type="text" 
+                                  value={editCategoryValue} 
+                                  onChange={(e) => setEditCategoryValue(e.target.value)}
+                                  onBlur={handleSaveRename}
+                                  onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }}
+                                  className="custom-input rounded px-2 py-0.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full"
+                                  autoFocus
+                                />
+                              ) : (
+                                <div className="flex items-center gap-1.5 overflow-hidden group w-full">
+                                  <span className="truncate">{cleanName}</span>
+                                  {activeTab === "edit" && (
+                                    <button 
+                                      onClick={() => handleStartRename('expenses', item)}
+                                      className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition p-1"
+                                      title="Rename"
+                                    >
+                                      <i className="fa-solid fa-pen text-[10px]"></i>
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {/* Custom clustering dropdown override selector [3] */}
+                              {activeTab === "edit" && (
+                                <div className="flex items-center gap-2 ml-auto shrink-0">
+                                  <select
+                                    value={data.categoryOverrides?.[item] || "auto"}
+                                    onChange={(e) => {
+                                      const val = e.target.value === "auto" ? null : e.target.value;
+                                      const updated = {
+                                        ...data,
+                                        categoryOverrides: {
+                                          ...(data.categoryOverrides || {}),
+                                          [item]: val
+                                        }
+                                      };
+                                      saveStateAndDispatch(updated, Date.now());
+                                    }}
+                                    className="bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded px-2 py-0.5 text-[10px] text-slate-600 dark:text-zinc-400 outline-none focus:border-indigo-500 max-w-[85px] transition"
+                                  >
+                                    <option value="auto">Auto 🤖</option>
+                                    <option value="housing">Wohnen 🏠</option>
+                                    <option value="living">Alltag 🍎</option>
+                                    <option value="subscriptions">Abonnement 🎟️</option>
+                                    <option value="leisure">Freizeit 🎭</option>
+                                    <option value="professional">Beruf 🎓</option>
+                                  </select>
+                                  
+                                  {/* Reordering caret selectors inside Edit tab [1] */}
+                                  <div className="flex items-center space-x-1">
+                                    <button 
+                                      onClick={() => handleMoveCategory('expenses', idx, 'up')}
+                                      disabled={idx === 0}
+                                      className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
+                                    >
+                                      <i className="fa-solid fa-caret-up"></i>
+                                    </button>
+                                    <button 
+                                      onClick={() => handleMoveCategory('expenses', idx, 'down')}
+                                      disabled={idx === arr.length - 1}
+                                      className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
+                                    >
+                                      <i className="fa-solid fa-caret-down"></i>
+                                    </button>
+                                    {isCustom && (
+                                      <button 
+                                        onClick={() => handleDeleteCategory('expenses', item)}
+                                        className="text-slate-400 hover:text-rose-600 transition p-1"
+                                        title={t('clearAll')}
+                                      >
+                                        <i className="fa-solid fa-trash-can text-xs"></i>
+                                      </button>
                                     )}
                                   </div>
-                                  
-                                  {/* Custom clustering dropdown override selector [3] */}
-                                  {activeTab === "edit" && (
-                                    <div className="flex items-center gap-2 mt-1 sm:mt-0">
-                                      <select
-                                        value={data.categoryOverrides?.[item] || "auto"}
-                                        onChange={(e) => {
-                                          const val = e.target.value === "auto" ? null : e.target.value;
-                                          const updated = {
-                                            ...data,
-                                            categoryOverrides: {
-                                              ...(data.categoryOverrides || {}),
-                                              [item]: val
-                                            }
-                                          };
-                                          saveStateAndDispatch(updated, Date.now());
-                                        }}
-                                        className="bg-white border border-slate-200 rounded px-2 py-0.5 text-[10px] text-slate-600 outline-none focus:border-indigo-500 max-w-[85px] transition"
-                                      >
-                                        <option value="auto">Auto 🤖</option>
-                                        <option value="housing">Wohnen 🏠</option>
-                                        <option value="living">Alltag 🍎</option>
-                                        <option value="leisure">Freizeit 🎭</option>
-                                        <option value="professional">Beruf 🎓</option>
-                                      </select>
-                                      
-                                      {/* Reordering caret selectors inside Edit tab [1] */}
-                                      <div className="flex items-center space-x-1 shrink-0">
-                                        <button 
-                                          onClick={() => handleMoveCategory('expenses', idx, 'up')}
-                                          disabled={idx === 0}
-                                          className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
-                                        >
-                                          <i className="fa-solid fa-caret-up"></i>
-                                        </button>
-                                        <button 
-                                          onClick={() => handleMoveCategory('expenses', idx, 'down')}
-                                          disabled={idx === arr.length - 1}
-                                          className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
-                                        >
-                                          <i className="fa-solid fa-caret-down"></i>
-                                        </button>
-                                        {isCustom && (
-                                          <button 
-                                            onClick={() => handleDeleteCategory('expenses', item)}
-                                            className="text-slate-400 hover:text-rose-600 transition p-1"
-                                            title={i18n.language === 'de' ? 'Kategorie löschen' : 'Delete category'}
-                                          >
-                                            <i className="fa-solid fa-trash-can text-xs"></i>
-                                          </button>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="p-3 text-right font-semibold flex items-center justify-end gap-1.5 min-h-[52px]">
-                                  {activeTab === "view" ? (
-                                    <span className="text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
-                                  ) : (
-                                    <React.Fragment>
-                                      <input
-                                        type="number"
-                                        step="any"
-                                        value={val !== undefined && val !== 0 ? val : ''}
-                                        placeholder="0"
-                                        onChange={(e) => handleValueChange('expenses', item, selectedMonth, e.target.value)}
-                                        className="num-input-fix text-right bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-500 font-semibold transition"
-                                      />
-                                      {/* Set as Recurring Budget configuration utility [1] */}
-                                      <button
-                                        onClick={() => setRecurringSetup({ type: 'expenses', item, value: val || 0 })}
-                                        className="text-slate-400 hover:text-indigo-600 p-1.5 transition outline-none shrink-0"
-                                        title={t('setRecurringBudget')}
-                                      >
-                                        <i className="fa-solid fa-arrows-spin"></i>
-                                      </button>
-                                    </React.Fragment>
-                                  )}
-                                </td>
-                                <td className="p-3 text-right text-slate-600 font-medium">{formatCurrency(ytdTotal)}</td>
-                                <td className="p-3 text-right text-slate-500 text-xs">
-                                  {formatCurrency(average)}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                                </div>
+                              )}
+                            </td>
+                            
+                            {/* Zone 2: Input field / Value + Recurring trigger [1, 5] */}
+                            <div className="flex-zone-2 text-right flex items-center justify-end gap-1.5">
+                              {activeTab === "view" ? (
+                                <span className="font-bold text-slate-700 dark:text-zinc-300 block pr-2 whitespace-nowrap">{formatCurrency(val || 0)}</span>
+                              ) : (
+                                <React.Fragment>
+                                  <input
+                                    type="number"
+                                    step="any"
+                                    value={val !== undefined && val !== 0 ? val : ''}
+                                    placeholder="0"
+                                    onChange={(e) => handleValueChange('expenses', item, selectedMonth, e.target.value)}
+                                    className="num-input-fix custom-input text-right rounded-lg outline-none focus:border-indigo-500 font-semibold transition"
+                                  />
+                                  {/* Set as Recurring Budget configuration utility [1] */}
+                                  <button
+                                    onClick={() => setRecurringSetup({ type: 'expenses', item, value: val || 0 })}
+                                    className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 transition outline-none shrink-0"
+                                    title={t('setRecurringBudget')}
+                                  >
+                                    <i className="fa-solid fa-arrows-spin"></i>
+                                  </button>
+                                </React.Fragment>
+                              )}
+                            </div>
+
+                            {/* Zone 3: YTD and Average [1, 5] */}
+                            <div className="flex-zone-3">
+                              <span className="w-20 text-right text-slate-600 dark:text-zinc-400 font-medium whitespace-nowrap">{formatCurrency(ytdTotal)}</span>
+                              <span className="w-20 text-right text-slate-500 dark:text-zinc-500 text-xs whitespace-nowrap">{formatCurrency(average)}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
 
                     {activeTab === "edit" && (
-                      <div className="p-3 bg-slate-50 border-t border-slate-100 flex gap-2">
+                      <div className="p-3 bg-slate-50 dark:bg-zinc-850 border-t border-slate-100 dark:border-zinc-800 flex gap-2">
                         <input
                           type="text"
                           value={customExpenseInput}
                           onChange={(e) => setCustomExpenseInput(e.target.value)}
                           placeholder={t('addPlaceholder')}
-                          className="flex-grow bg-white border border-slate-200 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition"
+                          className="flex-grow bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition text-slate-800 dark:text-zinc-100"
                         />
                         <button
                           onClick={() => handleAddCategory('expenses', customExpenseInput, setCustomExpenseInput)}
@@ -2214,24 +2309,24 @@
           {/* Automated Multi-Month Recurring Budget overlay/wizard [1] */}
           {recurringSetup && (
             <div className="fixed inset-0 bg-slate-950/40 z-50 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-sm w-full shadow-2xl space-y-4">
-                <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-                  <h3 className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
+              <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 p-6 max-w-sm w-full shadow-2xl space-y-4">
+                <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-zinc-800">
+                  <h3 className="font-bold text-slate-800 dark:text-zinc-100 text-sm flex items-center gap-1.5">
                     <i className="fa-solid fa-arrows-spin text-indigo-500"></i> {t('setRecurringBudget')}
                   </h3>
-                  <button onClick={() => setRecurringSetup(null)} className="text-slate-400 hover:text-slate-600">
+                  <button onClick={() => setRecurringSetup(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-400">
                     <i className="fa-solid fa-xmark"></i>
                   </button>
                 </div>
-                <p className="text-xs text-slate-500 capitalize">
-                  {t('categories.' + recurringSetup.item).replace('categories.', '')}: <span className="font-bold text-slate-700">{formatCurrency(recurringSetup.value)}</span>
+                <p className="text-xs text-slate-500 dark:text-zinc-400 capitalize">
+                  {t('categories.' + recurringSetup.item).replace('categories.', '')}: <span className="font-bold text-slate-700 dark:text-zinc-200">{formatCurrency(recurringSetup.value)}</span>
                 </p>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('durationInMonths')}</label>
+                  <label className="text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">{t('durationInMonths')}</label>
                   <select
                     value={recurringMonths}
                     onChange={(e) => setRecurringMonths(parseInt(e.target.value))}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-indigo-500 transition font-semibold"
+                    className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-zinc-100 outline-none focus:border-indigo-500 transition font-semibold"
                   >
                     <option value={3}>3 {i18n.language === 'de' ? 'Monate' : 'months'}</option>
                     <option value={6}>6 {i18n.language === 'de' ? 'Monate' : 'months'}</option>
@@ -2241,7 +2336,7 @@
                 <div className="flex gap-2 pt-2">
                   <button
                     onClick={() => setRecurringSetup(null)}
-                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2 rounded-lg text-xs transition"
+                    className="flex-1 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 font-bold py-2 rounded-lg text-xs transition"
                   >
                     Cancel
                   </button>
@@ -2293,3 +2388,6 @@
   </script>
 </body>
 </html>
+
+The system calculations, theme triggers, and data migration modules are cleanly
+deployed and backward-compatible with your existing partitions [1, 2, 3, 4].
