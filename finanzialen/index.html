@@ -1,3 +1,28 @@
+Here is your completely upgraded, unfragmented codebase for index.html.
+
+Major Upgrades Included
+
+1.  Adaptive Month-to-Month Liquidity Engine: Refactored the entire monthly
+    aggregation engine to support strict chronological roll-overs [1]. It starts
+    from a customizable Initial Savings Base (Startkapital), then rolls over net
+    leftovers continuously month-by-month starting in May 2026 [1, 5]. The
+    result is displayed as Verfügbares Gesamtguthaben (Total Available
+    Liquidity).
+2.  Dedicated Annual Overview Tab: Integrated a navigation track option titled
+    Jahresanalyse (Annual Overview) [5]. This view dynamically plots
+    interactive, sorted Chart.js expense breakdowns, summaries on peak
+    categories, highest spending months, annual savings rates, and a complete
+    exportable multi-month grid.
+3.  Manual Category Group Overrides: Added a selection control next to each
+    category in Edit mode [6]. This allows you to manually force any item into a
+    specific cluster (Wohnen, Alltag, Freizeit, Beruf), permanently overriding
+    the automated semantic clustering engine in both IndexedDB and Firestore
+    [3, 6].
+4.  Clean UI Input Elements: Removed the browser-native spinner controls on
+    input elements via injected CSS properties.
+
+File: index.html
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -19,6 +44,26 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4f46e5">
+  
+  <style>
+    /* Remove native numeric increment step controls [4] */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    input[type="number"] {
+        -moz-appearance: textfield;
+    }
+    /* Simple custom scrollbar wrapper */
+    .scrollbar-none::-webkit-scrollbar {
+      display: none;
+    }
+    .scrollbar-none {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
   <div id="root"></div>
@@ -84,12 +129,6 @@
       ]
     };
 
-    // Isolated tracking of fixed one-time assets / costs [1]
-    const isOneTimeAssetOrCost = (posten) => {
-      const p = posten.toLowerCase();
-      return p.includes("kaution") || p.includes("savings") || p.includes("deposit");
-    };
-
     const getExpenseBracket = (posten) => {
       const housing = ["Hause mieten", "Hause kaution", "strom ⚡", "Gas/ Heißung", "radio", "internet/ Handy"];
       const living = ["Lebensmittel 🍞🍲", "Hausrat 🛋️", "transport/ tickets", "kleidung"];
@@ -148,13 +187,19 @@
         yearlyNetBalance: "Jahressaldo", 
         overallNetBalance: "Gesamtsaldo", 
         allTimeScope: "Gesamter Zeitraum",
-        oneTime: "Einmalig", // One-time asset identifier [1]
         showAudit: "Berechnung prüfen", // Audit Panel [3]
         hideAudit: "Breakdown verbergen",
-        auditTitle: "Audit-Aufschlüsselung",
-        accumulatedIncome: "Akkumulierte Einkünfte",
-        accumulatedExpenses: "Akkumulierte Ausgaben",
-        activeDeductions: "Deductions/Buffer (Einmalig)",
+        auditTitle: "Audit-Aufschlüsselung (Gesamter Zeitraum)",
+        accumulatedIncome: "Gesamteinnahmen", // Refactored [2]
+        accumulatedExpenses: "Gesamtausgaben", // Refactored [2]
+        initialSavingsLabel: "Startkapital (Foundation)",
+        totalAvailableLiquidity: "Verfügbares Gesamtguthaben", // Liquidity [1]
+        annualOverview: "Jahresanalyse", // Annual tab [2]
+        savingsRate: "Sparsatz des Jahres",
+        peakSpendingCategory: "Höchste Ausgabenkategorie",
+        highestExpenseMonth: "Ausgabenstärkster Monat",
+        noData: "Keine Daten vorhanden",
+        oneTimeOverride: "Gruppierung anpassen", // Custom override [3]
         months: {
           Jan: "Jan", Feb: "Feb", Mrz: "Mrz", Apr: "Apr", Mai: "Mai", Jun: "Jun",
           Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Okt", Nov: "Nov", Dez: "Dez"
@@ -232,13 +277,19 @@
         yearlyNetBalance: "Yearly Net Balance", 
         overallNetBalance: "Overall Balance", 
         allTimeScope: "All-Time Timeline",
-        oneTime: "One-Time", // One-time asset identifier [1]
         showAudit: "Show Calculation Breakdown", // Audit Panel [3]
         hideAudit: "Hide Breakdown",
-        auditTitle: "Audit Calculation Breakdown",
-        accumulatedIncome: "Total Accumulated Income",
-        accumulatedExpenses: "Total Accumulated Expenses",
-        activeDeductions: "Active Deductions/Buffer",
+        auditTitle: "Audit Calculation Breakdown (All-Time)",
+        accumulatedIncome: "Total Accumulated Income", // Refactored [2]
+        accumulatedExpenses: "Total Accumulated Expenses", // Refactored [2]
+        initialSavingsLabel: "Start Capital (Savings)",
+        totalAvailableLiquidity: "Total Available Liquidity", // Liquidity [1]
+        annualOverview: "Annual Overview", // Annual tab [2]
+        savingsRate: "Yearly Savings Rate",
+        peakSpendingCategory: "Peak Spending Category",
+        highestExpenseMonth: "Highest Spending Month",
+        noData: "No Data Recorded",
+        oneTimeOverride: "Override Color Bracket", // Custom override [3]
         months: {
           Jan: "Jan", Feb: "Feb", Mrz: "Mar", Apr: "Apr", Mai: "May", Jun: "Jun",
           Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Oct", Nov: "Nov", Dez: "Dec"
@@ -321,7 +372,9 @@
           incomes: [...INITIAL_CATEGORIES.incomes],
           expenses: [...INITIAL_CATEGORIES.expenses]
         },
-        values: {}
+        values: {},
+        initialSavingsBase: 5000, // Safe capital default [1]
+        categoryOverrides: {} // Multi-month custom mapping overrides [3]
       };
       ["2026", "2027", "2028"].forEach(year => {
         state.values[year] = { incomes: {}, expenses: {} };
@@ -346,7 +399,9 @@
           incomes: [...(loadedState.categories?.incomes || INITIAL_CATEGORIES.incomes)],
           expenses: [...(loadedState.categories?.expenses || INITIAL_CATEGORIES.expenses)]
         },
-        values: { ...(loadedState.values || {}) }
+        values: { ...(loadedState.values || {}) },
+        initialSavingsBase: loadedState.initialSavingsBase !== undefined ? loadedState.initialSavingsBase : 5000,
+        categoryOverrides: loadedState.categoryOverrides || {}
       };
 
       // Non-destructively append any missing base categories to ensure safe structural initialization
@@ -466,9 +521,20 @@
 
       const chartRef = useRef(null);
       const chartInstanceRef = useRef(null);
+      const annualChartRef = useRef(null); // Ref for annual report view [2]
+      const annualChartInstanceRef = useRef(null);
       const fileInputRef = useRef(null);
 
+      // Manual Category Overrides Mapping [3]
+      const getEffectiveExpenseBracket = (posten) => {
+        if (data.categoryOverrides && data.categoryOverrides[posten]) {
+          return data.categoryOverrides[posten];
+        }
+        return getExpenseBracket(posten);
+      };
+
       useEffect(() => {
+        if (selectedMonth === "AnnualOverview") return; // Keep tab intact [2]
         const validMonths = getMonthsForYear(selectedYear);
         if (!validMonths.includes(selectedMonth)) {
           setSelectedMonth(validMonths[0]);
@@ -492,7 +558,7 @@
         // Lock database references to prevent structural siloing [1]
         const unsubscribe = db.collection('monthly_logs').doc('house_finanzen_state')
           .onSnapshot(async (doc) => {
-            // Explicitly clear memory buffer variables inside real-time callback [2]
+            // Explicitly clear calculation memory buffer variables inside callback to prevent duplication [2]
             let snapshotIncomesSum = 0;
             let snapshotExpensesSum = 0;
             
@@ -531,8 +597,57 @@
         };
       }, [data]);
 
+      // Dynamic chronological timeline roll-over calculator [1]
+      const chronologicalTimelineResult = useMemo(() => {
+        const resultSequence = {};
+        let runningGuthaben = parseFloat(data.initialSavingsBase) || 0;
+
+        // Order across full active years strictly [1]
+        const targetSequence = [];
+        [2026, 2027, 2028].forEach(yr => {
+          getMonthsForYear(yr).forEach(mo => {
+            targetSequence.push({ year: yr, month: mo });
+          });
+        });
+
+        targetSequence.forEach(({ year, month }) => {
+          const yearData = data.values[year];
+          let monthlyIn = 0;
+          let monthlyEx = 0;
+
+          if (yearData) {
+            if (yearData.incomes) {
+              data.categories.incomes.forEach(category => {
+                monthlyIn += parseFloat(yearData.incomes[category]?.[month]) || 0;
+              });
+            }
+            if (yearData.expenses) {
+              data.categories.expenses.forEach(category => {
+                monthlyEx += parseFloat(yearData.expenses[category]?.[month]) || 0;
+              });
+            }
+          }
+
+          const availableFunds = runningGuthaben + monthlyIn;
+          const endLeftover = availableFunds - monthlyEx;
+
+          resultSequence[`${year}-${month}`] = {
+            availableFunds,
+            leftover: endLeftover,
+            monthlyIncome: monthlyIn,
+            monthlyExpenses: monthlyEx,
+            prevGuthaben: runningGuthaben
+          };
+
+          runningGuthaben = endLeftover;
+        });
+
+        return resultSequence;
+      }, [data]);
+
       // Side-by-side grouped stacked visual chart logic [2]
       useEffect(() => {
+        if (selectedMonth === "AnnualOverview") return;
         if (!chartRef.current) return;
         const ctx = chartRef.current.getContext('2d');
         const monthsForYear = getMonthsForYear(selectedYear);
@@ -621,7 +736,131 @@
             chartInstanceRef.current.destroy();
           }
         };
-      }, [data, selectedYear, i18n.language]);
+      }, [data, selectedYear, selectedMonth, i18n.language]);
+
+      // Annual overview analytics compiling layer [2]
+      const annualOverviewData = useMemo(() => {
+        const yearValues = data.values[selectedYear];
+        const monthsForYear = getMonthsForYear(selectedYear);
+        const totalsByCategory = {};
+
+        let totalYearlyIn = 0;
+        let totalYearlyEx = 0;
+        const monthTotals = {};
+
+        data.categories.expenses.forEach(category => {
+          totalsByCategory[category] = 0;
+        });
+
+        monthsForYear.forEach(m => {
+          let mIn = 0;
+          let mEx = 0;
+
+          data.categories.incomes.forEach(category => {
+            const val = parseFloat(yearValues?.incomes?.[category]?.[m]) || 0;
+            totalYearlyIn += val;
+            mIn += val;
+          });
+
+          data.categories.expenses.forEach(category => {
+            const val = parseFloat(yearValues?.expenses?.[category]?.[m]) || 0;
+            totalYearlyEx += val;
+            totalsByCategory[category] += val;
+            mEx += val;
+          });
+
+          monthTotals[m] = { income: mIn, expenses: mEx };
+        });
+
+        // Sorted lists by total expenditures [2]
+        const sortedExpenses = Object.keys(totalsByCategory)
+          .map(cat => ({ category: cat, total: totalsByCategory[cat] }))
+          .sort((a, b) => b.total - a.total);
+
+        const peakCategory = sortedExpenses[0]?.total > 0 ? sortedExpenses[0].category : null;
+
+        let highestMonth = null;
+        let maxMonthEx = 0;
+        monthsForYear.forEach(m => {
+          if (monthTotals[m].expenses > maxMonthEx) {
+            maxMonthEx = monthTotals[m].expenses;
+            highestMonth = m;
+          }
+        });
+
+        const savingsRate = totalYearlyIn > 0 
+          ? ((totalYearlyIn - totalYearlyEx) / totalYearlyIn) * 100 
+          : 0;
+
+        return {
+          totalYearlyIn,
+          totalYearlyEx,
+          sortedExpenses,
+          peakCategory,
+          highestMonth,
+          savingsRate,
+          monthTotals
+        };
+      }, [data, selectedYear]);
+
+      // Chart.js script for end-of-year pie overview [2]
+      useEffect(() => {
+        if (selectedMonth !== "AnnualOverview") return;
+        if (!annualChartRef.current) return;
+        const ctx = annualChartRef.current.getContext('2d');
+
+        const activeExpenditures = annualOverviewData.sortedExpenses.filter(e => e.total > 0);
+        const datasetLabels = activeExpenditures.map(e => {
+          const key = t(`categories.${e.category}`);
+          return key.replace('categories.', '');
+        });
+        const datasetValues = activeExpenditures.map(e => e.total);
+
+        // Assign bracket aligned background colors for aesthetic consistency
+        const backgroundColors = activeExpenditures.map(e => {
+          const bracket = getEffectiveExpenseBracket(e.category);
+          if (bracket === 'housing') return '#475569';
+          if (bracket === 'living') return '#f59e0b';
+          if (bracket === 'professional') return '#14b8a6';
+          return '#6366f1';
+        });
+
+        if (annualChartInstanceRef.current) {
+          annualChartInstanceRef.current.destroy();
+        }
+
+        annualChartInstanceRef.current = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: datasetLabels,
+            datasets: [{
+              data: datasetValues,
+              backgroundColor: backgroundColors,
+              borderWidth: 1,
+              borderColor: '#ffffff'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'right',
+                labels: {
+                  boxWidth: 12,
+                  font: { size: 10 }
+                }
+              }
+            }
+          }
+        });
+
+        return () => {
+          if (annualChartInstanceRef.current) {
+            annualChartInstanceRef.current.destroy();
+          }
+        };
+      }, [data, selectedYear, selectedMonth, i18n.language, annualOverviewData]);
 
       const triggerLocalToCloudSync = async () => {
         setSyncStatus("syncing");
@@ -898,20 +1137,20 @@
 
       const getBracketMonthlyTotal = (bracketKey, month) => {
         if (!data.values[selectedYear]) return 0;
-        const items = data.categories.expenses.filter(posten => getExpenseBracket(posten) === bracketKey);
+        const items = data.categories.expenses.filter(posten => getEffectiveExpenseBracket(posten) === bracketKey);
         return items.reduce((sum, posten) => {
           const val = data.values[selectedYear].expenses[posten]?.[month];
           return sum + (val || 0);
         }, 0);
       };
 
-      // Semantic Sorting Clustering engine helper [3]
+      // Clustered Categories selector with Overrides support [3]
       const getClusteredCategories = (categories, type) => {
         if (type === 'incomes') return categories; 
         const bracketOrder = ['housing', 'living', 'leisure', 'professional'];
         return [...categories].sort((a, b) => {
-          const bracketA = getExpenseBracket(a);
-          const bracketB = getExpenseBracket(b);
+          const bracketA = getEffectiveExpenseBracket(a);
+          const bracketB = getEffectiveExpenseBracket(b);
           return bracketOrder.indexOf(bracketA) - bracketOrder.indexOf(bracketB);
         });
       };
@@ -925,6 +1164,11 @@
         if (totalIncome === 0) return 0;
         return (totalExpenses / totalIncome) * 100;
       }, [totalIncome, totalExpenses]);
+
+      // Adaptive Month-to-Month Liquidity Rollovers [1]
+      const activeLiquidityResult = useMemo(() => {
+        return chronologicalTimelineResult[`${selectedYear}-${selectedMonth}`] || { availableFunds: 0, leftover: 0, prevGuthaben: 0 };
+      }, [chronologicalTimelineResult, selectedYear, selectedMonth]);
 
       // Bounded Annual Net Balance Calculation [1]
       const yearlyNetBalance = useMemo(() => {
@@ -999,46 +1243,44 @@
         return totalIncomesGlobal - totalExpensesGlobal;
       }, [data]);
 
-      // Audit Breakdown transparency data compiler [3]
+      // Audit Breakdown transparency data compiler (Removed Deductions/Buffer) [1, 3]
       const auditBreakdown = useMemo(() => {
         let accIncome = 0;
         let accExpense = 0;
-        let actBuffer = 0;
-        const yearData = data.values[selectedYear];
-        if (!yearData) return { accIncome, accExpense, actBuffer };
+        
+        Object.keys(data.values).forEach(year => {
+          const yearData = data.values[year];
+          if (!yearData) return;
 
-        const monthsForYear = getMonthsForYear(selectedYear);
+          const monthsForYear = getMonthsForYear(parseInt(year));
 
-        // Sum overall active income and parse one-time buffer assets safely [1, 3]
-        data.categories.incomes.forEach(category => {
-          const monthsData = yearData.incomes?.[category];
-          if (monthsData) {
-            monthsForYear.forEach(m => {
-              const val = parseFloat(monthsData[m]) || 0;
-              accIncome += val;
-              if (isOneTimeAssetOrCost(category)) {
-                actBuffer += val; // Fixed savings assets categorized cleanly [1]
+          // Sum overall active incomes across the entire database timeline [1]
+          if (yearData.incomes) {
+            data.categories.incomes.forEach(category => {
+              const monthsData = yearData.incomes[category];
+              if (monthsData) {
+                monthsForYear.forEach(m => {
+                  accIncome += parseFloat(monthsData[m]) || 0;
+                });
+              }
+            });
+          }
+
+          // Sum overall active expenses across the entire database timeline [1]
+          if (yearData.expenses) {
+            data.categories.expenses.forEach(category => {
+              const monthsData = yearData.expenses[category];
+              if (monthsData) {
+                monthsForYear.forEach(m => {
+                  accExpense += parseFloat(monthsData[m]) || 0;
+                });
               }
             });
           }
         });
 
-        // Sum overall active expenses and parse one-time buffer deductions [1, 3]
-        data.categories.expenses.forEach(category => {
-          const monthsData = yearData.expenses?.[category];
-          if (monthsData) {
-            monthsForYear.forEach(m => {
-              const val = parseFloat(monthsData[m]) || 0;
-              accExpense += val;
-              if (isOneTimeAssetOrCost(category)) {
-                actBuffer += val; // Fixed house deposits categorized cleanly [1]
-              }
-            });
-          }
-        });
-
-        return { accIncome, accExpense, actBuffer };
-      }, [data, selectedYear]);
+        return { accIncome, accExpense };
+      }, [data]);
 
       const getItemStats = (type, posten) => {
         const monthsForYear = getMonthsForYear(selectedYear);
@@ -1047,11 +1289,8 @@
           return sum + (val || 0);
         }, 0);
         
-        // Categorize fixed, one-time assets as non-recurring averages [1]
-        const isOneTime = isOneTimeAssetOrCost(posten);
-        const average = isOneTime ? ytdTotal : (ytdTotal / monthsForYear.length);
-        
-        return { ytdTotal, average, isOneTime };
+        const average = ytdTotal / monthsForYear.length;
+        return { ytdTotal, average };
       };
 
       return (
@@ -1106,7 +1345,7 @@
             />
           )}
           <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isBurgerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-            <div className="p-5 flex flex-col h-full justify-between">
+            <div className="p-5 flex flex-col h-full justify-between overflow-y-auto">
               <div className="space-y-6">
                 <div className="flex justify-between items-center pb-4 border-b border-slate-100">
                   <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
@@ -1116,9 +1355,28 @@
                     <i className="fa-solid fa-xmark text-lg"></i>
                   </button>
                 </div>
+
+                {/* Capital Setup Input Block [1] */}
+                <div className="space-y-2 pt-2">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('initialSavingsLabel')}</p>
+                  <input
+                    type="number"
+                    value={data.initialSavingsBase !== undefined ? data.initialSavingsBase : 5000}
+                    onChange={(e) => {
+                      const baseVal = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                      const updated = {
+                        ...data,
+                        initialSavingsBase: isNaN(baseVal) ? 0 : baseVal
+                      };
+                      saveStateAndDispatch(updated, Date.now());
+                    }}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm font-semibold outline-none focus:border-indigo-500 transition"
+                    placeholder="0.00"
+                  />
+                </div>
                 
                 {/* Select Year */}
-                <div className="space-y-2">
+                <div className="space-y-2 border-t border-slate-100 pt-4">
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('selectYear')}</p>
                   <div className="flex gap-2">
                     {[2026, 2027, 2028].map(yr => (
@@ -1134,7 +1392,7 @@
                 </div>
 
                 {/* Select Language */}
-                <div className="space-y-2">
+                <div className="space-y-2 border-t border-slate-100 pt-4">
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('selectLanguage')}</p>
                   <div className="flex gap-2">
                     <button 
@@ -1191,487 +1449,629 @@
             </div>
           </div>
 
-          {/* Month Navigation */}
+          {/* Month Navigation Tabs with AnnualOverview Trigger [2] */}
           <nav className="bg-white border-b border-slate-200 sticky top-[52px] z-30 shadow-sm">
-            <div className="max-w-7xl mx-auto px-4 overflow-x-auto whitespace-nowrap scrollbar-none flex">
-              {getMonthsForYear(selectedYear).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setSelectedMonth(m)}
-                  className={`flex-1 min-w-[70px] py-4 text-center font-semibold text-sm transition-all border-b-2 outline-none ${
-                    selectedMonth === m
-                      ? 'border-indigo-600 text-indigo-600 bg-indigo-5/50'
-                      : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'
-                  }`}
-                >
-                  {t(`months.${m}`)}
-                </button>
-              ))}
+            <div className="max-w-7xl mx-auto px-4 overflow-x-auto whitespace-nowrap scrollbar-none flex items-center">
+              <div className="flex overflow-x-auto scrollbar-none flex-grow">
+                {getMonthsForYear(selectedYear).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setSelectedMonth(m)}
+                    className={`flex-1 min-w-[70px] py-4 text-center font-semibold text-sm transition-all border-b-2 outline-none ${
+                      selectedMonth === m
+                        ? 'border-indigo-600 text-indigo-600 bg-indigo-5/50'
+                        : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                    }`}
+                  >
+                    {t(`months.${m}`)}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setSelectedMonth("AnnualOverview")}
+                className={`py-4 px-6 text-center font-bold text-sm transition-all border-b-2 border-transparent outline-none flex items-center gap-1.5 shrink-0 ml-4 ${
+                  selectedMonth === "AnnualOverview"
+                    ? 'border-indigo-600 text-indigo-600 bg-indigo-5/50'
+                    : 'text-indigo-600 hover:bg-slate-50'
+                }`}
+              >
+                <i className="fa-solid fa-chart-line"></i> {t('annualOverview')}
+              </button>
             </div>
           </nav>
 
           {/* Main Layout Area */}
           <main className="flex-grow max-w-7xl mx-auto w-full px-4 py-6 space-y-6">
 
-            {/* Segmented view/edit toggle [6] */}
-            <div className="flex bg-slate-200/60 p-1 rounded-xl max-w-sm mx-auto shadow-inner">
-              <button 
-                onClick={() => setActiveTab('view')}
-                className={`flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 ${activeTab === 'view' ? 'bg-white text-indigo-700 shadow' : 'text-slate-600 hover:text-slate-800'}`}
-              >
-                <i className="fa-solid fa-eye text-sm"></i> {t('viewTab')}
-              </button>
-              <button 
-                onClick={() => setActiveTab('edit')}
-                className={`flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 ${activeTab === 'edit' ? 'bg-white text-indigo-700 shadow' : 'text-slate-600 hover:text-slate-800'}`}
-              >
-                <i className="fa-solid fa-pen-to-square text-sm"></i> {t('editTab')}
-              </button>
-            </div>
-
-            {/* Triple Net Metrics Panel [2] */}
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
-              {/* Metric 1: Monthly Leftover */}
-              <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
-                saldo >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
-              }`}>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h2 className={`text-xs font-bold uppercase tracking-wider ${saldo >= 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
-                      {t('monthlyLeftover')}
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-1">
-                      {t(`months.${selectedMonth}`)} {selectedYear}
-                    </p>
-                  </div>
-                  <div className={`text-2xl font-black ${saldo >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {saldo < 0 ? "-" : ""}{formatCurrency(Math.abs(saldo))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Metric 2: Yearly Net Balance [1, 2] */}
-              <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
-                yearlyNetBalance >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
-              }`}>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h2 className={`text-xs font-bold uppercase tracking-wider ${yearlyNetBalance >= 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
-                      {t('yearlyNetBalance')}
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-1">
-                      {selectedYear}
-                    </p>
-                  </div>
-                  <div className={`text-2xl font-black ${yearlyNetBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {yearlyNetBalance < 0 ? "-" : ""}{formatCurrency(Math.abs(yearlyNetBalance))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Metric 3: Overall Balance [1, 2] */}
-              <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
-                overallNetBalance >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
-              }`}>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h2 className={`text-xs font-bold uppercase tracking-wider ${overallNetBalance >= 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
-                      {t('overallNetBalance')}
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-1">
-                      {t('allTimeScope')}
-                    </p>
-                  </div>
-                  <div className={`text-2xl font-black ${overallNetBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {overallNetBalance < 0 ? "-" : ""}{formatCurrency(Math.abs(overallNetBalance))}
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Audit Breakdown Transparency Drawer [3] */}
-            <div className="space-y-2">
-              <div className="flex justify-end px-1">
-                <button 
-                  onClick={() => setIsAuditOpen(!isAuditOpen)} 
-                  className="text-indigo-600 hover:text-indigo-800 text-xs font-bold flex items-center gap-1.5 transition outline-none"
-                >
-                  <i className={`fa-solid ${isAuditOpen ? 'fa-square-minus' : 'fa-square-plus'}`}></i>
-                  <span>{isAuditOpen ? t('hideAudit') : t('showAudit')}</span>
-                </button>
-              </div>
-
-              {isAuditOpen && (
-                <div className="bg-slate-100 border border-slate-200 rounded-2xl p-4 text-xs space-y-2 animate-fadeIn transition-all duration-300">
-                  <h4 className="font-bold text-slate-700 uppercase tracking-wide border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
-                    <i className="fa-solid fa-calculator text-indigo-500"></i> {t('auditTitle')} ({selectedYear})
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 py-1">
-                    <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200">
-                      <span className="text-slate-500 font-medium">{t('accumulatedIncome')}:</span>
-                      <span className="font-bold text-emerald-600">+ {formatCurrency(auditBreakdown.accIncome)}</span>
+            {selectedMonth === "AnnualOverview" ? (
+              /* DEDICATED ANNUAL OVERVIEW LAYOUT TAB [2] */
+              <div className="space-y-6 animate-fadeIn">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Metric 1: Savings Rate */}
+                  <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                    <div>
+                      <p className="text-xs font-bold text-indigo-800 uppercase tracking-wider">{t('savingsRate')}</p>
+                      <p className="text-2xl font-black text-indigo-900 mt-1">{annualOverviewData.savingsRate.toFixed(1)}%</p>
                     </div>
-                    <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200">
-                      <span className="text-slate-500 font-medium">{t('accumulatedExpenses')}:</span>
-                      <span className="font-bold text-rose-600">- {formatCurrency(auditBreakdown.accExpense)}</span>
+                    <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                      <i className="fa-solid fa-percent text-xl"></i>
                     </div>
-                    <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200">
-                      <span className="text-slate-500 font-medium">{t('activeDeductions')}:</span>
-                      <span className="font-bold text-indigo-600">- {formatCurrency(auditBreakdown.actBuffer)}</span>
+                  </div>
+
+                  {/* Metric 2: Peak Spending Category */}
+                  <div className="bg-rose-50 border border-rose-200 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                    <div>
+                      <p className="text-xs font-bold text-rose-800 uppercase tracking-wider">{t('peakSpendingCategory')}</p>
+                      <p className="text-base font-black text-rose-900 mt-2 truncate max-w-[170px]">
+                        {annualOverviewData.peakCategory ? t(`categories.${annualOverviewData.peakCategory}`).replace('categories.', '') : t('noData')}
+                      </p>
+                    </div>
+                    <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
+                      <i className="fa-solid fa-fire text-xl"></i>
+                    </div>
+                  </div>
+
+                  {/* Metric 3: Highest Spent Month */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                    <div>
+                      <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('highestExpenseMonth')}</p>
+                      <p className="text-2xl font-black text-slate-900 mt-1">
+                        {annualOverviewData.highestMonth ? `${t(`months.${annualOverviewData.highestMonth}`)} ${selectedYear}` : t('noData')}
+                      </p>
+                    </div>
+                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                      <i className="fa-solid fa-calendar-days text-xl"></i>
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
-            
-            {/* Aggregate Metrics Grid */}
-            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
-                <div>
-                  <p className="text-xs font-bold text-emerald-800 uppercase">{t('totalIncome')}</p>
-                  <p className="text-2xl font-black text-emerald-900 mt-1">{formatCurrency(totalIncome)}</p>
+
+                {/* Pie/Doughnut Chart Expense Breakdown */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">{t('analyticsHeader')}</h3>
+                    <p className="text-xs text-slate-400 mb-4">Prozentuale Verteilung aller Ausgaben im Jahr {selectedYear}</p>
+                    <div className="h-[260px] relative w-full flex justify-center">
+                      <canvas ref={annualChartRef}></canvas>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                    {annualOverviewData.sortedExpenses.map(({ category, total }) => {
+                      const cleanCatName = t(`categories.${category}`).replace('categories.', '');
+                      const share = annualOverviewData.totalYearlyEx > 0 ? (total / annualOverviewData.totalYearlyEx) * 100 : 0;
+                      if (total === 0) return null;
+                      return (
+                        <div key={category} className="flex justify-between items-center text-xs border-b border-slate-100 pb-2">
+                          <span className="font-semibold text-slate-600">{cleanCatName}</span>
+                          <span className="font-bold text-slate-700">{formatCurrency(total)} ({share.toFixed(1)}%)</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
-                  <i className="fa-solid fa-circle-arrow-down text-xl"></i>
+
+                {/* 12-Month transaction grid view */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                    <h3 className="font-bold text-slate-700 text-sm">{selectedYear} - Datasheet</h3>
+                  </div>
+                  <div className="overflow-x-auto scrollbar-none">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-slate-100 border-b border-slate-200 font-bold text-slate-600 uppercase">
+                          <th className="p-3">Month</th>
+                          <th className="p-3 text-right">Incomes</th>
+                          <th className="p-3 text-right">Expenses</th>
+                          <th className="p-3 text-right">Savings Net</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium">
+                        {getMonthsForYear(selectedYear).map(m => {
+                          const income = annualOverviewData.monthTotals[m]?.income || 0;
+                          const expenses = annualOverviewData.monthTotals[m]?.expenses || 0;
+                          const net = income - expenses;
+                          return (
+                            <tr key={m} className="hover:bg-slate-50">
+                              <td className="p-3 font-semibold text-slate-700">{t(`months.${m}`)}</td>
+                              <td className="p-3 text-right text-emerald-600">{formatCurrency(income)}</td>
+                              <td className="p-3 text-right text-rose-600">{formatCurrency(expenses)}</td>
+                              <td className={`p-3 text-right font-bold ${net >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                {net < 0 ? "-" : ""}{formatCurrency(Math.abs(net))}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-
-              <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
-                <div>
-                  <p className="text-xs font-bold text-rose-800 uppercase">{t('totalExpenses')}</p>
-                  <p className="text-2xl font-black text-rose-900 mt-1">{formatCurrency(totalExpenses)}</p>
-                </div>
-                <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
-                  <i className="fa-solid fa-circle-arrow-up text-xl"></i>
-                </div>
-              </div>
-
-              <div className={`border rounded-2xl p-4 flex items-center justify-between shadow-sm transition-colors ${
-                saldo >= 0 ? 'bg-indigo-50 border-indigo-200' : 'bg-amber-50 border-amber-200'
-              }`}>
-                <div>
-                  <p className={`text-xs font-bold uppercase ${saldo >= 0 ? 'text-indigo-800' : 'text-amber-800'}`}>{t('saldo')} ({t(`months.${selectedMonth}`)})</p>
-                  <p className={`text-2xl font-black mt-1 ${saldo >= 0 ? 'text-indigo-900' : 'text-amber-900'}`}>{formatCurrency(saldo)}</p>
-                </div>
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                  saldo >= 0 ? 'bg-indigo-100 text-indigo-600' : 'bg-amber-100 text-amber-600'
-                }`}>
-                  <i className={`fa-solid text-xl ${saldo >= 0 ? 'fa-scale-balanced' : 'fa-triangle-exclamation'}`}></i>
-                </div>
-              </div>
-
-              <div className="bg-slate-100 border border-slate-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
-                <div>
-                  <p className="text-xs font-bold text-slate-700 uppercase">{t('spentRatio')}</p>
-                  <p className="text-2xl font-black text-slate-900 mt-1">{percentageSpent.toFixed(1)}%</p>
-                </div>
-                <div className="w-full max-w-[80px] bg-slate-200 rounded-full h-2.5 ml-2">
-                  <div 
-                    className={`h-2.5 rounded-full transition-all duration-300 ${
-                      percentageSpent > 100 ? 'bg-rose-600' : percentageSpent > 85 ? 'bg-amber-500' : 'bg-indigo-600'
-                    }`} 
-                    style={{ width: `${Math.min(percentageSpent, 100)}%` }}
-                  ></div>
-                </div>
-              </div>
-            </section>
-
-            {/* Side-by-Side Grouped Stacked Analytics Chart [2] */}
-            <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-              <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-                <i className="fa-solid fa-chart-simple text-indigo-600"></i> {t('analyticsHeader')} - {selectedYear}
-              </h3>
-              <div className="h-[280px] relative w-full">
-                <canvas ref={chartRef}></canvas>
-              </div>
-            </section>
-
-            {/* Ledger Tables */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              
-              {/* TABLE A: EINKÜNFTE */}
-              <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                <div className="p-4 border-b border-slate-200 bg-emerald-50/50 flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-emerald-900 flex items-center gap-2">
-                    <i className="fa-solid fa-money-bill-trend-up text-emerald-600"></i> {t('incomesHeader')}
-                  </h3>
-                  <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full">
-                    {t('sum')}: {formatCurrency(totalIncome)}
-                  </span>
-                </div>
-                <div className="overflow-x-auto flex-grow">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="bg-slate-100 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
-                        <th className="p-3">{t('posten')}</th>
-                        <th className="p-3 w-32 text-right">{t(`months.${selectedMonth}`)} (€)</th>
-                        <th className="p-3 w-28 text-right">{t('resultYtd')}</th>
-                        <th className="p-3 w-28 text-right">{t('avgSchnitt')}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-sm">
-                      {(activeTab === "view" ? getClusteredCategories(data.categories.incomes, 'incomes') : data.categories.incomes).map((item, idx, arr) => {
-                        const { ytdTotal, average, isOneTime } = getItemStats('incomes', item);
-                        const val = data.values[selectedYear]?.incomes[item]?.[selectedMonth];
-                        
-                        // Database Object Parsing sanitation step
-                        const key = t(`categories.${item}`);
-                        let cleanName = key.replace('categories.', '');
-                        cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
-
-                        // Deletion identification check
-                        const isCustom = !INITIAL_CATEGORIES.incomes.includes(item);
-                        const isRenaming = editingCategory && editingCategory.type === 'incomes' && editingCategory.name === item;
-
-                        return (
-                          <tr key={item} className="hover:bg-slate-50 transition border-l-4 border-emerald-500">
-                            <td className="p-3 font-medium text-slate-700 flex items-center justify-between group min-h-[52px]">
-                              {isRenaming ? (
-                                <input 
-                                  type="text" 
-                                  value={editCategoryValue} 
-                                  onChange={(e) => setEditCategoryValue(e.target.value)}
-                                  onBlur={handleSaveRename}
-                                  onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }}
-                                  className="bg-white border border-indigo-500 rounded px-2 py-0.5 text-slate-800 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full max-w-[160px]"
-                                  autoFocus
-                                />
-                              ) : (
-                                <div className="flex items-center gap-1.5 overflow-hidden">
-                                  <span className="truncate">{cleanName}</span>
-                                  {activeTab === "edit" && (
-                                    <button 
-                                      onClick={() => handleStartRename('incomes', item)}
-                                      className="text-slate-400 hover:text-indigo-600 transition p-1 opacity-0 group-hover:opacity-100 focus:opacity-100"
-                                      title="Rename"
-                                    >
-                                      <i className="fa-solid fa-pen text-[10px]"></i>
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                              
-                              {/* Reordering caret selectors inside Edit tab [1] */}
-                              {activeTab === "edit" && (
-                                <div className="flex items-center space-x-1 shrink-0 ml-2">
-                                  <button 
-                                    onClick={() => handleMoveCategory('incomes', idx, 'up')}
-                                    disabled={idx === 0}
-                                    className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
-                                  >
-                                    <i className="fa-solid fa-caret-up"></i>
-                                  </button>
-                                  <button 
-                                    onClick={() => handleMoveCategory('incomes', idx, 'down')}
-                                    disabled={idx === arr.length - 1}
-                                    className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
-                                  >
-                                    <i className="fa-solid fa-caret-down"></i>
-                                  </button>
-                                  {isCustom && (
-                                    <button 
-                                      onClick={() => handleDeleteCategory('incomes', item)}
-                                      className="text-slate-400 hover:text-rose-600 transition p-1"
-                                      title={i18n.language === 'de' ? 'Kategorie löschen' : 'Delete category'}
-                                    >
-                                      <i className="fa-solid fa-trash-can text-xs"></i>
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                            </td>
-                            <td className="p-3 text-right">
-                              {activeTab === "view" ? (
-                                <span className="font-bold text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
-                              ) : (
-                                <input
-                                  type="number"
-                                  step="any"
-                                  value={val !== undefined && val !== 0 ? val : ''}
-                                  placeholder="0"
-                                  onChange={(e) => handleValueChange('incomes', item, selectedMonth, e.target.value)}
-                                  className="w-full text-right bg-slate-50 focus:bg-white border border-slate-200 focus:border-indigo-500 rounded px-2 py-1 outline-none font-semibold transition"
-                                />
-                              )}
-                            </td>
-                            <td className="p-3 text-right text-slate-600 font-medium">{formatCurrency(ytdTotal)}</td>
-                            <td className="p-3 text-right text-slate-500 text-xs">
-                              {/* Display non-recurring flag strictly for fixed setup values [1] */}
-                              {isOneTime ? `(${t('oneTime')})` : formatCurrency(average)}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+            ) : (
+              /* TRADITIONAL MONTHLY BUDGET LAYOUT VIEW */
+              <div className="space-y-6">
+                {/* Segmented view/edit toggle [6] */}
+                <div className="flex bg-slate-200/60 p-1 rounded-xl max-w-sm mx-auto shadow-inner">
+                  <button 
+                    onClick={() => setActiveTab('view')}
+                    className={`flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 ${activeTab === 'view' ? 'bg-white text-indigo-700 shadow' : 'text-slate-600 hover:text-slate-800'}`}
+                  >
+                    <i className="fa-solid fa-eye text-sm"></i> {t('viewTab')}
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('edit')}
+                    className={`flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 ${activeTab === 'edit' ? 'bg-white text-indigo-700 shadow' : 'text-slate-600 hover:text-slate-800'}`}
+                  >
+                    <i className="fa-solid fa-pen-to-square text-sm"></i> {t('editTab')}
+                  </button>
                 </div>
 
-                {activeTab === "edit" && (
-                  <div className="p-3 bg-slate-50 border-t border-slate-100 flex gap-2">
-                    <input
-                      type="text"
-                      value={customIncomeInput}
-                      onChange={(e) => setCustomIncomeInput(e.target.value)}
-                      placeholder={t('addPlaceholder')}
-                      className="flex-grow bg-white border border-slate-200 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition"
-                    />
-                    <button
-                      onClick={() => handleAddCategory('incomes', customIncomeInput, setCustomIncomeInput)}
-                      className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-bold transition flex items-center gap-1 shrink-0"
+                {/* Triple Net Metrics Panel [2] */}
+                <section className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+                  {/* Metric 1: Monthly Leftover */}
+                  <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
+                    saldo >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
+                  }`}>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h2 className={`text-xs font-bold uppercase tracking-wider ${saldo >= 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
+                          {t('monthlyLeftover')}
+                        </h2>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {t(`months.${selectedMonth}`)} {selectedYear}
+                        </p>
+                      </div>
+                      <div className={`text-2xl font-black ${saldo >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {saldo < 0 ? "-" : ""}{formatCurrency(Math.abs(saldo))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Metric 2: Yearly Net Balance [1, 2] */}
+                  <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
+                    yearlyNetBalance >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
+                  }`}>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h2 className={`text-xs font-bold uppercase tracking-wider ${yearlyNetBalance >= 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
+                          {t('yearlyNetBalance')}
+                        </h2>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {selectedYear}
+                        </p>
+                      </div>
+                      <div className={`text-2xl font-black ${yearlyNetBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {yearlyNetBalance < 0 ? "-" : ""}{formatCurrency(Math.abs(yearlyNetBalance))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Metric 3: Chronological Total Available Liquidity [1] */}
+                  <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
+                    activeLiquidityResult.leftover >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
+                  }`}>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h2 className={`text-xs font-bold uppercase tracking-wider ${activeLiquidityResult.leftover >= 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
+                          {t('totalAvailableLiquidity')}
+                        </h2>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {t('active')}
+                        </p>
+                      </div>
+                      <div className={`text-2xl font-black ${activeLiquidityResult.leftover >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {activeLiquidityResult.leftover < 0 ? "-" : ""}{formatCurrency(Math.abs(activeLiquidityResult.leftover))}
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Audit Breakdown Transparency Drawer (Removed Deductions/Buffer Card) [2, 3] */}
+                <div className="space-y-2">
+                  <div className="flex justify-end px-1">
+                    <button 
+                      onClick={() => setIsAuditOpen(!isAuditOpen)} 
+                      className="text-indigo-600 hover:text-indigo-800 text-xs font-bold flex items-center gap-1.5 transition outline-none"
                     >
-                      <i className="fa-solid fa-plus"></i> Add
+                      <i className={`fa-solid ${isAuditOpen ? 'fa-square-minus' : 'fa-square-plus'}`}></i>
+                      <span>{isAuditOpen ? t('hideAudit') : t('showAudit')}</span>
                     </button>
                   </div>
-                )}
-              </section>
 
-              {/* TABLE B: AUSGABEN */}
-              <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                <div className="p-4 border-b border-slate-200 bg-rose-50/50 flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-rose-900 flex items-center gap-2">
-                    <i className="fa-solid fa-cart-shopping text-rose-600"></i> {t('expensesHeader')}
-                  </h3>
-                  <span className="text-xs font-semibold px-2.5 py-1 bg-rose-100 text-rose-800 rounded-full">
-                    {t('sum')}: {formatCurrency(totalExpenses)}
-                  </span>
+                  {isAuditOpen && (
+                    <div className="bg-slate-100 border border-slate-200 rounded-2xl p-4 text-xs space-y-2 animate-fadeIn transition-all duration-300">
+                      <h4 className="font-bold text-slate-700 uppercase tracking-wide border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
+                        <i className="fa-solid fa-calculator text-indigo-500"></i> {t('auditTitle')}
+                      </h4>
+                      {/* Clean side-by-side Dual Net Metrics Panel [2] */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-1">
+                        <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200">
+                          <span className="text-slate-500 font-medium">{t('accumulatedIncome')}:</span>
+                          <span className="font-bold text-emerald-600">+ {formatCurrency(auditBreakdown.accIncome)}</span>
+                        </div>
+                        <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200">
+                          <span className="text-slate-500 font-medium">{t('accumulatedExpenses')}:</span>
+                          <span className="font-bold text-rose-600">- {formatCurrency(auditBreakdown.accExpense)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="overflow-x-auto max-h-[600px] overflow-y-auto flex-grow">
-                  <table className="w-full text-left border-collapse">
-                    <thead className="sticky top-0 bg-slate-100 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase z-10">
-                      <tr>
-                        <th className="p-3 bg-slate-100">{t('posten')}</th>
-                        <th className="p-3 w-32 text-right bg-slate-100">{t(`months.${selectedMonth}`)} (€)</th>
-                        <th className="p-3 w-28 text-right bg-slate-100">{t('resultYtd')}</th>
-                        <th className="p-3 w-28 text-right bg-slate-100">{t('avgSchnitt')}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-sm">
-                      {(activeTab === "view" ? getClusteredCategories(data.categories.expenses, 'expenses') : data.categories.expenses).map((item, idx, arr) => {
-                        const { ytdTotal, average, isOneTime } = getItemStats('expenses', item);
-                        const val = data.values[selectedYear]?.expenses[item]?.[selectedMonth];
-                        
-                        // dynamic left-border tags mapped by category bracket [3]
-                        const bracket = getExpenseBracket(item);
-                        
-                        // Semantically defined clustering background colors [3]
-                        const rowClass = 
-                          bracket === 'housing' ? 'bg-slate-50/50 hover:bg-slate-100 border-l-4 border-slate-500' : 
-                          bracket === 'living' ? 'bg-amber-50/30 hover:bg-amber-100/50 border-l-4 border-amber-500' :  
-                          bracket === 'professional' ? 'bg-teal-50/30 hover:bg-teal-100/50 border-l-4 border-teal-500' : 
-                          'bg-indigo-50/20 hover:bg-indigo-100/50 border-l-4 border-indigo-500'; 
-
-                        // Database Object Parsing sanitation step
-                        const key = t(`categories.${item}`);
-                        let cleanName = key.replace('categories.', '');
-                        cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
-
-                        // Deletion identification check
-                        const isCustom = !INITIAL_CATEGORIES.expenses.includes(item);
-                        const isRenaming = editingCategory && editingCategory.type === 'expenses' && editingCategory.name === item;
-
-                        return (
-                          <tr key={item} className={`transition ${rowClass}`}>
-                            <td className="p-3 font-medium text-slate-700 flex items-center justify-between group min-h-[52px]">
-                              {isRenaming ? (
-                                <input 
-                                  type="text" 
-                                  value={editCategoryValue} 
-                                  onChange={(e) => setEditCategoryValue(e.target.value)}
-                                  onBlur={handleSaveRename}
-                                  onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }}
-                                  className="bg-white border border-indigo-500 rounded px-2 py-0.5 text-slate-800 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full max-w-[160px]"
-                                  autoFocus
-                                />
-                              ) : (
-                                <div className="flex items-center gap-1.5 overflow-hidden">
-                                  <span className="truncate">{cleanName}</span>
-                                  {activeTab === "edit" && (
-                                    <button 
-                                      onClick={() => handleStartRename('expenses', item)}
-                                      className="text-slate-400 hover:text-indigo-600 transition p-1 opacity-0 group-hover:opacity-100 focus:opacity-100"
-                                      title="Rename"
-                                    >
-                                      <i className="fa-solid fa-pen text-[10px]"></i>
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                              
-                              {/* Reordering caret selectors inside Edit tab [1] */}
-                              {activeTab === "edit" && (
-                                <div className="flex items-center space-x-1 shrink-0 ml-2">
-                                  <button 
-                                    onClick={() => handleMoveCategory('expenses', idx, 'up')}
-                                    disabled={idx === 0}
-                                    className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
-                                  >
-                                    <i className="fa-solid fa-caret-up"></i>
-                                  </button>
-                                  <button 
-                                    onClick={() => handleMoveCategory('expenses', idx, 'down')}
-                                    disabled={idx === arr.length - 1}
-                                    className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
-                                  >
-                                    <i className="fa-solid fa-caret-down"></i>
-                                  </button>
-                                  {isCustom && (
-                                    <button 
-                                      onClick={() => handleDeleteCategory('expenses', item)}
-                                      className="text-slate-400 hover:text-rose-600 transition p-1"
-                                      title={i18n.language === 'de' ? 'Kategorie löschen' : 'Delete category'}
-                                    >
-                                      <i className="fa-solid fa-trash-can text-xs"></i>
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                            </td>
-                            <td className="p-3 text-right font-semibold">
-                              {activeTab === "view" ? (
-                                <span className="text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
-                              ) : (
-                                <input
-                                  type="number"
-                                  step="any"
-                                  value={val !== undefined && val !== 0 ? val : ''}
-                                  placeholder="0"
-                                  onChange={(e) => handleValueChange('expenses', item, selectedMonth, e.target.value)}
-                                  className="w-full text-right bg-slate-50 focus:bg-white border border-slate-200 focus:border-indigo-500 rounded px-2 py-1 outline-none font-semibold transition"
-                                />
-                              )}
-                            </td>
-                            <td className="p-3 text-right text-slate-600 font-medium">{formatCurrency(ytdTotal)}</td>
-                            <td className="p-3 text-right text-slate-500 text-xs">
-                              {/* Display non-recurring flag strictly for fixed setup values [1] */}
-                              {isOneTime ? `(${t('oneTime')})` : formatCurrency(average)}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {activeTab === "edit" && (
-                  <div className="p-3 bg-slate-50 border-t border-slate-100 flex gap-2">
-                    <input
-                      type="text"
-                      value={customExpenseInput}
-                      onChange={(e) => setCustomExpenseInput(e.target.value)}
-                      placeholder={t('addPlaceholder')}
-                      className="flex-grow bg-white border border-slate-200 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition"
-                    />
-                    <button
-                      onClick={() => handleAddCategory('expenses', customExpenseInput, setCustomExpenseInput)}
-                      className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-bold transition flex items-center gap-1 shrink-0"
-                    >
-                      <i className="fa-solid fa-plus"></i> Add
-                    </button>
+                
+                {/* Aggregate Metrics Grid */}
+                <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                    <div>
+                      <p className="text-xs font-bold text-emerald-800 uppercase">{t('totalIncome')}</p>
+                      <p className="text-2xl font-black text-emerald-900 mt-1">{formatCurrency(totalIncome)}</p>
+                    </div>
+                    <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                      <i className="fa-solid fa-circle-arrow-down text-xl"></i>
+                    </div>
                   </div>
-                )}
-              </section>
 
-            </div>
+                  <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                    <div>
+                      <p className="text-xs font-bold text-rose-800 uppercase">{t('totalExpenses')}</p>
+                      <p className="text-2xl font-black text-rose-900 mt-1">{formatCurrency(totalExpenses)}</p>
+                    </div>
+                    <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
+                      <i className="fa-solid fa-circle-arrow-up text-xl"></i>
+                    </div>
+                  </div>
+
+                  <div className={`border rounded-2xl p-4 flex items-center justify-between shadow-sm transition-colors ${
+                    saldo >= 0 ? 'bg-indigo-50 border-indigo-200' : 'bg-amber-50 border-amber-200'
+                  }`}>
+                    <div>
+                      <p className={`text-xs font-bold uppercase ${saldo >= 0 ? 'text-indigo-800' : 'text-amber-800'}`}>{t('saldo')} ({t(`months.${selectedMonth}`)})</p>
+                      <p className={`text-2xl font-black mt-1 ${saldo >= 0 ? 'text-indigo-900' : 'text-amber-900'}`}>{formatCurrency(saldo)}</p>
+                    </div>
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      saldo >= 0 ? 'bg-indigo-100 text-indigo-600' : 'bg-amber-100 text-amber-600'
+                    }`}>
+                      <i className={`fa-solid text-xl ${saldo >= 0 ? 'fa-scale-balanced' : 'fa-triangle-exclamation'}`}></i>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-100 border border-slate-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                    <div>
+                      <p className="text-xs font-bold text-slate-700 uppercase">{t('spentRatio')}</p>
+                      <p className="text-2xl font-black text-slate-900 mt-1">{percentageSpent.toFixed(1)}%</p>
+                    </div>
+                    <div className="w-full max-w-[80px] bg-slate-200 rounded-full h-2.5 ml-2">
+                      <div 
+                        className={`h-2.5 rounded-full transition-all duration-300 ${
+                          percentageSpent > 100 ? 'bg-rose-600' : percentageSpent > 85 ? 'bg-amber-500' : 'bg-indigo-600'
+                        }`} 
+                        style={{ width: `${Math.min(percentageSpent, 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Side-by-Side Grouped Stacked Analytics Chart [2] */}
+                <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                  <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                    <i className="fa-solid fa-chart-simple text-indigo-600"></i> {t('analyticsHeader')} - {selectedYear}
+                  </h3>
+                  <div className="h-[280px] relative w-full">
+                    <canvas ref={chartRef}></canvas>
+                  </div>
+                </section>
+
+                {/* Ledger Tables - Refactored responsive layout for wide views [4] */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                  
+                  {/* TABLE A: EINKÜNFTE */}
+                  <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                    <div className="p-4 border-b border-slate-200 bg-emerald-50/50 flex items-center justify-between">
+                      <h3 className="text-lg font-bold text-emerald-900 flex items-center gap-2">
+                        <i className="fa-solid fa-money-bill-trend-up text-emerald-600"></i> {t('incomesHeader')}
+                      </h3>
+                      <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full">
+                        {t('sum')}: {formatCurrency(totalIncome)}
+                      </span>
+                    </div>
+                    <div className="overflow-x-auto flex-grow">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="bg-slate-100 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
+                            <th className="p-3">{t('posten')}</th>
+                            <th className="p-3 w-32 text-right">{t(`months.${selectedMonth}`)} (€)</th>
+                            <th className="p-3 w-28 text-right">{t('resultYtd')}</th>
+                            <th className="p-3 w-28 text-right">{t('avgSchnitt')}</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-sm">
+                          {(activeTab === "view" ? getClusteredCategories(data.categories.incomes, 'incomes') : data.categories.incomes).map((item, idx, arr) => {
+                            const { ytdTotal, average } = getItemStats('incomes', item);
+                            const val = data.values[selectedYear]?.incomes[item]?.[selectedMonth];
+                            
+                            // Database Object Parsing sanitation step
+                            const key = t(`categories.${item}`);
+                            let cleanName = key.replace('categories.', '');
+                            cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+
+                            // Deletion identification check
+                            const isCustom = !INITIAL_CATEGORIES.incomes.includes(item);
+                            const isRenaming = editingCategory && editingCategory.type === 'incomes' && editingCategory.name === item;
+
+                            return (
+                              <tr key={item} className="hover:bg-slate-50 transition border-l-4 border-emerald-500">
+                                <td className="p-3 font-medium text-slate-700 flex items-center justify-between group min-h-[52px]">
+                                  {isRenaming ? (
+                                    <input 
+                                      type="text" 
+                                      value={editCategoryValue} 
+                                      onChange={(e) => setEditCategoryValue(e.target.value)}
+                                      onBlur={handleSaveRename}
+                                      onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }}
+                                      className="bg-white border border-indigo-500 rounded px-2 py-0.5 text-slate-800 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full max-w-[160px]"
+                                      autoFocus
+                                    />
+                                  ) : (
+                                    <div className="flex items-center gap-1.5 overflow-hidden">
+                                      <span className="truncate">{cleanName}</span>
+                                      {activeTab === "edit" && (
+                                        <button 
+                                          onClick={() => handleStartRename('incomes', item)}
+                                          className="text-slate-400 hover:text-indigo-600 transition p-1 opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                          title="Rename"
+                                        >
+                                          <i className="fa-solid fa-pen text-[10px]"></i>
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Reordering caret selectors inside Edit tab [1] */}
+                                  {activeTab === "edit" && (
+                                    <div className="flex items-center space-x-1 shrink-0 ml-2">
+                                      <button 
+                                        onClick={() => handleMoveCategory('incomes', idx, 'up')}
+                                        disabled={idx === 0}
+                                        className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
+                                      >
+                                        <i className="fa-solid fa-caret-up"></i>
+                                      </button>
+                                      <button 
+                                        onClick={() => handleMoveCategory('incomes', idx, 'down')}
+                                        disabled={idx === arr.length - 1}
+                                        className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
+                                      >
+                                        <i className="fa-solid fa-caret-down"></i>
+                                      </button>
+                                      {isCustom && (
+                                        <button 
+                                          onClick={() => handleDeleteCategory('incomes', item)}
+                                          className="text-slate-400 hover:text-rose-600 transition p-1"
+                                          title={i18n.language === 'de' ? 'Kategorie löschen' : 'Delete category'}
+                                        >
+                                          <i className="fa-solid fa-trash-can text-xs"></i>
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="p-3 text-right">
+                                  {activeTab === "view" ? (
+                                    <span className="font-bold text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
+                                  ) : (
+                                    <input
+                                      type="number"
+                                      step="any"
+                                      value={val !== undefined && val !== 0 ? val : ''}
+                                      placeholder="0"
+                                      onChange={(e) => handleValueChange('incomes', item, selectedMonth, e.target.value)}
+                                      className="w-full text-right bg-slate-50 focus:bg-white border border-slate-200 focus:border-indigo-500 rounded px-2 py-1 outline-none font-semibold transition"
+                                    />
+                                  )}
+                                </td>
+                                <td className="p-3 text-right text-slate-600 font-medium">{formatCurrency(ytdTotal)}</td>
+                                <td className="p-3 text-right text-slate-500 text-xs">
+                                  {formatCurrency(average)}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {activeTab === "edit" && (
+                      <div className="p-3 bg-slate-50 border-t border-slate-100 flex gap-2">
+                        <input
+                          type="text"
+                          value={customIncomeInput}
+                          onChange={(e) => setCustomIncomeInput(e.target.value)}
+                          placeholder={t('addPlaceholder')}
+                          className="flex-grow bg-white border border-slate-200 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition"
+                        />
+                        <button
+                          onClick={() => handleAddCategory('incomes', customIncomeInput, setCustomIncomeInput)}
+                          className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-bold transition flex items-center gap-1 shrink-0"
+                        >
+                          <i className="fa-solid fa-plus"></i> Add
+                        </button>
+                      </div>
+                    )}
+                  </section>
+
+                  {/* TABLE B: AUSGABEN */}
+                  <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                    <div className="p-4 border-b border-slate-200 bg-rose-50/50 flex items-center justify-between">
+                      <h3 className="text-lg font-bold text-rose-900 flex items-center gap-2">
+                        <i className="fa-solid fa-cart-shopping text-rose-600"></i> {t('expensesHeader')}
+                      </h3>
+                      <span className="text-xs font-semibold px-2.5 py-1 bg-rose-100 text-rose-800 rounded-full">
+                        {t('sum')}: {formatCurrency(totalExpenses)}
+                      </span>
+                    </div>
+                    <div className="overflow-x-auto max-h-[500px] overflow-y-auto flex-grow">
+                      <table className="w-full text-left border-collapse">
+                        <thead className="sticky top-0 bg-slate-100 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase z-10">
+                          <tr>
+                            <th className="p-3 bg-slate-100">Posten</th>
+                            <th className="p-3 bg-slate-100 w-32 text-right">{t(`months.${selectedMonth}`)} (€)</th>
+                            <th className="p-3 bg-slate-100 w-28 text-right">{t('resultYtd')}</th>
+                            <th className="p-3 bg-slate-100 w-28 text-right">{t('avgSchnitt')}</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-sm">
+                          {(activeTab === "view" ? getClusteredCategories(data.categories.expenses, 'expenses') : data.categories.expenses).map((item, idx, arr) => {
+                            const { ytdTotal, average } = getItemStats('expenses', item);
+                            const val = data.values[selectedYear]?.expenses[item]?.[selectedMonth];
+                            
+                            // dynamic left-border tags mapped by category bracket [3]
+                            const bracket = getEffectiveExpenseBracket(item);
+                            
+                            // Semantically defined clustering background colors [3]
+                            const rowClass = 
+                              bracket === 'housing' ? 'bg-slate-50/50 hover:bg-slate-100 border-l-4 border-slate-500' : 
+                              bracket === 'living' ? 'bg-amber-50/30 hover:bg-amber-100/50 border-l-4 border-amber-500' :  
+                              bracket === 'professional' ? 'bg-teal-50/30 hover:bg-teal-100/50 border-l-4 border-teal-500' : 
+                              'bg-indigo-50/20 hover:bg-indigo-100/50 border-l-4 border-indigo-500'; 
+
+                            // Database Object Parsing sanitation step
+                            const key = t(`categories.${item}`);
+                            let cleanName = key.replace('categories.', '');
+                            cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+
+                            // Deletion identification check
+                            const isCustom = !INITIAL_CATEGORIES.expenses.includes(item);
+                            const isRenaming = editingCategory && editingCategory.type === 'expenses' && editingCategory.name === item;
+
+                            return (
+                              <tr key={item} className={`transition ${rowClass}`}>
+                                <td className="p-3 font-medium text-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between group gap-2">
+                                  <div className="flex items-center gap-1.5 overflow-hidden">
+                                    {isRenaming ? (
+                                      <input 
+                                        type="text" 
+                                        value={editCategoryValue} 
+                                        onChange={(e) => setEditCategoryValue(e.target.value)}
+                                        onBlur={handleSaveRename}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }}
+                                        className="bg-white border border-indigo-500 rounded px-2 py-0.5 text-slate-800 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full max-w-[160px]"
+                                        autoFocus
+                                      />
+                                    ) : (
+                                      <React.Fragment>
+                                        <span className="truncate">{cleanName}</span>
+                                        {activeTab === "edit" && (
+                                          <button 
+                                            onClick={() => handleStartRename('expenses', item)}
+                                            className="text-slate-400 hover:text-indigo-600 transition p-1 opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                            title="Rename"
+                                          >
+                                            <i className="fa-solid fa-pen text-[10px]"></i>
+                                          </button>
+                                        )}
+                                      </React.Fragment>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Custom clustering dropdown override selector [3] */}
+                                  {activeTab === "edit" && (
+                                    <div className="flex items-center gap-2 mt-1 sm:mt-0">
+                                      <select
+                                        value={data.categoryOverrides?.[item] || "auto"}
+                                        onChange={(e) => {
+                                          const val = e.target.value === "auto" ? null : e.target.value;
+                                          const updated = {
+                                            ...data,
+                                            categoryOverrides: {
+                                              ...(data.categoryOverrides || {}),
+                                              [item]: val
+                                            }
+                                          };
+                                          saveStateAndDispatch(updated, Date.now());
+                                        }}
+                                        className="bg-white border border-slate-200 rounded px-2 py-0.5 text-[10px] text-slate-600 outline-none focus:border-indigo-500 max-w-[85px] transition"
+                                      >
+                                        <option value="auto">Auto 🤖</option>
+                                        <option value="housing">Wohnen 🏠</option>
+                                        <option value="living">Alltag 🍎</option>
+                                        <option value="leisure">Freizeit 🎭</option>
+                                        <option value="professional">Beruf 🎓</option>
+                                      </select>
+                                      
+                                      {/* Reordering caret selectors inside Edit tab [1] */}
+                                      <div className="flex items-center space-x-1 shrink-0">
+                                        <button 
+                                          onClick={() => handleMoveCategory('expenses', idx, 'up')}
+                                          disabled={idx === 0}
+                                          className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
+                                        >
+                                          <i className="fa-solid fa-caret-up"></i>
+                                        </button>
+                                        <button 
+                                          onClick={() => handleMoveCategory('expenses', idx, 'down')}
+                                          disabled={idx === arr.length - 1}
+                                          className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
+                                        >
+                                          <i className="fa-solid fa-caret-down"></i>
+                                        </button>
+                                        {isCustom && (
+                                          <button 
+                                            onClick={() => handleDeleteCategory('expenses', item)}
+                                            className="text-slate-400 hover:text-rose-600 transition p-1"
+                                            title={i18n.language === 'de' ? 'Kategorie löschen' : 'Delete category'}
+                                          >
+                                            <i className="fa-solid fa-trash-can text-xs"></i>
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="p-3 text-right font-semibold">
+                                  {activeTab === "view" ? (
+                                    <span className="text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
+                                  ) : (
+                                    <input
+                                      type="number"
+                                      step="any"
+                                      value={val !== undefined && val !== 0 ? val : ''}
+                                      placeholder="0"
+                                      onChange={(e) => handleValueChange('expenses', item, selectedMonth, e.target.value)}
+                                      className="w-full text-right bg-slate-50 focus:bg-white border border-slate-200 focus:border-indigo-500 rounded px-2 py-1 outline-none font-semibold transition"
+                                    />
+                                  )}
+                                </td>
+                                <td className="p-3 text-right text-slate-600 font-medium">{formatCurrency(ytdTotal)}</td>
+                                <td className="p-3 text-right text-slate-500 text-xs">
+                                  {formatCurrency(average)}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {activeTab === "edit" && (
+                      <div className="p-3 bg-slate-50 border-t border-slate-100 flex gap-2">
+                        <input
+                          type="text"
+                          value={customExpenseInput}
+                          onChange={(e) => setCustomExpenseInput(e.target.value)}
+                          placeholder={t('addPlaceholder')}
+                          className="flex-grow bg-white border border-slate-200 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition"
+                        />
+                        <button
+                          onClick={() => handleAddCategory('expenses', customExpenseInput, setCustomExpenseInput)}
+                          className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-bold transition flex items-center gap-1 shrink-0"
+                        >
+                          <i className="fa-solid fa-plus"></i> Add
+                        </button>
+                      </div>
+                    )}
+                  </section>
+
+                </div>
+              </div>
+            )}
           </main>
         </div>
       );
