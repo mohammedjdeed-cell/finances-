@@ -53,7 +53,7 @@ function deleteQueueItem(dbInstance, key) {
   return new Promise((resolve, reject) => {
     const tx = dbInstance.transaction('queue', 'readwrite');
     const store = tx.objectStore('queue');
-    const request = store.delete(key);
+    const request = store.put(value);
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
   });
