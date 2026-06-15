@@ -168,7 +168,8 @@
         accumulatedIncome: "Gesamteinnahmen", // Refactored [2]
         accumulatedExpenses: "Gesamtausgaben", // Refactored [2]
         initialSavingsLabel: "Startkapital (Foundation)",
-        totalAvailableLiquidity: "Verfügbares Gesamtguthaben", // Liquidity [1]
+        runningCashBalance: "Endbestand / Kontostand", // Reordered Metric Card [1, 2]
+        endOf: "Ende", // dynamic sublabel [2]
         annualOverview: "Jahresanalyse", // Annual tab [2]
         savingsRate: "Sparsatz des Jahres",
         peakSpendingCategory: "Höchste Ausgabenkategorie",
@@ -258,7 +259,8 @@
         accumulatedIncome: "Total Accumulated Income", // Refactored [2]
         accumulatedExpenses: "Total Accumulated Expenses", // Refactored [2]
         initialSavingsLabel: "Start Capital (Savings)",
-        totalAvailableLiquidity: "Total Available Liquidity", // Liquidity [1]
+        runningCashBalance: "Running Cash Balance", // Reordered Metric Card [1, 2]
+        endOf: "End of", // dynamic sublabel [2]
         annualOverview: "Annual Overview", // Annual tab [2]
         savingsRate: "Yearly Savings Rate",
         peakSpendingCategory: "Peak Spending Category",
@@ -348,8 +350,8 @@
           expenses: [...INITIAL_CATEGORIES.expenses]
         },
         values: {},
-        initialSavingsBase: 5000, // Safe capital default [1]
-        categoryOverrides: {} // Multi-month custom mapping overrides [3]
+        initialSavingsBase: 5000, 
+        categoryOverrides: {} 
       };
       ["2026", "2027", "2028"].forEach(year => {
         state.values[year] = { incomes: {}, expenses: {} };
@@ -572,10 +574,10 @@
         };
       }, [data]);
 
-      // Dynamic chronological timeline roll-over calculator [1]
+      // Strict Chronological Roll-Over Math detached from initialSavingsBase/capital [1, 2]
       const chronologicalTimelineResult = useMemo(() => {
         const resultSequence = {};
-        let runningGuthaben = parseFloat(data.initialSavingsBase) || 0;
+        let runningGuthaben = 0; // Explicitly starting sequential array cascade from May 2026 at 0 [2]
 
         // Order across full active years strictly [1]
         const targetSequence = [];
@@ -1119,7 +1121,7 @@
         }, 0);
       };
 
-      // Clustered Categories selector with Overrides support [3]
+      // Semantic Sorting Clustering engine helper [3]
       const getClusteredCategories = (categories, type) => {
         if (type === 'incomes') return categories; 
         const bracketOrder = ['housing', 'living', 'leisure', 'professional'];
@@ -1568,13 +1570,15 @@
                 <div className="flex bg-slate-200/60 p-1 rounded-xl max-w-sm mx-auto shadow-inner">
                   <button 
                     onClick={() => setActiveTab('view')}
-                    className={`flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 ${activeTab === 'view' ? 'bg-white text-indigo-700 shadow' : 'text-slate-600 hover:text-slate-800'}`}
+                    className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 bg-white text-indigo-700 shadow"
+                    style={{ backgroundColor: activeTab === 'view' ? '#ffffff' : 'transparent', color: activeTab === 'view' ? '#4338ca' : '#475569' }}
                   >
                     <i className="fa-solid fa-eye text-sm"></i> {t('viewTab')}
                   </button>
                   <button 
                     onClick={() => setActiveTab('edit')}
-                    className={`flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 ${activeTab === 'edit' ? 'bg-white text-indigo-700 shadow' : 'text-slate-600 hover:text-slate-800'}`}
+                    className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2"
+                    style={{ backgroundColor: activeTab === 'edit' ? '#ffffff' : 'transparent', color: activeTab === 'edit' ? '#4338ca' : '#475569' }}
                   >
                     <i className="fa-solid fa-pen-to-square text-sm"></i> {t('editTab')}
                   </button>
@@ -1620,19 +1624,22 @@
                     </div>
                   </div>
 
-                  {/* Metric 3: Chronological Total Available Liquidity [1] */}
+                  {/* Metric 3: Strict Chronological Running Cash Balance [1, 2] */}
                   <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
                     activeLiquidityResult.leftover >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
                   }`}>
                     <div className="flex justify-between items-center">
                       <div>
+                        {/* Renamed card label [1] */}
                         <h2 className={`text-xs font-bold uppercase tracking-wider ${activeLiquidityResult.leftover >= 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
-                          {t('totalAvailableLiquidity')}
+                          {t('runningCashBalance')}
                         </h2>
+                        {/* Changed sublabel to dynamic end of selected month [1] */}
                         <p className="text-xs text-slate-500 mt-1">
-                          {t('active')}
+                          {t('endOf')} {t(`months.${selectedMonth}`)} {selectedYear}
                         </p>
                       </div>
+                      {/* Bold metric value with visual green/red color-coding [1, 2, 3] */}
                       <div className={`text-2xl font-black ${activeLiquidityResult.leftover >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                         {activeLiquidityResult.leftover < 0 ? "-" : ""}{formatCurrency(Math.abs(activeLiquidityResult.leftover))}
                       </div>
@@ -1838,7 +1845,7 @@
                                       value={val !== undefined && val !== 0 ? val : ''}
                                       placeholder="0"
                                       onChange={(e) => handleValueChange('incomes', item, selectedMonth, e.target.value)}
-                                      className="w-full text-right bg-slate-50 focus:bg-white border border-slate-200 focus:border-indigo-500 rounded px-2 py-1 outline-none font-semibold transition"
+                                      className="w-full text-right bg-slate-50 focus:bg-white border border-slate-200 focus:border-indigo-500 rounded px-2 py-1 outline-none font-semibold transition animate-none"
                                     />
                                   )}
                                 </td>
@@ -1867,7 +1874,7 @@
                           className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-bold transition flex items-center gap-1 shrink-0"
                         >
                           <i className="fa-solid fa-plus"></i> Add
-                        </button>
+                    </button>
                       </div>
                     )}
                   </section>
@@ -2010,7 +2017,7 @@
                                       value={val !== undefined && val !== 0 ? val : ''}
                                       placeholder="0"
                                       onChange={(e) => handleValueChange('expenses', item, selectedMonth, e.target.value)}
-                                      className="w-full text-right bg-slate-50 focus:bg-white border border-slate-200 focus:border-indigo-500 rounded px-2 py-1 outline-none font-semibold transition"
+                                      className="w-full text-right bg-slate-50 focus:bg-white border border-slate-200 focus:border-indigo-500 rounded px-2 py-1 outline-none font-semibold transition animate-none"
                                     />
                                   )}
                                 </td>
