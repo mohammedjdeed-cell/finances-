@@ -39,7 +39,7 @@
     /* Dynamic Form Input Numeric Overflow Fix [5] */
     .num-input-fix {
       width: 100% !important;
-      min-width: 130px !important;
+      min-width: 100px !important;
       box-sizing: border-box !important;
       padding: 0.375rem 0.75rem !important;
     }
@@ -1268,6 +1268,11 @@
         return (totalExpenses / totalIncome) * 100;
       }, [totalIncome, totalExpenses]);
 
+      // Adaptive Month-to-Month Liquidity Rollovers [1]
+      const activeLiquidityResult = useMemo(() => {
+        return chronologicalTimelineResult[`${selectedYear}-${selectedMonth}`] || { availableFunds: 0, leftover: 0, prevGuthaben: 0 };
+      }, [chronologicalTimelineResult, selectedYear, selectedMonth]);
+
       // Bounded Annual Net Balance Calculation [1]
       const yearlyNetBalance = useMemo(() => {
         let totalIncomesYear = 0;
@@ -1340,11 +1345,6 @@
 
         return totalIncomesGlobal - totalExpensesGlobal;
       }, [data]);
-
-      // Adaptive Month-to-Month Liquidity Rollovers [1]
-      const activeLiquidityResult = useMemo(() => {
-        return chronologicalTimelineResult[`${selectedYear}-${selectedMonth}`] || { availableFunds: 0, leftover: 0, prevGuthaben: 0 };
-      }, [chronologicalTimelineResult, selectedYear, selectedMonth]);
 
       // Audit Breakdown transparency data compiler (Removed Deductions/Buffer) [1, 3]
       const auditBreakdown = useMemo(() => {
@@ -1451,7 +1451,7 @@
             <div className="p-5 flex flex-col h-full justify-between overflow-y-auto">
               <div className="space-y-6">
                 <div className="flex justify-between items-center pb-4 border-b border-slate-100 dark:border-zinc-800">
-                  <h3 className="font-bold text-slate-800 dark:text-zinc-100 text-base flex items-center gap-2">
+                  <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
                     <i className="fa-solid fa-shield-halved text-indigo-600"></i> {t('options')}
                   </h3>
                   <button onClick={() => setIsBurgerOpen(false)} className="text-slate-400 hover:text-slate-600 transition">
@@ -1611,48 +1611,48 @@
               <div className="space-y-6 animate-fadeIn">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Metric 1: Savings Rate */}
-                  <div className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                  <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-5 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-indigo-800 dark:text-indigo-400 uppercase tracking-wider">{t('savingsRate')}</p>
-                      <p className="text-2xl font-black text-indigo-900 dark:text-indigo-200 mt-1">{annualOverviewData.savingsRate.toFixed(1)}%</p>
+                      <p className="text-xs font-bold text-indigo-800 uppercase tracking-wider">{t('savingsRate')}</p>
+                      <p className="text-2xl font-black text-indigo-900 mt-1">{annualOverviewData.savingsRate.toFixed(1)}%</p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-300">
+                    <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
                       <i className="fa-solid fa-percent text-xl"></i>
                     </div>
                   </div>
 
                   {/* Metric 2: Peak Spending Category */}
-                  <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                  <div className="bg-rose-50 border border-rose-200 rounded-2xl p-5 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-rose-800 dark:text-rose-400 uppercase tracking-wider">{t('peakSpendingCategory')}</p>
-                      <p className="text-base font-black text-rose-900 dark:text-rose-200 mt-2 truncate max-w-[170px]">
+                      <p className="text-xs font-bold text-rose-800 uppercase tracking-wider">{t('peakSpendingCategory')}</p>
+                      <p className="text-base font-black text-rose-900 mt-2 truncate max-w-[170px]">
                         {annualOverviewData.peakCategory ? t(`categories.${annualOverviewData.peakCategory}`).replace('categories.', '') : t('noData')}
                       </p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-300">
+                    <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
                       <i className="fa-solid fa-fire text-xl"></i>
                     </div>
                   </div>
 
                   {/* Metric 3: Highest Spent Month */}
-                  <div className="bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-slate-700 dark:text-zinc-400 uppercase tracking-wider">{t('highestExpenseMonth')}</p>
-                      <p className="text-2xl font-black text-slate-900 dark:text-zinc-100 mt-1">
+                      <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('highestExpenseMonth')}</p>
+                      <p className="text-2xl font-black text-slate-900 mt-1">
                         {annualOverviewData.highestMonth ? `${t(`months.${annualOverviewData.highestMonth}`)} ${selectedYear}` : t('noData')}
                       </p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-600 dark:text-zinc-400">
+                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
                       <i className="fa-solid fa-calendar-days text-xl"></i>
                     </div>
                   </div>
                 </div>
 
                 {/* Pie/Doughnut Chart Expense Breakdown */}
-                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm p-5 grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2 uppercase tracking-wider">{t('analyticsHeader')}</h3>
-                    <p className="text-xs text-slate-400 dark:text-zinc-500 mb-4">Prozentuale Verteilung aller Ausgaben im Jahr {selectedYear}</p>
+                    <h3 className="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">{t('analyticsHeader')}</h3>
+                    <p className="text-xs text-slate-400 mb-4">Prozentuale Verteilung aller Ausgaben im Jahr {selectedYear}</p>
                     <div className="h-[260px] relative w-full flex justify-center">
                       <canvas ref={annualChartRef}></canvas>
                     </div>
@@ -1664,9 +1664,9 @@
                       const share = annualOverviewData.totalYearlyEx > 0 ? (total / annualOverviewData.totalYearlyEx) * 100 : 0;
                       if (total === 0) return null;
                       return (
-                        <div key={category} className="flex justify-between items-center text-xs border-b border-slate-100 dark:border-zinc-800 pb-2">
-                          <span className="font-semibold text-slate-600 dark:text-zinc-400">{cleanCatName}</span>
-                          <span className="font-bold text-slate-700 dark:text-zinc-200">{formatCurrency(total)} ({share.toFixed(1)}%)</span>
+                        <div key={category} className="flex justify-between items-center text-xs border-b border-slate-100 pb-2">
+                          <span className="font-semibold text-slate-600">{cleanCatName}</span>
+                          <span className="font-bold text-slate-700">{formatCurrency(total)} ({share.toFixed(1)}%)</span>
                         </div>
                       );
                     })}
@@ -1674,31 +1674,31 @@
                 </div>
 
                 {/* 12-Month transaction grid view */}
-                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
-                  <div className="p-4 border-b border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-850 flex justify-between items-center">
-                    <h3 className="font-bold text-slate-700 dark:text-zinc-300 text-sm">{selectedYear} - Datasheet</h3>
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                    <h3 className="font-bold text-slate-700 text-sm">{selectedYear} - Datasheet</h3>
                   </div>
                   <div className="overflow-x-auto scrollbar-none">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="bg-slate-100 dark:bg-zinc-800 border-b border-slate-200 dark:border-zinc-800 font-bold text-slate-600 dark:text-zinc-400 uppercase">
+                        <tr className="bg-slate-100 border-b border-slate-200 font-bold text-slate-600 uppercase">
                           <th className="p-3">Month</th>
                           <th className="p-3 text-right">Incomes</th>
                           <th className="p-3 text-right">Expenses</th>
                           <th className="p-3 text-right">Savings Net</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-medium">
+                      <tbody className="divide-y divide-slate-100 font-medium">
                         {getMonthsForYear(selectedYear).map(m => {
                           const income = annualOverviewData.monthTotals[m]?.income || 0;
                           const expenses = annualOverviewData.monthTotals[m]?.expenses || 0;
                           const net = income - expenses;
                           return (
-                            <tr key={m} className="hover:bg-slate-50 dark:hover:bg-zinc-800/40">
-                              <td className="p-3 font-semibold text-slate-700 dark:text-zinc-300">{t(`months.${m}`)}</td>
-                              <td className="p-3 text-right text-emerald-600 dark:text-emerald-400">{formatCurrency(income)}</td>
-                              <td className="p-3 text-right text-rose-600 dark:text-rose-400">{formatCurrency(expenses)}</td>
-                              <td className={`p-3 text-right font-bold ${net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                            <tr key={m} className="hover:bg-slate-50">
+                              <td className="p-3 font-semibold text-slate-700">{t(`months.${m}`)}</td>
+                              <td className="p-3 text-right text-emerald-600">{formatCurrency(income)}</td>
+                              <td className="p-3 text-right text-rose-600">{formatCurrency(expenses)}</td>
+                              <td className={`p-3 text-right font-bold ${net >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                                 {net < 0 ? "-" : ""}{formatCurrency(Math.abs(net))}
                               </td>
                             </tr>
@@ -1713,18 +1713,18 @@
               /* TRADITIONAL MONTHLY BUDGET LAYOUT VIEW */
               <div className="space-y-6">
                 {/* Segmented view/edit toggle [6] */}
-                <div className="flex bg-slate-200/60 dark:bg-zinc-800 p-1 rounded-xl max-w-sm mx-auto shadow-inner">
+                <div className="flex bg-slate-200/60 p-1 rounded-xl max-w-sm mx-auto shadow-inner">
                   <button 
                     onClick={() => setActiveTab('view')}
-                    className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 bg-white dark:bg-zinc-700 text-indigo-700 dark:text-indigo-200 shadow"
-                    style={{ backgroundColor: activeTab === 'view' ? '' : 'transparent' }}
+                    className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 bg-white text-indigo-700 shadow"
+                    style={{ backgroundColor: activeTab === 'view' ? '#ffffff' : 'transparent', color: activeTab === 'view' ? '#4338ca' : '#475569' }}
                   >
                     <i className="fa-solid fa-eye text-sm"></i> {t('viewTab')}
                   </button>
                   <button 
                     onClick={() => setActiveTab('edit')}
-                    className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 dark:text-zinc-400"
-                    style={{ backgroundColor: activeTab === 'edit' ? '' : 'transparent' }}
+                    className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2"
+                    style={{ backgroundColor: activeTab === 'edit' ? '#ffffff' : 'transparent', color: activeTab === 'edit' ? '#4338ca' : '#475569' }}
                   >
                     <i className="fa-solid fa-pen-to-square text-sm"></i> {t('editTab')}
                   </button>
@@ -1734,14 +1734,14 @@
                 <section className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
                   {/* Metric 1: Monthly Leftover */}
                   <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
-                    saldo >= 0 ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/15 dark:border-emerald-900' : 'bg-rose-50 border-rose-200 dark:bg-rose-950/15 dark:border-rose-900'
+                    saldo >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
                   }`}>
                     <div className="flex justify-between items-center">
                       <div>
-                        <h2 className={`text-xs font-bold uppercase tracking-wider ${saldo >= 0 ? 'text-emerald-800 dark:text-emerald-400' : 'text-rose-800 dark:text-rose-400'}`}>
+                        <h2 className={`text-xs font-bold uppercase tracking-wider ${saldo >= 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
                           {t('monthlyLeftover')}
                         </h2>
-                        <p className="text-xs text-slate-500 dark:text-zinc-500 mt-1">
+                        <p className="text-xs text-slate-500 mt-1">
                           {t(`months.${selectedMonth}`)} {selectedYear}
                         </p>
                       </div>
@@ -1753,14 +1753,14 @@
 
                   {/* Metric 2: Yearly Net Balance [1, 2] */}
                   <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
-                    yearlyNetBalance >= 0 ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/15 dark:border-emerald-900' : 'bg-rose-50 border-rose-200 dark:bg-rose-950/15 dark:border-rose-900'
+                    yearlyNetBalance >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
                   }`}>
                     <div className="flex justify-between items-center">
                       <div>
-                        <h2 className={`text-xs font-bold uppercase tracking-wider ${yearlyNetBalance >= 0 ? 'text-emerald-800 dark:text-emerald-400' : 'text-rose-800 dark:text-rose-400'}`}>
+                        <h2 className={`text-xs font-bold uppercase tracking-wider ${yearlyNetBalance >= 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
                           {t('yearlyNetBalance')}
                         </h2>
-                        <p className="text-xs text-slate-500 dark:text-zinc-500 mt-1">
+                        <p className="text-xs text-slate-500 mt-1">
                           {selectedYear}
                         </p>
                       </div>
@@ -1772,16 +1772,16 @@
 
                   {/* Metric 3: Strict Chronological Running Cash Balance [1, 2] */}
                   <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
-                    activeLiquidityResult.leftover >= 0 ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/15 dark:border-emerald-900' : 'bg-rose-50 border-rose-200 dark:bg-rose-950/15 dark:border-rose-900'
+                    activeLiquidityResult.leftover >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'
                   }`}>
                     <div className="flex justify-between items-center">
                       <div>
                         {/* Renamed card label [1] */}
-                        <h2 className={`text-xs font-bold uppercase tracking-wider ${activeLiquidityResult.leftover >= 0 ? 'text-emerald-800 dark:text-emerald-400' : 'text-rose-800 dark:text-rose-400'}`}>
+                        <h2 className={`text-xs font-bold uppercase tracking-wider ${activeLiquidityResult.leftover >= 0 ? 'text-emerald-800' : 'text-rose-800'}`}>
                           {t('runningCashBalance')}
                         </h2>
                         {/* Changed sublabel to end of selected month [1] */}
-                        <p className="text-xs text-slate-500 dark:text-zinc-500 mt-1">
+                        <p className="text-xs text-slate-500 mt-1">
                           {t('endOf')} {t(`months.${selectedMonth}`)} {selectedYear}
                         </p>
                       </div>
@@ -1792,12 +1792,12 @@
                   </div>
                 </section>
 
-                {/* Audit Breakdown Transparency Drawer [2, 3] */}
+                {/* Audit Breakdown Transparency Drawer (Removed Deductions/Buffer) [2, 3] */}
                 <div className="space-y-2">
                   <div className="flex justify-end px-1">
                     <button 
                       onClick={() => setIsAuditOpen(!isAuditOpen)} 
-                      className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-xs font-bold flex items-center gap-1.5 transition outline-none"
+                      className="text-indigo-600 hover:text-indigo-800 text-xs font-bold flex items-center gap-1.5 transition outline-none"
                     >
                       <i className={`fa-solid ${isAuditOpen ? 'fa-square-minus' : 'fa-square-plus'}`}></i>
                       <span>{isAuditOpen ? t('hideAudit') : t('showAudit')}</span>
@@ -1805,19 +1805,19 @@
                   </div>
 
                   {isAuditOpen && (
-                    <div className="bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-4 text-xs space-y-2 animate-fadeIn transition-all duration-300">
-                      <h4 className="font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wide border-b border-slate-200 dark:border-zinc-800 pb-1.5 flex items-center gap-1.5">
+                    <div className="bg-slate-100 border border-slate-200 rounded-2xl p-4 text-xs space-y-2 animate-fadeIn transition-all duration-300">
+                      <h4 className="font-bold text-slate-700 uppercase tracking-wide border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
                         <i className="fa-solid fa-calculator text-indigo-500"></i> {t('auditTitle')}
                       </h4>
                       {/* Clean side-by-side Dual Net Metrics Panel [2] */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-1">
-                        <div className="flex justify-between items-center bg-white dark:bg-zinc-800 p-3 rounded-xl border border-slate-200 dark:border-zinc-700">
-                          <span className="text-slate-500 dark:text-zinc-400 font-medium">{t('accumulatedIncome')}:</span>
-                          <span className="font-bold text-emerald-600 dark:text-emerald-400">+ {formatCurrency(auditBreakdown.accIncome)}</span>
+                        <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200">
+                          <span className="text-slate-500 font-medium">{t('accumulatedIncome')}:</span>
+                          <span className="font-bold text-emerald-600">+ {formatCurrency(auditBreakdown.accIncome)}</span>
                         </div>
-                        <div className="flex justify-between items-center bg-white dark:bg-zinc-800 p-3 rounded-xl border border-slate-200 dark:border-zinc-700">
-                          <span className="text-slate-500 dark:text-zinc-400 font-medium">{t('accumulatedExpenses')}:</span>
-                          <span className="font-bold text-rose-600 dark:text-rose-400">- {formatCurrency(auditBreakdown.accExpense)}</span>
+                        <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200">
+                          <span className="text-slate-500 font-medium">{t('accumulatedExpenses')}:</span>
+                          <span className="font-bold text-rose-600">- {formatCurrency(auditBreakdown.accExpense)}</span>
                         </div>
                       </div>
                     </div>
@@ -1826,46 +1826,46 @@
                 
                 {/* Aggregate Metrics Grid */}
                 <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-emerald-50 dark:bg-emerald-950/15 border border-emerald-200 dark:border-emerald-900 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase">{t('totalIncome')}</p>
-                      <p className="text-2xl font-black text-emerald-900 dark:text-emerald-200 mt-1">{formatCurrency(totalIncome)}</p>
+                      <p className="text-xs font-bold text-emerald-800 uppercase">{t('totalIncome')}</p>
+                      <p className="text-2xl font-black text-emerald-900 mt-1">{formatCurrency(totalIncome)}</p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-emerald-300">
+                    <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
                       <i className="fa-solid fa-circle-arrow-down text-xl"></i>
                     </div>
                   </div>
 
-                  <div className="bg-rose-50 dark:bg-rose-950/15 border border-rose-200 dark:border-rose-900 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                  <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-rose-800 dark:text-rose-400 uppercase">{t('totalExpenses')}</p>
-                      <p className="text-2xl font-black text-rose-900 dark:text-rose-200 mt-1">{formatCurrency(totalExpenses)}</p>
+                      <p className="text-xs font-bold text-rose-800 uppercase">{t('totalExpenses')}</p>
+                      <p className="text-2xl font-black text-rose-900 mt-1">{formatCurrency(totalExpenses)}</p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-300">
+                    <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
                       <i className="fa-solid fa-circle-arrow-up text-xl"></i>
                     </div>
                   </div>
 
                   <div className={`border rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all ${
-                    saldo >= 0 ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-950/15 dark:border-indigo-900' : 'bg-amber-50 border-amber-200 dark:bg-amber-950/15 dark:border-amber-900'
+                    saldo >= 0 ? 'bg-indigo-50 border-indigo-200' : 'bg-amber-50 border-amber-200'
                   }`}>
                     <div>
-                      <p className={`text-xs font-bold uppercase ${saldo >= 0 ? 'text-indigo-800 dark:text-indigo-400' : 'text-amber-800 dark:text-amber-400'}`}>{t('saldo')} ({t(`months.${selectedMonth}`)})</p>
-                      <p className={`text-2xl font-black mt-1 ${saldo >= 0 ? 'text-indigo-900 dark:text-indigo-200' : 'text-amber-900 dark:text-amber-200'}`}>{formatCurrency(saldo)}</p>
+                      <p className={`text-xs font-bold uppercase ${saldo >= 0 ? 'text-indigo-800' : 'text-amber-800'}`}>{t('saldo')} ({t(`months.${selectedMonth}`)})</p>
+                      <p className={`text-2xl font-black mt-1 ${saldo >= 0 ? 'text-indigo-900' : 'text-amber-900'}`}>{formatCurrency(saldo)}</p>
                     </div>
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      saldo >= 0 ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-300'
+                      saldo >= 0 ? 'bg-indigo-100 text-indigo-600' : 'bg-amber-100 text-amber-600'
                     }`}>
                       <i className={`fa-solid text-xl ${saldo >= 0 ? 'fa-scale-balanced' : 'fa-triangle-exclamation'}`}></i>
                     </div>
                   </div>
 
-                  <div className="bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-4 flex items-center justify-between shadow-sm transition-colors">
+                  <div className="bg-slate-100 border border-slate-200 rounded-2xl p-4 flex items-center justify-between shadow-sm transition-colors">
                     <div>
-                      <p className="text-xs font-bold text-slate-700 dark:text-zinc-400 uppercase">{t('spentRatio')}</p>
-                      <p className="text-2xl font-black text-slate-900 dark:text-zinc-100 mt-1">{percentageSpent.toFixed(1)}%</p>
+                      <p className="text-xs font-bold text-slate-700 uppercase">{t('spentRatio')}</p>
+                      <p className="text-2xl font-black text-slate-900 mt-1">{percentageSpent.toFixed(1)}%</p>
                     </div>
-                    <div className="w-full max-w-[80px] bg-slate-200 dark:bg-zinc-800 rounded-full h-2.5 ml-2">
+                    <div className="w-full max-w-[80px] bg-slate-200 rounded-full h-2.5 ml-2">
                       <div 
                         className={`h-2.5 rounded-full transition-all duration-300 ${
                           percentageSpent > 100 ? 'bg-rose-600' : percentageSpent > 85 ? 'bg-amber-500' : 'bg-indigo-600'
@@ -1877,8 +1877,8 @@
                 </section>
 
                 {/* Side-by-Side Grouped Stacked Analytics Chart [2] */}
-                <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm p-4 transition-colors">
-                  <h3 className="text-sm font-bold text-slate-700 dark:text-zinc-300 mb-3 flex items-center gap-2">
+                <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 transition-colors">
+                  <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
                     <i className="fa-solid fa-chart-simple text-indigo-600"></i> {t('analyticsHeader')} - {selectedYear}
                   </h3>
                   <div className="h-[280px] relative w-full">
@@ -1890,26 +1890,26 @@
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                   
                   {/* TABLE A: EINKÜNFTE */}
-                  <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden flex flex-col transition-colors">
-                    <div className="p-4 border-b border-slate-200 dark:border-zinc-800 bg-emerald-50/50 dark:bg-emerald-950/10 flex items-center justify-between">
-                      <h3 className="text-lg font-bold text-emerald-900 dark:text-emerald-400 flex items-center gap-2">
+                  <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                    <div className="p-4 border-b border-slate-200 bg-emerald-50/50 flex items-center justify-between">
+                      <h3 className="text-lg font-bold text-emerald-900 flex items-center gap-2">
                         <i className="fa-solid fa-money-bill-trend-up text-emerald-600"></i> {t('incomesHeader')}
                       </h3>
-                      <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 rounded-full">
+                      <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full">
                         {t('sum')}: {formatCurrency(totalIncome)}
                       </span>
                     </div>
                     <div className="overflow-x-auto flex-grow">
                       <table className="w-full text-left border-collapse">
                         <thead>
-                          <tr className="bg-slate-100 dark:bg-zinc-800/80 border-b border-slate-200 dark:border-zinc-800 text-xs font-semibold text-slate-600 dark:text-zinc-400 uppercase">
-                            <th className="p-3">Posten</th>
+                          <tr className="bg-slate-100 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
+                            <th className="p-3">{t('posten')}</th>
                             <th className="p-3 w-32 text-right">{t(`months.${selectedMonth}`)} (€)</th>
                             <th className="p-3 w-28 text-right">{t('resultYtd')}</th>
                             <th className="p-3 w-28 text-right">{t('avgSchnitt')}</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 text-sm">
+                        <tbody className="divide-y divide-slate-100 text-sm">
                           {(activeTab === "view" ? getClusteredCategories(data.categories.incomes, 'incomes') : data.categories.incomes).map((item, idx, arr) => {
                             const { ytdTotal, average } = getItemStats('incomes', item);
                             const val = data.values[selectedYear]?.incomes[item]?.[selectedMonth];
@@ -1924,8 +1924,8 @@
                             const isRenaming = editingCategory && editingCategory.type === 'incomes' && editingCategory.name === item;
 
                             return (
-                              <tr key={item} className="hover:bg-slate-50 dark:hover:bg-zinc-800/40 transition border-l-4 border-emerald-500">
-                                <td className="p-3 font-medium text-slate-700 dark:text-zinc-300 flex items-center justify-between group min-h-[52px]">
+                              <tr key={item} className="hover:bg-slate-50 transition border-l-4 border-emerald-500">
+                                <td className="p-3 font-medium text-slate-700 flex items-center justify-between group min-h-[52px]">
                                   {isRenaming ? (
                                     <input 
                                       type="text" 
@@ -1933,7 +1933,7 @@
                                       onChange={(e) => setEditCategoryValue(e.target.value)}
                                       onBlur={handleSaveRename}
                                       onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }}
-                                      className="bg-white dark:bg-zinc-800 border border-indigo-500 rounded px-2 py-0.5 text-slate-800 dark:text-zinc-100 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full max-w-[160px]"
+                                      className="bg-white border border-indigo-500 rounded px-2 py-0.5 text-slate-800 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full max-w-[160px]"
                                       autoFocus
                                     />
                                   ) : (
@@ -1982,7 +1982,7 @@
                                 </td>
                                 <td className="p-3 text-right">
                                   {activeTab === "view" ? (
-                                    <span className="font-bold text-slate-700 dark:text-zinc-300 block pr-2">{formatCurrency(val || 0)}</span>
+                                    <span className="font-bold text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
                                   ) : (
                                     <input
                                       type="number"
@@ -1990,12 +1990,12 @@
                                       value={val !== undefined && val !== 0 ? val : ''}
                                       placeholder="0"
                                       onChange={(e) => handleValueChange('incomes', item, selectedMonth, e.target.value)}
-                                      className="num-input-fix text-right bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg outline-none focus:border-indigo-500 font-semibold transition"
+                                      className="num-input-fix text-right bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-500 font-semibold transition"
                                     />
                                   )}
                                 </td>
-                                <td className="p-3 text-right text-slate-600 dark:text-zinc-400 font-medium">{formatCurrency(ytdTotal)}</td>
-                                <td className="p-3 text-right text-slate-500 dark:text-zinc-500 text-xs">
+                                <td className="p-3 text-right text-slate-600 font-medium">{formatCurrency(ytdTotal)}</td>
+                                <td className="p-3 text-right text-slate-500 text-xs">
                                   {formatCurrency(average)}
                                 </td>
                               </tr>
@@ -2006,13 +2006,13 @@
                     </div>
 
                     {activeTab === "edit" && (
-                      <div className="p-3 bg-slate-50 dark:bg-zinc-850 border-t border-slate-100 dark:border-zinc-800 flex gap-2">
+                      <div className="p-3 bg-slate-50 border-t border-slate-100 flex gap-2">
                         <input
                           type="text"
                           value={customIncomeInput}
                           onChange={(e) => setCustomIncomeInput(e.target.value)}
                           placeholder={t('addPlaceholder')}
-                          className="flex-grow bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition text-slate-800 dark:text-zinc-100"
+                          className="flex-grow bg-white border border-slate-200 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition"
                         />
                         <button
                           onClick={() => handleAddCategory('incomes', customIncomeInput, setCustomIncomeInput)}
@@ -2025,26 +2025,26 @@
                   </section>
 
                   {/* TABLE B: AUSGABEN */}
-                  <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden flex flex-col transition-colors">
-                    <div className="p-4 border-b border-slate-200 dark:border-zinc-800 bg-rose-50/50 dark:bg-rose-950/10 flex items-center justify-between">
-                      <h3 className="text-lg font-bold text-rose-900 dark:text-rose-400 flex items-center gap-2">
+                  <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                    <div className="p-4 border-b border-slate-200 bg-rose-50/50 flex items-center justify-between">
+                      <h3 className="text-lg font-bold text-rose-900 flex items-center gap-2">
                         <i className="fa-solid fa-cart-shopping text-rose-600"></i> {t('expensesHeader')}
                       </h3>
-                      <span className="text-xs font-semibold px-2.5 py-1 bg-rose-100 dark:bg-rose-900/50 text-rose-800 dark:text-rose-300 rounded-full">
+                      <span className="text-xs font-semibold px-2.5 py-1 bg-rose-100 text-rose-800 rounded-full">
                         {t('sum')}: {formatCurrency(totalExpenses)}
                       </span>
                     </div>
                     <div className="overflow-x-auto max-h-[500px] overflow-y-auto flex-grow">
                       <table className="w-full text-left border-collapse">
-                        <thead className="sticky top-0 bg-slate-100 dark:bg-zinc-800 border-b border-slate-200 dark:border-zinc-800 text-xs font-semibold text-slate-600 dark:text-zinc-400 uppercase z-10">
-                          <tr>
-                            <th className="p-3 bg-slate-100 dark:bg-zinc-800">Posten</th>
-                            <th className="p-3 bg-slate-100 dark:bg-zinc-800 w-32 text-right">{t(`months.${selectedMonth}`)} (€)</th>
-                            <th className="p-3 bg-slate-100 dark:bg-zinc-800 w-28 text-right">{t('resultYtd')}</th>
-                            <th className="p-3 bg-slate-100 dark:bg-zinc-800 w-28 text-right">{t('avgSchnitt')}</th>
+                        <thead>
+                          <tr className="bg-slate-100 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
+                            <th className="p-3">Posten</th>
+                            <th className="p-3 w-32 text-right">{t(`months.${selectedMonth}`)} (€)</th>
+                            <th className="p-3 w-28 text-right">{t('resultYtd')}</th>
+                            <th className="p-3 w-28 text-right">{t('avgSchnitt')}</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 text-sm">
+                        <tbody className="divide-y divide-slate-100 text-sm">
                           {(activeTab === "view" ? getClusteredCategories(data.categories.expenses, 'expenses') : data.categories.expenses).map((item, idx, arr) => {
                             const { ytdTotal, average } = getItemStats('expenses', item);
                             const val = data.values[selectedYear]?.expenses[item]?.[selectedMonth];
@@ -2054,11 +2054,10 @@
                             
                             // Semantically defined clustering background colors [3]
                             const rowClass = 
-                              bracket === 'housing' ? 'bg-slate-50/50 hover:bg-slate-100 dark:bg-slate-900/20 dark:hover:bg-slate-800/40 border-l-4 border-slate-500 dark:border-slate-400' : 
-                              bracket === 'living' ? 'bg-amber-50/30 hover:bg-amber-100/50 dark:bg-amber-950/10 dark:hover:bg-amber-900/20 border-l-4 border-amber-500 dark:border-amber-400' :  
-                              bracket === 'subscriptions' ? 'bg-indigo-50/20 hover:bg-indigo-100/50 dark:bg-indigo-950/15 dark:hover:bg-indigo-900/30 border-l-4 border-indigo-500 dark:border-indigo-400' : // Subscriptions [2]
-                              bracket === 'professional' ? 'bg-teal-50/30 hover:bg-teal-100/50 dark:bg-teal-950/10 dark:hover:bg-teal-900/20 border-l-4 border-teal-500 dark:border-teal-400' : 
-                              'bg-purple-50/20 hover:bg-purple-100/50 dark:bg-purple-950/10 dark:hover:bg-purple-900/20 border-l-4 border-purple-500 dark:border-purple-400'; // Leisure pink
+                              bracket === 'housing' ? 'bg-slate-50/50 hover:bg-slate-100 border-l-4 border-slate-500' : 
+                              bracket === 'living' ? 'bg-amber-50/30 hover:bg-amber-100/50 border-l-4 border-amber-500' :  
+                              bracket === 'professional' ? 'bg-teal-50/30 hover:bg-teal-100/50 border-l-4 border-teal-500' : 
+                              'bg-indigo-50/20 hover:bg-indigo-100/50 border-l-4 border-indigo-500'; 
 
                             // Database Object Parsing sanitation step
                             const key = t(`categories.${item}`);
@@ -2071,7 +2070,7 @@
 
                             return (
                               <tr key={item} className={`transition ${rowClass}`}>
-                                <td className="p-3 font-medium text-slate-700 dark:text-zinc-300 flex flex-col sm:flex-row sm:items-center sm:justify-between group gap-2">
+                                <td className="p-3 font-medium text-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between group gap-2">
                                   <div className="flex items-center gap-1.5 overflow-hidden">
                                     {isRenaming ? (
                                       <input 
@@ -2080,7 +2079,7 @@
                                         onChange={(e) => setEditCategoryValue(e.target.value)}
                                         onBlur={handleSaveRename}
                                         onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }}
-                                        className="bg-white dark:bg-zinc-800 border border-indigo-500 rounded px-2 py-0.5 text-slate-800 dark:text-zinc-100 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full max-w-[160px]"
+                                        className="bg-white border border-indigo-500 rounded px-2 py-0.5 text-slate-800 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full max-w-[160px]"
                                         autoFocus
                                       />
                                     ) : (
@@ -2115,12 +2114,11 @@
                                           };
                                           saveStateAndDispatch(updated, Date.now());
                                         }}
-                                        className="bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded px-2 py-0.5 text-[10px] text-slate-600 dark:text-zinc-400 outline-none focus:border-indigo-500 max-w-[85px] transition"
+                                        className="bg-white border border-slate-200 rounded px-2 py-0.5 text-[10px] text-slate-600 outline-none focus:border-indigo-500 max-w-[85px] transition"
                                       >
                                         <option value="auto">Auto 🤖</option>
                                         <option value="housing">Wohnen 🏠</option>
                                         <option value="living">Alltag 🍎</option>
-                                        <option value="subscriptions">Abonnement 🎟️</option>
                                         <option value="leisure">Freizeit 🎭</option>
                                         <option value="professional">Beruf 🎓</option>
                                       </select>
@@ -2156,7 +2154,7 @@
                                 </td>
                                 <td className="p-3 text-right font-semibold flex items-center justify-end gap-1.5 min-h-[52px]">
                                   {activeTab === "view" ? (
-                                    <span className="text-slate-700 dark:text-zinc-300 block pr-2">{formatCurrency(val || 0)}</span>
+                                    <span className="text-slate-700 block pr-2">{formatCurrency(val || 0)}</span>
                                   ) : (
                                     <React.Fragment>
                                       <input
@@ -2165,12 +2163,12 @@
                                         value={val !== undefined && val !== 0 ? val : ''}
                                         placeholder="0"
                                         onChange={(e) => handleValueChange('expenses', item, selectedMonth, e.target.value)}
-                                        className="num-input-fix text-right bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg outline-none focus:border-indigo-500 font-semibold transition animate-none"
+                                        className="num-input-fix text-right bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-indigo-500 font-semibold transition"
                                       />
                                       {/* Set as Recurring Budget configuration utility [1] */}
                                       <button
                                         onClick={() => setRecurringSetup({ type: 'expenses', item, value: val || 0 })}
-                                        className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1.5 transition outline-none shrink-0"
+                                        className="text-slate-400 hover:text-indigo-600 p-1.5 transition outline-none shrink-0"
                                         title={t('setRecurringBudget')}
                                       >
                                         <i className="fa-solid fa-arrows-spin"></i>
@@ -2178,8 +2176,8 @@
                                     </React.Fragment>
                                   )}
                                 </td>
-                                <td className="p-3 text-right text-slate-600 dark:text-zinc-400 font-medium">{formatCurrency(ytdTotal)}</td>
-                                <td className="p-3 text-right text-slate-500 dark:text-zinc-500 text-xs">
+                                <td className="p-3 text-right text-slate-600 font-medium">{formatCurrency(ytdTotal)}</td>
+                                <td className="p-3 text-right text-slate-500 text-xs">
                                   {formatCurrency(average)}
                                 </td>
                               </tr>
@@ -2190,13 +2188,13 @@
                     </div>
 
                     {activeTab === "edit" && (
-                      <div className="p-3 bg-slate-50 dark:bg-zinc-850 border-t border-slate-100 dark:border-zinc-800 flex gap-2">
+                      <div className="p-3 bg-slate-50 border-t border-slate-100 flex gap-2">
                         <input
                           type="text"
                           value={customExpenseInput}
                           onChange={(e) => setCustomExpenseInput(e.target.value)}
                           placeholder={t('addPlaceholder')}
-                          className="flex-grow bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition text-slate-800 dark:text-zinc-100"
+                          className="flex-grow bg-white border border-slate-200 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition"
                         />
                         <button
                           onClick={() => handleAddCategory('expenses', customExpenseInput, setCustomExpenseInput)}
@@ -2216,24 +2214,24 @@
           {/* Automated Multi-Month Recurring Budget overlay/wizard [1] */}
           {recurringSetup && (
             <div className="fixed inset-0 bg-slate-950/40 z-50 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 p-6 max-w-sm w-full shadow-2xl space-y-4">
-                <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-zinc-800">
-                  <h3 className="font-bold text-slate-800 dark:text-zinc-100 text-sm flex items-center gap-1.5">
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 max-w-sm w-full shadow-2xl space-y-4">
+                <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                  <h3 className="font-bold text-slate-800 text-sm flex items-center gap-1.5">
                     <i className="fa-solid fa-arrows-spin text-indigo-500"></i> {t('setRecurringBudget')}
                   </h3>
-                  <button onClick={() => setRecurringSetup(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-400">
+                  <button onClick={() => setRecurringSetup(null)} className="text-slate-400 hover:text-slate-600">
                     <i className="fa-solid fa-xmark"></i>
                   </button>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-zinc-400 capitalize">
-                  {t('categories.' + recurringSetup.item).replace('categories.', '')}: <span className="font-bold text-slate-700 dark:text-zinc-200">{formatCurrency(recurringSetup.value)}</span>
+                <p className="text-xs text-slate-500 capitalize">
+                  {t('categories.' + recurringSetup.item).replace('categories.', '')}: <span className="font-bold text-slate-700">{formatCurrency(recurringSetup.value)}</span>
                 </p>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">{t('durationInMonths')}</label>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('durationInMonths')}</label>
                   <select
                     value={recurringMonths}
                     onChange={(e) => setRecurringMonths(parseInt(e.target.value))}
-                    className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-zinc-100 outline-none focus:border-indigo-500 transition font-semibold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-indigo-500 transition font-semibold"
                   >
                     <option value={3}>3 {i18n.language === 'de' ? 'Monate' : 'months'}</option>
                     <option value={6}>6 {i18n.language === 'de' ? 'Monate' : 'months'}</option>
@@ -2243,7 +2241,7 @@
                 <div className="flex gap-2 pt-2">
                   <button
                     onClick={() => setRecurringSetup(null)}
-                    className="flex-1 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 font-bold py-2 rounded-lg text-xs transition"
+                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2 rounded-lg text-xs transition"
                   >
                     Cancel
                   </button>
@@ -2295,6 +2293,3 @@
   </script>
 </body>
 </html>
-
-The system calculations, theme triggers, and data migration modules are cleanly
-deployed and backward-compatible with your existing partitions [1, 2, 3, 4].
