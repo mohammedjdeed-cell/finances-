@@ -135,9 +135,18 @@
       measurementId: "G-6SNL4MJZVK"
     };
 
-    // Initialize Firebase Services [3]
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    // Initialize Firebase Services Safely to Prevent Crash on Blocker/Offline
+    let db = null;
+    try {
+      if (typeof firebase !== 'undefined') {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+      } else {
+        console.warn("Firebase SDK not loaded. Operating in offline-only local mode.");
+      }
+    } catch (e) {
+      console.error("Firebase initialization failed:", e);
+    }
 
     const ALL_MONTHS = ["Jan", "Feb", "Mrz", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 
@@ -405,11 +414,21 @@
     const LanguageContext = createContext();
 
     function LanguageProvider({ children }) {
-      const [lang, setLang] = useState(() => localStorage.getItem('budget_app_lang') || 'de');
+      const [lang, setLang] = useState(() => {
+        try {
+          return localStorage.getItem('budget_app_lang') || 'de';
+        } catch (e) {
+          return 'de';
+        }
+      });
 
       const changeLanguage = (newLang) => {
         setLang(newLang);
-        localStorage.setItem('budget_app_lang', newLang);
+        try {
+          localStorage.setItem('budget_app_lang', newLang);
+        } catch (e) {
+          console.warn("Could not save language to localStorage:", e);
+        }
       };
 
       const t = (path) => {
@@ -528,55 +547,87 @@
       return merged;
     };
 
-    // Local IndexedDB caching driver [1]
+    // Local IndexedDB caching driver with safe LocalStorage Fallback [1]
     const IDB = {
       dbName: 'BudgetDatabase_v2',
       dbVersion: 1,
       open() {
         return new Promise((resolve, reject) => {
-          const request = indexedDB.open(this.dbName, this.dbVersion);
-          request.onupgradeneeded = (e) => {
-            const database = e.target.result;
-            if (!database.objectStoreNames.contains('state')) {
-              database.createObjectStore('state', { keyPath: 'id' });
-            }
-            if (!database.objectStoreNames.contains('queue')) {
-              database.createObjectStore('queue', { keyPath: 'id' });
-            }
-          };
-          request.onsuccess = (e) => resolve(e.target.result);
-          request.onerror = (e) => reject(e.target.error);
+          if (typeof indexedDB === 'undefined') {
+            reject(new Error("IndexedDB not supported in this browser"));
+            return;
+          }
+          try {
+            const request = indexedDB.open(this.dbName, this.dbVersion);
+            request.onupgradeneeded = (e) => {
+              const database = e.target.result;
+              if (!database.objectStoreNames.contains('state')) {
+                database.createObjectStore('state', { keyPath: 'id' });
+              }
+              if (!database.objectStoreNames.contains('queue')) {
+                database.createObjectStore('queue', { keyPath: 'id' });
+              }
+            };
+            request.onsuccess = (e) => resolve(e.target.result);
+            request.onerror = (e) => reject(e.target.error);
+          } catch (err) {
+            reject(err);
+          }
         });
       },
       async get(storeName, key) {
-        const database = await this.open();
-        return new Promise((resolve, reject) => {
-          const tx = database.transaction(storeName, 'readonly');
-          const store = tx.objectStore(storeName);
-          const request = store.get(key);
-          request.onsuccess = () => resolve(request.result);
-          request.onerror = () => reject(request.error);
-        });
+        try {
+          const database = await this.open();
+          return new Promise((resolve, reject) => {
+            const tx = database.transaction(storeName, 'readonly');
+            const store = tx.objectStore(storeName);
+            const request = store.get(key);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+          });
+        } catch (e) {
+          console.warn("IndexedDB access failed, falling back to LocalStorage:", e);
+          try {
+            const serialized = localStorage.getItem(`fallback_${storeName}_${key}`);
+            return serialized ? JSON.parse(serialized) : null;
+          } catch (err) {
+            return null;
+          }
+        }
       },
       async set(storeName, value) {
-        const database = await this.open();
-        return new Promise((resolve, reject) => {
-          const tx = database.transaction(storeName, 'readwrite');
-          const store = tx.objectStore(storeName);
-          const request = store.put(value);
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        });
+        try {
+          const database = await this.open();
+          return new Promise((resolve, reject) => {
+            const tx = database.transaction(storeName, 'readwrite');
+            const store = tx.objectStore(storeName);
+            const request = store.put(value);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+          });
+        } catch (e) {
+          console.warn("IndexedDB save failed, saving to LocalStorage fallback:", e);
+          try {
+            localStorage.setItem(`fallback_${storeName}_${value.id || 'data'}`, JSON.stringify(value));
+          } catch (err) {}
+        }
       },
       async delete(storeName, key) {
-        const database = await this.open();
-        return new Promise((resolve, reject) => {
-          const tx = database.transaction(storeName, 'readwrite');
-          const store = tx.objectStore(storeName);
-          const request = store.delete(key);
-          request.onsuccess = () => resolve();
-          request.onerror = () => reject(request.error);
-        });
+        try {
+          const database = await this.open();
+          return new Promise((resolve, reject) => {
+            const tx = database.transaction(storeName, 'readwrite');
+            const store = tx.objectStore(storeName);
+            const request = store.delete(key);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+          });
+        } catch (e) {
+          console.warn("IndexedDB deletion failed, cleaning LocalStorage fallback:", e);
+          try {
+            localStorage.removeItem(`fallback_${storeName}_${key}`);
+          } catch (err) {}
+        }
       }
     };
 
@@ -591,8 +642,14 @@
       const [activeTab, setActiveTab] = useState("view"); 
       const [isAuditOpen, setIsAuditOpen] = useState(false); 
 
-      // Tri-State Theme Engine state [4]
-      const [theme, setTheme] = useState(() => localStorage.getItem('budget_app_theme') || 'system');
+      // Tri-State Theme Engine state with safe wrapper [4]
+      const [theme, setTheme] = useState(() => {
+        try {
+          return localStorage.getItem('budget_app_theme') || 'system';
+        } catch (e) {
+          return 'system';
+        }
+      });
 
       const [customIncomeInput, setCustomIncomeInput] = useState("");
       const [customExpenseInput, setCustomExpenseInput] = useState("");
@@ -620,7 +677,11 @@
 
       // App Theme Engine bootstrap hook [4]
       useEffect(() => {
-        localStorage.setItem('budget_app_theme', theme);
+        try {
+          localStorage.setItem('budget_app_theme', theme);
+        } catch (e) {
+          console.warn("Writing theme to localStorage is restricted:", e);
+        }
         const applyTheme = (val) => {
           const rootEl = document.documentElement;
           let resolvedTheme = val;
@@ -677,24 +738,31 @@
         }
         loadInitialData();
 
-        // Lock database references to prevent structural siloing [1]
-        const unsubscribe = db.collection('monthly_logs').doc('house_finanzen_state')
-          .onSnapshot(async (doc) => {
-            if (doc.exists) {
-              const remote = doc.data();
-              const localCached = await IDB.get('state', 'budget_data');
-              
-              // Apply remote configurations only if remote is chronologically newer [1]
-              if (!localCached || remote.updatedAt > localCached.updatedAt) {
-                const merged = mergeAndLockState(remote.payload);
-                setData(merged);
-                await IDB.set('state', { id: 'budget_data', payload: merged, updatedAt: remote.updatedAt });
-                setSyncStatus("synced");
-              }
-            }
-          }, (err) => {
-            console.warn("Firestore connection offline or restricted:", err);
-          });
+        // Lock database references safely to avoid structural siloing [1]
+        let unsubscribe = () => {};
+        if (db) {
+          try {
+            unsubscribe = db.collection('monthly_logs').doc('house_finanzen_state')
+              .onSnapshot(async (doc) => {
+                if (doc.exists) {
+                  const remote = doc.data();
+                  const localCached = await IDB.get('state', 'budget_data');
+                  
+                  // Apply remote configurations only if remote is chronologically newer [1]
+                  if (!localCached || remote.updatedAt > localCached.updatedAt) {
+                    const merged = mergeAndLockState(remote.payload);
+                    setData(merged);
+                    await IDB.set('state', { id: 'budget_data', payload: merged, updatedAt: remote.updatedAt });
+                    setSyncStatus("synced");
+                  }
+                }
+              }, (err) => {
+                console.warn("Firestore connection offline or restricted:", err);
+              });
+          } catch (err) {
+            console.warn("Failed to bind Firestore listener:", err);
+          }
+        }
 
         return () => unsubscribe();
       }, []);
@@ -767,6 +835,11 @@
       useEffect(() => {
         if (selectedMonth === "AnnualOverview") return;
         if (!chartRef.current) return;
+        if (typeof Chart === 'undefined') {
+          console.warn("Chart.js failed to load or is blocked. Visual graphics are disabled.");
+          return;
+        }
+
         const ctx = chartRef.current.getContext('2d');
         const monthsForYear = getMonthsForYear(selectedYear);
 
@@ -945,6 +1018,11 @@
       useEffect(() => {
         if (selectedMonth !== "AnnualOverview") return;
         if (!annualChartRef.current) return;
+        if (typeof Chart === 'undefined') {
+          console.warn("Chart.js failed to load. Visual breakdown disabled.");
+          return;
+        }
+
         const ctx = annualChartRef.current.getContext('2d');
 
         const activeExpenditures = annualOverviewData.sortedExpenses.filter(e => e.total > 0);
@@ -1006,6 +1084,7 @@
       }, [data, selectedYear, selectedMonth, i18n.language, annualOverviewData, theme]);
 
       const triggerLocalToCloudSync = async () => {
+        if (!db) return;
         setSyncStatus("syncing");
         try {
           const queueItem = await IDB.get('queue', 'pending_sync');
@@ -1031,7 +1110,7 @@
         await IDB.set('state', { id: 'budget_data', payload: updatedData, updatedAt: timestamp });
         await IDB.set('queue', { id: 'pending_sync', payload: updatedData, updatedAt: timestamp });
 
-        if (navigator.onLine) {
+        if (navigator.onLine && db) {
           setSyncStatus("syncing");
           try {
             await db.collection('monthly_logs').doc('house_finanzen_state').set({
