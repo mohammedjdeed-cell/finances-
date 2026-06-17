@@ -12,13 +12,13 @@
       darkMode: 'class'
     }
   </script>
-  <!-- React & Babel CDNs -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- Chart.js CDN for Visual Analytics -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Firebase Compat SDKs [3] -->
+  <!-- React & Babel CDNs (Version Locked) -->
+  <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
+  <!-- Chart.js CDN for Visual Analytics (Version Locked) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2"></script>
+  <!-- Firebase Compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <!-- FontAwesome Icons -->
@@ -27,29 +27,29 @@
   <meta name="theme-color" content="#4f46e5">
   
   <style>
-    /* Universal Theme custom variables [2] */
+    /* Universal Theme custom variables */
     :root, [data-theme="light"] {
-        --color-bg: #f8fafc;
+        --color-bg: #f4f4f5; 
         --color-card: #ffffff;
-        --color-text-main: #1e293b;
-        --color-text-muted: #64748b;
-        --color-border: #e2e8f0;
+        --color-text-main: #18181b; 
+        --color-text-muted: #71717a; 
+        --color-border: #e4e4e7; 
         --color-input-bg: #ffffff;
-        --color-input-text: #1e293b;
-        --color-chart-grid: rgba(0, 0, 0, 0.05);
-        --color-chart-label: #475569;
+        --color-input-text: #18181b;
+        --color-chart-grid: rgba(24, 24, 27, 0.06);
+        --color-chart-label: #52525b; 
     }
     
     [data-theme="dark"] {
-        --color-bg: #121214;
-        --color-card: #1a1a1e;
-        --color-text-main: #f3f4f6;
-        --color-text-muted: #9ca3af;
-        --color-border: #3f3f46;
-        --color-input-bg: #26262b;
-        --color-input-text: #f3f4f6;
-        --color-chart-grid: rgba(255, 255, 255, 0.1);
-        --color-chart-label: #9ca3af;
+        --color-bg: #09090b; 
+        --color-card: #18181b; 
+        --color-text-main: #fafafa; 
+        --color-text-muted: #a1a1aa; 
+        --color-border: #27272a; 
+        --color-input-bg: #202023; 
+        --color-input-text: #fafafa;
+        --color-chart-grid: rgba(250, 250, 250, 0.08);
+        --color-chart-label: #a1a1aa;
     }
 
     body {
@@ -69,56 +69,37 @@
       border-color: var(--color-border) !important;
     }
 
-    /* Strict Flexbox row wrapping overhaul layout [1] */
-    .expense-row, .income-row {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        padding: 10px 15px;
-        gap: 15px;
-        width: 100%;
-        box-sizing: border-box;
+    /* Bulletproof locked CSS Grid layout */
+    .locked-grid-row {
+      display: grid !important;
+      grid-template-columns: minmax(150px, 3.5fr) 105px 95px 95px !important;
+      align-items: center !important;
+      gap: 12px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      padding: 10px 14px !important;
     }
 
-    /* Zone 1: Name and Badges [1] */
-    .flex-zone-1 {
-        display: flex !important;
-        align-items: center !important;
-        gap: 8px !important;
-        flex: 2 !important;
-        min-width: 200px !important;
-        overflow: hidden !important;
+    /* Locked CSS Grid layout for the annual overview data sheet */
+    .annual-grid-row {
+      display: grid !important;
+      grid-template-columns: 2fr 3fr 3fr 3fr !important;
+      align-items: center !important;
+      gap: 12px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      padding: 12px 16px !important;
     }
 
-    /* Zone 2: Input Field constraint [1, 5] */
-    .flex-zone-2 {
-        flex: 1 !important;
-        max-width: 110px !important;
-        width: 100% !important;
-        text-align: right !important;
-        box-sizing: border-box !important;
-    }
-
-    /* Zone 3: YTD & Averages [1] */
-    .flex-zone-3 {
-        display: flex !important;
-        gap: 20px !important;
-        flex: 1.5 !important;
-        justify-content: flex-end !important;
-        text-align: right !important;
-        white-space: nowrap !important;
-    }
-
-    /* Form Input Numeric Overflow Fix [5] */
+    /* Form Input Numeric Overflow Fix */
     .num-input-fix {
       width: 100% !important;
-      min-width: 100px !important;
+      min-width: 80px !important;
       box-sizing: border-box !important;
-      padding: 0.375rem 0.75rem !important;
+      padding: 0.375rem 0.5rem !important;
     }
 
-    /* Remove native numeric increment step controls [4] */
+    /* Remove native numeric increment step controls */
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
         -webkit-appearance: none;
@@ -137,13 +118,13 @@
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+<body class="font-sans min-h-screen">
   <div id="root"></div>
 
-  <script type="text/babel">
+  <script type="text/babel" data-presets="react,env">
     const { useState, useEffect, useMemo, createContext, useContext, useRef } = React;
 
-    // Preserved Firebase Configuration [3]
+    // Preserved Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyCvKICFZCwQz5e70HTLDA_eDD4Us8XqNas",
       authDomain: "finances-ed83f.firebaseapp.com",
@@ -154,13 +135,34 @@
       measurementId: "G-6SNL4MJZVK"
     };
 
-    // Initialize Firebase Services [3]
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    // Initialize Firebase Services Safely
+    let db = null;
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+    } catch (error) {
+      console.warn("Firebase initialization blocked. App running offline.", error);
+    }
+
+    // Storage Wrappers to prevent local execution crashes
+    const safeGetStorage = (key, fallback) => {
+      try {
+        return localStorage.getItem(key) || fallback;
+      } catch (e) {
+        return fallback;
+      }
+    };
+
+    const safeSetStorage = (key, value) => {
+      try {
+        localStorage.setItem(key, value);
+      } catch (e) {
+        console.warn("LocalStorage write blocked.", e);
+      }
+    };
 
     const ALL_MONTHS = ["Jan", "Feb", "Mrz", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 
-    // Timeline logic starting explicitly in May 2026 [5]
     const getMonthsForYear = (year) => {
       if (year === 2026) {
         return ["Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
@@ -201,7 +203,6 @@
       ]
     };
 
-    // Auto-scan subscription rules [2]
     const isSubscription = (posten) => {
       const p = posten.toLowerCase();
       const subKeywords = ["netflix", "google", "amazon", "xiaomi", "spotify", "cloud", "abo", "subscription", "youtube", "disney", "prime"];
@@ -209,7 +210,7 @@
     };
 
     const getExpenseBracket = (posten) => {
-      if (isSubscription(posten)) return 'subscriptions'; // Subscriptions [2]
+      if (isSubscription(posten)) return 'subscriptions';
       
       const housing = ["Hause mieten", "Hause kaution", "strom ⚡", "Gas/ Heißung", "radio", "internet/ Handy"];
       const living = ["Lebensmittel 🍞🍲", "Hausrat 🛋️", "transport/ tickets", "kleidung"];
@@ -221,7 +222,6 @@
       return 'leisure'; 
     };
 
-    // Bilingual translation dictionaries [4]
     const translations = {
       de: {
         title: "Finanzplaner",
@@ -256,24 +256,24 @@
         bracketLiving: "Alltag & Logistik",
         bracketLeisure: "Freizeit & Extras",
         bracketProfessional: "Beruf, Gesundheit & Vorsorge",
-        bracketSubscriptions: "Abonnements", // Subscriptions [2]
+        bracketSubscriptions: "Abonnements",
         viewTab: "Details & Ansicht",
         editTab: "Werte bearbeiten",
         backupSection: "Sicherheits-Backup",
         exportBackup: "Backup exportieren (JSON)",
         importBackup: "Backup importieren (JSON)",
         importSuccess: "Daten erfolgreich aus Backup importiert!",
-        importError: "Fehler beim Importieren der Datei. Bitte stellen Sie sicher, dass es sich um eine gültige JSON-Backup-Datei handelt.",
-        deleteConfirmation: "Möchten Sie die Kategorie \"{{name}}\" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+        importError: "Fehler beim Importieren der Datei.",
+        deleteConfirmation: "Möchten Sie die Kategorie \"{{name}}\" wirklich löschen?",
         monthlyLeftover: "Monats-Restbetrag",
         yearlyNetBalance: "Jahressaldo", 
         overallNetBalance: "Gesamtsaldo", 
         allTimeScope: "Gesamter Zeitraum",
-        showAudit: "Berechnung prüfen", // Audit Panel [3]
+        showAudit: "Berechnung prüfen",
         hideAudit: "Breakdown verbergen",
         auditTitle: "Audit-Aufschlüsselung (Gesamter Zeitraum)",
-        accumulatedIncome: "Gesamteinnahmen", // Refactored [2]
-        accumulatedExpenses: "Gesamtausgaben", // Refactored [2]
+        accumulatedIncome: "Gesamteinnahmen",
+        accumulatedExpenses: "Gesamtausgaben",
         initialSavingsLabel: "Startkapital (Foundation)",
         runningCashBalance: "Endbestand / Kontostand", 
         endOf: "Ende", 
@@ -282,10 +282,10 @@
         peakSpendingCategory: "Höchste Ausgabenkategorie",
         highestExpenseMonth: "Ausgabenstärkster Monat",
         noData: "Keine Daten vorhanden",
-        oneTimeOverride: "Gruppierung anpassen", // Custom override [3]
-        setRecurringBudget: "Monatlich budgetieren", // Recurring [1]
+        oneTimeOverride: "Gruppierung anpassen",
+        setRecurringBudget: "Monatlich budgetieren",
         durationInMonths: "Anzahl der Monate",
-        themeLabel: "Design-Modus", // Theme Engine [4]
+        themeLabel: "Design-Modus",
         themeLight: "Hell",
         themeDark: "Dunkel",
         themeSystem: "System-Standard",
@@ -354,24 +354,24 @@
         bracketLiving: "Daily Living & Logistics",
         bracketLeisure: "Leisure & Discretionary",
         bracketProfessional: "Professional & Insurance",
-        bracketSubscriptions: "Subscriptions", // Subscriptions [2]
+        bracketSubscriptions: "Subscriptions",
         viewTab: "Details & View",
         editTab: "Edit Values",
         backupSection: "Data Backup Panel",
         exportBackup: "Export Backup (JSON)",
         importBackup: "Import Backup (JSON)",
         importSuccess: "Database restored successfully from backup!",
-        importError: "Failed to restore backup. Please ensure the file is a valid JSON backup format.",
-        deleteConfirmation: "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+        importError: "Failed to restore backup.",
+        deleteConfirmation: "Are you sure you want to delete \"{{name}}\"?",
         monthlyLeftover: "Monthly Leftover", 
         yearlyNetBalance: "Yearly Net Balance", 
         overallNetBalance: "Overall Balance", 
         allTimeScope: "All-Time Timeline",
-        showAudit: "Show Calculation Breakdown", // Audit Panel [3]
+        showAudit: "Show Calculation Breakdown",
         hideAudit: "Hide Breakdown",
         auditTitle: "Audit Calculation Breakdown (All-Time)",
-        accumulatedIncome: "Total Accumulated Income", // Refactored [2]
-        accumulatedExpenses: "Total Accumulated Expenses", // Refactored [2]
+        accumulatedIncome: "Total Accumulated Income",
+        accumulatedExpenses: "Total Accumulated Expenses",
         initialSavingsLabel: "Start Capital (Savings)",
         runningCashBalance: "Running Cash Balance", 
         endOf: "End of", 
@@ -380,10 +380,10 @@
         peakSpendingCategory: "Peak Spending Category",
         highestExpenseMonth: "Highest Spending Month",
         noData: "No Data Recorded",
-        oneTimeOverride: "Override Color Bracket", // Custom override [3]
-        setRecurringBudget: "Set as Recurring Budget", // Recurring [1]
+        oneTimeOverride: "Override Color Bracket",
+        setRecurringBudget: "Set as Recurring Budget",
         durationInMonths: "Duration in Months",
-        themeLabel: "App Theme", // Theme Engine [4]
+        themeLabel: "App Theme",
         themeLight: "Light",
         themeDark: "Dark",
         themeSystem: "System Default",
@@ -424,11 +424,11 @@
     const LanguageContext = createContext();
 
     function LanguageProvider({ children }) {
-      const [lang, setLang] = useState(() => localStorage.getItem('budget_app_lang') || 'de');
+      const [lang, setLang] = useState(() => safeGetStorage('budget_app_lang', 'de'));
 
       const changeLanguage = (newLang) => {
         setLang(newLang);
-        localStorage.setItem('budget_app_lang', newLang);
+        safeSetStorage('budget_app_lang', newLang);
       };
 
       const t = (path) => {
@@ -462,7 +462,6 @@
 
     const useTranslation = () => useContext(LanguageContext);
 
-    // Initial basic structural state generator [1]
     const generateInitialState = () => {
       const state = {
         categories: {
@@ -487,7 +486,6 @@
       return state;
     };
 
-    // Non-destructive safe merging logic [1]
     const mergeAndLockState = (loadedState) => {
       if (!loadedState) return generateInitialState();
 
@@ -501,7 +499,6 @@
         categoryOverrides: loadedState.categoryOverrides || {}
       };
 
-      // Non-destructively append any missing base categories to ensure safe structural initialization
       INITIAL_CATEGORIES.incomes.forEach(item => {
         if (!merged.categories.incomes.includes(item)) {
           merged.categories.incomes.push(item);
@@ -513,7 +510,6 @@
         }
       });
 
-      // Synchronize month properties safely across active year scopes
       ["2026", "2027", "2028"].forEach(year => {
         if (!merged.values[year]) {
           merged.values[year] = { incomes: {}, expenses: {} };
@@ -547,7 +543,6 @@
       return merged;
     };
 
-    // Local IndexedDB caching driver [1]
     const IDB = {
       dbName: 'BudgetDatabase_v2',
       dbVersion: 1,
@@ -610,17 +605,14 @@
       const [activeTab, setActiveTab] = useState("view"); 
       const [isAuditOpen, setIsAuditOpen] = useState(false); 
 
-      // Tri-State Theme Engine state [4]
-      const [theme, setTheme] = useState(() => localStorage.getItem('budget_app_theme') || 'system');
-
+      const [theme, setTheme] = useState(() => safeGetStorage('budget_app_theme', 'system'));
       const [customIncomeInput, setCustomIncomeInput] = useState("");
       const [customExpenseInput, setCustomExpenseInput] = useState("");
 
       const [editingCategory, setEditingCategory] = useState(null); 
       const [editCategoryValue, setEditCategoryValue] = useState("");
 
-      // Recurring budget wizard configuration [1]
-      const [recurringSetup, setRecurringSetup] = useState(null); // { type, item, value }
+      const [recurringSetup, setRecurringSetup] = useState(null);
       const [recurringMonths, setRecurringMonths] = useState(3);
 
       const chartRef = useRef(null);
@@ -629,7 +621,6 @@
       const annualChartInstanceRef = useRef(null);
       const fileInputRef = useRef(null);
 
-      // Manual Category Overrides Mapping [3]
       const getEffectiveExpenseBracket = (posten) => {
         if (data.categoryOverrides && data.categoryOverrides[posten]) {
           return data.categoryOverrides[posten];
@@ -637,9 +628,8 @@
         return getExpenseBracket(posten);
       };
 
-      // App Theme Engine bootstrap hook [4]
       useEffect(() => {
-        localStorage.setItem('budget_app_theme', theme);
+        safeSetStorage('budget_app_theme', theme);
         const applyTheme = (val) => {
           const rootEl = document.documentElement;
           let resolvedTheme = val;
@@ -682,7 +672,6 @@
         }
       }, [selectedYear]);
 
-      // Seed local cache safely, subscribe securely to frozen cloud paths [1, 3]
       useEffect(() => {
         async function loadInitialData() {
           try {
@@ -696,33 +685,28 @@
         }
         loadInitialData();
 
-        // Lock database references to prevent structural siloing [1]
-        const unsubscribe = db.collection('monthly_logs').doc('house_finanzen_state')
-          .onSnapshot(async (doc) => {
-            // Explicitly clear calculation memory buffer variables inside callback to prevent duplication [2]
-            let snapshotIncomesSum = 0;
-            let snapshotExpensesSum = 0;
-            
-            if (doc.exists) {
-              const remote = doc.data();
-              const localCached = await IDB.get('state', 'budget_data');
-              
-              // Apply remote configurations only if remote is chronologically newer [1]
-              if (!localCached || remote.updatedAt > localCached.updatedAt) {
-                const merged = mergeAndLockState(remote.payload);
-                setData(merged);
-                await IDB.set('state', { id: 'budget_data', payload: merged, updatedAt: remote.updatedAt });
-                setSyncStatus("synced");
+        let unsubscribe = () => {};
+        if (db) {
+          unsubscribe = db.collection('monthly_logs').doc('house_finanzen_state')
+            .onSnapshot(async (doc) => {
+              if (doc.exists) {
+                const remote = doc.data();
+                const localCached = await IDB.get('state', 'budget_data');
+                
+                if (!localCached || remote.updatedAt > localCached.updatedAt) {
+                  const merged = mergeAndLockState(remote.payload);
+                  setData(merged);
+                  await IDB.set('state', { id: 'budget_data', payload: merged, updatedAt: remote.updatedAt });
+                  setSyncStatus("synced");
+                }
               }
-            }
-          }, (err) => {
-            console.warn("Firestore connection offline or restricted:", err);
-          });
-
+            }, (err) => {
+              console.warn("Firestore connection offline or restricted:", err);
+            });
+        }
         return () => unsubscribe();
       }, []);
 
-      // Connectivity sync triggers [2]
       useEffect(() => {
         const handleOnline = async () => {
           setIsOnline(true);
@@ -738,12 +722,10 @@
         };
       }, [data]);
 
-      // Strict Chronological Roll-Over Math detached from initialSavingsBase/capital [1, 2]
       const chronologicalTimelineResult = useMemo(() => {
         const resultSequence = {};
-        let runningGuthaben = 0; // Explicitly starting sequential array cascade from May 2026 at 0 [2]
+        let runningGuthaben = 0; 
 
-        // Order across full active years strictly [1]
         const targetSequence = [];
         [2026, 2027, 2028].forEach(yr => {
           getMonthsForYear(yr).forEach(mo => {
@@ -786,7 +768,6 @@
         return resultSequence;
       }, [data]);
 
-      // Side-by-side grouped stacked visual chart logic [2]
       useEffect(() => {
         if (selectedMonth === "AnnualOverview") return;
         if (!chartRef.current) return;
@@ -801,8 +782,8 @@
         }
 
         const isDarkTheme = document.documentElement.classList.contains('dark');
-        const axisColor = isDarkTheme ? '#94a3b8' : '#475569';
-        const gridColor = isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'; // dynamic opacity [2]
+        const axisColor = isDarkTheme ? '#a1a1aa' : '#52525b';
+        const gridColor = isDarkTheme ? 'rgba(250, 250, 250, 0.08)' : 'rgba(24, 24, 27, 0.06)';
 
         chartInstanceRef.current = new Chart(ctx, {
           type: 'bar',
@@ -833,14 +814,14 @@
               {
                 label: t('bracketSubscriptions'),
                 data: monthsForYear.map(m => getBracketMonthlyTotal('subscriptions', m)),
-                backgroundColor: '#7c3aed', // Subscriptions purple [2]
+                backgroundColor: '#7c3aed',
                 stack: 'Stack1',
                 borderRadius: 4,
               },
               {
                 label: t('bracketLeisure'),
                 data: monthsForYear.map(m => getBracketMonthlyTotal('leisure', m)),
-                backgroundColor: '#ec4899', // Leisure pink [3]
+                backgroundColor: '#ec4899',
                 stack: 'Stack1',
                 borderRadius: 4,
               },
@@ -899,7 +880,6 @@
         };
       }, [data, selectedYear, selectedMonth, i18n.language, theme]);
 
-      // Annual overview analytics compiling layer [2]
       const annualOverviewData = useMemo(() => {
         const yearValues = data.values[selectedYear];
         const monthsForYear = getMonthsForYear(selectedYear);
@@ -933,7 +913,6 @@
           monthTotals[m] = { income: mIn, expenses: mEx };
         });
 
-        // Sorted lists by total expenditures [2]
         const sortedExpenses = Object.keys(totalsByCategory)
           .map(cat => ({ category: cat, total: totalsByCategory[cat] }))
           .sort((a, b) => b.total - a.total);
@@ -964,7 +943,6 @@
         };
       }, [data, selectedYear]);
 
-      // Chart.js script for end-of-year pie overview [2]
       useEffect(() => {
         if (selectedMonth !== "AnnualOverview") return;
         if (!annualChartRef.current) return;
@@ -977,7 +955,6 @@
         });
         const datasetValues = activeExpenditures.map(e => e.total);
 
-        // Assign bracket aligned background colors for aesthetic consistency [3]
         const backgroundColors = activeExpenditures.map(e => {
           const bracket = getEffectiveExpenseBracket(e.category);
           if (bracket === 'housing') return '#475569';
@@ -992,7 +969,7 @@
         }
 
         const isDarkTheme = document.documentElement.classList.contains('dark');
-        const textColor = isDarkTheme ? '#94a3b8' : '#475569';
+        const textColor = isDarkTheme ? '#a1a1aa' : '#52525b';
 
         annualChartInstanceRef.current = new Chart(ctx, {
           type: 'doughnut',
@@ -1002,7 +979,7 @@
               data: datasetValues,
               backgroundColor: backgroundColors,
               borderWidth: 1,
-              borderColor: isDarkTheme ? '#27272a' : '#ffffff'
+              borderColor: isDarkTheme ? '#18181b' : '#ffffff'
             }]
           },
           options: {
@@ -1031,6 +1008,7 @@
       const triggerLocalToCloudSync = async () => {
         setSyncStatus("syncing");
         try {
+          if (!db) throw new Error("Database not initialized");
           const queueItem = await IDB.get('queue', 'pending_sync');
           if (queueItem) {
             const docRef = db.collection('monthly_logs').doc('house_finanzen_state');
@@ -1054,7 +1032,7 @@
         await IDB.set('state', { id: 'budget_data', payload: updatedData, updatedAt: timestamp });
         await IDB.set('queue', { id: 'pending_sync', payload: updatedData, updatedAt: timestamp });
 
-        if (navigator.onLine) {
+        if (navigator.onLine && db) {
           setSyncStatus("syncing");
           try {
             await db.collection('monthly_logs').doc('house_finanzen_state').set({
@@ -1130,7 +1108,6 @@
         await saveStateAndDispatch(updatedData, Date.now());
       };
 
-      // Multi-Month Recurring copy transaction script [1]
       const handleApplyRecurring = async (type, item, startMonth, startYear, monthsCount, value) => {
         const updatedData = { ...data };
         const timeline = [];
@@ -1160,7 +1137,6 @@
         await saveStateAndDispatch(updatedData, Date.now());
       };
 
-      // Caret list manual sorting controls [1]
       const handleMoveCategory = async (type, index, direction) => {
         const updatedData = { ...data };
         const categories = [...updatedData.categories[type]];
@@ -1179,7 +1155,6 @@
         await saveStateAndDispatch(updatedData, Date.now());
       };
 
-      // Inline Renaming with Backward-Compatible Data Migration [2]
       const handleStartRename = (type, name) => {
         setEditingCategory({ type, name });
         setEditCategoryValue(name);
@@ -1202,10 +1177,8 @@
 
         const updatedData = { ...data };
         
-        // 1. Update list preserving strict sorting index order [1]
         updatedData.categories[type] = updatedData.categories[type].map(cat => cat === originalName ? newName : cat);
 
-        // 2. Perform safe historical values migration [2]
         Object.keys(updatedData.values).forEach(year => {
           const yearValues = updatedData.values[year]?.[type];
           if (yearValues && yearValues[originalName]) {
@@ -1218,7 +1191,6 @@
         await saveStateAndDispatch(updatedData, Date.now());
       };
 
-      // Secure Category Deletion Engine with Historical Data Preservation [1, 2]
       const handleDeleteCategory = async (type, item) => {
         const key = t(`categories.${item}`);
         let cleanName = key.replace('categories.', '');
@@ -1230,7 +1202,6 @@
         const updatedData = { ...data };
         const fallbackKey = "Sonstiges";
 
-        // Check if category holds non-zero values across years and months [2]
         let hasData = false;
         Object.keys(updatedData.values).forEach(year => {
           const yearVals = updatedData.values[year]?.[type]?.[item];
@@ -1243,7 +1214,6 @@
           }
         });
 
-        // Other Fallback data migration logic [2]
         if (hasData) {
           Object.keys(updatedData.values).forEach(year => {
             if (!updatedData.values[year][type][fallbackKey]) {
@@ -1261,7 +1231,6 @@
           });
         }
 
-        // Clean out schema structures securely [2]
         updatedData.categories[type] = updatedData.categories[type].filter(cat => cat !== item);
         Object.keys(updatedData.values).forEach(year => {
           if (updatedData.values[year]?.[type]) {
@@ -1279,7 +1248,6 @@
         }
       };
 
-      // Backup JSON utilities [2]
       const handleExportBackup = () => {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
         const downloadAnchor = document.createElement('a');
@@ -1340,10 +1308,9 @@
         }, 0);
       };
 
-      // Semantic Sorting Clustering engine helper [3]
       const getClusteredCategories = (categories, type) => {
         if (type === 'incomes') return categories; 
-        const bracketOrder = ['housing', 'living', 'subscriptions', 'leisure', 'professional']; // Clustered Subscriptions bracket added [2]
+        const bracketOrder = ['housing', 'living', 'subscriptions', 'leisure', 'professional'];
         return [...categories].sort((a, b) => {
           const bracketA = getEffectiveExpenseBracket(a);
           const bracketB = getEffectiveExpenseBracket(b);
@@ -1351,7 +1318,6 @@
         });
       };
 
-      // Strict Monthly and Yearly Accounting Isolation [1]
       const totalIncome = useMemo(() => getMonthlyTotal('incomes', selectedMonth), [data, selectedMonth, selectedYear]);
       const totalExpenses = useMemo(() => getMonthlyTotal('expenses', selectedMonth), [data, selectedMonth, selectedYear]);
       
@@ -1361,21 +1327,25 @@
         return (totalExpenses / totalIncome) * 100;
       }, [totalIncome, totalExpenses]);
 
-      // Adaptive Month-to-Month Liquidity Rollovers [1]
       const activeLiquidityResult = useMemo(() => {
-        return chronologicalTimelineResult[`${selectedYear}-${selectedMonth}`] || { availableFunds: 0, leftover: 0, prevGuthaben: 0 };
+        const key = `${selectedYear}-${selectedMonth}`;
+        return chronologicalTimelineResult[key] || {
+          availableFunds: 0,
+          leftover: 0,
+          monthlyIncome: 0,
+          monthlyExpenses: 0,
+          prevGuthaben: 0
+        };
       }, [chronologicalTimelineResult, selectedYear, selectedMonth]);
 
-      // Bounded Annual Net Balance Calculation [1]
       const yearlyNetBalance = useMemo(() => {
         let totalIncomesYear = 0;
         let totalExpensesYear = 0;
         const yearData = data.values[selectedYear];
         if (!yearData) return 0;
 
-        const monthsForYear = getMonthsForYear(selectedYear); // Explicitly May-Dec for 2026
+        const monthsForYear = getMonthsForYear(selectedYear);
 
-        // Sum Incomes strictly inside current year boundaries [1]
         if (yearData.incomes) {
           data.categories.incomes.forEach(category => {
             const monthsData = yearData.incomes[category];
@@ -1387,7 +1357,6 @@
           });
         }
 
-        // Sum Expenses strictly inside current year boundaries [1]
         if (yearData.expenses) {
           data.categories.expenses.forEach(category => {
             const monthsData = yearData.expenses[category];
@@ -1402,7 +1371,6 @@
         return totalIncomesYear - totalExpensesYear;
       }, [data, selectedYear]);
 
-      // Cumulative Global Net Balance Calculation Engine [1]
       const overallNetBalance = useMemo(() => {
         let totalIncomesGlobal = 0;
         let totalExpensesGlobal = 0;
@@ -1411,7 +1379,6 @@
           const yearData = data.values[year];
           if (!yearData) return;
 
-          // Global Incomes Accumulation [1]
           if (yearData.incomes) {
             data.categories.incomes.forEach(category => {
               const monthsData = yearData.incomes[category];
@@ -1423,7 +1390,6 @@
             });
           }
 
-          // Global Expenses Accumulation [1]
           if (yearData.expenses) {
             data.categories.expenses.forEach(category => {
               const monthsData = yearData.expenses[category];
@@ -1439,7 +1405,6 @@
         return totalIncomesGlobal - totalExpensesGlobal;
       }, [data]);
 
-      // Audit Breakdown transparency data compiler (Removed Deductions/Buffer) [1, 3]
       const auditBreakdown = useMemo(() => {
         let accIncome = 0;
         let accExpense = 0;
@@ -1450,7 +1415,6 @@
 
           const monthsForYear = getMonthsForYear(parseInt(year));
 
-          // Sum overall active incomes across the entire database timeline [1]
           if (yearData.incomes) {
             data.categories.incomes.forEach(category => {
               const monthsData = yearData.incomes[category];
@@ -1462,7 +1426,6 @@
             });
           }
 
-          // Sum overall active expenses across the entire database timeline [1]
           if (yearData.expenses) {
             data.categories.expenses.forEach(category => {
               const monthsData = yearData.expenses[category];
@@ -1492,7 +1455,6 @@
       return (
         <div className="flex flex-col min-h-screen">
           
-          {/* Header Layout with Burger Drawer toggle [4] */}
           <header className="bg-indigo-700 text-white shadow-md sticky top-0 z-40">
             <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
               <div className="flex items-center space-x-2">
@@ -1501,7 +1463,6 @@
               </div>
 
               <div className="flex items-center space-x-3">
-                {/* Visual sync state indicators */}
                 {syncStatus === "syncing" && (
                   <span className="bg-blue-600 text-white px-2.5 py-1 text-xs rounded-full flex items-center gap-1 hidden md:inline-flex">
                     <i className="fa-solid fa-arrows-rotate animate-spin"></i> {t('syncing')}
@@ -1522,7 +1483,6 @@
                   <span>{isOnline ? t('online') : t('offline')}</span>
                 </span>
                 
-                {/* Burger Icon Toggle Trigger [4] */}
                 <button 
                   onClick={() => setIsBurgerOpen(true)} 
                   className="w-10 h-10 rounded-lg hover:bg-indigo-600 transition flex items-center justify-center text-xl outline-none"
@@ -1533,7 +1493,6 @@
             </div>
           </header>
 
-          {/* Sliding Options Drawer [4] */}
           {isBurgerOpen && (
             <div 
               onClick={() => setIsBurgerOpen(false)} 
@@ -1552,7 +1511,6 @@
                   </button>
                 </div>
 
-                {/* Capital Setup Input Block [1] */}
                 <div className="space-y-2 pt-2">
                   <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">{t('initialSavingsLabel')}</p>
                   <input
@@ -1571,7 +1529,6 @@
                   />
                 </div>
                 
-                {/* Select Year */}
                 <div className="space-y-2 border-t border-[var(--color-border)] pt-4">
                   <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">{t('selectYear')}</p>
                   <div className="flex gap-2">
@@ -1587,7 +1544,6 @@
                   </div>
                 </div>
 
-                {/* Tri-State Theme Toggler Control [4] */}
                 <div className="space-y-2 border-t border-[var(--color-border)] pt-4">
                   <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">{t('themeLabel')}</p>
                   <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-zinc-800 rounded-lg p-1">
@@ -1607,7 +1563,6 @@
                   </div>
                 </div>
 
-                {/* Select Language */}
                 <div className="space-y-2 border-t border-[var(--color-border)] pt-4">
                   <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">{t('selectLanguage')}</p>
                   <div className="flex gap-2">
@@ -1626,19 +1581,18 @@
                   </div>
                 </div>
 
-                {/* Backup configuration interface [2] */}
                 <div className="space-y-2 pt-4 border-t border-[var(--color-border)]">
                   <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">{t('backupSection')}</p>
                   <div className="flex flex-col gap-2">
                     <button
                       onClick={handleExportBackup}
-                      className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2 px-3 rounded-lg text-xs flex items-center justify-center gap-2 transition"
+                      className="bg-indigo-50 hover:bg-indigo-100 dark:bg-zinc-800 dark:text-indigo-300 dark:hover:bg-zinc-700 text-indigo-700 font-bold py-2 px-3 rounded-lg text-xs flex items-center justify-center gap-2 transition"
                     >
                       <i className="fa-solid fa-file-export"></i> {t('exportBackup')}
                     </button>
                     <button
                       onClick={triggerFileSelector}
-                      className="bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold py-2 px-3 rounded-lg text-xs flex items-center justify-center gap-2 transition"
+                      className="bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 text-slate-700 font-bold py-2 px-3 rounded-lg text-xs flex items-center justify-center gap-2 transition"
                     >
                       <i className="fa-solid fa-file-import"></i> {t('importBackup')}
                     </button>
@@ -1653,7 +1607,6 @@
                 </div>
               </div>
 
-              {/* Secure Reset Data Link [4] */}
               <div className="pt-4 border-t border-[var(--color-border)]">
                 <button 
                   onClick={() => { handleResetData(); setIsBurgerOpen(false); }}
@@ -1665,7 +1618,6 @@
             </div>
           </div>
 
-          {/* Month Navigation Tabs with AnnualOverview Trigger [2] */}
           <nav className="bg-[var(--color-card)] border-b border-[var(--color-border)] sticky top-[52px] z-30 shadow-sm transition-colors">
             <div className="max-w-7xl mx-auto px-4 overflow-x-auto whitespace-nowrap scrollbar-none flex items-center">
               <div className="flex overflow-x-auto scrollbar-none flex-grow">
@@ -1696,56 +1648,50 @@
             </div>
           </nav>
 
-          {/* Main Layout Area */}
           <main className="flex-grow max-w-7xl mx-auto w-full px-4 py-6 space-y-6">
 
             {selectedMonth === "AnnualOverview" ? (
-              /* DEDICATED ANNUAL OVERVIEW LAYOUT TAB [2] */
               <div className="space-y-6 animate-fadeIn">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Metric 1: Savings Rate */}
-                  <div className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                  <div className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/50 rounded-2xl p-5 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-indigo-800 uppercase tracking-wider">{t('savingsRate')}</p>
-                      <p className="text-2xl font-black text-indigo-900 mt-1">{annualOverviewData.savingsRate.toFixed(1)}%</p>
+                      <p className="text-xs font-bold text-indigo-800 dark:text-indigo-400 uppercase tracking-wider">{t('savingsRate')}</p>
+                      <p className="text-2xl font-black text-indigo-900 dark:text-indigo-200 mt-1">{annualOverviewData.savingsRate.toFixed(1)}%</p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
+                    <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-300">
                       <i className="fa-solid fa-percent text-xl"></i>
                     </div>
                   </div>
 
-                  {/* Metric 2: Peak Spending Category */}
-                  <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                  <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 rounded-2xl p-5 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-rose-800 uppercase tracking-wider">{t('peakSpendingCategory')}</p>
-                      <p className="text-base font-black text-rose-900 mt-2 truncate max-w-[170px]">
+                      <p className="text-xs font-bold text-rose-800 dark:text-rose-400 uppercase tracking-wider">{t('peakSpendingCategory')}</p>
+                      <p className="text-base font-black text-rose-900 dark:text-rose-200 mt-2 truncate max-w-[170px]">
                         {annualOverviewData.peakCategory ? t(`categories.${annualOverviewData.peakCategory}`).replace('categories.', '') : t('noData')}
                       </p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
+                    <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-300">
                       <i className="fa-solid fa-fire text-xl"></i>
                     </div>
                   </div>
 
-                  {/* Metric 3: Highest Spent Month */}
-                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                  <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('highestExpenseMonth')}</p>
-                      <p className="text-2xl font-black text-slate-900 mt-1">
+                      <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">{t('highestExpenseMonth')}</p>
+                      <p className="text-2xl font-black text-zinc-900 dark:text-zinc-100 mt-1">
                         {annualOverviewData.highestMonth ? `${t(`months.${annualOverviewData.highestMonth}`)} ${selectedYear}` : t('noData')}
                       </p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                    <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-400">
                       <i className="fa-solid fa-calendar-days text-xl"></i>
                     </div>
                   </div>
                 </div>
 
-                {/* Pie/Doughnut Chart Expense Breakdown */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 grid grid-cols-1 lg:grid-cols-2 gap-6 items-center col-span-1 lg:col-span-3">
+                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm p-5 grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">{t('analyticsHeader')}</h3>
-                    <p className="text-xs text-slate-400 mb-4">Prozentuale Verteilung aller Ausgaben im Jahr {selectedYear}</p>
+                    <h3 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 uppercase tracking-wider">{t('analyticsHeader')}</h3>
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-4">Prozentuale Verteilung aller Ausgaben im Jahr {selectedYear}</p>
                     <div className="h-[260px] relative w-full flex justify-center">
                       <canvas ref={annualChartRef}></canvas>
                     </div>
@@ -1758,83 +1704,74 @@
                       if (total === 0) return null;
                       return (
                         <div key={category} className="flex justify-between items-center text-xs border-b border-[var(--color-border)] pb-2">
-                          <span className="font-semibold text-slate-600 dark:text-zinc-400">{cleanCatName}</span>
-                          <span className="font-bold text-slate-700 dark:text-zinc-200">{formatCurrency(total)} ({share.toFixed(1)}%)</span>
+                          <span className="font-semibold text-zinc-600 dark:text-zinc-400">{cleanCatName}</span>
+                          <span className="font-bold text-zinc-700 dark:text-zinc-200">{formatCurrency(total)} ({share.toFixed(1)}%)</span>
                         </div>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* 12-Month transaction grid view */}
-                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden transition-colors">
-                  <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-                    <h3 className="font-bold text-slate-700 text-sm">{selectedYear} - Datasheet</h3>
+                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+                  <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-850 flex justify-between items-center">
+                    <h3 className="font-bold text-zinc-700 dark:text-zinc-300 text-sm">{selectedYear} - Datasheet</h3>
                   </div>
                   <div className="overflow-x-auto scrollbar-none">
-                    <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="bg-slate-100 border-b border-slate-200 font-bold text-slate-600 uppercase">
-                          <th className="p-3">Month</th>
-                          <th className="p-3 text-right">Incomes</th>
-                          <th className="p-3 text-right">Expenses</th>
-                          <th className="p-3 text-right">Savings Net</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium">
-                        {getMonthsForYear(selectedYear).map(m => {
-                          const income = annualOverviewData.monthTotals[m]?.income || 0;
-                          const expenses = annualOverviewData.monthTotals[m]?.expenses || 0;
-                          const net = income - expenses;
-                          return (
-                            <tr key={m} className="hover:bg-slate-50">
-                              <td className="p-3 font-semibold text-slate-700">{t(`months.${m}`)}</td>
-                              <td className="p-3 text-right text-emerald-600">{formatCurrency(income)}</td>
-                              <td className="p-3 text-right text-rose-600">{formatCurrency(expenses)}</td>
-                              <td className={`p-3 text-right font-bold ${net >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                {net < 0 ? "-" : ""}{formatCurrency(Math.abs(net))}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                    <div className="min-w-[460px] divide-y divide-zinc-100 dark:divide-zinc-800">
+                      <div className="annual-grid-row font-bold text-xs text-zinc-600 dark:text-zinc-400 uppercase bg-zinc-100 dark:bg-zinc-800/80 border-b border-zinc-200 dark:border-zinc-800">
+                        <div>Month</div>
+                        <div className="text-right">Incomes</div>
+                        <div className="text-right">Expenses</div>
+                        <div className="text-right">Savings Net</div>
+                      </div>
+                      {getMonthsForYear(selectedYear).map(m => {
+                        const income = annualOverviewData.monthTotals[m]?.income || 0;
+                        const expenses = annualOverviewData.monthTotals[m]?.expenses || 0;
+                        const net = income - expenses;
+                        return (
+                          <div key={m} className="annual-grid-row hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition text-xs font-medium">
+                            <div className="font-semibold text-zinc-700 dark:text-zinc-300">{t(`months.${m}`)}</div>
+                            <div className="text-right text-emerald-600 dark:text-emerald-400">{formatCurrency(income)}</div>
+                            <div className="text-right text-rose-600 dark:text-rose-400">{formatCurrency(expenses)}</div>
+                            <div className={`text-right font-bold ${net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                              {net < 0 ? "-" : ""}{formatCurrency(Math.abs(net))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
             ) : (
-              /* TRADITIONAL MONTHLY BUDGET LAYOUT VIEW */
               <div className="space-y-6">
-                {/* Segmented view/edit toggle [6] */}
-                <div className="flex bg-slate-200/60 dark:bg-zinc-800 p-1 rounded-xl max-w-sm mx-auto shadow-inner transition-colors">
+                <div className="flex bg-zinc-200/60 dark:bg-zinc-850 p-1 rounded-xl max-w-sm mx-auto shadow-inner">
                   <button 
                     onClick={() => setActiveTab('view')}
-                    className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 bg-white dark:bg-zinc-750 text-indigo-700 dark:text-indigo-200 shadow"
-                    style={{ backgroundColor: activeTab === 'view' ? '' : 'transparent' }}
+                    className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 text-indigo-700 dark:text-indigo-200 shadow"
+                    style={{ backgroundColor: activeTab === 'view' ? 'var(--color-card)' : 'transparent' }}
                   >
                     <i className="fa-solid fa-eye text-sm"></i> {t('viewTab')}
                   </button>
                   <button 
                     onClick={() => setActiveTab('edit')}
                     className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 dark:text-zinc-400"
-                    style={{ backgroundColor: activeTab === 'edit' ? '' : 'transparent' }}
+                    style={{ backgroundColor: activeTab === 'edit' ? 'var(--color-card)' : 'transparent' }}
                   >
                     <i className="fa-solid fa-pen-to-square text-sm"></i> {t('editTab')}
                   </button>
                 </div>
 
-                {/* Triple Net Metrics Panel [2] */}
                 <section className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
-                  {/* Metric 1: Monthly Leftover */}
                   <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
-                    saldo >= 0 ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/15 dark:border-emerald-900' : 'bg-rose-50 border-rose-200 dark:bg-rose-950/15 dark:border-rose-900'
+                    saldo >= 0 ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/15 dark:border-emerald-900/50' : 'bg-rose-50 border-rose-200 dark:bg-rose-950/15 dark:border-rose-900/50'
                   }`}>
                     <div className="flex justify-between items-center">
                       <div>
                         <h2 className={`text-xs font-bold uppercase tracking-wider ${saldo >= 0 ? 'text-emerald-800 dark:text-emerald-400' : 'text-rose-800 dark:text-rose-400'}`}>
                           {t('monthlyLeftover')}
                         </h2>
-                        <p className="text-xs text-slate-500 dark:text-zinc-500 mt-1">
+                        <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">
                           {t(`months.${selectedMonth}`)} {selectedYear}
                         </p>
                       </div>
@@ -1844,16 +1781,15 @@
                     </div>
                   </div>
 
-                  {/* Metric 2: Yearly Net Balance [1, 2] */}
                   <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
-                    yearlyNetBalance >= 0 ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/15 dark:border-emerald-900' : 'bg-rose-50 border-rose-200 dark:bg-rose-950/15 dark:border-rose-900'
+                    yearlyNetBalance >= 0 ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/15 dark:border-emerald-900/50' : 'bg-rose-50 border-rose-200 dark:bg-rose-950/15 dark:border-rose-900/50'
                   }`}>
                     <div className="flex justify-between items-center">
                       <div>
                         <h2 className={`text-xs font-bold uppercase tracking-wider ${yearlyNetBalance >= 0 ? 'text-emerald-800 dark:text-emerald-400' : 'text-rose-800 dark:text-rose-400'}`}>
                           {t('yearlyNetBalance')}
                         </h2>
-                        <p className="text-xs text-slate-500 dark:text-zinc-500 mt-1">
+                        <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">
                           {selectedYear}
                         </p>
                       </div>
@@ -1863,16 +1799,15 @@
                     </div>
                   </div>
 
-                  {/* Metric 3: Strict Chronological Running Cash Balance [1, 2] */}
                   <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
-                    activeLiquidityResult.leftover >= 0 ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/15 dark:border-emerald-900' : 'bg-rose-50 border-rose-200 dark:bg-rose-950/15 dark:border-rose-900'
+                    activeLiquidityResult.leftover >= 0 ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/15 dark:border-emerald-900/50' : 'bg-rose-50 border-rose-200 dark:bg-rose-950/15 dark:border-rose-900/50'
                   }`}>
                     <div className="flex justify-between items-center">
                       <div>
                         <h2 className={`text-xs font-bold uppercase tracking-wider ${activeLiquidityResult.leftover >= 0 ? 'text-emerald-800 dark:text-emerald-400' : 'text-rose-800 dark:text-rose-400'}`}>
                           {t('runningCashBalance')}
                         </h2>
-                        <p className="text-xs text-slate-500 dark:text-zinc-500 mt-1">
+                        <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">
                           {t('endOf')} {t(`months.${selectedMonth}`)} {selectedYear}
                         </p>
                       </div>
@@ -1883,7 +1818,6 @@
                   </div>
                 </section>
 
-                {/* Audit Breakdown Transparency Drawer (Removed Deductions/Buffer Card) [2, 3] */}
                 <div className="space-y-2">
                   <div className="flex justify-end px-1">
                     <button 
@@ -1896,18 +1830,17 @@
                   </div>
 
                   {isAuditOpen && (
-                    <div className="bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-4 text-xs space-y-2 animate-fadeIn transition-all duration-300">
-                      <h4 className="font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wide border-b border-slate-200 dark:border-zinc-800 pb-1.5 flex items-center gap-1.5">
+                    <div className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-xs space-y-2 animate-fadeIn transition-all duration-300">
+                      <h4 className="font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide border-b border-zinc-200 dark:border-zinc-800 pb-1.5 flex items-center gap-1.5">
                         <i className="fa-solid fa-calculator text-indigo-500"></i> {t('auditTitle')}
                       </h4>
-                      {/* Clean side-by-side Dual Net Metrics Panel [2] */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-1">
-                        <div className="flex justify-between items-center bg-white dark:bg-zinc-800 p-3 rounded-xl border border-slate-200 dark:border-zinc-700">
-                          <span className="text-slate-500 dark:text-zinc-400 font-medium">{t('accumulatedIncome')}:</span>
+                        <div className="flex justify-between items-center bg-white dark:bg-zinc-800 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700">
+                          <span className="text-zinc-500 dark:text-zinc-400 font-medium">{t('accumulatedIncome')}:</span>
                           <span className="font-bold text-emerald-600 dark:text-emerald-400">+ {formatCurrency(auditBreakdown.accIncome)}</span>
                         </div>
-                        <div className="flex justify-between items-center bg-white dark:bg-zinc-800 p-3 rounded-xl border border-slate-200 dark:border-zinc-700">
-                          <span className="text-slate-500 dark:text-zinc-400 font-medium">{t('accumulatedExpenses')}:</span>
+                        <div className="flex justify-between items-center bg-white dark:bg-zinc-800 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700">
+                          <span className="text-zinc-500 dark:text-zinc-400 font-medium">{t('accumulatedExpenses')}:</span>
                           <span className="font-bold text-rose-600 dark:text-rose-400">- {formatCurrency(auditBreakdown.accExpense)}</span>
                         </div>
                       </div>
@@ -1915,9 +1848,8 @@
                   )}
                 </div>
                 
-                {/* Aggregate Metrics Grid */}
                 <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-emerald-50 dark:bg-emerald-950/15 border border-emerald-200 dark:border-emerald-900 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                  <div className="bg-emerald-50 dark:bg-emerald-950/15 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl p-4 flex items-center justify-between shadow-sm">
                     <div>
                       <p className="text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase">{t('totalIncome')}</p>
                       <p className="text-2xl font-black text-emerald-900 dark:text-emerald-200 mt-1">{formatCurrency(totalIncome)}</p>
@@ -1927,7 +1859,7 @@
                     </div>
                   </div>
 
-                  <div className="bg-rose-50 dark:bg-rose-950/15 border border-rose-200 dark:border-rose-900 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                  <div className="bg-rose-50 dark:bg-rose-950/15 border border-rose-200 dark:border-rose-900/50 rounded-2xl p-4 flex items-center justify-between shadow-sm">
                     <div>
                       <p className="text-xs font-bold text-rose-800 dark:text-rose-400 uppercase">{t('totalExpenses')}</p>
                       <p className="text-2xl font-black text-rose-900 dark:text-rose-200 mt-1">{formatCurrency(totalExpenses)}</p>
@@ -1938,7 +1870,7 @@
                   </div>
 
                   <div className={`border rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all ${
-                    saldo >= 0 ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-950/15 dark:border-indigo-900' : 'bg-amber-50 border-amber-200 dark:bg-amber-950/15 dark:border-amber-900'
+                    saldo >= 0 ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-950/15 dark:border-indigo-900/50' : 'bg-amber-50 border-amber-200 dark:bg-amber-950/15 dark:border-amber-900/50'
                   }`}>
                     <div>
                       <p className={`text-xs font-bold uppercase ${saldo >= 0 ? 'text-indigo-800 dark:text-indigo-400' : 'text-amber-800 dark:text-amber-400'}`}>{t('saldo')} ({t(`months.${selectedMonth}`)})</p>
@@ -1951,12 +1883,12 @@
                     </div>
                   </div>
 
-                  <div className="bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm rounded-2xl p-4 flex items-center justify-between transition-colors">
+                  <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 flex items-center justify-between shadow-sm transition-colors">
                     <div>
-                      <p className="text-xs font-bold text-slate-700 dark:text-zinc-400 uppercase">{t('spentRatio')}</p>
-                      <p className="text-2xl font-black text-slate-900 dark:text-zinc-100 mt-1">{percentageSpent.toFixed(1)}%</p>
+                      <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase">{t('spentRatio')}</p>
+                      <p className="text-2xl font-black text-zinc-800 dark:text-zinc-200 mt-1">{percentageSpent.toFixed(1)}%</p>
                     </div>
-                    <div className="w-full max-w-[80px] bg-slate-200 dark:bg-zinc-800 rounded-full h-2.5 ml-2">
+                    <div className="w-full max-w-[80px] bg-zinc-200 dark:bg-zinc-800 rounded-full h-2.5 ml-2">
                       <div 
                         className={`h-2.5 rounded-full transition-all duration-300 ${
                           percentageSpent > 100 ? 'bg-rose-600' : percentageSpent > 85 ? 'bg-amber-500' : 'bg-indigo-600'
@@ -1967,9 +1899,8 @@
                   </div>
                 </section>
 
-                {/* Side-by-Side Grouped Stacked Analytics Chart [2] */}
-                <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm p-4 transition-colors">
-                  <h3 className="text-sm font-bold text-slate-700 dark:text-zinc-300 mb-3 flex items-center gap-2">
+                <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm p-4 transition-colors">
+                  <h3 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-3 flex items-center gap-2">
                     <i className="fa-solid fa-chart-simple text-indigo-600"></i> {t('analyticsHeader')} - {selectedYear}
                   </h3>
                   <div className="h-[280px] relative w-full">
@@ -1977,12 +1908,10 @@
                   </div>
                 </section>
 
-                {/* Ledger Tables - Refactored responsive layout for wide views [4] */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                   
-                  {/* TABLE A: EINKÜNFTE */}
-                  <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden flex flex-col transition-colors">
-                    <div className="p-4 border-b border-slate-200 dark:border-zinc-800 bg-emerald-50/50 dark:bg-emerald-950/10 flex items-center justify-between">
+                  <section className="bg-[var(--color-card)] rounded-2xl border border-[var(--color-border)] shadow-sm overflow-hidden flex flex-col transition-colors">
+                    <div className="p-4 border-b border-[var(--color-border)] bg-emerald-50/50 dark:bg-emerald-950/10 flex items-center justify-between">
                       <h3 className="text-lg font-bold text-emerald-900 dark:text-emerald-400 flex items-center gap-2">
                         <i className="fa-solid fa-money-bill-trend-up text-emerald-600"></i> {t('incomesHeader')}
                       </h3>
@@ -1990,124 +1919,120 @@
                         {t('sum')}: {formatCurrency(totalIncome)}
                       </span>
                     </div>
-                    <div className="flex flex-col w-full divide-y divide-[var(--color-border)]">
-                      {/* Fixed Flexbox Table Header [1] */}
-                      <div className="income-row font-bold text-xs text-slate-600 dark:text-zinc-400 uppercase bg-slate-100 dark:bg-zinc-800/80 border-b border-[var(--color-border)]">
-                        <div className="flex-zone-1">{t('posten')}</div>
-                        <div className="flex-zone-2 text-right">{t(`months.${selectedMonth}`)} (€)</div>
-                        <div className="flex-zone-3">
-                          <span className="w-20 text-right">{t('resultYtd')}</span>
-                          <span className="w-20 text-right">{t('avgSchnitt')}</span>
+                    
+                    <div className="overflow-x-auto w-full scrollbar-none">
+                      <div className="min-w-[460px] flex flex-col w-full divide-y divide-[var(--color-border)]">
+                        <div className="locked-grid-row font-bold text-xs text-zinc-600 dark:text-zinc-400 uppercase bg-zinc-100 dark:bg-zinc-800/80 border-b border-[var(--color-border)]">
+                          <div className="truncate">{t('posten')}</div>
+                          <div className="text-right">{t(`months.${selectedMonth}`)} (€)</div>
+                          <div className="text-right">{t('resultYtd')}</div>
+                          <div className="text-right">{t('avgSchnitt')}</div>
                         </div>
+
+                        {(activeTab === "view" ? getClusteredCategories(data.categories.incomes, 'incomes') : data.categories.incomes).map((item, idx, arr) => {
+                          const { ytdTotal, average } = getItemStats('incomes', item);
+                          const val = data.values[selectedYear]?.incomes[item]?.[selectedMonth];
+                          
+                          const key = t(`categories.${item}`);
+                          let cleanName = key.replace('categories.', '');
+                          cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+
+                          const isCustom = !INITIAL_CATEGORIES.incomes.includes(item);
+                          const isRenaming = editingCategory && editingCategory.type === 'incomes' && editingCategory.name === item;
+
+                          return (
+                            <div key={item} className="locked-grid-row hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition border-l-4 border-emerald-500">
+                              <div className="flex items-center gap-1.5 overflow-hidden w-full font-medium text-zinc-700 dark:text-zinc-300">
+                                {isRenaming ? (
+                                  <input 
+                                    type="text" 
+                                    value={editCategoryValue} 
+                                    onChange={(e) => setEditCategoryValue(e.target.value)}
+                                    onBlur={handleSaveRename}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }}
+                                    className="custom-input rounded px-2 py-0.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full"
+                                    autoFocus
+                                  />
+                                ) : (
+                                  <div className="flex items-center gap-1.5 overflow-hidden w-full">
+                                    <span className="truncate" title={cleanName}>{cleanName}</span>
+                                    {activeTab === "edit" && (
+                                      <button 
+                                        onClick={() => handleStartRename('incomes', item)}
+                                        className="text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition p-1 shrink-0"
+                                        title="Rename"
+                                      >
+                                        <i className="fa-solid fa-pen text-[10px]"></i>
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                                
+                                {activeTab === "edit" && (
+                                  <div className="flex items-center space-x-1 shrink-0 ml-auto">
+                                    <button 
+                                      onClick={() => handleMoveCategory('incomes', idx, 'up')}
+                                      disabled={idx === 0}
+                                      className="text-zinc-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-zinc-400 transition p-1"
+                                    >
+                                      <i className="fa-solid fa-caret-up"></i>
+                                    </button>
+                                    <button 
+                                      onClick={() => handleMoveCategory('incomes', idx, 'down')}
+                                      disabled={idx === arr.length - 1}
+                                      className="text-zinc-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-zinc-400 transition p-1"
+                                    >
+                                      <i className="fa-solid fa-caret-down"></i>
+                                    </button>
+                                    {isCustom && (
+                                      <button 
+                                        onClick={() => handleDeleteCategory('incomes', item)}
+                                        className="text-zinc-400 hover:text-rose-600 transition p-1"
+                                        title={t('clearAll')}
+                                      >
+                                        <i className="fa-solid fa-trash-can text-xs"></i>
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="text-right w-full">
+                                {activeTab === "view" ? (
+                                  <span className="font-bold text-zinc-700 dark:text-zinc-300 block whitespace-nowrap">{formatCurrency(val || 0)}</span>
+                                ) : (
+                                  <input
+                                    type="number"
+                                    step="any"
+                                    value={val !== undefined && val !== 0 ? val : ''}
+                                    placeholder="0"
+                                    onChange={(e) => handleValueChange('incomes', item, selectedMonth, e.target.value)}
+                                    className="num-input-fix custom-input text-right rounded-lg outline-none focus:border-indigo-500 font-semibold transition py-1 px-2"
+                                  />
+                                )}
+                              </div>
+
+                              <div className="text-right text-zinc-600 dark:text-zinc-400 font-medium whitespace-nowrap w-full">
+                                {formatCurrency(ytdTotal)}
+                              </div>
+
+                              <div className="text-right text-zinc-500 dark:text-zinc-500 text-xs whitespace-nowrap w-full">
+                                {formatCurrency(average)}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-
-                      {/* Flexbox Body Rows [1] */}
-                      {(activeTab === "view" ? getClusteredCategories(data.categories.incomes, 'incomes') : data.categories.incomes).map((item, idx, arr) => {
-                        const { ytdTotal, average } = getItemStats('incomes', item);
-                        const val = data.values[selectedYear]?.incomes[item]?.[selectedMonth];
-                        
-                        // Database Object Parsing sanitation step
-                        const key = t(`categories.${item}`);
-                        let cleanName = key.replace('categories.', '');
-                        cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
-
-                        // Deletion identification check
-                        const isCustom = !INITIAL_CATEGORIES.incomes.includes(item);
-                        const isRenaming = editingCategory && editingCategory.type === 'incomes' && editingCategory.name === item;
-
-                        return (
-                          <div key={item} className="income-row hover:bg-slate-50 dark:hover:bg-zinc-800/40 transition border-l-4 border-emerald-500 custom-card-border-l">
-                            {/* Zone 1: Name and Reorder Buttons [1] */}
-                            <div className="flex-zone-1 font-medium text-slate-700 dark:text-zinc-300">
-                              {isRenaming ? (
-                                <input 
-                                  type="text" 
-                                  value={editCategoryValue} 
-                                  onChange={(e) => setEditCategoryValue(e.target.value)}
-                                  onBlur={handleSaveRename}
-                                  onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }}
-                                  className="custom-input rounded px-2 py-0.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full"
-                                  autoFocus
-                                />
-                              ) : (
-                                <div className="flex items-center gap-1.5 overflow-hidden group w-full">
-                                  <span className="truncate">{cleanName}</span>
-                                  {activeTab === "edit" && (
-                                    <button 
-                                      onClick={() => handleStartRename('incomes', item)}
-                                      className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition p-1"
-                                      title="Rename"
-                                    >
-                                      <i className="fa-solid fa-pen text-[10px]"></i>
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                              
-                              {/* Reordering caret selectors inside Edit tab [1] */}
-                              {activeTab === "edit" && (
-                                <div className="flex items-center space-x-1 shrink-0 ml-auto">
-                                  <button 
-                                    onClick={() => handleMoveCategory('incomes', idx, 'up')}
-                                    disabled={idx === 0}
-                                    className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
-                                  >
-                                    <i className="fa-solid fa-caret-up"></i>
-                                  </button>
-                                  <button 
-                                    onClick={() => handleMoveCategory('incomes', idx, 'down')}
-                                    disabled={idx === arr.length - 1}
-                                    className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
-                                  >
-                                    <i className="fa-solid fa-caret-down"></i>
-                                  </button>
-                                  {isCustom && (
-                                    <button 
-                                      onClick={() => handleDeleteCategory('incomes', item)}
-                                      className="text-slate-400 hover:text-rose-600 transition p-1"
-                                      title={t('clearAll')}
-                                    >
-                                      <i className="fa-solid fa-trash-can text-xs"></i>
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Zone 2: Input field / Value [1, 5] */}
-                            <div className="flex-zone-2 text-right">
-                              {activeTab === "view" ? (
-                                <span className="font-bold text-slate-700 dark:text-zinc-300 block pr-2 whitespace-nowrap">{formatCurrency(val || 0)}</span>
-                              ) : (
-                                <input
-                                  type="number"
-                                  step="any"
-                                  value={val !== undefined && val !== 0 ? val : ''}
-                                  placeholder="0"
-                                  onChange={(e) => handleValueChange('incomes', item, selectedMonth, e.target.value)}
-                                  className="num-input-fix custom-input text-right rounded-lg outline-none focus:border-indigo-500 font-semibold transition"
-                                />
-                              )}
-                            </div>
-
-                            {/* Zone 3: YTD and Average [1, 5] */}
-                            <div className="flex-zone-3">
-                              <span className="w-20 text-right text-slate-600 dark:text-zinc-400 font-medium whitespace-nowrap">{formatCurrency(ytdTotal)}</span>
-                              <span className="w-20 text-right text-slate-500 dark:text-zinc-500 text-xs whitespace-nowrap">{formatCurrency(average)}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
                     </div>
 
                     {activeTab === "edit" && (
-                      <div className="p-3 bg-slate-50 dark:bg-zinc-850 border-t border-slate-100 dark:border-zinc-800 flex gap-2">
+                      <div className="p-3 bg-zinc-50 dark:bg-zinc-850 border-t border-[var(--color-border)] flex gap-2">
                         <input
                           type="text"
                           value={customIncomeInput}
                           onChange={(e) => setCustomIncomeInput(e.target.value)}
                           placeholder={t('addPlaceholder')}
-                          className="flex-grow bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition text-slate-800 dark:text-zinc-100"
+                          className="flex-grow bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition text-zinc-800 dark:text-zinc-100"
                         />
                         <button
                           onClick={() => handleAddCategory('incomes', customIncomeInput, setCustomIncomeInput)}
@@ -2119,9 +2044,8 @@
                     )}
                   </section>
 
-                  {/* TABLE B: AUSGABEN */}
-                  <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden flex flex-col transition-colors">
-                    <div className="p-4 border-b border-slate-200 dark:border-zinc-800 bg-rose-50/50 dark:bg-rose-950/10 flex items-center justify-between">
+                  <section className="bg-[var(--color-card)] rounded-2xl border border-[var(--color-border)] shadow-sm overflow-hidden flex flex-col transition-colors">
+                    <div className="p-4 border-b border-[var(--color-border)] bg-rose-50/50 dark:bg-rose-950/10 flex items-center justify-between">
                       <h3 className="text-lg font-bold text-rose-900 dark:text-rose-400 flex items-center gap-2">
                         <i className="fa-solid fa-cart-shopping text-rose-600"></i> {t('expensesHeader')}
                       </h3>
@@ -2129,171 +2053,163 @@
                         {t('sum')}: {formatCurrency(totalExpenses)}
                       </span>
                     </div>
-                    <div className="flex flex-col w-full divide-y divide-[var(--color-border)]">
-                      {/* Fixed Flexbox Table Header [1] */}
-                      <div className="expense-row font-bold text-xs text-slate-600 dark:text-zinc-400 uppercase bg-slate-100 dark:bg-zinc-800/80 border-b border-[var(--color-border)]">
-                        <div className="flex-zone-1">{t('posten')}</div>
-                        <div className="flex-zone-2 text-right">{t(`months.${selectedMonth}`)} (€)</div>
-                        <div className="flex-zone-3">
-                          <span className="w-20 text-right">{t('resultYtd')}</span>
-                          <span className="w-20 text-right">{t('avgSchnitt')}</span>
+                    
+                    <div className="overflow-x-auto w-full scrollbar-none">
+                      <div className="min-w-[460px] flex flex-col w-full divide-y divide-[var(--color-border)]">
+                        <div className="locked-grid-row font-bold text-xs text-zinc-600 dark:text-zinc-400 uppercase bg-zinc-100 dark:bg-zinc-800/80 border-b border-[var(--color-border)]">
+                          <div className="truncate">{t('posten')}</div>
+                          <div className="text-right">{t(`months.${selectedMonth}`)} (€)</div>
+                          <div className="text-right">{t('resultYtd')}</div>
+                          <div className="text-right">{t('avgSchnitt')}</div>
                         </div>
-                      </div>
 
-                      {/* Flexbox Body Rows with Color Clustering highlights [1, 3] */}
-                      {(activeTab === "view" ? getClusteredCategories(data.categories.expenses, 'expenses') : data.categories.expenses).map((item, idx, arr) => {
-                        const { ytdTotal, average } = getItemStats('expenses', item);
-                        const val = data.values[selectedYear]?.expenses[item]?.[selectedMonth];
-                        
-                        // dynamic left-border tags mapped by category bracket [3]
-                        const bracket = getEffectiveExpenseBracket(item);
-                        
-                        // Semantically defined clustering background colors [3]
-                        const rowClass = 
-                          bracket === 'housing' ? 'bg-slate-50/50 hover:bg-slate-100 dark:bg-slate-900/20 dark:hover:bg-slate-800/40 border-l-4 border-slate-500 dark:border-slate-400' : 
-                          bracket === 'living' ? 'bg-amber-50/30 hover:bg-amber-100/50 dark:bg-amber-950/10 dark:hover:bg-amber-900/20 border-l-4 border-amber-500 dark:border-amber-400' :  
-                          bracket === 'subscriptions' ? 'bg-indigo-50/20 hover:bg-indigo-100/50 dark:bg-indigo-950/15 dark:hover:bg-indigo-900/30 border-l-4 border-indigo-500 dark:border-indigo-400' : 
-                          bracket === 'professional' ? 'bg-teal-50/30 hover:bg-teal-100/50 dark:bg-teal-950/10 dark:hover:bg-teal-900/20 border-l-4 border-teal-500 dark:border-teal-400' : 
-                          'bg-purple-50/20 hover:bg-purple-100/50 dark:bg-purple-950/10 dark:hover:bg-purple-900/20 border-l-4 border-purple-500 dark:border-purple-400'; 
+                        {(activeTab === "view" ? getClusteredCategories(data.categories.expenses, 'expenses') : data.categories.expenses).map((item, idx, arr) => {
+                          const { ytdTotal, average } = getItemStats('expenses', item);
+                          const val = data.values[selectedYear]?.expenses[item]?.[selectedMonth];
+                          
+                          const bracket = getEffectiveExpenseBracket(item);
+                          
+                          const rowClass = 
+                            bracket === 'housing' ? 'bg-zinc-50/30 hover:bg-zinc-100 dark:bg-zinc-900/10 dark:hover:bg-zinc-800/30 border-l-4 border-slate-500' : 
+                            bracket === 'living' ? 'bg-amber-50/20 hover:bg-amber-100/40 dark:bg-amber-950/5 dark:hover:bg-amber-900/15 border-l-4 border-amber-500' :  
+                            bracket === 'subscriptions' ? 'bg-indigo-50/20 hover:bg-indigo-100/40 dark:bg-indigo-950/10 dark:hover:bg-indigo-900/20 border-l-4 border-indigo-500' : 
+                            bracket === 'professional' ? 'bg-teal-50/20 hover:bg-teal-100/40 dark:bg-teal-950/10 dark:hover:bg-teal-900/20 border-l-4 border-teal-500' : 
+                            'bg-purple-50/20 hover:bg-purple-100/40 dark:bg-purple-950/10 dark:hover:bg-purple-900/20 border-l-4 border-purple-500'; 
 
-                        // Database Object Parsing sanitation step
-                        const key = t(`categories.${item}`);
-                        let cleanName = key.replace('categories.', '');
-                        cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+                          const key = t(`categories.${item}`);
+                          let cleanName = key.replace('categories.', '');
+                          cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
 
-                        // Deletion identification check
-                        const isCustom = !INITIAL_CATEGORIES.expenses.includes(item);
-                        const isRenaming = editingCategory && editingCategory.type === 'expenses' && editingCategory.name === item;
+                          const isCustom = !INITIAL_CATEGORIES.expenses.includes(item);
+                          const isRenaming = editingCategory && editingCategory.type === 'expenses' && editingCategory.name === item;
 
-                        return (
-                          <div key={item} className={`expense-row transition ${rowClass}`}>
-                            {/* Zone 1: Name, Rename, Override Select, Reorder carets [1, 3] */}
-                            <div className="flex-zone-1 font-medium text-slate-700 dark:text-zinc-300">
-                              {isRenaming ? (
-                                <input 
-                                  type="text" 
-                                  value={editCategoryValue} 
-                                  onChange={(e) => setEditCategoryValue(e.target.value)}
-                                  onBlur={handleSaveRename}
-                                  onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }}
-                                  className="custom-input rounded px-2 py-0.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full"
-                                  autoFocus
-                                />
-                              ) : (
-                                <div className="flex items-center gap-1.5 overflow-hidden group w-full">
-                                  <span className="truncate">{cleanName}</span>
-                                  {activeTab === "edit" && (
-                                    <button 
-                                      onClick={() => handleStartRename('expenses', item)}
-                                      className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition p-1"
-                                      title="Rename"
-                                    >
-                                      <i className="fa-solid fa-pen text-[10px]"></i>
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                              
-                              {/* Custom clustering dropdown override selector [3] */}
-                              {activeTab === "edit" && (
-                                <div className="flex items-center gap-2 ml-auto shrink-0">
-                                  <select
-                                    value={data.categoryOverrides?.[item] || "auto"}
-                                    onChange={(e) => {
-                                      const val = e.target.value === "auto" ? null : e.target.value;
-                                      const updated = {
-                                        ...data,
-                                        categoryOverrides: {
-                                          ...(data.categoryOverrides || {}),
-                                          [item]: val
-                                        }
-                                      };
-                                      saveStateAndDispatch(updated, Date.now());
-                                    }}
-                                    className="bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded px-2 py-0.5 text-[10px] text-slate-600 dark:text-zinc-400 outline-none focus:border-indigo-500 max-w-[85px] transition"
-                                  >
-                                    <option value="auto">Auto 🤖</option>
-                                    <option value="housing">Wohnen 🏠</option>
-                                    <option value="living">Alltag 🍎</option>
-                                    <option value="subscriptions">Abonnement 🎟️</option>
-                                    <option value="leisure">Freizeit 🎭</option>
-                                    <option value="professional">Beruf 🎓</option>
-                                  </select>
-                                  
-                                  {/* Reordering caret selectors inside Edit tab [1] */}
-                                  <div className="flex items-center space-x-1">
-                                    <button 
-                                      onClick={() => handleMoveCategory('expenses', idx, 'up')}
-                                      disabled={idx === 0}
-                                      className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
-                                    >
-                                      <i className="fa-solid fa-caret-up"></i>
-                                    </button>
-                                    <button 
-                                      onClick={() => handleMoveCategory('expenses', idx, 'down')}
-                                      disabled={idx === arr.length - 1}
-                                      className="text-slate-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-slate-400 transition"
-                                    >
-                                      <i className="fa-solid fa-caret-down"></i>
-                                    </button>
-                                    {isCustom && (
+                          return (
+                            <div key={item} className={`locked-grid-row transition ${rowClass}`}>
+                              <div className="flex items-center gap-1.5 overflow-hidden w-full font-medium text-zinc-700 dark:text-zinc-300">
+                                {isRenaming ? (
+                                  <input 
+                                    type="text" 
+                                    value={editCategoryValue} 
+                                    onChange={(e) => setEditCategoryValue(e.target.value)}
+                                    onBlur={handleSaveRename}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }}
+                                    className="custom-input rounded px-2 py-0.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full"
+                                    autoFocus
+                                  />
+                                ) : (
+                                  <div className="flex items-center gap-1.5 overflow-hidden w-full">
+                                    <span className="truncate" title={cleanName}>{cleanName}</span>
+                                    {activeTab === "edit" && (
                                       <button 
-                                        onClick={() => handleDeleteCategory('expenses', item)}
-                                        className="text-slate-400 hover:text-rose-600 transition p-1"
-                                        title={t('clearAll')}
+                                        onClick={() => handleStartRename('expenses', item)}
+                                        className="text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition p-1 shrink-0"
+                                        title="Rename"
                                       >
-                                        <i className="fa-solid fa-trash-can text-xs"></i>
+                                        <i className="fa-solid fa-pen text-[10px]"></i>
                                       </button>
                                     )}
                                   </div>
-                                </div>
-                              )}
-                            </td>
-                            
-                            {/* Zone 2: Input field / Value + Recurring trigger [1, 5] */}
-                            <div className="flex-zone-2 text-right flex items-center justify-end gap-1.5">
-                              {activeTab === "view" ? (
-                                <span className="font-bold text-slate-700 dark:text-zinc-300 block pr-2 whitespace-nowrap">{formatCurrency(val || 0)}</span>
-                              ) : (
-                                <React.Fragment>
-                                  <input
-                                    type="number"
-                                    step="any"
-                                    value={val !== undefined && val !== 0 ? val : ''}
-                                    placeholder="0"
-                                    onChange={(e) => handleValueChange('expenses', item, selectedMonth, e.target.value)}
-                                    className="num-input-fix custom-input text-right rounded-lg outline-none focus:border-indigo-500 font-semibold transition"
-                                  />
-                                  {/* Set as Recurring Budget configuration utility [1] */}
-                                  <button
-                                    onClick={() => setRecurringSetup({ type: 'expenses', item, value: val || 0 })}
-                                    className="text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 transition outline-none shrink-0"
-                                    title={t('setRecurringBudget')}
-                                  >
-                                    <i className="fa-solid fa-arrows-spin"></i>
-                                  </button>
-                                </React.Fragment>
-                              )}
-                            </div>
+                                )}
+                                
+                                {activeTab === "edit" && (
+                                  <div className="flex items-center gap-2 ml-auto shrink-0">
+                                    <select
+                                      value={data.categoryOverrides?.[item] || "auto"}
+                                      onChange={(e) => {
+                                        const val = e.target.value === "auto" ? null : e.target.value;
+                                        const updated = {
+                                          ...data,
+                                          categoryOverrides: {
+                                            ...(data.categoryOverrides || {}),
+                                            [item]: val
+                                          }
+                                        };
+                                        saveStateAndDispatch(updated, Date.now());
+                                      }}
+                                      className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-2 py-0.5 text-[10px] text-zinc-600 dark:text-zinc-400 outline-none focus:border-indigo-500 max-w-[85px] transition"
+                                    >
+                                      <option value="auto">Auto 🤖</option>
+                                      <option value="housing">Wohnen 🏠</option>
+                                      <option value="living">Alltag 🍎</option>
+                                      <option value="subscriptions">Abonnement 🎟️</option>
+                                      <option value="leisure">Freizeit 🎭</option>
+                                      <option value="professional">Beruf 🎓</option>
+                                    </select>
+                                    
+                                    <div className="flex items-center space-x-1">
+                                      <button 
+                                        onClick={() => handleMoveCategory('expenses', idx, 'up')}
+                                        disabled={idx === 0}
+                                        className="text-zinc-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-zinc-400 transition p-1"
+                                      >
+                                        <i className="fa-solid fa-caret-up"></i>
+                                      </button>
+                                      <button 
+                                        onClick={() => handleMoveCategory('expenses', idx, 'down')}
+                                        disabled={idx === arr.length - 1}
+                                        className="text-zinc-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-zinc-400 transition p-1"
+                                      >
+                                        <i className="fa-solid fa-caret-down"></i>
+                                      </button>
+                                      {isCustom && (
+                                        <button 
+                                          onClick={() => handleDeleteCategory('expenses', item)}
+                                          className="text-zinc-400 hover:text-rose-600 transition p-1"
+                                          title={t('clearAll')}
+                                        >
+                                          <i className="fa-solid fa-trash-can text-xs"></i>
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              <div className="text-right w-full flex items-center justify-end gap-1.5">
+                                {activeTab === "view" ? (
+                                  <span className="font-bold text-zinc-700 dark:text-zinc-300 block whitespace-nowrap">{formatCurrency(val || 0)}</span>
+                                ) : (
+                                  <React.Fragment>
+                                    <input
+                                      type="number"
+                                      step="any"
+                                      value={val !== undefined && val !== 0 ? val : ''}
+                                      placeholder="0"
+                                      onChange={(e) => handleValueChange('expenses', item, selectedMonth, e.target.value)}
+                                      className="num-input-fix custom-input text-right rounded-lg outline-none focus:border-indigo-500 font-semibold transition py-1 px-2"
+                                    />
+                                    <button
+                                      onClick={() => setRecurringSetup({ type: 'expenses', item, value: val || 0 })}
+                                      className="text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 transition outline-none shrink-0"
+                                      title={t('setRecurringBudget')}
+                                    >
+                                      <i className="fa-solid fa-arrows-spin"></i>
+                                    </button>
+                                  </React.Fragment>
+                                )}
+                              </div>
 
-                            {/* Zone 3: YTD and Average [1, 5] */}
-                            <div className="flex-zone-3">
-                              <span className="w-20 text-right text-slate-600 dark:text-zinc-400 font-medium whitespace-nowrap">{formatCurrency(ytdTotal)}</span>
-                              <span className="w-20 text-right text-slate-500 dark:text-zinc-500 text-xs whitespace-nowrap">{formatCurrency(average)}</span>
+                              <div className="text-right text-zinc-600 dark:text-zinc-400 font-medium whitespace-nowrap w-full">
+                                {formatCurrency(ytdTotal)}
+                              </div>
+
+                              <div className="text-right text-zinc-500 dark:text-zinc-500 text-xs whitespace-nowrap w-full">
+                                {formatCurrency(average)}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
 
                     {activeTab === "edit" && (
-                      <div className="p-3 bg-slate-50 dark:bg-zinc-850 border-t border-slate-100 dark:border-zinc-800 flex gap-2">
+                      <div className="p-3 bg-zinc-50 dark:bg-zinc-850 border-t border-[var(--color-border)] flex gap-2">
                         <input
                           type="text"
                           value={customExpenseInput}
                           onChange={(e) => setCustomExpenseInput(e.target.value)}
                           placeholder={t('addPlaceholder')}
-                          className="flex-grow bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition text-slate-800 dark:text-zinc-100"
+                          className="flex-grow bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition text-zinc-800 dark:text-zinc-100"
                         />
                         <button
                           onClick={() => handleAddCategory('expenses', customExpenseInput, setCustomExpenseInput)}
@@ -2310,27 +2226,26 @@
             )}
           </main>
 
-          {/* Automated Multi-Month Recurring Budget overlay/wizard [1] */}
           {recurringSetup && (
             <div className="fixed inset-0 bg-slate-950/40 z-50 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 p-6 max-w-sm w-full shadow-2xl space-y-4">
-                <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-zinc-800">
-                  <h3 className="font-bold text-slate-800 dark:text-zinc-100 text-sm flex items-center gap-1.5">
+              <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 max-w-sm w-full shadow-2xl space-y-4">
+                <div className="flex justify-between items-center pb-2 border-b border-zinc-100 dark:border-zinc-800">
+                  <h3 className="font-bold text-zinc-800 dark:text-zinc-100 text-sm flex items-center gap-1.5">
                     <i className="fa-solid fa-arrows-spin text-indigo-500"></i> {t('setRecurringBudget')}
                   </h3>
-                  <button onClick={() => setRecurringSetup(null)} className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-400">
+                  <button onClick={() => setRecurringSetup(null)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-400">
                     <i className="fa-solid fa-xmark"></i>
                   </button>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-zinc-400 capitalize">
-                  {t('categories.' + recurringSetup.item).replace('categories.', '')}: <span className="font-bold text-slate-700 dark:text-zinc-200">{formatCurrency(recurringSetup.value)}</span>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 capitalize">
+                  {t('categories.' + recurringSetup.item).replace('categories.', '')}: <span className="font-bold text-zinc-700 dark:text-zinc-200">{formatCurrency(recurringSetup.value)}</span>
                 </p>
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">{t('durationInMonths')}</label>
+                  <label className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">{t('durationInMonths')}</label>
                   <select
                     value={recurringMonths}
                     onChange={(e) => setRecurringMonths(parseInt(e.target.value))}
-                    className="w-full bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-zinc-100 outline-none focus:border-indigo-500 transition font-semibold"
+                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-zinc-100 outline-none focus:border-indigo-500 transition font-semibold"
                   >
                     <option value={3}>3 {i18n.language === 'de' ? 'Monate' : 'months'}</option>
                     <option value={6}>6 {i18n.language === 'de' ? 'Monate' : 'months'}</option>
@@ -2340,7 +2255,7 @@
                 <div className="flex gap-2 pt-2">
                   <button
                     onClick={() => setRecurringSetup(null)}
-                    className="flex-1 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 font-bold py-2 rounded-lg text-xs transition"
+                    className="flex-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold py-2 rounded-lg text-xs transition"
                   >
                     Cancel
                   </button>
