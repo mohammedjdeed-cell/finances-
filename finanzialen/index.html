@@ -13,21 +13,21 @@
     }
   </script>
   <!-- React & Babel CDNs -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js" crossorigin="anonymous"></script>
   <!-- Chart.js CDN for Visual Analytics -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Firebase Compat SDKs [3] -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" crossorigin="anonymous"></script>
+  <!-- Firebase Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js" crossorigin="anonymous"></script>
   <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4f46e5">
   
   <style>
-    /* Universal Theme custom variables [2] */
+    /* Universal Theme custom variables */
     :root, [data-theme="light"] {
         --color-bg: #f4f4f5; /* Zinc 100 */
         --color-card: #ffffff;
@@ -69,7 +69,7 @@
       border-color: var(--color-border) !important;
     }
 
-    /* Bulletproof locked CSS Grid layout [1] */
+    /* Bulletproof locked CSS Grid layout */
     .locked-grid-row {
       display: grid !important;
       grid-template-columns: minmax(150px, 3.5fr) 105px 95px 95px !important;
@@ -91,7 +91,7 @@
       padding: 12px 16px !important;
     }
 
-    /* Form Input Numeric Overflow Fix [5] */
+    /* Form Input Numeric Overflow Fix */
     .num-input-fix {
       width: 100% !important;
       min-width: 80px !important;
@@ -99,7 +99,7 @@
       padding: 0.375rem 0.5rem !important;
     }
 
-    /* Remove native numeric increment step controls [4] */
+    /* Remove native numeric increment step controls */
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
         -webkit-appearance: none;
@@ -121,10 +121,10 @@
 <body class="font-sans min-h-screen">
   <div id="root"></div>
 
-  <script type="text/babel">
+  <script type="text/babel" data-presets="react,env">
     const { useState, useEffect, useMemo, createContext, useContext, useRef } = React;
 
-    // Preserved Firebase Configuration [3]
+    // Preserved Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyCvKICFZCwQz5e70HTLDA_eDD4Us8XqNas",
       authDomain: "finances-ed83f.firebaseapp.com",
@@ -150,7 +150,7 @@
 
     const ALL_MONTHS = ["Jan", "Feb", "Mrz", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
 
-    // Timeline logic starting explicitly in May 2026 [5]
+    // Timeline logic starting explicitly in May 2026
     const getMonthsForYear = (year) => {
       if (year === 2026) {
         return ["Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
@@ -191,7 +191,7 @@
       ]
     };
 
-    // Auto-scan subscription rules [2]
+    // Auto-scan subscription rules
     const isSubscription = (posten) => {
       const p = posten.toLowerCase();
       const subKeywords = ["netflix", "google", "amazon", "xiaomi", "spotify", "cloud", "abo", "subscription", "youtube", "disney", "prime"];
@@ -199,7 +199,7 @@
     };
 
     const getExpenseBracket = (posten) => {
-      if (isSubscription(posten)) return 'subscriptions'; // Subscriptions [2]
+      if (isSubscription(posten)) return 'subscriptions';
       
       const housing = ["Hause mieten", "Hause kaution", "strom ⚡", "Gas/ Heißung", "radio", "internet/ Handy"];
       const living = ["Lebensmittel 🍞🍲", "Hausrat 🛋️", "transport/ tickets", "kleidung"];
@@ -211,7 +211,7 @@
       return 'leisure'; 
     };
 
-    // Bilingual translation dictionaries [4]
+    // Bilingual translation dictionaries
     const translations = {
       de: {
         title: "Finanzplaner",
@@ -246,7 +246,7 @@
         bracketLiving: "Alltag & Logistik",
         bracketLeisure: "Freizeit & Extras",
         bracketProfessional: "Beruf, Gesundheit & Vorsorge",
-        bracketSubscriptions: "Abonnements", // Subscriptions [2]
+        bracketSubscriptions: "Abonnements",
         viewTab: "Details & Ansicht",
         editTab: "Werte bearbeiten",
         backupSection: "Sicherheits-Backup",
@@ -259,11 +259,11 @@
         yearlyNetBalance: "Jahressaldo", 
         overallNetBalance: "Gesamtsaldo", 
         allTimeScope: "Gesamter Zeitraum",
-        showAudit: "Berechnung prüfen", // Audit Panel [3]
+        showAudit: "Berechnung prüfen",
         hideAudit: "Breakdown verbergen",
         auditTitle: "Audit-Aufschlüsselung (Gesamter Zeitraum)",
-        accumulatedIncome: "Gesamteinnahmen", // Refactored [2]
-        accumulatedExpenses: "Gesamtausgaben", // Refactored [2]
+        accumulatedIncome: "Gesamteinnahmen",
+        accumulatedExpenses: "Gesamtausgaben",
         initialSavingsLabel: "Startkapital (Foundation)",
         runningCashBalance: "Endbestand / Kontostand", 
         endOf: "Ende", 
@@ -272,10 +272,10 @@
         peakSpendingCategory: "Höchste Ausgabenkategorie",
         highestExpenseMonth: "Ausgabenstärkster Monat",
         noData: "Keine Daten vorhanden",
-        oneTimeOverride: "Gruppierung anpassen", // Custom override [3]
-        setRecurringBudget: "Monatlich budgetieren", // Recurring [1]
+        oneTimeOverride: "Gruppierung anpassen",
+        setRecurringBudget: "Monatlich budgetieren",
         durationInMonths: "Anzahl der Monate",
-        themeLabel: "Design-Modus", // Theme Engine [4]
+        themeLabel: "Design-Modus",
         themeLight: "Hell",
         themeDark: "Dunkel",
         themeSystem: "System-Standard",
@@ -344,7 +344,7 @@
         bracketLiving: "Daily Living & Logistics",
         bracketLeisure: "Leisure & Discretionary",
         bracketProfessional: "Professional & Insurance",
-        bracketSubscriptions: "Subscriptions", // Subscriptions [2]
+        bracketSubscriptions: "Subscriptions",
         viewTab: "Details & View",
         editTab: "Edit Values",
         backupSection: "Data Backup Panel",
@@ -357,11 +357,11 @@
         yearlyNetBalance: "Yearly Net Balance", 
         overallNetBalance: "Overall Balance", 
         allTimeScope: "All-Time Timeline",
-        showAudit: "Show Calculation Breakdown", // Audit Panel [3]
+        showAudit: "Show Calculation Breakdown",
         hideAudit: "Hide Breakdown",
         auditTitle: "Audit Calculation Breakdown (All-Time)",
-        accumulatedIncome: "Total Accumulated Income", // Refactored [2]
-        accumulatedExpenses: "Total Accumulated Expenses", // Refactored [2]
+        accumulatedIncome: "Total Accumulated Income",
+        accumulatedExpenses: "Total Accumulated Expenses",
         initialSavingsLabel: "Start Capital (Savings)",
         runningCashBalance: "Running Cash Balance", 
         endOf: "End of", 
@@ -370,10 +370,10 @@
         peakSpendingCategory: "Peak Spending Category",
         highestExpenseMonth: "Highest Spending Month",
         noData: "No Data Recorded",
-        oneTimeOverride: "Override Color Bracket", // Custom override [3]
-        setRecurringBudget: "Set as Recurring Budget", // Recurring [1]
+        oneTimeOverride: "Override Color Bracket",
+        setRecurringBudget: "Set as Recurring Budget",
         durationInMonths: "Duration in Months",
-        themeLabel: "App Theme", // Theme Engine [4]
+        themeLabel: "App Theme",
         themeLight: "Light",
         themeDark: "Dark",
         themeSystem: "System Default",
@@ -462,7 +462,7 @@
 
     const useTranslation = () => useContext(LanguageContext);
 
-    // Initial basic structural state generator [1]
+    // Initial basic structural state generator
     const generateInitialState = () => {
       const state = {
         categories: {
@@ -487,7 +487,7 @@
       return state;
     };
 
-    // Non-destructive safe merging logic [1]
+    // Non-destructive safe merging logic
     const mergeAndLockState = (loadedState) => {
       if (!loadedState) return generateInitialState();
 
@@ -547,7 +547,7 @@
       return merged;
     };
 
-    // Local IndexedDB caching driver with safe LocalStorage Fallback [1]
+    // Local IndexedDB caching driver with safe LocalStorage Fallback
     const IDB = {
       dbName: 'BudgetDatabase_v2',
       dbVersion: 1,
@@ -642,7 +642,7 @@
       const [activeTab, setActiveTab] = useState("view"); 
       const [isAuditOpen, setIsAuditOpen] = useState(false); 
 
-      // Tri-State Theme Engine state with safe wrapper [4]
+      // Tri-State Theme Engine state with safe wrapper
       const [theme, setTheme] = useState(() => {
         try {
           return localStorage.getItem('budget_app_theme') || 'system';
@@ -657,7 +657,7 @@
       const [editingCategory, setEditingCategory] = useState(null); 
       const [editCategoryValue, setEditCategoryValue] = useState("");
 
-      // Recurring budget wizard configuration [1]
+      // Recurring budget wizard configuration
       const [recurringSetup, setRecurringSetup] = useState(null); // { type, item, value }
       const [recurringMonths, setRecurringMonths] = useState(3);
 
@@ -667,7 +667,7 @@
       const annualChartInstanceRef = useRef(null);
       const fileInputRef = useRef(null);
 
-      // Manual Category Overrides Mapping [3]
+      // Manual Category Overrides Mapping
       const getEffectiveExpenseBracket = (posten) => {
         if (data.categoryOverrides && data.categoryOverrides[posten]) {
           return data.categoryOverrides[posten];
@@ -675,7 +675,7 @@
         return getExpenseBracket(posten);
       };
 
-      // App Theme Engine bootstrap hook [4]
+      // App Theme Engine bootstrap hook
       useEffect(() => {
         try {
           localStorage.setItem('budget_app_theme', theme);
@@ -767,7 +767,7 @@
         return () => unsubscribe();
       }, []);
 
-      // Connectivity sync triggers [2]
+      // Connectivity sync triggers
       useEffect(() => {
         const handleOnline = async () => {
           setIsOnline(true);
@@ -783,12 +783,12 @@
         };
       }, [data]);
 
-      // Strict Chronological Roll-Over Math detached from initialSavingsBase/capital [1, 2]
+      // Strict Chronological Running Balance Engine
       const chronologicalTimelineResult = useMemo(() => {
         const resultSequence = {};
-        let runningGuthaben = 0; // Explicitly starting sequential array cascade from May 2026 at 0 [2]
+        let runningGuthaben = 0; 
 
-        // Order across full active years strictly [1]
+        // Order across full active years strictly
         const targetSequence = [];
         [2026, 2027, 2028].forEach(yr => {
           getMonthsForYear(yr).forEach(mo => {
@@ -831,7 +831,7 @@
         return resultSequence;
       }, [data]);
 
-      // Side-by-side grouped stacked visual chart logic [2]
+      // Side-by-side grouped stacked visual chart logic
       useEffect(() => {
         if (selectedMonth === "AnnualOverview") return;
         if (!chartRef.current) return;
@@ -852,7 +852,7 @@
 
         const isDarkTheme = document.documentElement.classList.contains('dark');
         const axisColor = isDarkTheme ? '#a1a1aa' : '#52525b';
-        const gridColor = isDarkTheme ? 'rgba(250, 250, 250, 0.08)' : 'rgba(24, 24, 27, 0.06)'; // dynamic opacity [2]
+        const gridColor = isDarkTheme ? 'rgba(250, 250, 250, 0.08)' : 'rgba(24, 24, 27, 0.06)'; 
 
         chartInstanceRef.current = new Chart(ctx, {
           type: 'bar',
@@ -883,14 +883,14 @@
               {
                 label: t('bracketSubscriptions'),
                 data: monthsForYear.map(m => getBracketMonthlyTotal('subscriptions', m)),
-                backgroundColor: '#7c3aed', // Subscriptions purple [2]
+                backgroundColor: '#7c3aed', 
                 stack: 'Stack1',
                 borderRadius: 4,
               },
               {
                 label: t('bracketLeisure'),
                 data: monthsForYear.map(m => getBracketMonthlyTotal('leisure', m)),
-                backgroundColor: '#ec4899', // Leisure pink [3]
+                backgroundColor: '#ec4899', 
                 stack: 'Stack1',
                 borderRadius: 4,
               },
@@ -949,7 +949,7 @@
         };
       }, [data, selectedYear, selectedMonth, i18n.language, theme]);
 
-      // Annual overview analytics compiling layer [2]
+      // Annual overview analytics compiling layer
       const annualOverviewData = useMemo(() => {
         const yearValues = data.values[selectedYear];
         const monthsForYear = getMonthsForYear(selectedYear);
@@ -983,7 +983,7 @@
           monthTotals[m] = { income: mIn, expenses: mEx };
         });
 
-        // Sorted lists by total expenditures [2]
+        // Sorted lists by total expenditures
         const sortedExpenses = Object.keys(totalsByCategory)
           .map(cat => ({ category: cat, total: totalsByCategory[cat] }))
           .sort((a, b) => b.total - a.total);
@@ -1014,7 +1014,7 @@
         };
       }, [data, selectedYear]);
 
-      // Chart.js script for end-of-year pie overview [2]
+      // Chart.js script for end-of-year pie overview
       useEffect(() => {
         if (selectedMonth !== "AnnualOverview") return;
         if (!annualChartRef.current) return;
@@ -1032,7 +1032,7 @@
         });
         const datasetValues = activeExpenditures.map(e => e.total);
 
-        // Assign bracket aligned background colors for aesthetic consistency [3]
+        // Assign bracket aligned background colors for aesthetic consistency
         const backgroundColors = activeExpenditures.map(e => {
           const bracket = getEffectiveExpenseBracket(e.category);
           if (bracket === 'housing') return '#475569';
@@ -1113,1349 +1113,4 @@
         if (navigator.onLine && db) {
           setSyncStatus("syncing");
           try {
-            await db.collection('monthly_logs').doc('house_finanzen_state').set({
-              payload: updatedData,
-              updatedAt: timestamp
-            });
-            await IDB.delete('queue', 'pending_sync');
-            setSyncStatus("synced");
-          } catch (e) {
-            setSyncStatus("pending_sync");
-          }
-        } else {
-          setSyncStatus("pending_sync");
-          if ('serviceWorker' in navigator && 'SyncManager' in window) {
-            const reg = await navigator.serviceWorker.ready;
-            try {
-              await reg.sync.register('sync-budget');
-            } catch (err) {
-              console.warn("Background Sync registration rejected: ", err);
-            }
-          }
-        }
-      };
-
-      const handleValueChange = async (type, posten, month, val) => {
-        const parsedValue = val === '' ? 0 : parseFloat(val);
-        const updatedVal = isNaN(parsedValue) ? 0 : parsedValue;
-
-        const updatedData = { ...data };
-        if (!updatedData.values[selectedYear]) {
-          updatedData.values[selectedYear] = { incomes: {}, expenses: {} };
-        }
-        if (!updatedData.values[selectedYear][type][posten]) {
-          updatedData.values[selectedYear][type][posten] = {};
-        }
-        updatedData.values[selectedYear][type][posten][month] = updatedVal;
-
-        await saveStateAndDispatch(updatedData, Date.now());
-      };
-
-      const handleAddCategory = async (type, name, inputSetter) => {
-        if (!name.trim()) return;
-        const trimmedName = name.trim();
-
-        if (data.categories[type].includes(trimmedName)) {
-          alert(t('duplicateCategoryAlert'));
-          return;
-        }
-
-        const updatedCategories = {
-          ...data.categories,
-          [type]: [...data.categories[type], trimmedName]
-        };
-
-        const updatedValues = { ...data.values };
-        Object.keys(updatedValues).forEach(y => {
-          if (!updatedValues[y][type][trimmedName]) {
-            updatedValues[y][type][trimmedName] = {};
-          }
-          getMonthsForYear(parseInt(y)).forEach(m => {
-            if (updatedValues[y][type][trimmedName][m] === undefined) {
-              updatedValues[y][type][trimmedName][m] = 0;
-            }
-          });
-        });
-
-        const updatedData = {
-          categories: updatedCategories,
-          values: updatedValues
-        };
-
-        inputSetter("");
-        await saveStateAndDispatch(updatedData, Date.now());
-      };
-
-      // Multi-Month Recurring copy transaction script [1]
-      const handleApplyRecurring = async (type, item, startMonth, startYear, monthsCount, value) => {
-        const updatedData = { ...data };
-        const timeline = [];
-        
-        [2026, 2027, 2028].forEach(yr => {
-          getMonthsForYear(yr).forEach(mo => {
-            timeline.push({ year: yr, month: mo });
-          });
-        });
-
-        const startIndex = timeline.findIndex(t => t.year === parseInt(startYear) && t.month === startMonth);
-        if (startIndex !== -1) {
-          for (let i = 0; i < monthsCount; i++) {
-            const targetIndex = startIndex + i;
-            if (targetIndex < timeline.length) {
-              const { year, month } = timeline[targetIndex];
-              if (!updatedData.values[year]) {
-                updatedData.values[year] = { incomes: {}, expenses: {} };
-              }
-              if (!updatedData.values[year][type][item]) {
-                updatedData.values[year][type][item] = {};
-              }
-              updatedData.values[year][type][item][month] = value;
-            }
-          }
-        }
-        await saveStateAndDispatch(updatedData, Date.now());
-      };
-
-      // Caret list manual sorting controls [1]
-      const handleMoveCategory = async (type, index, direction) => {
-        const updatedData = { ...data };
-        const categories = [...updatedData.categories[type]];
-        if (direction === 'up' && index > 0) {
-          const temp = categories[index];
-          categories[index] = categories[index - 1];
-          categories[index - 1] = temp;
-        } else if (direction === 'down' && index < categories.length - 1) {
-          const temp = categories[index];
-          categories[index] = categories[index + 1];
-          categories[index + 1] = temp;
-        } else {
-          return;
-        }
-        updatedData.categories[type] = categories;
-        await saveStateAndDispatch(updatedData, Date.now());
-      };
-
-      // Inline Renaming with Backward-Compatible Data Migration [2]
-      const handleStartRename = (type, name) => {
-        setEditingCategory({ type, name });
-        setEditCategoryValue(name);
-      };
-
-      const handleSaveRename = async () => {
-        if (!editingCategory) return;
-        const { type, name: originalName } = editingCategory;
-        const newName = editCategoryValue.trim();
-
-        if (!newName || newName === originalName) {
-          setEditingCategory(null);
-          return;
-        }
-
-        if (data.categories[type].includes(newName)) {
-          alert(t('duplicateCategoryAlert'));
-          return;
-        }
-
-        const updatedData = { ...data };
-        
-        // 1. Update list preserving strict sorting index order [1]
-        updatedData.categories[type] = updatedData.categories[type].map(cat => cat === originalName ? newName : cat);
-
-        // 2. Perform safe historical values migration [2]
-        Object.keys(updatedData.values).forEach(year => {
-          const yearValues = updatedData.values[year]?.[type];
-          if (yearValues && yearValues[originalName]) {
-            yearValues[newName] = { ...yearValues[originalName] };
-            delete yearValues[originalName];
-          }
-        });
-
-        setEditingCategory(null);
-        await saveStateAndDispatch(updatedData, Date.now());
-      };
-
-      // Secure Category Deletion Engine with Historical Data Preservation [1, 2]
-      const handleDeleteCategory = async (type, item) => {
-        const key = t(`categories.${item}`);
-        let cleanName = key.replace('categories.', '');
-        cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
-
-        const confirmMsg = t('deleteConfirmation').replace('{{name}}', cleanName);
-        if (!window.confirm(confirmMsg)) return;
-
-        const updatedData = { ...data };
-        const fallbackKey = "Sonstiges";
-
-        // Check if category holds non-zero values across years and months [2]
-        let hasData = false;
-        Object.keys(updatedData.values).forEach(year => {
-          const yearVals = updatedData.values[year]?.[type]?.[item];
-          if (yearVals) {
-            Object.keys(yearVals).forEach(month => {
-              if (yearVals[month] !== 0) {
-                hasData = true;
-              }
-            });
-          }
-        });
-
-        // Other Fallback data migration logic [2]
-        if (hasData) {
-          Object.keys(updatedData.values).forEach(year => {
-            if (!updatedData.values[year][type][fallbackKey]) {
-              updatedData.values[year][type][fallbackKey] = {};
-              getMonthsForYear(parseInt(year)).forEach(m => {
-                updatedData.values[year][type][fallbackKey][m] = 0;
-              });
-            }
-
-            const deletedVals = updatedData.values[year]?.[type]?.[item] || {};
-            getMonthsForYear(parseInt(year)).forEach(m => {
-              const deletedVal = deletedVals[m] || 0;
-              updatedData.values[year][type][fallbackKey][m] = (updatedData.values[year][type][fallbackKey][m] || 0) + deletedVal;
-            });
-          });
-        }
-
-        // Clean out schema structures securely [2]
-        updatedData.categories[type] = updatedData.categories[type].filter(cat => cat !== item);
-        Object.keys(updatedData.values).forEach(year => {
-          if (updatedData.values[year]?.[type]) {
-            delete updatedData.values[year][type][item];
-          }
-        });
-
-        await saveStateAndDispatch(updatedData, Date.now());
-      };
-
-      const handleResetData = async () => {
-        if (window.confirm(t('confirmClear'))) {
-          const freshData = generateInitialState();
-          await saveStateAndDispatch(freshData, Date.now());
-        }
-      };
-
-      // Backup JSON utilities [2]
-      const handleExportBackup = () => {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `finanzen_backup_${selectedYear}.json`);
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
-      };
-
-      const handleImportBackup = (event) => {
-        const fileReader = new FileReader();
-        fileReader.onload = async (e) => {
-          try {
-            const importedState = JSON.parse(e.target.result);
-            if (importedState && importedState.categories && importedState.values) {
-              await saveStateAndDispatch(mergeAndLockState(importedState), Date.now());
-              alert(t('importSuccess'));
-            } else {
-              alert(t('importError'));
-            }
-          } catch (err) {
-            alert(t('importError'));
-          }
-        };
-        if (event.target.files[0]) {
-          fileReader.readAsText(event.target.files[0]);
-        }
-      };
-
-      const triggerFileSelector = () => {
-        if (fileInputRef.current) {
-          fileInputRef.current.click();
-        }
-      };
-
-      const formatCurrency = (val) => {
-        return new Intl.NumberFormat(i18n.language === 'de' ? 'de-DE' : 'en-US', { 
-          style: 'currency', 
-          currency: 'EUR' 
-        }).format(val || 0);
-      };
-
-      const getMonthlyTotal = (type, targetMonth) => {
-        if (!data.values[selectedYear]) return 0;
-        return data.categories[type].reduce((sum, posten) => {
-          const val = data.values[selectedYear][type][posten]?.[targetMonth];
-          return sum + (val || 0);
-        }, 0);
-      };
-
-      const getBracketMonthlyTotal = (bracketKey, month) => {
-        if (!data.values[selectedYear]) return 0;
-        const items = data.categories.expenses.filter(posten => getEffectiveExpenseBracket(posten) === bracketKey);
-        return items.reduce((sum, posten) => {
-          const val = data.values[selectedYear].expenses[posten]?.[month];
-          return sum + (val || 0);
-        }, 0);
-      };
-
-      // Semantic Sorting Clustering engine helper [3]
-      const getClusteredCategories = (categories, type) => {
-        if (type === 'incomes') return categories; 
-        const bracketOrder = ['housing', 'living', 'subscriptions', 'leisure', 'professional']; // Clustered Subscriptions bracket added [2]
-        return [...categories].sort((a, b) => {
-          const bracketA = getEffectiveExpenseBracket(a);
-          const bracketB = getEffectiveExpenseBracket(b);
-          return bracketOrder.indexOf(bracketA) - bracketOrder.indexOf(bracketB);
-        });
-      };
-
-      // Strict Monthly and Yearly Accounting Isolation [1]
-      const totalIncome = useMemo(() => getMonthlyTotal('incomes', selectedMonth), [data, selectedMonth, selectedYear]);
-      const totalExpenses = useMemo(() => getMonthlyTotal('expenses', selectedMonth), [data, selectedMonth, selectedYear]);
-      
-      const saldo = useMemo(() => totalIncome - totalExpenses, [totalIncome, totalExpenses]);
-      const percentageSpent = useMemo(() => {
-        if (totalIncome === 0) return 0;
-        return (totalExpenses / totalIncome) * 100;
-      }, [totalIncome, totalExpenses]);
-
-      // Active selected liquidity context definition
-      const activeLiquidityResult = useMemo(() => {
-        const key = `${selectedYear}-${selectedMonth}`;
-        return chronologicalTimelineResult[key] || {
-          availableFunds: 0,
-          leftover: 0,
-          monthlyIncome: 0,
-          monthlyExpenses: 0,
-          prevGuthaben: 0
-        };
-      }, [chronologicalTimelineResult, selectedYear, selectedMonth]);
-
-      // Bounded Annual Net Balance Calculation [1]
-      const yearlyNetBalance = useMemo(() => {
-        let totalIncomesYear = 0;
-        let totalExpensesYear = 0;
-        const yearData = data.values[selectedYear];
-        if (!yearData) return 0;
-
-        const monthsForYear = getMonthsForYear(selectedYear); // Explicitly May-Dec for 2026
-
-        // Sum Incomes strictly inside current year boundaries [1]
-        if (yearData.incomes) {
-          data.categories.incomes.forEach(category => {
-            const monthsData = yearData.incomes[category];
-            if (monthsData) {
-              monthsForYear.forEach(m => {
-                totalIncomesYear += parseFloat(monthsData[m]) || 0;
-              });
-            }
-          });
-        }
-
-        // Sum Expenses strictly inside current year boundaries [1]
-        if (yearData.expenses) {
-          data.categories.expenses.forEach(category => {
-            const monthsData = yearData.expenses[category];
-            if (monthsData) {
-              monthsForYear.forEach(m => {
-                totalExpensesYear += parseFloat(monthsData[m]) || 0;
-              });
-            }
-          });
-        }
-
-        return totalIncomesYear - totalExpensesYear;
-      }, [data, selectedYear]);
-
-      // Cumulative Global Net Balance Calculation Engine [1]
-      const overallNetBalance = useMemo(() => {
-        let totalIncomesGlobal = 0;
-        let totalExpensesGlobal = 0;
-
-        Object.keys(data.values).forEach(year => {
-          const yearData = data.values[year];
-          if (!yearData) return;
-
-          // Global Incomes Accumulation [1]
-          if (yearData.incomes) {
-            data.categories.incomes.forEach(category => {
-              const monthsData = yearData.incomes[category];
-              if (monthsData) {
-                Object.keys(monthsData).forEach(m => {
-                  totalIncomesGlobal += parseFloat(monthsData[m]) || 0;
-                });
-              }
-            });
-          }
-
-          // Global Expenses Accumulation [1]
-          if (yearData.expenses) {
-            data.categories.expenses.forEach(category => {
-              const monthsData = yearData.expenses[category];
-              if (monthsData) {
-                Object.keys(monthsData).forEach(m => {
-                  totalExpensesGlobal += parseFloat(monthsData[m]) || 0;
-                });
-              }
-            });
-          }
-        });
-
-        return totalIncomesGlobal - totalExpensesGlobal;
-      }, [data]);
-
-      // Audit Breakdown transparency data compiler (Removed Deductions/Buffer) [1, 3]
-      const auditBreakdown = useMemo(() => {
-        let accIncome = 0;
-        let accExpense = 0;
-        
-        Object.keys(data.values).forEach(year => {
-          const yearData = data.values[year];
-          if (!yearData) return;
-
-          const monthsForYear = getMonthsForYear(parseInt(year));
-
-          // Sum overall active incomes across the entire database timeline [1]
-          if (yearData.incomes) {
-            data.categories.incomes.forEach(category => {
-              const monthsData = yearData.incomes[category];
-              if (monthsData) {
-                monthsForYear.forEach(m => {
-                  accIncome += parseFloat(monthsData[m]) || 0;
-                });
-              }
-            });
-          }
-
-          // Sum overall active expenses across the entire database timeline [1]
-          if (yearData.expenses) {
-            data.categories.expenses.forEach(category => {
-              const monthsData = yearData.expenses[category];
-              if (monthsData) {
-                monthsForYear.forEach(m => {
-                  accExpense += parseFloat(monthsData[m]) || 0;
-                });
-              }
-            });
-          }
-        });
-
-        return { accIncome, accExpense };
-      }, [data]);
-
-      const getItemStats = (type, posten) => {
-        const monthsForYear = getMonthsForYear(selectedYear);
-        const ytdTotal = monthsForYear.reduce((sum, m) => {
-          const val = data.values[selectedYear]?.[type]?.[posten]?.[m];
-          return sum + (val || 0);
-        }, 0);
-        
-        const average = ytdTotal / monthsForYear.length;
-        return { ytdTotal, average };
-      };
-
-      return (
-        <div className="flex flex-col min-h-screen">
-          
-          {/* Header Layout with Burger Drawer toggle [4] */}
-          <header className="bg-indigo-700 text-white shadow-md sticky top-0 z-40">
-            <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-              <div className="flex items-center space-x-2">
-                <i className="fa-solid fa-wallet text-2xl"></i>
-                <h1 className="text-xl font-bold tracking-tight">{t('title')} <span className="text-xs bg-indigo-500 px-2 py-1 rounded ml-1">{t('cloudSync')}</span></h1>
-              </div>
-
-              <div className="flex items-center space-x-3">
-                {/* Visual sync state indicators */}
-                {syncStatus === "syncing" && (
-                  <span className="bg-blue-600 text-white px-2.5 py-1 text-xs rounded-full flex items-center gap-1 hidden md:inline-flex">
-                    <i className="fa-solid fa-arrows-rotate animate-spin"></i> {t('syncing')}
-                  </span>
-                )}
-                {syncStatus === "synced" && (
-                  <span className="bg-emerald-600 text-white px-2.5 py-1 text-xs rounded-full flex items-center gap-1 hidden md:inline-flex">
-                    <i className="fa-solid fa-cloud-arrow-up"></i> {t('synced')}
-                  </span>
-                )}
-                {syncStatus === "pending_sync" && (
-                  <span className="bg-amber-600 text-white px-2.5 py-1 text-xs rounded-full flex items-center gap-1 animate-pulse hidden md:inline-flex">
-                    <i className="fa-solid fa-clock-rotate-left"></i> {t('pending_sync')}
-                  </span>
-                )}
-                <span className={`px-2.5 py-1 text-xs rounded-full flex items-center gap-1 ${isOnline ? 'bg-indigo-500' : 'bg-rose-600'}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full bg-white ${isOnline ? 'animate-ping' : ''}`}></span>
-                  <span>{isOnline ? t('online') : t('offline')}</span>
-                </span>
-                
-                {/* Burger Icon Toggle Trigger [4] */}
-                <button 
-                  onClick={() => setIsBurgerOpen(true)} 
-                  className="w-10 h-10 rounded-lg hover:bg-indigo-600 transition flex items-center justify-center text-xl outline-none"
-                >
-                  <i className="fa-solid fa-bars"></i>
-                </button>
-              </div>
-            </div>
-          </header>
-
-          {/* Sliding Options Drawer [4] */}
-          {isBurgerOpen && (
-            <div 
-              onClick={() => setIsBurgerOpen(false)} 
-              className="fixed inset-0 bg-slate-950/40 z-50 backdrop-blur-sm transition-opacity" 
-            />
-          )}
-          <div className="fixed top-0 right-0 h-full w-80 bg-[var(--color-card)] border-l border-[var(--color-border)] shadow-2xl z-50 transform transition-transform duration-300 ease-in-out scrollbar-none overflow-y-auto" style={{ transform: isBurgerOpen ? 'translateX(0)' : 'translateX(100%)' }}>
-            <div className="p-5 flex flex-col h-full justify-between">
-              <div className="space-y-6">
-                <div className="flex justify-between items-center pb-4 border-b border-[var(--color-border)]">
-                  <h3 className="font-bold text-[var(--color-text-main)] text-base flex items-center gap-2">
-                    <i className="fa-solid fa-shield-halved text-indigo-600"></i> {t('options')}
-                  </h3>
-                  <button onClick={() => setIsBurgerOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-400">
-                    <i className="fa-solid fa-xmark text-lg"></i>
-                  </button>
-                </div>
-
-                {/* Capital Setup Input Block [1] */}
-                <div className="space-y-2 pt-2">
-                  <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">{t('initialSavingsLabel')}</p>
-                  <input
-                    type="number"
-                    value={data.initialSavingsBase !== undefined ? data.initialSavingsBase : 5000}
-                    onChange={(e) => {
-                      const baseVal = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                      const updated = {
-                        ...data,
-                        initialSavingsBase: isNaN(baseVal) ? 0 : baseVal
-                      };
-                      saveStateAndDispatch(updated, Date.now());
-                    }}
-                    className="w-full bg-[var(--color-input-bg)] border border-[var(--color-border)] rounded-lg px-3 py-1.5 text-sm font-semibold text-[var(--color-input-text)] outline-none focus:border-indigo-500 transition"
-                    placeholder="0.00"
-                  />
-                </div>
-                
-                {/* Select Year */}
-                <div className="space-y-2 border-t border-[var(--color-border)] pt-4">
-                  <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">{t('selectYear')}</p>
-                  <div className="flex gap-2">
-                    {[2026, 2027, 2028].map(yr => (
-                      <button
-                        key={yr}
-                        onClick={() => { setSelectedYear(yr); setIsBurgerOpen(false); }}
-                        className={`px-3 py-1.5 rounded text-xs transition font-bold ${selectedYear === yr ? 'bg-indigo-600 text-white' : 'bg-[var(--color-input-bg)] border border-[var(--color-border)] text-[var(--color-text-main)] hover:bg-slate-200 dark:hover:bg-zinc-800'}`}
-                      >
-                        {yr}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Tri-State Theme Toggler Control [4] */}
-                <div className="space-y-2 border-t border-[var(--color-border)] pt-4">
-                  <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">{t('themeLabel')}</p>
-                  <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-zinc-800 rounded-lg p-1">
-                    {['light', 'dark', 'system'].map(mode => (
-                      <button
-                        key={mode}
-                        onClick={() => setTheme(mode)}
-                        className={`px-2 py-1.5 rounded-md text-[10px] transition font-bold ${
-                          theme === mode 
-                            ? 'bg-white dark:bg-zinc-700 text-indigo-700 dark:text-indigo-200 shadow-sm' 
-                            : 'text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200'
-                        }`}
-                      >
-                        {t(`theme${mode.charAt(0).toUpperCase() + mode.slice(1)}`)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Select Language */}
-                <div className="space-y-2 border-t border-[var(--color-border)] pt-4">
-                  <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">{t('selectLanguage')}</p>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => { i18n.changeLanguage('de'); setIsBurgerOpen(false); }} 
-                      className={`px-3 py-1.5 rounded text-xs transition font-bold ${i18n.language === 'de' ? 'bg-indigo-600 text-white' : 'bg-[var(--color-input-bg)] border border-[var(--color-border)] text-[var(--color-text-main)]'}`}
-                    >
-                      DE
-                    </button>
-                    <button 
-                      onClick={() => { i18n.changeLanguage('en'); setIsBurgerOpen(false); }} 
-                      className={`px-3 py-1.5 rounded text-xs transition font-bold ${i18n.language === 'en' ? 'bg-indigo-600 text-white' : 'bg-[var(--color-input-bg)] border border-[var(--color-border)] text-[var(--color-text-main)]'}`}
-                    >
-                      EN
-                    </button>
-                  </div>
-                </div>
-
-                {/* Backup configuration interface [2] */}
-                <div className="space-y-2 pt-4 border-t border-[var(--color-border)]">
-                  <p className="text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">{t('backupSection')}</p>
-                  <div className="flex flex-col gap-2">
-                    <button
-                      onClick={handleExportBackup}
-                      className="bg-indigo-50 hover:bg-indigo-100 dark:bg-zinc-800 dark:text-indigo-300 dark:hover:bg-zinc-700 text-indigo-700 font-bold py-2 px-3 rounded-lg text-xs flex items-center justify-center gap-2 transition"
-                    >
-                      <i className="fa-solid fa-file-export"></i> {t('exportBackup')}
-                    </button>
-                    <button
-                      onClick={triggerFileSelector}
-                      className="bg-slate-50 hover:bg-slate-100 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 text-slate-700 font-bold py-2 px-3 rounded-lg text-xs flex items-center justify-center gap-2 transition"
-                    >
-                      <i className="fa-solid fa-file-import"></i> {t('importBackup')}
-                    </button>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".json"
-                      onChange={handleImportBackup}
-                      className="hidden"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Secure Reset Data Link [4] */}
-              <div className="pt-4 border-t border-[var(--color-border)]">
-                <button 
-                  onClick={() => { handleResetData(); setIsBurgerOpen(false); }}
-                  className="text-slate-400 hover:text-rose-600 transition duration-200 text-xs underline flex items-center gap-2 py-2 w-full text-left font-medium"
-                >
-                  <i className="fa-solid fa-triangle-exclamation"></i> {t('clearAll')}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Month Navigation Tabs with AnnualOverview Trigger [2] */}
-          <nav className="bg-[var(--color-card)] border-b border-[var(--color-border)] sticky top-[52px] z-30 shadow-sm transition-colors">
-            <div className="max-w-7xl mx-auto px-4 overflow-x-auto whitespace-nowrap scrollbar-none flex items-center">
-              <div className="flex overflow-x-auto scrollbar-none flex-grow">
-                {getMonthsForYear(selectedYear).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setSelectedMonth(m)}
-                    className={`flex-1 min-w-[70px] py-4 text-center font-semibold text-sm transition-all border-b-2 outline-none ${
-                      selectedMonth === m
-                        ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-indigo-5/50 dark:bg-indigo-950/20'
-                        : 'border-transparent text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800/30'
-                    }`}
-                  >
-                    {t(`months.${m}`)}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => setSelectedMonth("AnnualOverview")}
-                className={`py-4 px-6 text-center font-bold text-sm transition-all border-b-2 border-transparent outline-none flex items-center gap-1.5 shrink-0 ml-4 ${
-                  selectedMonth === "AnnualOverview"
-                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400 bg-indigo-5/50 dark:bg-indigo-950/20'
-                    : 'text-indigo-600 dark:text-indigo-400 hover:bg-slate-50 dark:hover:bg-zinc-800/30'
-                }`}
-              >
-                <i className="fa-solid fa-chart-line"></i> {t('annualOverview')}
-              </button>
-            </div>
-          </nav>
-
-          {/* Main Layout Area */}
-          <main className="flex-grow max-w-7xl mx-auto w-full px-4 py-6 space-y-6">
-
-            {selectedMonth === "AnnualOverview" ? (
-              /* DEDICATED ANNUAL OVERVIEW LAYOUT TAB [2] */
-              <div className="space-y-6 animate-fadeIn">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Metric 1: Savings Rate */}
-                  <div className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/50 rounded-2xl p-5 flex items-center justify-between shadow-sm">
-                    <div>
-                      <p className="text-xs font-bold text-indigo-800 dark:text-indigo-400 uppercase tracking-wider">{t('savingsRate')}</p>
-                      <p className="text-2xl font-black text-indigo-900 dark:text-indigo-200 mt-1">{annualOverviewData.savingsRate.toFixed(1)}%</p>
-                    </div>
-                    <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-300">
-                      <i className="fa-solid fa-percent text-xl"></i>
-                    </div>
-                  </div>
-
-                  {/* Metric 2: Peak Spending Category */}
-                  <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 rounded-2xl p-5 flex items-center justify-between shadow-sm">
-                    <div>
-                      <p className="text-xs font-bold text-rose-800 dark:text-rose-400 uppercase tracking-wider">{t('peakSpendingCategory')}</p>
-                      <p className="text-base font-black text-rose-900 dark:text-rose-200 mt-2 truncate max-w-[170px]">
-                        {annualOverviewData.peakCategory ? t(`categories.${annualOverviewData.peakCategory}`).replace('categories.', '') : t('noData')}
-                      </p>
-                    </div>
-                    <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-300">
-                      <i className="fa-solid fa-fire text-xl"></i>
-                    </div>
-                  </div>
-
-                  {/* Metric 3: Highest Spent Month */}
-                  <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 flex items-center justify-between shadow-sm">
-                    <div>
-                      <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">{t('highestExpenseMonth')}</p>
-                      <p className="text-2xl font-black text-zinc-900 dark:text-zinc-100 mt-1">
-                        {annualOverviewData.highestMonth ? `${t(`months.${annualOverviewData.highestMonth}`)} ${selectedYear}` : t('noData')}
-                      </p>
-                    </div>
-                    <div className="w-12 h-12 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-600 dark:text-zinc-400">
-                      <i className="fa-solid fa-calendar-days text-xl"></i>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pie/Doughnut Chart Expense Breakdown */}
-                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm p-5 grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
-                  <div>
-                    <h3 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 uppercase tracking-wider">{t('analyticsHeader')}</h3>
-                    <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-4">Prozentuale Verteilung aller Ausgaben im Jahr {selectedYear}</p>
-                    <div className="h-[260px] relative w-full flex justify-center">
-                      <canvas ref={annualChartRef}></canvas>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 max-h-[300px] overflow-y-auto scrollbar-none">
-                    {annualOverviewData.sortedExpenses.map(({ category, total }) => {
-                      const cleanCatName = t(`categories.${category}`).replace('categories.', '');
-                      const share = annualOverviewData.totalYearlyEx > 0 ? (total / annualOverviewData.totalYearlyEx) * 100 : 0;
-                      if (total === 0) return null;
-                      return (
-                        <div key={category} className="flex justify-between items-center text-xs border-b border-[var(--color-border)] pb-2">
-                          <span className="font-semibold text-zinc-600 dark:text-zinc-400">{cleanCatName}</span>
-                          <span className="font-bold text-zinc-700 dark:text-zinc-200">{formatCurrency(total)} ({share.toFixed(1)}%)</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* 12-Month transaction grid view without table tags */}
-                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
-                  <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-850 flex justify-between items-center">
-                    <h3 className="font-bold text-zinc-700 dark:text-zinc-300 text-sm">{selectedYear} - Datasheet</h3>
-                  </div>
-                  <div className="overflow-x-auto scrollbar-none">
-                    <div className="min-w-[460px] divide-y divide-zinc-100 dark:divide-zinc-800">
-                      <div className="annual-grid-row font-bold text-xs text-zinc-600 dark:text-zinc-400 uppercase bg-zinc-100 dark:bg-zinc-800/80 border-b border-zinc-200 dark:border-zinc-800">
-                        <div>Month</div>
-                        <div className="text-right">Incomes</div>
-                        <div className="text-right">Expenses</div>
-                        <div className="text-right">Savings Net</div>
-                      </div>
-                      {getMonthsForYear(selectedYear).map(m => {
-                        const income = annualOverviewData.monthTotals[m]?.income || 0;
-                        const expenses = annualOverviewData.monthTotals[m]?.expenses || 0;
-                        const net = income - expenses;
-                        return (
-                          <div key={m} className="annual-grid-row hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition text-xs font-medium">
-                            <div className="font-semibold text-zinc-700 dark:text-zinc-300">{t(`months.${m}`)}</div>
-                            <div className="text-right text-emerald-600 dark:text-emerald-400">{formatCurrency(income)}</div>
-                            <div className="text-right text-rose-600 dark:text-rose-400">{formatCurrency(expenses)}</div>
-                            <div className={`text-right font-bold ${net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                              {net < 0 ? "-" : ""}{formatCurrency(Math.abs(net))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              /* TRADITIONAL MONTHLY BUDGET LAYOUT VIEW */
-              <div className="space-y-6">
-                {/* Segmented view/edit toggle [6] */}
-                <div className="flex bg-zinc-200/60 dark:bg-zinc-850 p-1 rounded-xl max-w-sm mx-auto shadow-inner">
-                  <button 
-                    onClick={() => setActiveTab('view')}
-                    className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 text-indigo-700 dark:text-indigo-200 shadow"
-                    style={{ backgroundColor: activeTab === 'view' ? 'var(--color-card)' : 'transparent' }}
-                  >
-                    <i className="fa-solid fa-eye text-sm"></i> {t('viewTab')}
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab('edit')}
-                    className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 dark:text-zinc-400"
-                    style={{ backgroundColor: activeTab === 'edit' ? 'var(--color-card)' : 'transparent' }}
-                  >
-                    <i className="fa-solid fa-pen-to-square text-sm"></i> {t('editTab')}
-                  </button>
-                </div>
-
-                {/* Triple Net Metrics Panel [2] */}
-                <section className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
-                  {/* Metric 1: Monthly Leftover */}
-                  <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
-                    saldo >= 0 ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/15 dark:border-emerald-900/50' : 'bg-rose-50 border-rose-200 dark:bg-rose-950/15 dark:border-rose-900/50'
-                  }`}>
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h2 className={`text-xs font-bold uppercase tracking-wider ${saldo >= 0 ? 'text-emerald-800 dark:text-emerald-400' : 'text-rose-800 dark:text-rose-400'}`}>
-                          {t('monthlyLeftover')}
-                        </h2>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">
-                          {t(`months.${selectedMonth}`)} {selectedYear}
-                        </p>
-                      </div>
-                      <div className={`text-2xl font-black ${saldo >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                        {saldo < 0 ? "-" : ""}{formatCurrency(Math.abs(saldo))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Metric 2: Yearly Net Balance [1, 2] */}
-                  <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
-                    yearlyNetBalance >= 0 ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/15 dark:border-emerald-900/50' : 'bg-rose-50 border-rose-200 dark:bg-rose-950/15 dark:border-rose-900/50'
-                  }`}>
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h2 className={`text-xs font-bold uppercase tracking-wider ${yearlyNetBalance >= 0 ? 'text-emerald-800 dark:text-emerald-400' : 'text-rose-800 dark:text-rose-400'}`}>
-                          {t('yearlyNetBalance')}
-                        </h2>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">
-                          {selectedYear}
-                        </p>
-                      </div>
-                      <div className={`text-2xl font-black ${yearlyNetBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                        {yearlyNetBalance < 0 ? "-" : ""}{formatCurrency(Math.abs(yearlyNetBalance))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Metric 3: Strict Chronological Running Cash Balance [1, 2] */}
-                  <div className={`rounded-2xl p-5 border shadow-sm transition-all duration-300 ${
-                    activeLiquidityResult.leftover >= 0 ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/15 dark:border-emerald-900/50' : 'bg-rose-50 border-rose-200 dark:bg-rose-950/15 dark:border-rose-900/50'
-                  }`}>
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h2 className={`text-xs font-bold uppercase tracking-wider ${activeLiquidityResult.leftover >= 0 ? 'text-emerald-800 dark:text-emerald-400' : 'text-rose-800 dark:text-rose-400'}`}>
-                          {t('runningCashBalance')}
-                        </h2>
-                        <p className="text-xs text-zinc-500 dark:text-zinc-500 mt-1">
-                          {t('endOf')} {t(`months.${selectedMonth}`)} {selectedYear}
-                        </p>
-                      </div>
-                      <div className={`text-2xl font-black ${activeLiquidityResult.leftover >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                        {activeLiquidityResult.leftover < 0 ? "-" : ""}{formatCurrency(Math.abs(activeLiquidityResult.leftover))}
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                {/* Audit Breakdown Transparency Drawer [2, 3] */}
-                <div className="space-y-2">
-                  <div className="flex justify-end px-1">
-                    <button 
-                      onClick={() => setIsAuditOpen(!isAuditOpen)} 
-                      className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 text-xs font-bold flex items-center gap-1.5 transition outline-none"
-                    >
-                      <i className={`fa-solid ${isAuditOpen ? 'fa-square-minus' : 'fa-square-plus'}`}></i>
-                      <span>{isAuditOpen ? t('hideAudit') : t('showAudit')}</span>
-                    </button>
-                  </div>
-
-                  {isAuditOpen && (
-                    <div className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-xs space-y-2 animate-fadeIn transition-all duration-300">
-                      <h4 className="font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide border-b border-zinc-200 dark:border-zinc-800 pb-1.5 flex items-center gap-1.5">
-                        <i className="fa-solid fa-calculator text-indigo-500"></i> {t('auditTitle')}
-                      </h4>
-                      {/* Clean side-by-side Dual Net Metrics Panel [2] */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-1">
-                        <div className="flex justify-between items-center bg-white dark:bg-zinc-800 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700">
-                          <span className="text-zinc-500 dark:text-zinc-400 font-medium">{t('accumulatedIncome')}:</span>
-                          <span className="font-bold text-emerald-600 dark:text-emerald-400">+ {formatCurrency(auditBreakdown.accIncome)}</span>
-                        </div>
-                        <div className="flex justify-between items-center bg-white dark:bg-zinc-800 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700">
-                          <span className="text-zinc-500 dark:text-zinc-400 font-medium">{t('accumulatedExpenses')}:</span>
-                          <span className="font-bold text-rose-600 dark:text-rose-400">- {formatCurrency(auditBreakdown.accExpense)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Aggregate Metrics Grid */}
-                <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-emerald-50 dark:bg-emerald-950/15 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl p-4 flex items-center justify-between shadow-sm">
-                    <div>
-                      <p className="text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase">{t('totalIncome')}</p>
-                      <p className="text-2xl font-black text-emerald-900 dark:text-emerald-200 mt-1">{formatCurrency(totalIncome)}</p>
-                    </div>
-                    <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-emerald-600 dark:text-indigo-300">
-                      <i className="fa-solid fa-circle-arrow-down text-xl"></i>
-                    </div>
-                  </div>
-
-                  <div className="bg-rose-50 dark:bg-rose-950/15 border border-rose-200 dark:border-rose-900/50 rounded-2xl p-4 flex items-center justify-between shadow-sm">
-                    <div>
-                      <p className="text-xs font-bold text-rose-800 dark:text-rose-400 uppercase">{t('totalExpenses')}</p>
-                      <p className="text-2xl font-black text-rose-900 dark:text-rose-200 mt-1">{formatCurrency(totalExpenses)}</p>
-                    </div>
-                    <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-rose-600 dark:text-zinc-300">
-                      <i className="fa-solid fa-circle-arrow-up text-xl"></i>
-                    </div>
-                  </div>
-
-                  <div className={`border rounded-2xl p-4 flex items-center justify-between shadow-sm transition-all ${
-                    saldo >= 0 ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-950/15 dark:border-indigo-900/50' : 'bg-amber-50 border-amber-200 dark:bg-amber-950/15 dark:border-amber-900/50'
-                  }`}>
-                    <div>
-                      <p className={`text-xs font-bold uppercase ${saldo >= 0 ? 'text-indigo-800 dark:text-indigo-400' : 'text-amber-800 dark:text-amber-400'}`}>{t('saldo')} ({t(`months.${selectedMonth}`)})</p>
-                      <p className={`text-2xl font-black mt-1 ${saldo >= 0 ? 'text-indigo-900 dark:text-indigo-200' : 'text-amber-900 dark:text-amber-200'}`}>{formatCurrency(saldo)}</p>
-                    </div>
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      saldo >= 0 ? 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300' : 'bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-300'
-                    }`}>
-                      <i className={`fa-solid text-xl ${saldo >= 0 ? 'fa-scale-balanced' : 'fa-triangle-exclamation'}`}></i>
-                    </div>
-                  </div>
-
-                  <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 flex items-center justify-between shadow-sm transition-colors">
-                    <div>
-                      <p className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase">{t('spentRatio')}</p>
-                      <p className="text-2xl font-black text-zinc-800 dark:text-zinc-200 mt-1">{percentageSpent.toFixed(1)}%</p>
-                    </div>
-                    <div className="w-full max-w-[80px] bg-zinc-200 dark:bg-zinc-800 rounded-full h-2.5 ml-2">
-                      <div 
-                        className={`h-2.5 rounded-full transition-all duration-300 ${
-                          percentageSpent > 100 ? 'bg-rose-600' : percentageSpent > 85 ? 'bg-amber-500' : 'bg-indigo-600'
-                        }`} 
-                        style={{ width: `${Math.min(percentageSpent, 100)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </section>
-
-                {/* Side-by-Side Grouped Stacked Analytics Chart [2] */}
-                <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm p-4 transition-colors">
-                  <h3 className="text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-3 flex items-center gap-2">
-                    <i className="fa-solid fa-chart-simple text-indigo-600"></i> {t('analyticsHeader')} - {selectedYear}
-                  </h3>
-                  <div className="h-[280px] relative w-full">
-                    <canvas ref={chartRef}></canvas>
-                  </div>
-                </section>
-
-                {/* Ledger Tables - Refactored into a Locked Track CSS Grid [1] */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                  
-                  {/* TABLE A: EINKÜNFTE */}
-                  <section className="bg-[var(--color-card)] rounded-2xl border border-[var(--color-border)] shadow-sm overflow-hidden flex flex-col transition-colors">
-                    <div className="p-4 border-b border-[var(--color-border)] bg-emerald-50/50 dark:bg-emerald-950/10 flex items-center justify-between">
-                      <h3 className="text-lg font-bold text-emerald-900 dark:text-emerald-400 flex items-center gap-2">
-                        <i className="fa-solid fa-money-bill-trend-up text-emerald-600"></i> {t('incomesHeader')}
-                      </h3>
-                      <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 rounded-full">
-                        {t('sum')}: {formatCurrency(totalIncome)}
-                      </span>
-                    </div>
-                    
-                    {/* Horizontal scroll container with locked minimum column widths */}
-                    <div className="overflow-x-auto w-full scrollbar-none">
-                      <div className="min-w-[460px] flex flex-col w-full divide-y divide-[var(--color-border)]">
-                        {/* CSS Grid Column Header */}
-                        <div className="locked-grid-row font-bold text-xs text-zinc-600 dark:text-zinc-400 uppercase bg-zinc-100 dark:bg-zinc-800/80 border-b border-[var(--color-border)]">
-                          <div className="truncate">{t('posten')}</div>
-                          <div className="text-right">{t(`months.${selectedMonth}`)} (€)</div>
-                          <div className="text-right">{t('resultYtd')}</div>
-                          <div className="text-right">{t('avgSchnitt')}</div>
-                        </div>
-
-                        {/* CSS Grid Data Rows */}
-                        {(activeTab === "view" ? getClusteredCategories(data.categories.incomes, 'incomes') : data.categories.incomes).map((item, idx, arr) => {
-                          const { ytdTotal, average } = getItemStats('incomes', item);
-                          const val = data.values[selectedYear]?.incomes[item]?.[selectedMonth];
-                          
-                          // Database Object Parsing sanitation step
-                          const key = t(`categories.${item}`);
-                          let cleanName = key.replace('categories.', '');
-                          cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
-
-                          // Deletion identification check
-                          const isCustom = !INITIAL_CATEGORIES.incomes.includes(item);
-                          const isRenaming = editingCategory && editingCategory.type === 'incomes' && editingCategory.name === item;
-
-                          return (
-                            <div key={item} className="locked-grid-row hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition border-l-4 border-emerald-500">
-                              {/* Column 1: Category Name & Edit Options */}
-                              <div className="flex items-center gap-1.5 overflow-hidden w-full font-medium text-zinc-700 dark:text-zinc-300">
-                                {isRenaming ? (
-                                  <input 
-                                    type="text" 
-                                    value={editCategoryValue} 
-                                    onChange={(e) => setEditCategoryValue(e.target.value)}
-                                    onBlur={handleSaveRename}
-                                    onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }}
-                                    className="custom-input rounded px-2 py-0.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full"
-                                    autoFocus
-                                  />
-                                ) : (
-                                  <div className="flex items-center gap-1.5 overflow-hidden w-full">
-                                    <span className="truncate" title={cleanName}>{cleanName}</span>
-                                    {activeTab === "edit" && (
-                                      <button 
-                                        onClick={() => handleStartRename('incomes', item)}
-                                        className="text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition p-1 shrink-0"
-                                        title="Rename"
-                                      >
-                                        <i className="fa-solid fa-pen text-[10px]"></i>
-                                      </button>
-                                    )}
-                                  </div>
-                                )}
-                                
-                                {activeTab === "edit" && (
-                                  <div className="flex items-center space-x-1 shrink-0 ml-auto">
-                                    <button 
-                                      onClick={() => handleMoveCategory('incomes', idx, 'up')}
-                                      disabled={idx === 0}
-                                      className="text-zinc-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-zinc-400 transition p-1"
-                                    >
-                                      <i className="fa-solid fa-caret-up"></i>
-                                    </button>
-                                    <button 
-                                      onClick={() => handleMoveCategory('incomes', idx, 'down')}
-                                      disabled={idx === arr.length - 1}
-                                      className="text-zinc-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-zinc-400 transition p-1"
-                                    >
-                                      <i className="fa-solid fa-caret-down"></i>
-                                    </button>
-                                    {isCustom && (
-                                      <button 
-                                        onClick={() => handleDeleteCategory('incomes', item)}
-                                        className="text-zinc-400 hover:text-rose-600 transition p-1"
-                                        title={t('clearAll')}
-                                      >
-                                        <i className="fa-solid fa-trash-can text-xs"></i>
-                                      </button>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Column 2: Input field / Value */}
-                              <div className="text-right w-full">
-                                {activeTab === "view" ? (
-                                  <span className="font-bold text-zinc-700 dark:text-zinc-300 block whitespace-nowrap">{formatCurrency(val || 0)}</span>
-                                ) : (
-                                  <input
-                                    type="number"
-                                    step="any"
-                                    value={val !== undefined && val !== 0 ? val : ''}
-                                    placeholder="0"
-                                    onChange={(e) => handleValueChange('incomes', item, selectedMonth, e.target.value)}
-                                    className="num-input-fix custom-input text-right rounded-lg outline-none focus:border-indigo-500 font-semibold transition py-1 px-2"
-                                  />
-                                )}
-                              </div>
-
-                              {/* Column 3: YTD */}
-                              <div className="text-right text-zinc-600 dark:text-zinc-400 font-medium whitespace-nowrap w-full">
-                                {formatCurrency(ytdTotal)}
-                              </div>
-
-                              {/* Column 4: Average */}
-                              <div className="text-right text-zinc-500 dark:text-zinc-500 text-xs whitespace-nowrap w-full">
-                                {formatCurrency(average)}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {activeTab === "edit" && (
-                      <div className="p-3 bg-zinc-50 dark:bg-zinc-850 border-t border-[var(--color-border)] flex gap-2">
-                        <input
-                          type="text"
-                          value={customIncomeInput}
-                          onChange={(e) => setCustomIncomeInput(e.target.value)}
-                          placeholder={t('addPlaceholder')}
-                          className="flex-grow bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition text-zinc-800 dark:text-zinc-100"
-                        />
-                        <button
-                          onClick={() => handleAddCategory('incomes', customIncomeInput, setCustomIncomeInput)}
-                          className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-bold transition flex items-center gap-1 shrink-0"
-                        >
-                          <i className="fa-solid fa-plus"></i> Add
-                        </button>
-                      </div>
-                    )}
-                  </section>
-
-                  {/* TABLE B: AUSGABEN */}
-                  <section className="bg-[var(--color-card)] rounded-2xl border border-[var(--color-border)] shadow-sm overflow-hidden flex flex-col transition-colors">
-                    <div className="p-4 border-b border-[var(--color-border)] bg-rose-50/50 dark:bg-rose-950/10 flex items-center justify-between">
-                      <h3 className="text-lg font-bold text-rose-900 dark:text-rose-400 flex items-center gap-2">
-                        <i className="fa-solid fa-cart-shopping text-rose-600"></i> {t('expensesHeader')}
-                      </h3>
-                      <span className="text-xs font-semibold px-2.5 py-1 bg-rose-100 dark:bg-rose-900/50 text-rose-800 dark:text-rose-300 rounded-full">
-                        {t('sum')}: {formatCurrency(totalExpenses)}
-                      </span>
-                    </div>
-                    
-                    {/* Horizontal scroll container with locked minimum column widths */}
-                    <div className="overflow-x-auto w-full scrollbar-none">
-                      <div className="min-w-[460px] flex flex-col w-full divide-y divide-[var(--color-border)]">
-                        {/* CSS Grid Column Header */}
-                        <div className="locked-grid-row font-bold text-xs text-zinc-600 dark:text-zinc-400 uppercase bg-zinc-100 dark:bg-zinc-800/80 border-b border-[var(--color-border)]">
-                          <div className="truncate">{t('posten')}</div>
-                          <div className="text-right">{t(`months.${selectedMonth}`)} (€)</div>
-                          <div className="text-right">{t('resultYtd')}</div>
-                          <div className="text-right">{t('avgSchnitt')}</div>
-                        </div>
-
-                        {/* CSS Grid Data Rows */}
-                        {(activeTab === "view" ? getClusteredCategories(data.categories.expenses, 'expenses') : data.categories.expenses).map((item, idx, arr) => {
-                          const { ytdTotal, average } = getItemStats('expenses', item);
-                          const val = data.values[selectedYear]?.expenses[item]?.[selectedMonth];
-                          
-                          // Dynamic left-border tags mapped by category bracket [3]
-                          const bracket = getEffectiveExpenseBracket(item);
-                          
-                          // Semantically defined clustering background colors [3]
-                          const rowClass = 
-                            bracket === 'housing' ? 'bg-zinc-50/30 hover:bg-zinc-100 dark:bg-zinc-900/10 dark:hover:bg-zinc-800/30 border-l-4 border-slate-500' : 
-                            bracket === 'living' ? 'bg-amber-50/20 hover:bg-amber-100/40 dark:bg-amber-950/5 dark:hover:bg-amber-900/15 border-l-4 border-amber-500' :  
-                            bracket === 'subscriptions' ? 'bg-indigo-50/20 hover:bg-indigo-100/40 dark:bg-indigo-950/10 dark:hover:bg-indigo-900/20 border-l-4 border-indigo-500' : 
-                            bracket === 'professional' ? 'bg-teal-50/20 hover:bg-teal-100/40 dark:bg-teal-950/10 dark:hover:bg-teal-900/20 border-l-4 border-teal-500' : 
-                            'bg-purple-50/20 hover:bg-purple-100/40 dark:bg-purple-950/10 dark:hover:bg-purple-900/20 border-l-4 border-purple-500'; 
-
-                          // Database Object Parsing sanitation step
-                          const key = t(`categories.${item}`);
-                          let cleanName = key.replace('categories.', '');
-                          cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
-
-                          // Deletion identification check
-                          const isCustom = !INITIAL_CATEGORIES.expenses.includes(item);
-                          const isRenaming = editingCategory && editingCategory.type === 'expenses' && editingCategory.name === item;
-
-                          return (
-                            <div key={item} className={`locked-grid-row transition ${rowClass}`}>
-                              {/* Column 1: Name, Rename, Override Select, Reorder carets */}
-                              <div className="flex items-center gap-1.5 overflow-hidden w-full font-medium text-zinc-700 dark:text-zinc-300">
-                                {isRenaming ? (
-                                  <input 
-                                    type="text" 
-                                    value={editCategoryValue} 
-                                    onChange={(e) => setEditCategoryValue(e.target.value)}
-                                    onBlur={handleSaveRename}
-                                    onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }}
-                                    className="custom-input rounded px-2 py-0.5 text-sm outline-none focus:ring-1 focus:ring-indigo-500 w-full"
-                                    autoFocus
-                                  />
-                                ) : (
-                                  <div className="flex items-center gap-1.5 overflow-hidden w-full">
-                                    <span className="truncate" title={cleanName}>{cleanName}</span>
-                                    {activeTab === "edit" && (
-                                      <button 
-                                        onClick={() => handleStartRename('expenses', item)}
-                                        className="text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition p-1 shrink-0"
-                                        title="Rename"
-                                      >
-                                        <i className="fa-solid fa-pen text-[10px]"></i>
-                                      </button>
-                                    )}
-                                  </div>
-                                )}
-                                
-                                {activeTab === "edit" && (
-                                  <div className="flex items-center gap-2 ml-auto shrink-0">
-                                    <select
-                                      value={data.categoryOverrides?.[item] || "auto"}
-                                      onChange={(e) => {
-                                        const val = e.target.value === "auto" ? null : e.target.value;
-                                        const updated = {
-                                          ...data,
-                                          categoryOverrides: {
-                                            ...(data.categoryOverrides || {}),
-                                            [item]: val
-                                          }
-                                        };
-                                        saveStateAndDispatch(updated, Date.now());
-                                      }}
-                                      className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-2 py-0.5 text-[10px] text-zinc-600 dark:text-zinc-400 outline-none focus:border-indigo-500 max-w-[85px] transition"
-                                    >
-                                      <option value="auto">Auto 🤖</option>
-                                      <option value="housing">Wohnen 🏠</option>
-                                      <option value="living">Alltag 🍎</option>
-                                      <option value="subscriptions">Abonnement 🎟️</option>
-                                      <option value="leisure">Freizeit 🎭</option>
-                                      <option value="professional">Beruf 🎓</option>
-                                    </select>
-                                    
-                                    <div className="flex items-center space-x-1">
-                                      <button 
-                                        onClick={() => handleMoveCategory('expenses', idx, 'up')}
-                                        disabled={idx === 0}
-                                        className="text-zinc-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-zinc-400 transition p-1"
-                                      >
-                                        <i className="fa-solid fa-caret-up"></i>
-                                      </button>
-                                      <button 
-                                        onClick={() => handleMoveCategory('expenses', idx, 'down')}
-                                        disabled={idx === arr.length - 1}
-                                        className="text-zinc-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-zinc-400 transition p-1"
-                                      >
-                                        <i className="fa-solid fa-caret-down"></i>
-                                      </button>
-                                      {isCustom && (
-                                        <button 
-                                          onClick={() => handleDeleteCategory('expenses', item)}
-                                          className="text-zinc-400 hover:text-rose-600 transition p-1"
-                                          title={t('clearAll')}
-                                        >
-                                          <i className="fa-solid fa-trash-can text-xs"></i>
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                              
-                              {/* Column 2: Input field / Value + Recurring */}
-                              <div className="text-right w-full flex items-center justify-end gap-1.5">
-                                {activeTab === "view" ? (
-                                  <span className="font-bold text-zinc-700 dark:text-zinc-300 block whitespace-nowrap">{formatCurrency(val || 0)}</span>
-                                ) : (
-                                  <React.Fragment>
-                                    <input
-                                      type="number"
-                                      step="any"
-                                      value={val !== undefined && val !== 0 ? val : ''}
-                                      placeholder="0"
-                                      onChange={(e) => handleValueChange('expenses', item, selectedMonth, e.target.value)}
-                                      className="num-input-fix custom-input text-right rounded-lg outline-none focus:border-indigo-500 font-semibold transition py-1 px-2"
-                                    />
-                                    <button
-                                      onClick={() => setRecurringSetup({ type: 'expenses', item, value: val || 0 })}
-                                      className="text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 transition outline-none shrink-0"
-                                      title={t('setRecurringBudget')}
-                                    >
-                                      <i className="fa-solid fa-arrows-spin"></i>
-                                    </button>
-                                  </React.Fragment>
-                                )}
-                              </div>
-
-                              {/* Column 3: YTD */}
-                              <div className="text-right text-zinc-600 dark:text-zinc-400 font-medium whitespace-nowrap w-full">
-                                {formatCurrency(ytdTotal)}
-                              </div>
-
-                              {/* Column 4: Average */}
-                              <div className="text-right text-zinc-500 dark:text-zinc-500 text-xs whitespace-nowrap w-full">
-                                {formatCurrency(average)}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {activeTab === "edit" && (
-                      <div className="p-3 bg-zinc-50 dark:bg-zinc-850 border-t border-[var(--color-border)] flex gap-2">
-                        <input
-                          type="text"
-                          value={customExpenseInput}
-                          onChange={(e) => setCustomExpenseInput(e.target.value)}
-                          placeholder={t('addPlaceholder')}
-                          className="flex-grow bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition text-zinc-800 dark:text-zinc-100"
-                        />
-                        <button
-                          onClick={() => handleAddCategory('expenses', customExpenseInput, setCustomExpenseInput)}
-                          className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-bold transition flex items-center gap-1 shrink-0"
-                        >
-                          <i className="fa-solid fa-plus"></i> Add
-                        </button>
-                      </div>
-                    )}
-                  </section>
-
-                </div>
-              </div>
-            )}
-          </main>
-
-          {/* Automated Multi-Month Recurring Budget overlay/wizard [1] */}
-          {recurringSetup && (
-            <div className="fixed inset-0 bg-slate-950/40 z-50 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 max-w-sm w-full shadow-2xl space-y-4">
-                <div className="flex justify-between items-center pb-2 border-b border-zinc-100 dark:border-zinc-800">
-                  <h3 className="font-bold text-zinc-800 dark:text-zinc-100 text-sm flex items-center gap-1.5">
-                    <i className="fa-solid fa-arrows-spin text-indigo-500"></i> {t('setRecurringBudget')}
-                  </h3>
-                  <button onClick={() => setRecurringSetup(null)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-400">
-                    <i className="fa-solid fa-xmark"></i>
-                  </button>
-                </div>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 capitalize">
-                  {t('categories.' + recurringSetup.item).replace('categories.', '')}: <span className="font-bold text-zinc-700 dark:text-zinc-200">{formatCurrency(recurringSetup.value)}</span>
-                </p>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">{t('durationInMonths')}</label>
-                  <select
-                    value={recurringMonths}
-                    onChange={(e) => setRecurringMonths(parseInt(e.target.value))}
-                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-zinc-100 outline-none focus:border-indigo-500 transition font-semibold"
-                  >
-                    <option value={3}>3 {i18n.language === 'de' ? 'Monate' : 'months'}</option>
-                    <option value={6}>6 {i18n.language === 'de' ? 'Monate' : 'months'}</option>
-                    <option value={12}>12 {i18n.language === 'de' ? 'Monate' : 'months'}</option>
-                  </select>
-                </div>
-                <div className="flex gap-2 pt-2">
-                  <button
-                    onClick={() => setRecurringSetup(null)}
-                    className="flex-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300 font-bold py-2 rounded-lg text-xs transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={async () => {
-                      await handleApplyRecurring(recurringSetup.type, recurringSetup.item, selectedMonth, selectedYear, recurringMonths, recurringSetup.value);
-                      setRecurringSetup(null);
-                    }}
-                    className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-lg text-xs transition"
-                  >
-                    Apply
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-        </div>
-      );
-    }
-
-    function App() {
-      return (
-        <LanguageProvider>
-          <MainAppContent />
-        </LanguageProvider>
-      );
-    }
-
-    const container = document.getElementById('root');
-    const root = ReactDOM.createRoot(container);
-    root.render(<App />);
-
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(async (reg) => {
-            if ('SyncManager' in window) {
-              try {
-                await reg.sync.register('sync-budget');
-              } catch (e) {
-                console.warn('Sync registration failed: ', e);
-              }
-            }
-          })
-          .catch(err => console.error('SW registration error:', err));
-      });
-    }
-  </script>
-</body>
-</html>
+            await db.collection('monthly_logs').doc('ho
