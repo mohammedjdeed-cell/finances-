@@ -1361,6 +1361,11 @@
         return (totalExpenses / totalIncome) * 100;
       }, [totalIncome, totalExpenses]);
 
+      // Adaptive Month-to-Month Liquidity Rollovers [1]
+      const activeLiquidityResult = useMemo(() => {
+        return chronologicalTimelineResult[`${selectedYear}-${selectedMonth}`] || { availableFunds: 0, leftover: 0, prevGuthaben: 0 };
+      }, [chronologicalTimelineResult, selectedYear, selectedMonth]);
+
       // Bounded Annual Net Balance Calculation [1]
       const yearlyNetBalance = useMemo(() => {
         let totalIncomesYear = 0;
@@ -1701,10 +1706,10 @@
                   {/* Metric 1: Savings Rate */}
                   <div className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900 rounded-2xl p-5 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-indigo-800 dark:text-indigo-400 uppercase tracking-wider">{t('savingsRate')}</p>
-                      <p className="text-2xl font-black text-indigo-900 dark:text-indigo-200 mt-1">{annualOverviewData.savingsRate.toFixed(1)}%</p>
+                      <p className="text-xs font-bold text-indigo-800 uppercase tracking-wider">{t('savingsRate')}</p>
+                      <p className="text-2xl font-black text-indigo-900 mt-1">{annualOverviewData.savingsRate.toFixed(1)}%</p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-300">
+                    <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600">
                       <i className="fa-solid fa-percent text-xl"></i>
                     </div>
                   </div>
@@ -1712,35 +1717,35 @@
                   {/* Metric 2: Peak Spending Category */}
                   <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900 rounded-2xl p-5 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-rose-800 dark:text-rose-400 uppercase tracking-wider">{t('peakSpendingCategory')}</p>
-                      <p className="text-base font-black text-rose-900 dark:text-rose-200 mt-2 truncate max-w-[170px]">
+                      <p className="text-xs font-bold text-rose-800 uppercase tracking-wider">{t('peakSpendingCategory')}</p>
+                      <p className="text-base font-black text-rose-900 mt-2 truncate max-w-[170px]">
                         {annualOverviewData.peakCategory ? t(`categories.${annualOverviewData.peakCategory}`).replace('categories.', '') : t('noData')}
                       </p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-300">
+                    <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
                       <i className="fa-solid fa-fire text-xl"></i>
                     </div>
                   </div>
 
                   {/* Metric 3: Highest Spent Month */}
-                  <div className="bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex items-center justify-between shadow-sm">
                     <div>
-                      <p className="text-xs font-bold text-slate-700 dark:text-zinc-400 uppercase tracking-wider">{t('highestExpenseMonth')}</p>
-                      <p className="text-2xl font-black text-slate-900 dark:text-zinc-100 mt-1">
+                      <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('highestExpenseMonth')}</p>
+                      <p className="text-2xl font-black text-slate-900 mt-1">
                         {annualOverviewData.highestMonth ? `${t(`months.${annualOverviewData.highestMonth}`)} ${selectedYear}` : t('noData')}
                       </p>
                     </div>
-                    <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-slate-600 dark:text-zinc-400">
+                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
                       <i className="fa-solid fa-calendar-days text-xl"></i>
                     </div>
                   </div>
                 </div>
 
                 {/* Pie/Doughnut Chart Expense Breakdown */}
-                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm p-5 grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 grid grid-cols-1 lg:grid-cols-2 gap-6 items-center col-span-1 lg:col-span-3">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-700 dark:text-zinc-300 mb-2 uppercase tracking-wider">{t('analyticsHeader')}</h3>
-                    <p className="text-xs text-slate-400 dark:text-zinc-500 mb-4">Prozentuale Verteilung aller Ausgaben im Jahr {selectedYear}</p>
+                    <h3 className="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">{t('analyticsHeader')}</h3>
+                    <p className="text-xs text-slate-400 mb-4">Prozentuale Verteilung aller Ausgaben im Jahr {selectedYear}</p>
                     <div className="h-[260px] relative w-full flex justify-center">
                       <canvas ref={annualChartRef}></canvas>
                     </div>
@@ -1762,31 +1767,31 @@
                 </div>
 
                 {/* 12-Month transaction grid view */}
-                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
-                  <div className="p-4 border-b border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-850 flex justify-between items-center">
-                    <h3 className="font-bold text-slate-700 dark:text-zinc-300 text-sm">{selectedYear} - Datasheet</h3>
+                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden transition-colors">
+                  <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                    <h3 className="font-bold text-slate-700 text-sm">{selectedYear} - Datasheet</h3>
                   </div>
                   <div className="overflow-x-auto scrollbar-none">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="bg-slate-100 dark:bg-zinc-800 border-b border-slate-200 dark:border-zinc-800 font-bold text-slate-600 dark:text-zinc-400 uppercase">
+                        <tr className="bg-slate-100 border-b border-slate-200 font-bold text-slate-600 uppercase">
                           <th className="p-3">Month</th>
                           <th className="p-3 text-right">Incomes</th>
                           <th className="p-3 text-right">Expenses</th>
                           <th className="p-3 text-right">Savings Net</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 font-medium">
+                      <tbody className="divide-y divide-slate-100 font-medium">
                         {getMonthsForYear(selectedYear).map(m => {
                           const income = annualOverviewData.monthTotals[m]?.income || 0;
                           const expenses = annualOverviewData.monthTotals[m]?.expenses || 0;
                           const net = income - expenses;
                           return (
-                            <tr key={m} className="hover:bg-slate-50 dark:hover:bg-zinc-800/40">
-                              <td className="p-3 font-semibold text-slate-700 dark:text-zinc-300">{t(`months.${m}`)}</td>
-                              <td className="p-3 text-right text-emerald-600 dark:text-emerald-400">{formatCurrency(income)}</td>
-                              <td className="p-3 text-right text-rose-600 dark:text-rose-400">{formatCurrency(expenses)}</td>
-                              <td className={`p-3 text-right font-bold ${net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                            <tr key={m} className="hover:bg-slate-50">
+                              <td className="p-3 font-semibold text-slate-700">{t(`months.${m}`)}</td>
+                              <td className="p-3 text-right text-emerald-600">{formatCurrency(income)}</td>
+                              <td className="p-3 text-right text-rose-600">{formatCurrency(expenses)}</td>
+                              <td className={`p-3 text-right font-bold ${net >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                                 {net < 0 ? "-" : ""}{formatCurrency(Math.abs(net))}
                               </td>
                             </tr>
@@ -1801,10 +1806,10 @@
               /* TRADITIONAL MONTHLY BUDGET LAYOUT VIEW */
               <div className="space-y-6">
                 {/* Segmented view/edit toggle [6] */}
-                <div className="flex bg-slate-200/60 dark:bg-zinc-800 p-1 rounded-xl max-w-sm mx-auto shadow-inner">
+                <div className="flex bg-slate-200/60 dark:bg-zinc-800 p-1 rounded-xl max-w-sm mx-auto shadow-inner transition-colors">
                   <button 
                     onClick={() => setActiveTab('view')}
-                    className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 bg-white dark:bg-zinc-700 text-indigo-700 dark:text-indigo-200 shadow"
+                    className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 bg-white dark:bg-zinc-750 text-indigo-700 dark:text-indigo-200 shadow"
                     style={{ backgroundColor: activeTab === 'view' ? '' : 'transparent' }}
                   >
                     <i className="fa-solid fa-eye text-sm"></i> {t('viewTab')}
@@ -1946,7 +1951,7 @@
                     </div>
                   </div>
 
-                  <div className="bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-4 flex items-center justify-between shadow-sm transition-colors">
+                  <div className="bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm rounded-2xl p-4 flex items-center justify-between transition-colors">
                     <div>
                       <p className="text-xs font-bold text-slate-700 dark:text-zinc-400 uppercase">{t('spentRatio')}</p>
                       <p className="text-2xl font-black text-slate-900 dark:text-zinc-100 mt-1">{percentageSpent.toFixed(1)}%</p>
@@ -1972,7 +1977,7 @@
                   </div>
                 </section>
 
-                {/* Ledger Tables - Refactored responsive layout with Flexbox alignment constraints [1] */}
+                {/* Ledger Tables - Refactored responsive layout for wide views [4] */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                   
                   {/* TABLE A: EINKÜNFTE */}
@@ -2387,6 +2392,3 @@
   </script>
 </body>
 </html>
-
-The system calculations, theme triggers, and data migration modules are cleanly
-deployed and backward-compatible with your existing partitions [1, 2, 3, 4].
