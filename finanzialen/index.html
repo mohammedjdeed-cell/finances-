@@ -4,24 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Finanzplaner - Advanced Cloud Sync & Analytics</title>
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Tailwind Config for Dark Mode class support -->
   <script>
     tailwind.config = {
       darkMode: 'class'
     }
   </script>
-  <!-- React & Babel CDNs (Version Locked) -->
   <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"></script>
-  <!-- Chart.js CDN for Visual Analytics (Version Locked) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2"></script>
-  <!-- Firebase Compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4f46e5">
@@ -1713,7 +1707,7 @@
                 </div>
 
                 <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
-                  <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-850 flex justify-between items-center">
+                  <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 flex justify-between items-center">
                     <h3 className="font-bold text-zinc-700 dark:text-zinc-300 text-sm">{selectedYear} - Datasheet</h3>
                   </div>
                   <div className="overflow-x-auto scrollbar-none">
@@ -1745,7 +1739,7 @@
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="flex bg-zinc-200/60 dark:bg-zinc-850 p-1 rounded-xl max-w-sm mx-auto shadow-inner">
+                <div className="flex bg-zinc-200/60 dark:bg-zinc-800 p-1 rounded-xl max-w-sm mx-auto shadow-inner">
                   <button 
                     onClick={() => setActiveTab('view')}
                     className="flex-1 py-2 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 text-indigo-700 dark:text-indigo-200 shadow"
@@ -2026,7 +2020,7 @@
                     </div>
 
                     {activeTab === "edit" && (
-                      <div className="p-3 bg-zinc-50 dark:bg-zinc-850 border-t border-[var(--color-border)] flex gap-2">
+                      <div className="p-3 bg-zinc-50 dark:bg-zinc-800 border-t border-[var(--color-border)] flex gap-2">
                         <input
                           type="text"
                           value={customIncomeInput}
@@ -2203,7 +2197,7 @@
                     </div>
 
                     {activeTab === "edit" && (
-                      <div className="p-3 bg-zinc-50 dark:bg-zinc-850 border-t border-[var(--color-border)] flex gap-2">
+                      <div className="p-3 bg-zinc-50 dark:bg-zinc-800 border-t border-[var(--color-border)] flex gap-2">
                         <input
                           type="text"
                           value={customExpenseInput}
