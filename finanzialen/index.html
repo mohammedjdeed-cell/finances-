@@ -21,7 +21,7 @@
   <meta name="theme-color" content="#4f46e5">
   
   <style>
-    /* Strict CSS Variable Theme Engine (Bypasses Tailwind CDN Failures) */
+    /* Strict CSS Variable Theme Engine */
     :root, [data-theme="light"] {
         --color-bg: #f6f8fa;
         --color-card: #ffffff;
@@ -52,7 +52,6 @@
         --color-chart-label: #8b949e;
     }
 
-    /* Guaranteed Theme Classes */
     .bg-theme-main { background-color: var(--color-bg) !important; }
     .bg-theme-card { background-color: var(--color-card) !important; }
     .bg-theme-header { background-color: var(--color-header-row) !important; }
@@ -68,17 +67,9 @@
       background-color: var(--color-bg) !important;
       color: var(--color-text-main) !important;
       transition: background-color 0.3s ease, color 0.3s ease;
-    }
-
-    /* Locked Layouts */
-    .locked-grid-row {
-      display: grid !important;
-      grid-template-columns: minmax(150px, 3.5fr) 105px 95px 95px !important;
-      align-items: center !important;
-      gap: 12px !important;
-      width: 100% !important;
-      box-sizing: border-box !important;
-      padding: 10px 14px !important;
+      padding-bottom: max(env(safe-area-inset-bottom), 24px);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
     }
 
     .annual-grid-row {
@@ -89,13 +80,6 @@
       width: 100% !important;
       box-sizing: border-box !important;
       padding: 12px 16px !important;
-    }
-
-    .num-input-fix {
-      width: 100% !important;
-      min-width: 80px !important;
-      box-sizing: border-box !important;
-      padding: 0.375rem 0.5rem !important;
     }
 
     input[type="number"]::-webkit-inner-spin-button,
@@ -280,7 +264,6 @@
       const [activeTab, setActiveTab] = useState("view"); 
       const [isAuditOpen, setIsAuditOpen] = useState(false); 
 
-      // Header Scroll State
       const [isHeaderVisible, setIsHeaderVisible] = useState(true);
       const [lastScrollY, setLastScrollY] = useState(0);
 
@@ -298,7 +281,6 @@
       const annualChartInstanceRef = useRef(null);
       const fileInputRef = useRef(null);
 
-      // Scroll Event Listener
       useEffect(() => {
         const handleScroll = () => {
           const currentScrollY = window.scrollY;
@@ -1034,6 +1016,7 @@
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                   
+                  {/* INCOMES TABLE */}
                   <section className="bg-theme-card rounded-2xl border border-theme shadow-sm overflow-hidden flex flex-col">
                     <div className="p-4 border-b border-theme bg-theme-header flex items-center justify-between">
                       <h3 className="text-lg font-bold text-theme-main flex items-center gap-2">
@@ -1044,15 +1027,23 @@
                       </span>
                     </div>
                     
-                    <div className="overflow-x-auto w-full scrollbar-none">
-                      <div className="min-w-[460px] flex flex-col w-full divide-y divide-[var(--color-border)]">
-                        <div className="locked-grid-row font-bold text-xs text-theme-muted uppercase bg-theme-header border-b border-theme">
-                          <div className="truncate">{t('posten')}</div>
-                          <div className="text-right">{t(`months.${selectedMonth}`)} (€)</div>
-                          <div className="text-right">{t('resultYtd')}</div>
-                          <div className="text-right">{t('avgSchnitt')}</div>
+                    <div className="overflow-x-hidden w-full">
+                      <div className="flex flex-col w-full divide-y divide-[var(--color-border)]">
+                        
+                        {/* Table Header Row */}
+                        <div className="flex items-center justify-between p-3 bg-theme-header border-b border-theme text-[10px] md:text-xs font-bold text-theme-muted uppercase tracking-wider">
+                          <div className="w-full md:w-[30%] truncate">{t('posten')}</div>
+                          <div className={`flex-1 text-right flex justify-end gap-2 ${activeTab === 'view' ? 'hidden md:flex' : 'flex'}`}>
+                             {activeTab === "edit" && <div className="hidden md:block flex-1"></div>}
+                             <div className="w-24 md:w-28 text-right shrink-0">{t(`months.${selectedMonth}`)} (€)</div>
+                          </div>
+                          <div className="hidden md:flex items-center justify-end gap-4 w-[160px] shrink-0">
+                            <div className="w-1/2 text-right">{t('resultYtd')}</div>
+                            <div className="w-1/2 text-right">{t('avgSchnitt')}</div>
+                          </div>
                         </div>
 
+                        {/* Incomes Data Rows */}
                         {(activeTab === "view" ? getClusteredCategories(data.categories.incomes, 'incomes') : data.categories.incomes).map((item, idx, arr) => {
                           const { ytdTotal, average } = getItemStats('incomes', item);
                           const val = data.values[selectedYear]?.incomes[item]?.[selectedMonth];
@@ -1061,37 +1052,57 @@
                           const isRenaming = editingCategory && editingCategory.type === 'incomes' && editingCategory.name === item;
 
                           return (
-                            <div key={item} className="locked-grid-row hover-theme-row transition border-l-4 border-emerald-500">
-                              <div className="flex items-center gap-1.5 overflow-hidden w-full font-medium text-theme-main">
-                                {isRenaming ? (
-                                  <input type="text" value={editCategoryValue} onChange={(e) => setEditCategoryValue(e.target.value)} onBlur={handleSaveRename} onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }} className="bg-theme-input text-theme-input border border-theme rounded px-2 py-0.5 text-sm outline-none focus:border-indigo-500 w-full" autoFocus />
-                                ) : (
-                                  <div className="flex items-center gap-1.5 overflow-hidden w-full">
-                                    <span className="truncate" title={cleanName}>{cleanName}</span>
-                                    {activeTab === "edit" && (
-                                      <button onClick={() => handleStartRename('incomes', item)} className="text-theme-muted hover:text-indigo-500 transition p-1 shrink-0"><i className="fa-solid fa-pen text-[10px]"></i></button>
-                                    )}
-                                  </div>
-                                )}
-                                
-                                {activeTab === "edit" && (
-                                  <div className="flex items-center space-x-1 shrink-0 ml-auto">
-                                    <button onClick={() => handleMoveCategory('incomes', idx, 'up')} disabled={idx === 0} className="text-theme-muted hover:text-indigo-500 disabled:opacity-30 transition p-1"><i className="fa-solid fa-caret-up"></i></button>
-                                    <button onClick={() => handleMoveCategory('incomes', idx, 'down')} disabled={idx === arr.length - 1} className="text-theme-muted hover:text-indigo-500 disabled:opacity-30 transition p-1"><i className="fa-solid fa-caret-down"></i></button>
-                                    {isCustom && <button onClick={() => handleDeleteCategory('incomes', item)} className="text-theme-muted hover:text-rose-500 transition p-1"><i className="fa-solid fa-trash-can text-xs"></i></button>}
+                            <div key={item} className={`p-3 hover-theme-row transition border-l-4 border-emerald-500 flex flex-col md:flex-row md:items-center gap-3 md:gap-4`}>
+                              
+                              {/* 1. Category Name */}
+                              <div className="flex items-center justify-between w-full md:w-[30%] min-w-0 shrink-0">
+                                <div className="flex items-center gap-2 overflow-hidden w-full">
+                                  {isRenaming ? (
+                                    <input type="text" value={editCategoryValue} onChange={(e) => setEditCategoryValue(e.target.value)} onBlur={handleSaveRename} onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }} className="bg-theme-input text-theme-input border border-theme rounded px-2 py-1 text-sm outline-none focus:border-indigo-500 w-full" autoFocus />
+                                  ) : (
+                                    <span className="truncate font-semibold text-theme-main text-sm md:text-base block">{cleanName}</span>
+                                  )}
+                                  {activeTab === "edit" && !isRenaming && (
+                                    <button onClick={() => handleStartRename('incomes', item)} className="text-theme-muted hover:text-indigo-500 p-1 shrink-0"><i className="fa-solid fa-pen text-[10px]"></i></button>
+                                  )}
+                                </div>
+                                {activeTab === "view" && (
+                                  <div className="md:hidden font-bold text-theme-main whitespace-nowrap shrink-0 ml-2">
+                                    {formatCurrency(val || 0)}
                                   </div>
                                 )}
                               </div>
 
-                              <div className="text-right w-full">
-                                {activeTab === "view" ? (
-                                  <span className="font-bold text-theme-main block whitespace-nowrap">{formatCurrency(val || 0)}</span>
+                              {/* 2. Controls & Value Row */}
+                              <div className={`flex items-center justify-between w-full md:flex-1 gap-2 ${activeTab === 'view' ? 'hidden md:flex' : 'flex'}`}>
+                                {activeTab === "edit" ? (
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    <button onClick={() => handleMoveCategory('incomes', idx, 'up')} disabled={idx === 0} className="text-theme-muted hover:text-indigo-500 disabled:opacity-30 p-1.5 bg-theme-header rounded-lg"><i className="fa-solid fa-caret-up"></i></button>
+                                    <button onClick={() => handleMoveCategory('incomes', idx, 'down')} disabled={idx === arr.length - 1} className="text-theme-muted hover:text-indigo-500 disabled:opacity-30 p-1.5 bg-theme-header rounded-lg"><i className="fa-solid fa-caret-down"></i></button>
+                                    {isCustom && <button onClick={() => handleDeleteCategory('incomes', item)} className="text-rose-400 hover:text-rose-600 p-1.5 bg-theme-header rounded-lg ml-1"><i className="fa-solid fa-trash-can text-xs"></i></button>}
+                                  </div>
                                 ) : (
-                                  <input type="number" step="any" value={val !== undefined && val !== 0 ? val : ''} placeholder="0" onChange={(e) => handleValueChange('incomes', item, selectedMonth, e.target.value)} className="num-input-fix bg-theme-input text-theme-input border border-theme text-right rounded-lg outline-none focus:border-indigo-500 font-semibold transition py-1 px-2" />
+                                  <div className="hidden md:block"></div>
                                 )}
+
+                                <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                                  {activeTab === "view" ? (
+                                    <span className="font-bold text-theme-main whitespace-nowrap hidden md:block">{formatCurrency(val || 0)}</span>
+                                  ) : (
+                                    <React.Fragment>
+                                      <input type="number" step="any" value={val !== undefined && val !== 0 ? val : ''} placeholder="0" onChange={(e) => handleValueChange('incomes', item, selectedMonth, e.target.value)} className="w-24 md:w-28 bg-theme-input text-theme-input border border-theme text-right rounded-lg outline-none focus:border-indigo-500 font-semibold transition py-1.5 px-2" />
+                                      <button onClick={() => setRecurringSetup({ type: 'incomes', item, value: val || 0 })} className="text-theme-muted hover:text-indigo-500 p-1.5 transition outline-none shrink-0 bg-theme-header rounded-lg" title={t('setRecurringBudget')}><i className="fa-solid fa-arrows-spin"></i></button>
+                                    </React.Fragment>
+                                  )}
+                                </div>
                               </div>
-                              <div className="text-right text-theme-muted font-medium whitespace-nowrap w-full">{formatCurrency(ytdTotal)}</div>
-                              <div className="text-right text-theme-muted text-xs whitespace-nowrap w-full">{formatCurrency(average)}</div>
+
+                              {/* 3. Desktop Stats */}
+                              <div className="hidden md:flex items-center justify-end gap-4 w-[160px] shrink-0 text-sm">
+                                <div className="w-1/2 text-right text-theme-muted font-medium">{formatCurrency(ytdTotal)}</div>
+                                <div className="w-1/2 text-right text-theme-muted text-xs">{formatCurrency(average)}</div>
+                              </div>
+
                             </div>
                           );
                         })}
@@ -1106,6 +1117,7 @@
                     )}
                   </section>
 
+                  {/* EXPENSES TABLE */}
                   <section className="bg-theme-card rounded-2xl border border-theme shadow-sm overflow-hidden flex flex-col">
                     <div className="p-4 border-b border-theme bg-theme-header flex items-center justify-between">
                       <h3 className="text-lg font-bold text-theme-main flex items-center gap-2">
@@ -1116,76 +1128,103 @@
                       </span>
                     </div>
                     
-                    <div className="overflow-x-auto w-full scrollbar-none">
-                      <div className="min-w-[460px] flex flex-col w-full divide-y divide-[var(--color-border)]">
-                        <div className="locked-grid-row font-bold text-xs text-theme-muted uppercase bg-theme-header border-b border-theme">
-                          <div className="truncate">{t('posten')}</div>
-                          <div className="text-right">{t(`months.${selectedMonth}`)} (€)</div>
-                          <div className="text-right">{t('resultYtd')}</div>
-                          <div className="text-right">{t('avgSchnitt')}</div>
+                    <div className="overflow-x-hidden w-full">
+                      <div className="flex flex-col w-full divide-y divide-[var(--color-border)]">
+                        
+                        {/* Table Header Row */}
+                        <div className="flex items-center justify-between p-3 bg-theme-header border-b border-theme text-[10px] md:text-xs font-bold text-theme-muted uppercase tracking-wider">
+                          <div className="w-full md:w-[30%] truncate">{t('posten')}</div>
+                          <div className={`flex-1 text-right flex justify-end gap-2 ${activeTab === 'view' ? 'hidden md:flex' : 'flex'}`}>
+                             {activeTab === "edit" && <div className="hidden md:block flex-1"></div>}
+                             <div className="w-24 md:w-28 text-right shrink-0">{t(`months.${selectedMonth}`)} (€)</div>
+                          </div>
+                          <div className="hidden md:flex items-center justify-end gap-4 w-[160px] shrink-0">
+                            <div className="w-1/2 text-right">{t('resultYtd')}</div>
+                            <div className="w-1/2 text-right">{t('avgSchnitt')}</div>
+                          </div>
                         </div>
 
+                        {/* Expenses Data Rows */}
                         {(activeTab === "view" ? getClusteredCategories(data.categories.expenses, 'expenses') : data.categories.expenses).map((item, idx, arr) => {
                           const { ytdTotal, average } = getItemStats('expenses', item);
                           const val = data.values[selectedYear]?.expenses[item]?.[selectedMonth];
                           const bracket = getEffectiveExpenseBracket(item);
                           
                           const rowClass = 
-                            bracket === 'housing' ? 'border-l-4 border-slate-500' : 
-                            bracket === 'living' ? 'border-l-4 border-amber-500' :  
-                            bracket === 'subscriptions' ? 'border-l-4 border-indigo-500' : 
-                            bracket === 'professional' ? 'border-l-4 border-teal-500' : 
-                            'border-l-4 border-purple-500'; 
+                            bracket === 'housing' ? 'border-slate-500' : 
+                            bracket === 'living' ? 'border-amber-500' :  
+                            bracket === 'subscriptions' ? 'border-indigo-500' : 
+                            bracket === 'professional' ? 'border-teal-500' : 
+                            'border-purple-500'; 
 
                           const cleanName = t(`categories.${item}`).replace('categories.', '').charAt(0).toUpperCase() + t(`categories.${item}`).replace('categories.', '').slice(1);
                           const isCustom = !INITIAL_CATEGORIES.expenses.includes(item);
                           const isRenaming = editingCategory && editingCategory.type === 'expenses' && editingCategory.name === item;
 
                           return (
-                            <div key={item} className={`locked-grid-row hover-theme-row transition ${rowClass}`}>
-                              <div className="flex items-center gap-1.5 overflow-hidden w-full font-medium text-theme-main">
-                                {isRenaming ? (
-                                  <input type="text" value={editCategoryValue} onChange={(e) => setEditCategoryValue(e.target.value)} onBlur={handleSaveRename} onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }} className="bg-theme-input text-theme-input border border-theme rounded px-2 py-0.5 text-sm outline-none focus:border-indigo-500 w-full" autoFocus />
-                                ) : (
-                                  <div className="flex items-center gap-1.5 overflow-hidden w-full">
-                                    <span className="truncate" title={cleanName}>{cleanName}</span>
-                                    {activeTab === "edit" && (
-                                      <button onClick={() => handleStartRename('expenses', item)} className="text-theme-muted hover:text-indigo-500 transition p-1 shrink-0"><i className="fa-solid fa-pen text-[10px]"></i></button>
-                                    )}
+                            <div key={item} className={`p-3 hover-theme-row transition border-l-4 ${rowClass} flex flex-col md:flex-row md:items-center gap-3 md:gap-4`}>
+                              
+                              {/* 1. Category Name */}
+                              <div className="flex items-center justify-between w-full md:w-[30%] min-w-0 shrink-0">
+                                <div className="flex items-center gap-2 overflow-hidden w-full">
+                                  {isRenaming ? (
+                                    <input type="text" value={editCategoryValue} onChange={(e) => setEditCategoryValue(e.target.value)} onBlur={handleSaveRename} onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }} className="bg-theme-input text-theme-input border border-theme rounded px-2 py-1 text-sm outline-none focus:border-indigo-500 w-full" autoFocus />
+                                  ) : (
+                                    <span className="truncate font-semibold text-theme-main text-sm md:text-base block">{cleanName}</span>
+                                  )}
+                                  {activeTab === "edit" && !isRenaming && (
+                                    <button onClick={() => handleStartRename('expenses', item)} className="text-theme-muted hover:text-indigo-500 p-1 shrink-0"><i className="fa-solid fa-pen text-[10px]"></i></button>
+                                  )}
+                                </div>
+                                {activeTab === "view" && (
+                                  <div className="md:hidden font-bold text-theme-main whitespace-nowrap shrink-0 ml-2">
+                                    {formatCurrency(val || 0)}
                                   </div>
                                 )}
-                                
-                                {activeTab === "edit" && (
-                                  <div className="flex items-center gap-2 ml-auto shrink-0">
+                              </div>
+
+                              {/* 2. Controls & Value Row */}
+                              <div className={`flex items-center justify-between w-full md:flex-1 gap-2 ${activeTab === 'view' ? 'hidden md:flex' : 'flex'}`}>
+                                {activeTab === "edit" ? (
+                                  <div className="flex items-center gap-1.5 shrink-0">
                                     <select
                                       value={data.categoryOverrides?.[item] || "auto"}
-                                      onChange={(e) => { const val = e.target.value === "auto" ? null : e.target.value; saveStateAndDispatch({ ...data, categoryOverrides: { ...(data.categoryOverrides || {}), [item]: val } }, Date.now()); }}
-                                      className="bg-theme-input border border-theme text-theme-main rounded px-2 py-0.5 text-[10px] outline-none focus:border-indigo-500 max-w-[85px] transition"
+                                      onChange={(e) => { const v = e.target.value === "auto" ? null : e.target.value; saveStateAndDispatch({ ...data, categoryOverrides: { ...(data.categoryOverrides || {}), [item]: v } }, Date.now()); }}
+                                      className="bg-theme-input border border-theme text-theme-main rounded-lg px-2 py-1.5 text-[11px] font-medium outline-none focus:border-indigo-500 max-w-[95px] transition"
                                     >
-                                      <option value="auto">Auto 🤖</option><option value="housing">Wohnen 🏠</option><option value="living">Alltag 🍎</option><option value="subscriptions">Abonnement 🎟️</option><option value="leisure">Freizeit 🎭</option><option value="professional">Beruf 🎓</option>
+                                      <option value="auto">Auto 🤖</option>
+                                      <option value="housing">Wohnen 🏠</option>
+                                      <option value="living">Alltag 🍎</option>
+                                      <option value="subscriptions">Abos 🎟️</option>
+                                      <option value="leisure">Freizeit 🎭</option>
+                                      <option value="professional">Beruf 🎓</option>
                                     </select>
-                                    
-                                    <div className="flex items-center space-x-1">
-                                      <button onClick={() => handleMoveCategory('expenses', idx, 'up')} disabled={idx === 0} className="text-theme-muted hover:text-indigo-500 disabled:opacity-30 transition p-1"><i className="fa-solid fa-caret-up"></i></button>
-                                      <button onClick={() => handleMoveCategory('expenses', idx, 'down')} disabled={idx === arr.length - 1} className="text-theme-muted hover:text-indigo-500 disabled:opacity-30 transition p-1"><i className="fa-solid fa-caret-down"></i></button>
-                                      {isCustom && <button onClick={() => handleDeleteCategory('expenses', item)} className="text-theme-muted hover:text-rose-500 transition p-1"><i className="fa-solid fa-trash-can text-xs"></i></button>}
-                                    </div>
+                                    <button onClick={() => handleMoveCategory('expenses', idx, 'up')} disabled={idx === 0} className="text-theme-muted hover:text-indigo-500 disabled:opacity-30 p-1.5 bg-theme-header rounded-lg"><i className="fa-solid fa-caret-up"></i></button>
+                                    <button onClick={() => handleMoveCategory('expenses', idx, 'down')} disabled={idx === arr.length - 1} className="text-theme-muted hover:text-indigo-500 disabled:opacity-30 p-1.5 bg-theme-header rounded-lg"><i className="fa-solid fa-caret-down"></i></button>
+                                    {isCustom && <button onClick={() => handleDeleteCategory('expenses', item)} className="text-rose-400 hover:text-rose-600 p-1.5 bg-theme-header rounded-lg ml-1"><i className="fa-solid fa-trash-can text-xs"></i></button>}
                                   </div>
-                                )}
-                              </div>
-                              
-                              <div className="text-right w-full flex items-center justify-end gap-1.5">
-                                {activeTab === "view" ? (
-                                  <span className="font-bold text-theme-main block whitespace-nowrap">{formatCurrency(val || 0)}</span>
                                 ) : (
-                                  <React.Fragment>
-                                    <input type="number" step="any" value={val !== undefined && val !== 0 ? val : ''} placeholder="0" onChange={(e) => handleValueChange('expenses', item, selectedMonth, e.target.value)} className="num-input-fix bg-theme-input text-theme-input border border-theme text-right rounded-lg outline-none focus:border-indigo-500 font-semibold transition py-1 px-2" />
-                                    <button onClick={() => setRecurringSetup({ type: 'expenses', item, value: val || 0 })} className="text-theme-muted hover:text-indigo-500 p-1 transition outline-none shrink-0" title={t('setRecurringBudget')}><i className="fa-solid fa-arrows-spin"></i></button>
-                                  </React.Fragment>
+                                  <div className="hidden md:block"></div>
                                 )}
+
+                                <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                                  {activeTab === "view" ? (
+                                    <span className="font-bold text-theme-main whitespace-nowrap hidden md:block">{formatCurrency(val || 0)}</span>
+                                  ) : (
+                                    <React.Fragment>
+                                      <input type="number" step="any" value={val !== undefined && val !== 0 ? val : ''} placeholder="0" onChange={(e) => handleValueChange('expenses', item, selectedMonth, e.target.value)} className="w-24 md:w-28 bg-theme-input text-theme-input border border-theme text-right rounded-lg outline-none focus:border-indigo-500 font-semibold transition py-1.5 px-2" />
+                                      <button onClick={() => setRecurringSetup({ type: 'expenses', item, value: val || 0 })} className="text-theme-muted hover:text-indigo-500 p-1.5 transition outline-none shrink-0 bg-theme-header rounded-lg" title={t('setRecurringBudget')}><i className="fa-solid fa-arrows-spin"></i></button>
+                                    </React.Fragment>
+                                  )}
+                                </div>
                               </div>
-                              <div className="text-right text-theme-muted font-medium whitespace-nowrap w-full">{formatCurrency(ytdTotal)}</div>
-                              <div className="text-right text-theme-muted text-xs whitespace-nowrap w-full">{formatCurrency(average)}</div>
+
+                              {/* 3. Desktop Stats */}
+                              <div className="hidden md:flex items-center justify-end gap-4 w-[160px] shrink-0 text-sm">
+                                <div className="w-1/2 text-right text-theme-muted font-medium">{formatCurrency(ytdTotal)}</div>
+                                <div className="w-1/2 text-right text-theme-muted text-xs">{formatCurrency(average)}</div>
+                              </div>
+
                             </div>
                           );
                         })}
