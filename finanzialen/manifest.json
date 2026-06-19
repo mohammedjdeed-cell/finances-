@@ -2,10 +2,10 @@
   "name": "Finanzplaner - Real-time Cloud Sync",
   "short_name": "BudgetPlaner",
   "description": "PWA für detailliertes Budgeting in Deutschland mit Cloud Synchronisation",
-  "start_url": "./index.html",
-  "display": "standalone",
+  "start_url": "https://finanzplaner-chi.vercel.app/index.html",
+  "display": "minimal-ui",
   "background_color": "#f8fafc",
-  "theme_color": "#4f46e5",
+  "theme_color": "#46bee5",
   "orientation": "portrait-primary",
   "icons": [
     {
@@ -18,5 +18,9 @@
       "sizes": "512x512",
       "type": "image/png"
     }
+  ],
+  "id": "HoueholdBudget",
+  "categories": [
+    "finance"
   ]
 }
