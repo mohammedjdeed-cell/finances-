@@ -394,6 +394,7 @@
         return new Date(year, mIdx + 1, 0).getDate();
       };
 
+      // Unified Calendar Week Generator (Sunday - Saturday, Majority rule)
       const getTrueWeekRangeLabel = (year, monthStr, weekIdx, lang) => {
         const monthMap = {
           "Jan": 0, "Feb": 1, "Mrz": 2, "Apr": 3, "Mai": 4, "Jun": 5,
@@ -401,14 +402,21 @@
         };
         const mIdx = monthMap[monthStr] !== undefined ? monthMap[monthStr] : 5;
         const firstOfMonth = new Date(year, mIdx, 1);
-        const dayOfW = firstOfMonth.getDay(); // 0 is Sunday, 1 is Mon...
-        const offset = dayOfW === 0 ? 6 : dayOfW - 1;
+        const dayOfW = firstOfMonth.getDay(); // 0 = Sun, 1 = Mon ... 6 = Sat
         
-        // Monday of the first week
-        const startOfWeek1 = new Date(firstOfMonth);
-        startOfWeek1.setDate(firstOfMonth.getDate() - offset);
+        // Find Sunday of the week containing the 1st of the month
+        const sundayOfFirstWeek = new Date(firstOfMonth);
+        sundayOfFirstWeek.setDate(firstOfMonth.getDate() - dayOfW);
         
-        // Current week start & end
+        // Majority Rule: How many days of this week fall in selected month?
+        const daysOfCurrentMonthInFirstWeek = 7 - dayOfW;
+        
+        const startOfWeek1 = new Date(sundayOfFirstWeek);
+        if (daysOfCurrentMonthInFirstWeek < 4) {
+          // Less than 4 days in target month -> Starts on next Sunday
+          startOfWeek1.setDate(sundayOfFirstWeek.getDate() + 7);
+        }
+        
         const startOfCurrentWeek = new Date(startOfWeek1);
         startOfCurrentWeek.setDate(startOfWeek1.getDate() + (weekIdx * 7));
         
@@ -427,7 +435,7 @@
         return `${formatDayMonth(startOfCurrentWeek)} - ${formatDayMonth(endOfCurrentWeek)}`;
       };
 
-      // Compact version for the main dashboard grid
+      // Compact Calendar Weeks (Sunday - Saturday)
       const getTrueWeekRangeLabelCompact = (year, monthStr, weekIdx) => {
         const monthMap = {
           "Jan": 0, "Feb": 1, "Mrz": 2, "Apr": 3, "Mai": 4, "Jun": 5,
@@ -436,10 +444,16 @@
         const mIdx = monthMap[monthStr] !== undefined ? monthMap[monthStr] : 5;
         const firstOfMonth = new Date(year, mIdx, 1);
         const dayOfW = firstOfMonth.getDay();
-        const offset = dayOfW === 0 ? 6 : dayOfW - 1;
+        const offset = dayOfW;
         
-        const startOfWeek1 = new Date(firstOfMonth);
-        startOfWeek1.setDate(firstOfMonth.getDate() - offset);
+        const sundayOfFirstWeek = new Date(firstOfMonth);
+        sundayOfFirstWeek.setDate(firstOfMonth.getDate() - offset);
+        
+        const daysOfCurrentMonthInFirstWeek = 7 - dayOfW;
+        const startOfWeek1 = new Date(sundayOfFirstWeek);
+        if (daysOfCurrentMonthInFirstWeek < 4) {
+          startOfWeek1.setDate(sundayOfFirstWeek.getDate() + 7);
+        }
         
         const startOfCurrentWeek = new Date(startOfWeek1);
         startOfCurrentWeek.setDate(startOfWeek1.getDate() + (weekIdx * 7));
@@ -909,43 +923,6 @@
         return data.categories.expenses.filter(posten => getEffectiveExpenseBracket(posten) === bracketKey).reduce((sum, posten) => sum + getSafeValue('expenses', posten, selectedYear, month), 0);
       };
 
-      const getClusteredCategories = (categories, type) => {
-        if (type === 'incomes') return categories; 
-        const bracketOrder = ['housing', 'living', 'subscriptions', 'leisure', 'professional'];
-        return [...categories].sort((a, b) => bracketOrder.indexOf(getEffectiveExpenseBracket(a)) - bracketOrder.indexOf(getEffectiveExpenseBracket(b)));
-      };
-
-      const totalIncome = useMemo(() => getMonthlyTotal('incomes', selectedMonth), [data, selectedMonth, selectedYear]);
-      const totalExpenses = useMemo(() => getMonthlyTotal('expenses', selectedMonth), [data, selectedMonth, selectedYear]);
-      const saldo = useMemo(() => totalIncome - totalExpenses, [totalIncome, totalExpenses]);
-      const percentageSpent = useMemo(() => totalIncome === 0 ? 0 : (totalExpenses / totalIncome) * 100, [totalIncome, totalExpenses]);
-      const activeLiquidityResult = useMemo(() => chronologicalTimelineResult[`${selectedYear}-${selectedMonth}`] || { leftover: 0 }, [chronologicalTimelineResult, selectedYear, selectedMonth]);
-
-      const yearlyNetBalance = useMemo(() => {
-        let totalIncomesYear = 0; let totalExpensesYear = 0; const yearData = data.values[selectedYear];
-        if (!yearData) return 0; const monthsForYear = getMonthsForYear(selectedYear);
-        if (yearData.incomes) data.categories.incomes.forEach(category => { totalIncomesYear += monthsForYear.reduce((sum, m) => sum + getSafeValue('incomes', category, selectedYear, m), 0); });
-        if (yearData.expenses) data.categories.expenses.forEach(category => { totalExpensesYear += monthsForYear.reduce((sum, m) => sum + getSafeValue('expenses', category, selectedYear, m), 0); });
-        return totalIncomesYear - totalExpensesYear;
-      }, [data, selectedYear]);
-
-      const auditBreakdown = useMemo(() => {
-        let accIncome = 0; let accExpense = 0;
-        Object.keys(data.values).forEach(year => {
-          const yearData = data.values[year]; if (!yearData) return; const monthsForYear = getMonthsForYear(parseInt(year));
-          if (yearData.incomes) data.categories.incomes.forEach(category => { monthsForYear.forEach(m => accIncome += getSafeValue('incomes', category, year, m)); });
-          if (yearData.expenses) data.categories.expenses.forEach(category => { monthsForYear.forEach(m => accExpense += getSafeValue('expenses', category, year, m)); });
-        });
-        return { accIncome, accExpense };
-      }, [data]);
-
-      const getItemStats = (type, posten) => {
-        const monthsForYear = getMonthsForYear(selectedYear);
-        const ytdTotal = monthsForYear.reduce((sum, m) => sum + getSafeValue(type, posten, selectedYear, m), 0);
-        return { ytdTotal, average: ytdTotal / monthsForYear.length };
-      };
-
-      // Helper to compute dynamic totals of fixed vs variable sections
       const getStackedTotals = (type, itemsList, isFixed) => {
         return itemsList.reduce((sum, cat) => {
           const mode = data.categoryModes?.[cat] || (type === 'incomes' ? 'fixed' : 'variable');
@@ -1507,7 +1484,7 @@
                                       <span className="font-bold text-theme-main text-sm">{formatCurrency(val)}</span>
                                       {activeTab === "edit" && (
                                         <button 
-                                          onClick={() => { setActiveEditCategory({ type: 'incomes', item }); setEditCategoryValue(item); }}
+                                          onClick={(e) => { setActiveEditCategory({ type: 'incomes', item }); setEditCategoryValue(item); }}
                                           className="text-xs font-bold text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1.5 rounded-lg transition"
                                         >
                                           ✏️ Edit
@@ -1730,7 +1707,7 @@
                                       <span className="font-bold text-theme-main text-sm">{formatCurrency(val)}</span>
                                       {activeTab === "edit" && (
                                         <button 
-                                          onClick={() => { setActiveEditCategory({ type: 'expenses', item }); setEditCategoryValue(item); }}
+                                          onClick={(e) => { setActiveEditCategory({ type: 'expenses', item }); setEditCategoryValue(item); }}
                                           className="text-xs font-bold text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1.5 rounded-lg transition"
                                         >
                                           ✏️ Edit
