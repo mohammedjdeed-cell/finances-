@@ -343,7 +343,7 @@
       const annualChartInstanceRef = useRef(null);
       const fileInputRef = useRef(null);
 
-      // Safe scoping of properties derived from the active category being configured
+      // Safe scoping of properties derived from the active category being configured (CRITICAL TO PREVENT BLANK PAGE ERROR)
       const activeEditType = activeEditCategory?.type;
       const activeEditItem = activeEditCategory?.item;
       const activeEditCategoryMode = activeEditItem ? (data.categoryModes?.[activeEditItem] || (activeEditType === 'incomes' ? 'fixed' : 'variable')) : 'variable';
@@ -402,7 +402,7 @@
         return new Date(year, mIdx + 1, 0).getDate();
       };
 
-      // Workaround: Sunday-first rolling calendar week ranges
+      // Sunday-first rolling calendar week range labels
       const getTrueWeekRangeLabel = (year, monthStr, weekIdx, lang) => {
         const monthMap = {
           "Jan": 0, "Feb": 1, "Mrz": 2, "Apr": 3, "Mai": 4, "Jun": 5,
@@ -416,7 +416,6 @@
         const sundayOfFirstWeek = new Date(firstOfMonth);
         sundayOfFirstWeek.setDate(firstOfMonth.getDate() - dayOfW);
         
-        // Calculate the current rolling week starting on Sunday
         const startOfCurrentWeek = new Date(sundayOfFirstWeek);
         startOfCurrentWeek.setDate(sundayOfFirstWeek.getDate() + (weekIdx * 7));
         
@@ -1668,6 +1667,7 @@
                               const val = getSafeValue('expenses', item, selectedYear, selectedMonth);
                               const bracket = getEffectiveExpenseBracket(item);
                               const isDragged = draggedItem && draggedItem.type === 'expenses' && data.categories.expenses[draggedItem.index] === item;
+                              const daysInMo = getDaysInMonth(selectedYear, selectedMonth);
 
                               const indicatorClass = 
                                 bracket === 'housing' ? 'border-slate-500' : 
@@ -1818,7 +1818,7 @@
                       </div>
                     )}
 
-                    {/* Classification Selector */}
+                    {/* Classification Selection */}
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-theme-muted uppercase tracking-wider block">{t('classificationLabel')}</label>
                       <div className="grid grid-cols-2 gap-3">
@@ -1852,7 +1852,7 @@
                       </div>
                     </div>
 
-                    {/* Numeric Inputs depending on Type */}
+                    {/* Numerical inputs */}
                     {!activeEditIsVariable ? (
                       <div className="space-y-4 pt-4 border-t border-theme">
                         <div className="grid grid-cols-2 gap-4">
@@ -1895,7 +1895,7 @@
 
                         <div className="space-y-3">
                           {['w1', 'w2', 'w3', 'w4', 'w5'].map((wk, wIdx) => {
-                            const wVal = getWeeklyVal(activeEditType, activeEditItem, selectedMonth, selectedMonth, wk);
+                            const wVal = getWeeklyVal(activeEditType, activeEditItem, selectedYear, selectedMonth, wk);
                             const weekDateLabel = getTrueWeekRangeLabel(selectedYear, selectedMonth, wIdx, i18n.language);
                             return (
                               <div key={wk} className="bg-theme-main/50 p-3 rounded-xl border border-theme flex items-center justify-between gap-4">
