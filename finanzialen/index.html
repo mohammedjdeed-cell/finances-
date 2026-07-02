@@ -93,6 +93,14 @@
 
     .scrollbar-none::-webkit-scrollbar { display: none; }
     .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+    @keyframes slideLeft {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+    .animate-slideLeft {
+      animation: slideLeft 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
   </style>
 </head>
 <body class="font-sans min-h-screen bg-theme-main text-theme-main">
@@ -148,14 +156,16 @@
 
     const translations = {
       de: {
-        title: "Finanzplaner", cloudSync: "Cloud-Sync", active: "Aktiv", online: "Netzwerk Online", offline: "Offline Modus", syncing: "Synchronisiere...", synced: "Cloud Aktuell", pending_sync: "Sync Warteschleife", totalIncome: "Monatliche Einkünfte", totalExpenses: "Monatliche Ausgaben", saldo: "Saldo", spentRatio: "Ausgabenquote", incomesHeader: "Einkünfte", expensesHeader: "Ausgaben", sum: "Summe", posten: "Posten", resultYtd: "Ergebnis (YTD)", avgSchnitt: "Ø Schnitt", clearAll: "Alle Anwendungsdaten löschen", confirmClear: "Sind Sie sicher, dass Sie alle eingegebenen Daten unwiderruflich löschen möchten?", analyticsHeader: "Budgetstruktur", addPlaceholder: "Kategoriename...", duplicateCategoryAlert: "Diese Kategorie existiert bereits.", options: "Optionen & Sicherung", selectYear: "Jahr wählen", selectLanguage: "Sprache wählen", backupSection: "Sicherheits-Backup", exportBackup: "Backup exportieren (JSON)", importBackup: "Backup importieren (JSON)", importSuccess: "Daten erfolgreich aus Backup importiert!", importError: "Fehler beim Importieren.", deleteConfirmation: "Möchten Sie die Kategorie \"{{name}}\" wirklich löschen?", monthlyLeftover: "Monats-Restbetrag", yearlyNetBalance: "Jahressaldo", overallNetBalance: "Gesamtsaldo", showAudit: "Berechnung prüfen", hideAudit: "Breakdown verbergen", auditTitle: "Audit-Aufschlüsselung", accumulatedIncome: "Gesamteinnahmen", accumulatedExpenses: "Gesamtausgaben", initialSavingsLabel: "Startkapital (Foundation)", runningCashBalance: "Endbestand", endOf: "Ende", annualOverview: "Jahresanalyse", savingsRate: "Sparsatz des Jahres", peakSpendingCategory: "Höchste Ausgabenkategorie", highestExpenseMonth: "Ausgabenstärkster Monat", noData: "Keine Daten", setRecurringBudget: "Monatlich budgetieren", durationInMonths: "Anzahl der Monate", themeLabel: "Design-Modus", themeLight: "Hell", themeDark: "Dunkel", themeSystem: "System", viewTab: "Details & Ansicht", editTab: "Werte bearbeiten", bracketHousing: "Wohnen", bracketLiving: "Alltag", bracketSubscriptions: "Abonnements", bracketLeisure: "Freizeit", bracketProfessional: "Beruf",
-        fixedType: "Fixkosten", variableType: "Variable Kosten", paymentDayLabel: "Zahltag (Tag)", paymentDayShort: "Tag", weeksLabel: "Wochenaufteilung", week: "Woche", dragToReorder: "Greifen zum Sortieren",
+        title: "Finanzplaner", cloudSync: "Cloud-Sync", active: "Aktiv", online: "Netzwerk Online", offline: "Offline Modus", syncing: "Synchronisiere...", synced: "Cloud Aktuell", pending_sync: "Sync Warteschleife", totalIncome: "Monatliche Einkünfte", totalExpenses: "Monatliche Ausgaben", saldo: "Saldo", spentRatio: "Ausgabenquote", incomesHeader: "Einkünfte", expensesHeader: "Ausgaben", sum: "Summe", posten: "Kategorie", resultYtd: "Ergebnis (YTD)", avgSchnitt: "Ø Schnitt", clearAll: "Alle Anwendungsdaten löschen", confirmClear: "Sind Sie sicher, dass Sie alle eingegebenen Daten unwiderruflich löschen möchten?", analyticsHeader: "Budgetstruktur", addPlaceholder: "Kategoriename...", duplicateCategoryAlert: "Diese Kategorie existiert bereits.", options: "Optionen & Sicherung", selectYear: "Jahr wählen", selectLanguage: "Sprache wählen", backupSection: "Sicherheits-Backup", exportBackup: "Backup exportieren (JSON)", importBackup: "Backup importieren (JSON)", importSuccess: "Daten erfolgreich aus Backup importiert!", importError: "Fehler beim Importieren.", deleteConfirmation: "Möchten Sie die Kategorie \"{{name}}\" wirklich löschen?", monthlyLeftover: "Monats-Restbetrag", yearlyNetBalance: "Jahressaldo", overallNetBalance: "Gesamtsaldo", showAudit: "Berechnung prüfen", hideAudit: "Breakdown verbergen", auditTitle: "Audit-Aufschlüsselung", accumulatedIncome: "Gesamteinnahmen", accumulatedExpenses: "Gesamtausgaben", initialSavingsLabel: "Startkapital (Foundation)", runningCashBalance: "Endbestand", endOf: "Ende", annualOverview: "Jahresanalyse", savingsRate: "Sparsatz des Jahres", peakSpendingCategory: "Höchste Ausgabenkategorie", highestExpenseMonth: "Ausgabenstärkster Monat", noData: "Keine Daten", setRecurringBudget: "Regelmäßig kopieren", durationInMonths: "Dauer in Monaten", themeLabel: "Design-Modus", themeLight: "Hell", themeDark: "Dunkel", themeSystem: "System", viewTab: "Details & Ansicht", editTab: "Werte bearbeiten", bracketHousing: "Wohnen", bracketLiving: "Alltag", bracketSubscriptions: "Abonnements", bracketLeisure: "Freizeit", bracketProfessional: "Beruf",
+        fixedType: "Fixkosten", variableType: "Variable Ausgaben", paymentDayLabel: "Zahltag des Monats", paymentDayShort: "Zahltag", weeksLabel: "Wochenaufteilung", week: "Woche", dragToReorder: "Greifen zum Sortieren",
+        editorTitle: "Kategorie konfigurieren", classificationLabel: "Klassifizierung", saveClose: "Speichern & Schließen", deleteCategoryBtn: "Kategorie löschen", valueLabel: "Festbetrag pro Monat (€)", bracketLabel: "Finanzbereich",
         months: { Jan: "Jan", Feb: "Feb", Mrz: "Mrz", Apr: "Apr", Mai: "Mai", Jun: "Jun", Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Okt", Nov: "Nov", Dez: "Dez" },
         categories: { "mohammed sperrkonto installmant": "Sperrkonto (Mohammed)", "mai sperrkonto installmant": "Sperrkonto (Mai)", "side income": "Nebeneinkommen", "savings": "Ersparnisse", "Hause mieten": "Hause mieten", "Hause kaution": "Hause kaution", "Lebensmittel 🍞🍲": "Lebensmittel 🍞🍲", "Hausrat 🛋️": "Hausrat 🛋️", "strom ⚡": "Strom ⚡", "Gas/ Heißung": "Gas/ Heizung", "Unterhaltung 🎊": "Unterhaltung 🎊", "essen im freien 🍔": "Auswärts essen 🍔", "Geschenke": "Geschenke", "Gesundheit ❤️(beauty, medical items)": "Gesundheit ❤️", "Ausbildung B2 exam": "B2 Prüfung", "Versicherung Care concept": "Care Concept", "kleidung": "Kleidung", "radio": "Rundfunkbeitrag", "internet/ Handy": "Internet / Handy", "transport/ tickets": "Transport / Tickets", "bank": "Bankgebühren", "Sparkasse card fee": "Sparkasse Gebühr", "Swan Schule": "Swan Schule", "FSP exam registration": "FSP Anmeldung", "Sonstiges": "Sonstiges" }
       },
       en: {
-        title: "Finance Planner", cloudSync: "Cloud Sync", active: "Active", online: "Network Online", offline: "Offline Mode", syncing: "Syncing...", synced: "Cloud Updated", pending_sync: "Sync Pending", totalIncome: "Monthly Income", totalExpenses: "Total Monthly Expenses", saldo: "Net Balance", spentRatio: "Spent Ratio", incomesHeader: "Incomes", expensesHeader: "Expenses", sum: "Total", posten: "Category / Item", resultYtd: "Result (YTD)", avgSchnitt: "Monthly Avg", clearAll: "Delete All Data", confirmClear: "Are you sure you want to permanently clear all data?", analyticsHeader: "Budget Structure", addPlaceholder: "Category name...", duplicateCategoryAlert: "This category already exists.", options: "Options & Backups", selectYear: "Select Year", selectLanguage: "Select Language", backupSection: "Data Backup Panel", exportBackup: "Export Backup (JSON)", importBackup: "Import Backup (JSON)", importSuccess: "Database restored successfully!", importError: "Failed to restore backup.", deleteConfirmation: "Are you sure you want to delete \"{{name}}\"?", monthlyLeftover: "Monthly Leftover", yearlyNetBalance: "Yearly Net Balance", overallNetBalance: "Overall Balance", showAudit: "Show Calculation Breakdown", hideAudit: "Hide Breakdown", auditTitle: "Audit Breakdown", accumulatedIncome: "Total Income", accumulatedExpenses: "Total Expenses", initialSavingsLabel: "Start Capital", runningCashBalance: "Running Cash Balance", endOf: "End of", annualOverview: "Annual Overview", savingsRate: "Yearly Savings Rate", peakSpendingCategory: "Peak Spending Category", highestExpenseMonth: "Highest Spending Month", noData: "No Data", setRecurringBudget: "Set as Recurring", durationInMonths: "Duration in Months", themeLabel: "App Theme", themeLight: "Light", themeDark: "Dark", themeSystem: "System Default", viewTab: "Details & View", editTab: "Edit Values", bracketHousing: "Housing", bracketLiving: "Daily Living", bracketSubscriptions: "Subscriptions", bracketLeisure: "Leisure", bracketProfessional: "Professional",
-        fixedType: "Fixed Bills", variableType: "Variable Expenses", paymentDayLabel: "Payment Day", paymentDayShort: "Day", weeksLabel: "Weekly Split", week: "Week", dragToReorder: "Drag to reorder",
+        title: "Finance Planner", cloudSync: "Cloud Sync", active: "Active", online: "Network Online", offline: "Offline Mode", syncing: "Syncing...", synced: "Cloud Updated", pending_sync: "Sync Pending", totalIncome: "Monthly Income", totalExpenses: "Total Monthly Expenses", saldo: "Net Balance", spentRatio: "Spent Ratio", incomesHeader: "Incomes", expensesHeader: "Expenses", sum: "Total", posten: "Category / Item", resultYtd: "Result (YTD)", avgSchnitt: "Monthly Avg", clearAll: "Delete All Data", confirmClear: "Are you sure you want to permanently clear all data?", analyticsHeader: "Budget Structure", addPlaceholder: "Category name...", duplicateCategoryAlert: "This category already exists.", options: "Options & Backups", selectYear: "Select Year", selectLanguage: "Select Language", backupSection: "Data Backup Panel", exportBackup: "Export Backup (JSON)", importBackup: "Import Backup (JSON)", importSuccess: "Database restored successfully!", importError: "Failed to restore backup.", deleteConfirmation: "Are you sure you want to delete \"{{name}}\"?", monthlyLeftover: "Monthly Leftover", yearlyNetBalance: "Yearly Net Balance", overallNetBalance: "Overall Balance", showAudit: "Show Calculation Breakdown", hideAudit: "Hide Breakdown", auditTitle: "Audit Breakdown", accumulatedIncome: "Total Income", accumulatedExpenses: "Total Expenses", initialSavingsLabel: "Start Capital", runningCashBalance: "Running Cash Balance", endOf: "End of", annualOverview: "Annual Overview", savingsRate: "Yearly Savings Rate", peakSpendingCategory: "Peak Spending Category", highestExpenseMonth: "Highest Spending Month", noData: "No Data", setRecurringBudget: "Set Recurring Budget", durationInMonths: "Duration in Months", themeLabel: "App Theme", themeLight: "Light", themeDark: "Dark", themeSystem: "System Default", viewTab: "Details & View", editTab: "Edit Values", bracketHousing: "Housing", bracketLiving: "Daily Living", bracketSubscriptions: "Subscriptions", bracketLeisure: "Leisure", bracketProfessional: "Professional",
+        fixedType: "Fixed Bills", variableType: "Variable Expenses", paymentDayLabel: "Monthly Payment Day", paymentDayShort: "Payday", weeksLabel: "Weekly Split", week: "Week", dragToReorder: "Drag to reorder",
+        editorTitle: "Configure Category", classificationLabel: "Classification", saveClose: "Save & Close", deleteCategoryBtn: "Delete Category", valueLabel: "Fixed Monthly Amount (€)", bracketLabel: "Budget Bracket",
         months: { Jan: "Jan", Feb: "Feb", Mrz: "Mar", Apr: "Apr", Mai: "May", Jun: "Jun", Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Oct", Nov: "Nov", Dez: "Dec" },
         categories: { "mohammed sperrkonto installmant": "Blocked Account (Mohammed)", "mai sperrkonto installmant": "Blocked Account (Mai)", "side income": "Side Income", "savings": "Savings", "Hause mieten": "Rent", "Hause kaution": "House Deposit", "Lebensmittel 🍞🍲": "Groceries 🍞🍲", "Hausrat 🛋️": "Household Goods 🛋️", "strom ⚡": "Electricity ⚡", "Gas/ Heißung": "Gas/ Heating", "Unterhaltung 🎊": "Entertainment 🎊", "essen im freien 🍔": "Dining Out 🍔", "Geschenke": "Gifts", "Gesundheit ❤️(beauty, medical items)": "Health ❤️", "Ausbildung B2 exam": "B2 Exam Training", "Versicherung Care concept": "Care Concept", "kleidung": "Clothing", "radio": "Radio / TV Tax", "internet/ Handy": "Internet / Mobile", "transport/ tickets": "Transport / Tickets", "bank": "Bank Fees", "Sparkasse card fee": "Sparkasse Card Fee", "Swan Schule": "Swan School", "FSP exam registration": "FSP Registration", "Sonstiges": "Miscellaneous" }
       }
@@ -190,7 +200,6 @@
     const generateInitialState = () => {
       const state = { categories: { incomes: [...INITIAL_CATEGORIES.incomes], expenses: [...INITIAL_CATEGORIES.expenses] }, values: {}, initialSavingsBase: 5000, categoryOverrides: {}, categoryModes: {}, fixedPaymentDays: {} };
       
-      // Default configurations
       const defaultFixed = [
         "Hause mieten", "Hause kaution", "strom ⚡", "Gas/ Heißung", 
         "radio", "internet/ Handy", "Versicherung Care concept", 
@@ -308,19 +317,19 @@
       const [activeTab, setActiveTab] = useState("view"); 
       const [isAuditOpen, setIsAuditOpen] = useState(false); 
 
+      // Focus configuration overlay state
+      const [activeEditCategory, setActiveEditCategory] = useState(null); // { type, item }
+
       const [isHeaderVisible, setIsHeaderVisible] = useState(true);
       const [lastScrollY, setLastScrollY] = useState(0);
 
       const [theme, setTheme] = useState(() => safeGetStorage('budget_app_theme', 'system'));
       const [customIncomeInput, setCustomIncomeInput] = useState("");
       const [customExpenseInput, setCustomExpenseInput] = useState("");
-      const [editingCategory, setEditingCategory] = useState(null); 
-      const [editCategoryValue, setEditCategoryValue] = useState("");
       const [recurringSetup, setRecurringSetup] = useState(null);
       const [recurringMonths, setRecurringMonths] = useState(3);
 
-      // Drag and drop state
-      const [draggedItem, setDraggedItem] = useState(null);
+      const [draggedItem, setDraggedItem] = useState(null); // { index, type }
 
       const chartRef = useRef(null);
       const chartInstanceRef = useRef(null);
@@ -350,7 +359,13 @@
       const getSafeValue = (type, posten, year, month) => {
         const val = data.values[year]?.[type]?.[posten]?.[month];
         if (typeof val === 'object' && val !== null) {
-          return parseFloat(val.total) || 0;
+          return (
+            (parseFloat(val.w1) || 0) + 
+            (parseFloat(val.w2) || 0) + 
+            (parseFloat(val.w3) || 0) + 
+            (parseFloat(val.w4) || 0) + 
+            (parseFloat(val.w5) || 0)
+          );
         }
         return parseFloat(val) || 0;
       };
@@ -362,6 +377,41 @@
         }
         if (weekKey === 'w1') return parseFloat(val) || 0;
         return 0;
+      };
+
+      const getDaysInMonth = (year, monthStr) => {
+        const monthMap = {
+          "Jan": 0, "Feb": 1, "Mrz": 2, "Apr": 3, "Mai": 4, "Jun": 5,
+          "Jul": 6, "Aug": 7, "Sep": 8, "Okt": 9, "Nov": 10, "Dez": 11
+        };
+        const mIdx = monthMap[monthStr] !== undefined ? monthMap[monthStr] : 5;
+        return new Date(year, mIdx + 1, 0).getDate();
+      };
+
+      const getWeekLabelText = (weekIndex, year, monthStr) => {
+        const totalDays = getDaysInMonth(year, monthStr);
+        const ranges = [
+          { start: 1, end: 7 },
+          { start: 8, end: 14 },
+          { start: 15, end: 21 },
+          { start: 22, end: 28 },
+          { start: 29, end: totalDays }
+        ];
+        const range = ranges[weekIndex];
+        const translatedMonth = t(`months.${monthStr}`);
+        return `${range.start}. - ${range.end}. ${translatedMonth}`;
+      };
+
+      const getWeekDaysShortText = (weekIndex, totalDays) => {
+        const ranges = [
+          { start: 1, end: 7 },
+          { start: 8, end: 14 },
+          { start: 15, end: 21 },
+          { start: 22, end: 28 },
+          { start: 29, end: totalDays }
+        ];
+        const range = ranges[weekIndex];
+        return `${range.start}-${range.end}`;
       };
 
       useEffect(() => {
@@ -582,7 +632,6 @@
         
         const currentVal = updatedData.values[selectedYear][type][posten][month];
         if (typeof currentVal === 'object' && currentVal !== null) {
-          // If it was weekly, flat update overrides Week 1 and clears other weeks
           updatedData.values[selectedYear][type][posten][month] = {
             w1: updatedVal, w2: 0, w3: 0, w4: 0, w5: 0, total: updatedVal
           };
@@ -623,6 +672,17 @@
         const newMode = currentMode === 'fixed' ? 'variable' : 'fixed';
         
         updatedData.categoryModes[item] = newMode;
+        
+        // Convert structures safely to avoid data loss
+        const monthVal = updatedData.values[selectedYear]?.[type]?.[item]?.[selectedMonth];
+        if (newMode === 'variable' && typeof monthVal === 'number') {
+          updatedData.values[selectedYear][type][item][selectedMonth] = {
+            w1: monthVal, w2: 0, w3: 0, w4: 0, w5: 0, total: monthVal
+          };
+        } else if (newMode === 'fixed' && typeof monthVal === 'object' && monthVal !== null) {
+          updatedData.values[selectedYear][type][item][selectedMonth] = getSafeValue(type, item, selectedYear, selectedMonth);
+        }
+
         await saveStateAndDispatch(updatedData, Date.now());
       };
 
@@ -644,9 +704,8 @@
         
         const updatedCategories = { ...data.categories, [type]: [...data.categories[type], trimmedName] };
         const updatedValues = { ...data.values };
-        const updatedCategoryModes = { ...data.categoryModes };
+        const updatedCategoryModes = { ...data.categoryModes || {} };
         
-        // Default newly created items as variable for expenses, fixed for incomes
         updatedCategoryModes[trimmedName] = type === 'incomes' ? 'fixed' : 'variable';
 
         Object.keys(updatedValues).forEach(y => {
@@ -699,26 +758,52 @@
         await saveStateAndDispatch(updatedData, Date.now());
       };
 
-      // Native Drag & Drop Handlers
-      const handleDragStart = (e, index, type) => {
-        setDraggedItem({ index, type });
+      // Native Grouped Drag & Drop Handlers (to keep categories clean inside their Fixed/Variable stacked lists)
+      const handleDragStart = (e, idx, type) => {
+        setDraggedItem({ index: idx, type: type });
         e.dataTransfer.effectAllowed = "move";
       };
 
-      const handleDragOver = (e, index) => {
+      const handleDragOver = (e) => {
         e.preventDefault();
       };
 
-      const handleDrop = async (e, index, type) => {
+      const handleGroupedDrop = async (e, targetIdxInGroup, type, isFixed) => {
         e.preventDefault();
-        if (!draggedItem || draggedItem.type !== type || draggedItem.index === index) return;
-        
+        if (!draggedItem || draggedItem.type !== type) return;
+
         const updatedData = { ...data };
-        const categories = [...updatedData.categories[type]];
-        const [removed] = categories.splice(draggedItem.index, 1);
-        categories.splice(index, 0, removed);
+        const masterCategories = [...updatedData.categories[type]];
         
-        updatedData.categories[type] = categories;
+        // Extract indices and names belonging to this specific group
+        const groupItems = masterCategories.filter(cat => {
+          const mode = data.categoryModes?.[cat] || (type === 'incomes' ? 'fixed' : 'variable');
+          return (mode === 'fixed') === isFixed;
+        });
+
+        // Find the absolute index of our dragged element in the master list
+        const draggedCatName = masterCategories[draggedItem.index];
+        const draggedIdxInGroup = groupItems.indexOf(draggedCatName);
+
+        if (draggedIdxInGroup === -1 || draggedIdxInGroup === targetIdxInGroup) return;
+
+        // Splice and reorder inside the group
+        const [removed] = groupItems.splice(draggedIdxInGroup, 1);
+        groupItems.splice(targetIdxInGroup, 0, removed);
+
+        // Map back to master array preserving order of other categories
+        let groupCounter = 0;
+        const reassembled = masterCategories.map(cat => {
+          const mode = data.categoryModes?.[cat] || (type === 'incomes' ? 'fixed' : 'variable');
+          if ((mode === 'fixed') === isFixed) {
+            const newItem = groupItems[groupCounter];
+            groupCounter++;
+            return newItem;
+          }
+          return cat;
+        });
+
+        updatedData.categories[type] = reassembled;
         await saveStateAndDispatch(updatedData, Date.now());
         setDraggedItem(null);
       };
@@ -727,32 +812,32 @@
         setDraggedItem(null);
       };
 
-      const handleStartRename = (type, name) => { setEditingCategory({ type, name }); setEditCategoryValue(name); };
-      const handleSaveRename = async () => {
-        if (!editingCategory) return;
-        const { type, name: originalName } = editingCategory;
-        const newName = editCategoryValue.trim();
-        if (!newName || newName === originalName) { setEditingCategory(null); return; }
-        if (data.categories[type].includes(newName)) { alert(t('duplicateCategoryAlert')); return; }
-        const updatedData = { ...data };
-        updatedData.categories[type] = updatedData.categories[type].map(cat => cat === originalName ? newName : cat);
+      const handleSaveRenameInModal = async (type, originalName, newName) => {
+        const trimmed = newName.trim();
+        if (!trimmed || trimmed === originalName) return;
+        if (data.categories[type].includes(trimmed)) { alert(t('duplicateCategoryAlert')); return; }
         
-        // Rename configuration structures safely
+        const updatedData = { ...data };
+        updatedData.categories[type] = updatedData.categories[type].map(cat => cat === originalName ? trimmed : cat);
+        
         if (updatedData.categoryModes && updatedData.categoryModes[originalName]) {
-          updatedData.categoryModes[newName] = updatedData.categoryModes[originalName];
+          updatedData.categoryModes[trimmed] = updatedData.categoryModes[originalName];
           delete updatedData.categoryModes[originalName];
         }
         if (updatedData.fixedPaymentDays && updatedData.fixedPaymentDays[originalName]) {
-          updatedData.fixedPaymentDays[newName] = updatedData.fixedPaymentDays[originalName];
+          updatedData.fixedPaymentDays[trimmed] = updatedData.fixedPaymentDays[originalName];
           delete updatedData.fixedPaymentDays[originalName];
         }
 
         Object.keys(updatedData.values).forEach(year => {
           const yearValues = updatedData.values[year]?.[type];
-          if (yearValues && yearValues[originalName]) { yearValues[newName] = { ...yearValues[originalName] }; delete yearValues[originalName]; }
+          if (yearValues && yearValues[originalName]) { yearValues[trimmed] = { ...yearValues[originalName] }; delete yearValues[originalName]; }
         });
-        setEditingCategory(null);
+
         await saveStateAndDispatch(updatedData, Date.now());
+        if (activeEditCategory && activeEditCategory.item === originalName) {
+          setActiveEditCategory({ ...activeEditCategory, item: trimmed });
+        }
       };
 
       const handleDeleteCategory = async (type, item) => {
@@ -775,8 +860,6 @@
         if (hasData) {
           Object.keys(updatedData.values).forEach(year => {
             if (!updatedData.values[year][type][fallbackKey]) { updatedData.values[year][type][fallbackKey] = {}; getMonthsForYear(parseInt(year)).forEach(m => { updatedData.values[year][type][fallbackKey][m] = 0; }); }
-            const deletedVals = updatedData.values[year]?.[type]?.[item] || {};
-            
             getMonthsForYear(parseInt(year)).forEach(m => { 
               const currentFallback = getSafeValue(type, fallbackKey, year, m);
               const incomingVal = getSafeValue(type, item, year, m);
@@ -788,7 +871,9 @@
         Object.keys(updatedData.values).forEach(year => { if (updatedData.values[year]?.[type]) delete updatedData.values[year][type][item]; });
         if (updatedData.categoryModes) delete updatedData.categoryModes[item];
         if (updatedData.fixedPaymentDays) delete updatedData.fixedPaymentDays[item];
+        
         await saveStateAndDispatch(updatedData, Date.now());
+        setActiveEditCategory(null);
       };
 
       const handleResetData = async () => { if (window.confirm(t('confirmClear'))) await saveStateAndDispatch(generateInitialState(), Date.now()); };
@@ -805,12 +890,6 @@
       const getBracketMonthlyTotal = (bracketKey, month) => {
         if (!data.values[selectedYear]) return 0;
         return data.categories.expenses.filter(posten => getEffectiveExpenseBracket(posten) === bracketKey).reduce((sum, posten) => sum + getSafeValue('expenses', posten, selectedYear, month), 0);
-      };
-
-      const getClusteredCategories = (categories, type) => {
-        if (type === 'incomes') return categories; 
-        const bracketOrder = ['housing', 'living', 'subscriptions', 'leisure', 'professional'];
-        return [...categories].sort((a, b) => bracketOrder.indexOf(getEffectiveExpenseBracket(a)) - bracketOrder.indexOf(getEffectiveExpenseBracket(b)));
       };
 
       const totalIncome = useMemo(() => getMonthlyTotal('incomes', selectedMonth), [data, selectedMonth, selectedYear]);
@@ -841,6 +920,17 @@
         const monthsForYear = getMonthsForYear(selectedYear);
         const ytdTotal = monthsForYear.reduce((sum, m) => sum + getSafeValue(type, posten, selectedYear, m), 0);
         return { ytdTotal, average: ytdTotal / monthsForYear.length };
+      };
+
+      // Helper to compute dynamic totals of fixed vs variable sections
+      const getStackedTotals = (type, itemsList, isFixed) => {
+        return itemsList.reduce((sum, cat) => {
+          const mode = data.categoryModes?.[cat] || (type === 'incomes' ? 'fixed' : 'variable');
+          if ((mode === 'fixed') === isFixed) {
+            return sum + getSafeValue(type, cat, selectedYear, selectedMonth);
+          }
+          return sum;
+        }, 0);
       };
 
       return (
@@ -1208,7 +1298,7 @@
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                   
-                  {/* INCOMES TABLE */}
+                  {/* INCOMES SECTION */}
                   <section className="bg-theme-card rounded-2xl border border-theme shadow-sm overflow-hidden flex flex-col">
                     <div className="p-4 border-b border-theme bg-theme-header flex items-center justify-between">
                       <h3 className="text-lg font-bold text-theme-main flex items-center gap-2">
@@ -1218,192 +1308,172 @@
                         {t('sum')}: {formatCurrency(totalIncome)}
                       </span>
                     </div>
-                    
-                    <div className="overflow-x-hidden w-full">
-                      <div className="flex flex-col w-full divide-y divide-[var(--color-border)]">
-                        
-                        {/* Table Header Row */}
-                        <div className="flex items-center justify-between p-3 bg-theme-header border-b border-theme text-[10px] md:text-xs font-bold text-theme-muted uppercase tracking-wider">
-                          <div className="w-full md:w-[35%] truncate flex items-center gap-1">
-                            {activeTab === "edit" && <span className="text-[10px] text-indigo-500 font-normal hidden md:inline">({t('dragToReorder')})</span>}
-                            <span>{t('posten')}</span>
-                          </div>
-                          <div className={`flex-1 text-right flex justify-end gap-2 ${activeTab === 'view' ? 'hidden md:flex' : 'flex'}`}>
-                             {activeTab === "edit" && <div className="hidden md:block flex-1"></div>}
-                             <div className="w-24 md:w-28 text-right shrink-0">{t(`months.${selectedMonth}`)} (€)</div>
-                          </div>
-                          <div className="hidden md:flex items-center justify-end gap-4 w-[160px] shrink-0">
-                            <div className="w-1/2 text-right">{t('resultYtd')}</div>
-                            <div className="w-1/2 text-right">{t('avgSchnitt')}</div>
-                          </div>
+
+                    <div className="p-4 space-y-6">
+                      {/* Fixed Incomes Stack */}
+                      <div>
+                        <div className="flex justify-between items-center mb-3 border-b border-theme pb-1">
+                          <h4 className="text-xs font-extrabold text-theme-muted uppercase tracking-wider flex items-center gap-1.5">
+                            <i className="fa-solid fa-building text-slate-400"></i> {t('fixedType')}
+                          </h4>
+                          <span className="text-xs font-bold text-theme-main">
+                            {formatCurrency(getStackedTotals('incomes', data.categories.incomes, true))}
+                          </span>
                         </div>
 
-                        {/* Incomes Data Rows */}
-                        {(activeTab === "view" ? getClusteredCategories(data.categories.incomes, 'incomes') : data.categories.incomes).map((item, idx, arr) => {
-                          const { ytdTotal, average } = getItemStats('incomes', item);
-                          const val = getSafeValue('incomes', item, selectedYear, selectedMonth);
-                          const cleanName = t(`categories.${item}`).replace('categories.', '').charAt(0).toUpperCase() + t(`categories.${item}`).replace('categories.', '').slice(1);
-                          const isCustom = !INITIAL_CATEGORIES.incomes.includes(item);
-                          const isRenaming = editingCategory && editingCategory.type === 'incomes' && editingCategory.name === item;
-                          
-                          const categoryMode = data.categoryModes?.[item] || 'fixed';
-                          const isVariable = categoryMode === 'variable';
-                          const paymentDay = data.fixedPaymentDays?.[item];
+                        <div 
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleGroupedDrop(e, 0, 'incomes', true)}
+                          className="space-y-2 min-h-[50px]"
+                        >
+                          {data.categories.incomes
+                            .filter(cat => (data.categoryModes?.[cat] || 'fixed') === 'fixed')
+                            .map((item, idx, filteredArr) => {
+                              const val = getSafeValue('incomes', item, selectedYear, selectedMonth);
+                              const pDay = data.fixedPaymentDays?.[item];
+                              const isDragged = draggedItem && draggedItem.type === 'incomes' && data.categories.incomes[draggedItem.index] === item;
 
-                          const isDragged = draggedItem && draggedItem.index === idx && draggedItem.type === 'incomes';
-
-                          return (
-                            <div 
-                              key={item} 
-                              draggable={activeTab === "edit"}
-                              onDragStart={(e) => handleDragStart(e, idx, 'incomes')}
-                              onDragOver={(e) => handleDragOver(e, idx)}
-                              onDrop={(e) => handleDrop(e, idx, 'incomes')}
-                              onDragEnd={handleDragEnd}
-                              className={`p-3 hover-theme-row transition border-l-4 border-emerald-500 flex flex-col ${isDragged ? 'opacity-40 bg-indigo-500/10' : ''}`}
-                            >
-                              <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
-                                {/* 1. Category Name & drag-grip */}
-                                <div className="flex items-center justify-between w-full md:w-[35%] min-w-0 shrink-0">
-                                  <div className="flex items-center gap-2 overflow-hidden w-full">
+                              return (
+                                <div 
+                                  key={item}
+                                  draggable={activeTab === "edit"}
+                                  onDragStart={(e) => handleDragStart(e, data.categories.incomes.indexOf(item), 'incomes')}
+                                  onDragEnd={handleDragEnd}
+                                  onDragOver={handleDragOver}
+                                  onDrop={(e) => handleGroupedDrop(e, idx, 'incomes', true)}
+                                  className={`p-3 bg-theme-main/40 border border-theme rounded-xl flex items-center justify-between gap-4 transition hover:border-indigo-500/50 ${isDragged ? 'opacity-40 bg-indigo-500/10' : ''}`}
+                                >
+                                  <div className="flex items-center gap-2.5 min-w-0">
                                     {activeTab === "edit" && (
-                                      <i className="fa-solid fa-grip-vertical text-theme-muted/50 cursor-grab active:cursor-grabbing hover:text-indigo-500 mr-2 shrink-0"></i>
+                                      <i className="fa-solid fa-grip-vertical text-theme-muted/40 cursor-grab active:cursor-grabbing hover:text-indigo-500 shrink-0"></i>
                                     )}
-                                    {isRenaming ? (
-                                      <input type="text" value={editCategoryValue} onChange={(e) => setEditCategoryValue(e.target.value)} onBlur={handleSaveRename} onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }} className="bg-theme-input text-theme-input border border-theme rounded px-2 py-1 text-sm outline-none focus:border-indigo-500 w-full" autoFocus />
-                                    ) : (
-                                      <div className="flex flex-col min-w-0">
-                                        <span className="truncate font-semibold text-theme-main text-sm md:text-base block">{cleanName}</span>
-                                        <div className="flex items-center gap-1.5 mt-0.5">
-                                          <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase ${isVariable ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-slate-500/10 text-slate-500 border border-slate-500/20'}`}>
-                                            {isVariable ? t('variableType') : t('fixedType')}
-                                          </span>
-                                          {!isVariable && paymentDay && (
-                                            <span className="text-[10px] text-theme-muted font-medium flex items-center gap-0.5">
-                                              <i className="fa-solid fa-calendar-day text-[9px]"></i> {t('paymentDayShort')} {paymentDay}
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-                                    {activeTab === "edit" && !isRenaming && (
-                                      <button onClick={() => handleStartRename('incomes', item)} className="text-theme-muted hover:text-indigo-500 p-1 shrink-0"><i className="fa-solid fa-pen text-[10px]"></i></button>
-                                    )}
-                                  </div>
-                                  {activeTab === "view" && (
-                                    <div className="md:hidden font-bold text-theme-main whitespace-nowrap shrink-0 ml-2">
-                                      {formatCurrency(val || 0)}
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* 2. Controls & Value Row */}
-                                <div className={`flex items-center justify-between w-full md:flex-1 gap-2 ${activeTab === 'view' ? 'hidden md:flex' : 'flex'}`}>
-                                  {activeTab === "edit" ? (
-                                    <div className="flex items-center gap-1.5 shrink-0">
-                                      {/* Fixed/Variable Toggle */}
-                                      <button 
-                                        type="button"
-                                        onClick={() => handleToggleCategoryMode('incomes', item)}
-                                        className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition ${isVariable ? 'bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20' : 'bg-slate-500/10 text-slate-500 border-slate-500/20 hover:bg-slate-500/20'}`}
-                                      >
-                                        {isVariable ? "🛒 Variable" : "🏢 Fixed"}
-                                      </button>
-
-                                      {/* Payment day if Fixed */}
-                                      {!isVariable && (
-                                        <input 
-                                          type="number"
-                                          min="1"
-                                          max="31"
-                                          value={paymentDay || ""}
-                                          placeholder={t('paymentDayShort')}
-                                          title={t('paymentDayLabel')}
-                                          onChange={(e) => handlePaymentDayChange(item, e.target.value)}
-                                          className="w-10 bg-theme-input text-theme-input border border-theme text-center rounded px-1 py-1 text-[11px] outline-none focus:border-indigo-500 font-bold"
-                                        />
+                                    <div className="truncate">
+                                      <span className="font-semibold text-theme-main text-sm block truncate">
+                                        {t(`categories.${item}`).replace('categories.', '')}
+                                      </span>
+                                      {pDay && (
+                                        <span className="text-[10px] text-theme-muted font-medium flex items-center gap-0.5 mt-0.5">
+                                          <i className="fa-solid fa-calendar-day text-[9px]"></i> {t('paymentDayShort')} {pDay}
+                                        </span>
                                       )}
-
-                                      <button onClick={() => handleMoveCategory('incomes', idx, 'up')} disabled={idx === 0} className="text-theme-muted hover:text-indigo-500 disabled:opacity-30 p-1.5 bg-theme-header rounded-lg"><i className="fa-solid fa-caret-up"></i></button>
-                                      <button onClick={() => handleMoveCategory('incomes', idx, 'down')} disabled={idx === arr.length - 1} className="text-theme-muted hover:text-indigo-500 disabled:opacity-30 p-1.5 bg-theme-header rounded-lg"><i className="fa-solid fa-caret-down"></i></button>
-                                      {isCustom && <button onClick={() => handleDeleteCategory('incomes', item)} className="text-rose-400 hover:text-rose-600 p-1.5 bg-theme-header rounded-lg ml-1"><i className="fa-solid fa-trash-can text-xs"></i></button>}
                                     </div>
-                                  ) : (
-                                    <div className="hidden md:block"></div>
-                                  )}
-
-                                  <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-                                    {activeTab === "view" ? (
-                                      <span className="font-bold text-theme-main whitespace-nowrap hidden md:block">{formatCurrency(val || 0)}</span>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-3 shrink-0">
+                                    <span className="font-bold text-theme-main text-sm">{formatCurrency(val)}</span>
+                                    {activeTab === "edit" ? (
+                                      <button 
+                                        onClick={() => setActiveEditCategory({ type: 'incomes', item })}
+                                        className="text-xs font-bold text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1.5 rounded-lg transition"
+                                      >
+                                        ✏️ Edit
+                                      </button>
                                     ) : (
-                                      <React.Fragment>
-                                        <input type="number" step="any" value={val !== undefined && val !== 0 ? val : ''} placeholder="0" disabled={isVariable} onChange={(e) => handleValueChange('incomes', item, selectedMonth, e.target.value)} className="w-24 md:w-28 bg-theme-input text-theme-input border border-theme text-right rounded-lg outline-none focus:border-indigo-500 font-semibold transition py-1.5 px-2 disabled:opacity-50" />
-                                        <button onClick={() => setRecurringSetup({ type: 'incomes', item, value: val || 0 })} className="text-theme-muted hover:text-indigo-500 p-1.5 transition outline-none shrink-0 bg-theme-header rounded-lg" title={t('setRecurringBudget')}><i className="fa-solid fa-arrows-spin"></i></button>
-                                      </React.Fragment>
+                                      val > 0 && (
+                                        <button 
+                                          onClick={() => setRecurringSetup({ type: 'incomes', item, value: val })} 
+                                          className="text-theme-muted hover:text-indigo-500 p-1 transition"
+                                          title={t('setRecurringBudget')}
+                                        >
+                                          <i className="fa-solid fa-arrows-spin"></i>
+                                        </button>
+                                      )
                                     )}
                                   </div>
                                 </div>
-
-                                {/* 3. Desktop Stats */}
-                                <div className="hidden md:flex items-center justify-end gap-4 w-[160px] shrink-0 text-sm">
-                                  <div className="w-1/2 text-right text-theme-muted font-medium">{formatCurrency(ytdTotal)}</div>
-                                  <div className="w-1/2 text-right text-theme-muted text-xs">{formatCurrency(average)}</div>
-                                </div>
-                              </div>
-
-                              {/* Variable weekly details panel */}
-                              {isVariable && (
-                                <div className="mt-2.5 pt-2 border-t border-theme/40">
-                                  {activeTab === "edit" ? (
-                                    <div className="grid grid-cols-5 gap-2 px-1">
-                                      {['w1', 'w2', 'w3', 'w4', 'w5'].map((wk, wIdx) => {
-                                        const wVal = getWeeklyVal('incomes', item, selectedYear, selectedMonth, wk);
-                                        return (
-                                          <div key={wk}>
-                                            <label className="text-[10px] text-theme-muted block font-semibold mb-1 truncate">{t('week')} {wIdx + 1}</label>
-                                            <input 
-                                              type="number"
-                                              step="any"
-                                              value={wVal || ""}
-                                              placeholder="0"
-                                              onChange={(e) => handleWeeklyValueChange('incomes', item, selectedMonth, wk, e.target.value)}
-                                              className="w-full bg-theme-input border border-theme rounded px-1.5 py-1 text-xs text-right font-semibold text-theme-input outline-none focus:border-indigo-500"
-                                            />
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  ) : (
-                                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-theme-muted font-medium bg-theme-header/30 p-2 rounded-lg">
-                                      {['w1', 'w2', 'w3', 'w4', 'w5'].map((wk, wIdx) => {
-                                        const wVal = getWeeklyVal('incomes', item, selectedYear, selectedMonth, wk);
-                                        if (wVal === 0) return null;
-                                        return (
-                                          <span key={wk} className="whitespace-nowrap">
-                                            W{wIdx+1}: <span className="font-bold text-theme-main">{formatCurrency(wVal)}</span>
-                                          </span>
-                                        );
-                                      })}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-
-                            </div>
-                          );
-                        })}
+                              );
+                            })}
+                        </div>
                       </div>
+
+                      {/* Variable Incomes Stack */}
+                      <div>
+                        <div className="flex justify-between items-center mb-3 border-b border-theme pb-1">
+                          <h4 className="text-xs font-extrabold text-theme-muted uppercase tracking-wider flex items-center gap-1.5">
+                            <i className="fa-solid fa-basket-shopping text-amber-500"></i> {t('variableType')}
+                          </h4>
+                          <span className="text-xs font-bold text-theme-main">
+                            {formatCurrency(getStackedTotals('incomes', data.categories.incomes, false))}
+                          </span>
+                        </div>
+
+                        <div 
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleGroupedDrop(e, 0, 'incomes', false)}
+                          className="space-y-3 min-h-[50px]"
+                        >
+                          {data.categories.incomes
+                            .filter(cat => (data.categoryModes?.[cat] || 'fixed') === 'variable')
+                            .map((item, idx) => {
+                              const val = getSafeValue('incomes', item, selectedYear, selectedMonth);
+                              const isDragged = draggedItem && draggedItem.type === 'incomes' && data.categories.incomes[draggedItem.index] === item;
+                              const daysInMo = getDaysInMonth(selectedYear, selectedMonth);
+
+                              return (
+                                <div 
+                                  key={item}
+                                  draggable={activeTab === "edit"}
+                                  onDragStart={(e) => handleDragStart(e, data.categories.incomes.indexOf(item), 'incomes')}
+                                  onDragEnd={handleDragEnd}
+                                  onDragOver={handleDragOver}
+                                  onDrop={(e) => handleGroupedDrop(e, idx, 'incomes', false)}
+                                  className={`p-3 bg-theme-main/40 border border-theme rounded-xl flex flex-col gap-2 transition hover:border-indigo-500/50 ${isDragged ? 'opacity-40 bg-indigo-500/10' : ''}`}
+                                >
+                                  <div className="flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                      {activeTab === "edit" && (
+                                        <i className="fa-solid fa-grip-vertical text-theme-muted/40 cursor-grab active:cursor-grabbing hover:text-indigo-500 shrink-0"></i>
+                                      )}
+                                      <span className="font-semibold text-theme-main text-sm truncate">
+                                        {t(`categories.${item}`).replace('categories.', '')}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-3 shrink-0">
+                                      <span className="font-bold text-theme-main text-sm">{formatCurrency(val)}</span>
+                                      {activeTab === "edit" && (
+                                        <button 
+                                          onClick={() => setActiveEditCategory({ type: 'incomes', item })}
+                                          className="text-xs font-bold text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1.5 rounded-lg transition"
+                                        >
+                                          ✏️ Edit
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Dynamic True Calendar Mini Overview */}
+                                  <div className="grid grid-cols-5 gap-1 mt-1 text-[9px] text-theme-muted bg-theme-header/40 p-1.5 rounded-lg border border-theme/30">
+                                    {['w1', 'w2', 'w3', 'w4', 'w5'].map((wk, wIdx) => {
+                                      const wVal = getWeeklyVal('incomes', item, selectedYear, selectedMonth, wk);
+                                      const dateSpan = getWeekDaysShortText(wIdx, daysInMo);
+                                      return (
+                                        <div key={wk} className="text-center border-r last:border-0 border-theme/30 px-1">
+                                          <span className="block font-semibold text-[8px] text-theme-muted uppercase tracking-tight">{dateSpan}</span>
+                                          <span className={`block font-bold mt-0.5 ${wVal > 0 ? 'text-indigo-500 font-extrabold' : ''}`}>
+                                            {wVal > 0 ? formatCurrency(wVal) : '—'}
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+
                     </div>
 
                     {activeTab === "edit" && (
                       <div className="p-3 bg-theme-footer border-t border-theme flex gap-2">
-                        <input type="text" value={customIncomeInput} onChange={(e) => setCustomIncomeInput(e.target.value)} placeholder={t('addPlaceholder')} className="flex-grow bg-theme-input border border-theme text-theme-input rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition" />
-                        <button onClick={() => handleAddCategory('incomes', customIncomeInput, setCustomIncomeInput)} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-bold transition flex items-center gap-1 shrink-0"><i className="fa-solid fa-plus"></i> Add</button>
+                        <input type="text" value={customIncomeInput} onChange={(e) => setCustomIncomeInput(e.target.value)} placeholder={t('addPlaceholder')} className="flex-grow bg-theme-input border border-theme text-theme-input rounded-xl px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition" />
+                        <button onClick={() => handleAddCategory('incomes', customIncomeInput, setCustomIncomeInput)} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-xl font-bold transition flex items-center gap-1 shrink-0"><i className="fa-solid fa-plus"></i> Add</button>
                       </div>
                     )}
                   </section>
 
-                  {/* EXPENSES TABLE */}
+                  {/* EXPENSES SECTION */}
                   <section className="bg-theme-card rounded-2xl border border-theme shadow-sm overflow-hidden flex flex-col">
                     <div className="p-4 border-b border-theme bg-theme-header flex items-center justify-between">
                       <h3 className="text-lg font-bold text-theme-main flex items-center gap-2">
@@ -1413,209 +1483,181 @@
                         {t('sum')}: {formatCurrency(totalExpenses)}
                       </span>
                     </div>
-                    
-                    <div className="overflow-x-hidden w-full">
-                      <div className="flex flex-col w-full divide-y divide-[var(--color-border)]">
-                        
-                        {/* Table Header Row */}
-                        <div className="flex items-center justify-between p-3 bg-theme-header border-b border-theme text-[10px] md:text-xs font-bold text-theme-muted uppercase tracking-wider">
-                          <div className="w-full md:w-[35%] truncate flex items-center gap-1">
-                            {activeTab === "edit" && <span className="text-[10px] text-indigo-500 font-normal hidden md:inline">({t('dragToReorder')})</span>}
-                            <span>{t('posten')}</span>
-                          </div>
-                          <div className={`flex-1 text-right flex justify-end gap-2 ${activeTab === 'view' ? 'hidden md:flex' : 'flex'}`}>
-                             {activeTab === "edit" && <div className="hidden md:block flex-1"></div>}
-                             <div className="w-24 md:w-28 text-right shrink-0">{t(`months.${selectedMonth}`)} (€)</div>
-                          </div>
-                          <div className="hidden md:flex items-center justify-end gap-4 w-[160px] shrink-0">
-                            <div className="w-1/2 text-right">{t('resultYtd')}</div>
-                            <div className="w-1/2 text-right">{t('avgSchnitt')}</div>
-                          </div>
+
+                    <div className="p-4 space-y-6">
+                      {/* Fixed Bills Stack */}
+                      <div>
+                        <div className="flex justify-between items-center mb-3 border-b border-theme pb-1">
+                          <h4 className="text-xs font-extrabold text-theme-muted uppercase tracking-wider flex items-center gap-1.5">
+                            <i className="fa-solid fa-receipt text-slate-400"></i> {t('fixedType')}
+                          </h4>
+                          <span className="text-xs font-bold text-theme-main">
+                            {formatCurrency(getStackedTotals('expenses', data.categories.expenses, true))}
+                          </span>
                         </div>
 
-                        {/* Expenses Data Rows */}
-                        {(activeTab === "view" ? getClusteredCategories(data.categories.expenses, 'expenses') : data.categories.expenses).map((item, idx, arr) => {
-                          const { ytdTotal, average } = getItemStats('expenses', item);
-                          const val = getSafeValue('expenses', item, selectedYear, selectedMonth);
-                          const bracket = getEffectiveExpenseBracket(item);
-                          
-                          const rowClass = 
-                            bracket === 'housing' ? 'border-slate-500' : 
-                            bracket === 'living' ? 'border-amber-500' :  
-                            bracket === 'subscriptions' ? 'border-indigo-500' : 
-                            bracket === 'professional' ? 'border-teal-500' : 
-                            'border-purple-500'; 
+                        <div 
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleGroupedDrop(e, 0, 'expenses', true)}
+                          className="space-y-2 min-h-[50px]"
+                        >
+                          {data.categories.expenses
+                            .filter(cat => (data.categoryModes?.[cat] || 'variable') === 'fixed')
+                            .map((item, idx) => {
+                              const val = getSafeValue('expenses', item, selectedYear, selectedMonth);
+                              const pDay = data.fixedPaymentDays?.[item];
+                              const bracket = getEffectiveExpenseBracket(item);
+                              const isDragged = draggedItem && draggedItem.type === 'expenses' && data.categories.expenses[draggedItem.index] === item;
+                              
+                              const indicatorClass = 
+                                bracket === 'housing' ? 'border-slate-500' : 
+                                bracket === 'living' ? 'border-amber-500' :  
+                                bracket === 'subscriptions' ? 'border-indigo-500' : 
+                                bracket === 'professional' ? 'border-teal-500' : 'border-purple-500';
 
-                          const cleanName = t(`categories.${item}`).replace('categories.', '').charAt(0).toUpperCase() + t(`categories.${item}`).replace('categories.', '').slice(1);
-                          const isCustom = !INITIAL_CATEGORIES.expenses.includes(item);
-                          const isRenaming = editingCategory && editingCategory.type === 'expenses' && editingCategory.name === item;
-
-                          const categoryMode = data.categoryModes?.[item] || 'variable';
-                          const isVariable = categoryMode === 'variable';
-                          const paymentDay = data.fixedPaymentDays?.[item];
-
-                          const isDragged = draggedItem && draggedItem.index === idx && draggedItem.type === 'expenses';
-
-                          return (
-                            <div 
-                              key={item} 
-                              draggable={activeTab === "edit"}
-                              onDragStart={(e) => handleDragStart(e, idx, 'expenses')}
-                              onDragOver={(e) => handleDragOver(e, idx)}
-                              onDrop={(e) => handleDrop(e, idx, 'expenses')}
-                              onDragEnd={handleDragEnd}
-                              className={`p-3 hover-theme-row transition border-l-4 ${rowClass} flex flex-col ${isDragged ? 'opacity-40 bg-indigo-500/10' : ''}`}
-                            >
-                              <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
-                                {/* 1. Category Name & drag grip */}
-                                <div className="flex items-center justify-between w-full md:w-[35%] min-w-0 shrink-0">
-                                  <div className="flex items-center gap-2 overflow-hidden w-full">
+                              return (
+                                <div 
+                                  key={item}
+                                  draggable={activeTab === "edit"}
+                                  onDragStart={(e) => handleDragStart(e, data.categories.expenses.indexOf(item), 'expenses')}
+                                  onDragEnd={handleDragEnd}
+                                  onDragOver={handleDragOver}
+                                  onDrop={(e) => handleGroupedDrop(e, idx, 'expenses', true)}
+                                  className={`p-3 bg-theme-main/40 border border-theme border-l-4 ${indicatorClass} rounded-r-xl flex items-center justify-between gap-4 transition hover:border-indigo-500/50 ${isDragged ? 'opacity-40 bg-indigo-500/10' : ''}`}
+                                >
+                                  <div className="flex items-center gap-2.5 min-w-0">
                                     {activeTab === "edit" && (
-                                      <i className="fa-solid fa-grip-vertical text-theme-muted/50 cursor-grab active:cursor-grabbing hover:text-indigo-500 mr-2 shrink-0"></i>
+                                      <i className="fa-solid fa-grip-vertical text-theme-muted/40 cursor-grab active:cursor-grabbing hover:text-indigo-500 shrink-0"></i>
                                     )}
-                                    {isRenaming ? (
-                                      <input type="text" value={editCategoryValue} onChange={(e) => setEditCategoryValue(e.target.value)} onBlur={handleSaveRename} onKeyDown={(e) => { if (e.key === 'Enter') handleSaveRename(); }} className="bg-theme-input text-theme-input border border-theme rounded px-2 py-1 text-sm outline-none focus:border-indigo-500 w-full" autoFocus />
-                                    ) : (
-                                      <div className="flex flex-col min-w-0">
-                                        <span className="truncate font-semibold text-theme-main text-sm md:text-base block">{cleanName}</span>
-                                        <div className="flex items-center gap-1.5 mt-0.5">
-                                          <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold uppercase ${isVariable ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-slate-500/10 text-slate-500 border border-slate-500/20'}`}>
-                                            {isVariable ? t('variableType') : t('fixedType')}
-                                          </span>
-                                          {!isVariable && paymentDay && (
-                                            <span className="text-[10px] text-theme-muted font-medium flex items-center gap-0.5">
-                                              <i className="fa-solid fa-calendar-day text-[9px]"></i> {t('paymentDayShort')} {paymentDay}
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-                                    {activeTab === "edit" && !isRenaming && (
-                                      <button onClick={() => handleStartRename('expenses', item)} className="text-theme-muted hover:text-indigo-500 p-1 shrink-0"><i className="fa-solid fa-pen text-[10px]"></i></button>
-                                    )}
-                                  </div>
-                                  {activeTab === "view" && (
-                                    <div className="md:hidden font-bold text-theme-main whitespace-nowrap shrink-0 ml-2">
-                                      {formatCurrency(val || 0)}
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* 2. Controls & Value Row */}
-                                <div className={`flex items-center justify-between w-full md:flex-1 gap-2 ${activeTab === 'view' ? 'hidden md:flex' : 'flex'}`}>
-                                  {activeTab === "edit" ? (
-                                    <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
-                                      <select
-                                        value={data.categoryOverrides?.[item] || "auto"}
-                                        onChange={(e) => { const v = e.target.value === "auto" ? null : e.target.value; saveStateAndDispatch({ ...data, categoryOverrides: { ...(data.categoryOverrides || {}), [item]: v } }, Date.now()); }}
-                                        className="bg-theme-input border border-theme text-theme-main rounded-lg px-2 py-1.5 text-[11px] font-medium outline-none focus:border-indigo-500 max-w-[95px] transition"
-                                      >
-                                        <option value="auto">Auto 🤖</option>
-                                        <option value="housing">Wohnen 🏠</option>
-                                        <option value="living">Alltag 🍎</option>
-                                        <option value="subscriptions">Abos 🎟️</option>
-                                        <option value="leisure">Freizeit 🎭</option>
-                                        <option value="professional">Beruf 🎓</option>
-                                      </select>
-
-                                      {/* Fixed/Variable Toggle */}
-                                      <button 
-                                        type="button"
-                                        onClick={() => handleToggleCategoryMode('expenses', item)}
-                                        className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition ${isVariable ? 'bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20' : 'bg-slate-500/10 text-slate-500 border-slate-500/20 hover:bg-slate-500/20'}`}
-                                      >
-                                        {isVariable ? "🛒 Variable" : "🏢 Fixed"}
-                                      </button>
-
-                                      {/* Payment day if Fixed */}
-                                      {!isVariable && (
-                                        <input 
-                                          type="number"
-                                          min="1"
-                                          max="31"
-                                          value={paymentDay || ""}
-                                          placeholder={t('paymentDayShort')}
-                                          title={t('paymentDayLabel')}
-                                          onChange={(e) => handlePaymentDayChange(item, e.target.value)}
-                                          className="w-10 bg-theme-input text-theme-input border border-theme text-center rounded px-1 py-1 text-[11px] outline-none focus:border-indigo-500 font-bold"
-                                        />
+                                    <div className="truncate">
+                                      <span className="font-semibold text-theme-main text-sm block truncate">
+                                        {t(`categories.${item}`).replace('categories.', '')}
+                                      </span>
+                                      {pDay && (
+                                        <span className="text-[10px] text-theme-muted font-medium flex items-center gap-0.5 mt-0.5">
+                                          <i className="fa-solid fa-calendar-day text-[9px]"></i> {t('paymentDayShort')} {pDay}
+                                        </span>
                                       )}
-
-                                      <button onClick={() => handleMoveCategory('expenses', idx, 'up')} disabled={idx === 0} className="text-theme-muted hover:text-indigo-500 disabled:opacity-30 p-1.5 bg-theme-header rounded-lg"><i className="fa-solid fa-caret-up"></i></button>
-                                      <button onClick={() => handleMoveCategory('expenses', idx, 'down')} disabled={idx === arr.length - 1} className="text-theme-muted hover:text-indigo-500 disabled:opacity-30 p-1.5 bg-theme-header rounded-lg"><i className="fa-solid fa-caret-down"></i></button>
-                                      {isCustom && <button onClick={() => handleDeleteCategory('expenses', item)} className="text-rose-400 hover:text-rose-600 p-1.5 bg-theme-header rounded-lg ml-1"><i className="fa-solid fa-trash-can text-xs"></i></button>}
                                     </div>
-                                  ) : (
-                                    <div className="hidden md:block"></div>
-                                  )}
-
-                                  <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-                                    {activeTab === "view" ? (
-                                      <span className="font-bold text-theme-main whitespace-nowrap hidden md:block">{formatCurrency(val || 0)}</span>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-3 shrink-0">
+                                    <span className="font-bold text-theme-main text-sm">{formatCurrency(val)}</span>
+                                    {activeTab === "edit" ? (
+                                      <button 
+                                        onClick={() => setActiveEditCategory({ type: 'expenses', item })}
+                                        className="text-xs font-bold text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1.5 rounded-lg transition"
+                                      >
+                                        ✏️ Edit
+                                      </button>
                                     ) : (
-                                      <React.Fragment>
-                                        <input type="number" step="any" value={val !== undefined && val !== 0 ? val : ''} placeholder="0" disabled={isVariable} onChange={(e) => handleValueChange('expenses', item, selectedMonth, e.target.value)} className="w-24 md:w-28 bg-theme-input text-theme-input border border-theme text-right rounded-lg outline-none focus:border-indigo-500 font-semibold transition py-1.5 px-2 disabled:opacity-50" />
-                                        <button onClick={() => setRecurringSetup({ type: 'expenses', item, value: val || 0 })} className="text-theme-muted hover:text-indigo-500 p-1.5 transition outline-none shrink-0 bg-theme-header rounded-lg" title={t('setRecurringBudget')}><i className="fa-solid fa-arrows-spin"></i></button>
-                                      </React.Fragment>
+                                      val > 0 && (
+                                        <button 
+                                          onClick={() => setRecurringSetup({ type: 'expenses', item, value: val })} 
+                                          className="text-theme-muted hover:text-indigo-500 p-1 transition"
+                                          title={t('setRecurringBudget')}
+                                        >
+                                          <i className="fa-solid fa-arrows-spin"></i>
+                                        </button>
+                                      )
                                     )}
                                   </div>
                                 </div>
-
-                                {/* 3. Desktop Stats */}
-                                <div className="hidden md:flex items-center justify-end gap-4 w-[160px] shrink-0 text-sm">
-                                  <div className="w-1/2 text-right text-theme-muted font-medium">{formatCurrency(ytdTotal)}</div>
-                                  <div className="w-1/2 text-right text-theme-muted text-xs">{formatCurrency(average)}</div>
-                                </div>
-                              </div>
-
-                              {/* Variable weekly details panel */}
-                              {isVariable && (
-                                <div className="mt-2.5 pt-2 border-t border-theme/40">
-                                  {activeTab === "edit" ? (
-                                    <div className="grid grid-cols-5 gap-2 px-1">
-                                      {['w1', 'w2', 'w3', 'w4', 'w5'].map((wk, wIdx) => {
-                                        const wVal = getWeeklyVal('expenses', item, selectedYear, selectedMonth, wk);
-                                        return (
-                                          <div key={wk}>
-                                            <label className="text-[10px] text-theme-muted block font-semibold mb-1 truncate">{t('week')} {wIdx + 1}</label>
-                                            <input 
-                                              type="number"
-                                              step="any"
-                                              value={wVal || ""}
-                                              placeholder="0"
-                                              onChange={(e) => handleWeeklyValueChange('expenses', item, selectedMonth, wk, e.target.value)}
-                                              className="w-full bg-theme-input border border-theme rounded px-1.5 py-1 text-xs text-right font-semibold text-theme-input outline-none focus:border-indigo-500"
-                                            />
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  ) : (
-                                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-theme-muted font-medium bg-theme-header/30 p-2 rounded-lg">
-                                      {['w1', 'w2', 'w3', 'w4', 'w5'].map((wk, wIdx) => {
-                                        const wVal = getWeeklyVal('expenses', item, selectedYear, selectedMonth, wk);
-                                        if (wVal === 0) return null;
-                                        return (
-                                          <span key={wk} className="whitespace-nowrap">
-                                            W{wIdx+1}: <span className="font-bold text-theme-main">{formatCurrency(wVal)}</span>
-                                          </span>
-                                        );
-                                      })}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-
-                            </div>
-                          );
-                        })}
+                              );
+                            })}
+                        </div>
                       </div>
+
+                      {/* Variable Expenses Stack */}
+                      <div>
+                        <div className="flex justify-between items-center mb-3 border-b border-theme pb-1">
+                          <h4 className="text-xs font-extrabold text-theme-muted uppercase tracking-wider flex items-center gap-1.5">
+                            <i className="fa-solid fa-cart-shopping text-rose-400"></i> {t('variableType')}
+                          </h4>
+                          <span className="text-xs font-bold text-theme-main">
+                            {formatCurrency(getStackedTotals('expenses', data.categories.expenses, false))}
+                          </span>
+                        </div>
+
+                        <div 
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleGroupedDrop(e, 0, 'expenses', false)}
+                          className="space-y-3 min-h-[50px]"
+                        >
+                          {data.categories.expenses
+                            .filter(cat => (data.categoryModes?.[cat] || 'variable') === 'variable')
+                            .map((item, idx) => {
+                              const val = getSafeValue('expenses', item, selectedYear, selectedMonth);
+                              const bracket = getEffectiveExpenseBracket(item);
+                              const isDragged = draggedItem && draggedItem.type === 'expenses' && data.categories.expenses[draggedItem.index] === item;
+                              const daysInMo = getDaysInMonth(selectedYear, selectedMonth);
+
+                              const indicatorClass = 
+                                bracket === 'housing' ? 'border-slate-500' : 
+                                bracket === 'living' ? 'border-amber-500' :  
+                                bracket === 'subscriptions' ? 'border-indigo-500' : 
+                                bracket === 'professional' ? 'border-teal-500' : 'border-purple-500';
+
+                              return (
+                                <div 
+                                  key={item}
+                                  draggable={activeTab === "edit"}
+                                  onDragStart={(e) => handleDragStart(e, data.categories.expenses.indexOf(item), 'expenses')}
+                                  onDragEnd={handleDragEnd}
+                                  onDragOver={handleDragOver}
+                                  onDrop={(e) => handleGroupedDrop(e, idx, 'expenses', false)}
+                                  className={`p-3 bg-theme-main/40 border border-theme border-l-4 ${indicatorClass} rounded-r-xl flex flex-col gap-2 transition hover:border-indigo-500/50 ${isDragged ? 'opacity-40 bg-indigo-500/10' : ''}`}
+                                >
+                                  <div className="flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                      {activeTab === "edit" && (
+                                        <i className="fa-solid fa-grip-vertical text-theme-muted/40 cursor-grab active:cursor-grabbing hover:text-indigo-500 shrink-0"></i>
+                                      )}
+                                      <span className="font-semibold text-theme-main text-sm truncate">
+                                        {t(`categories.${item}`).replace('categories.', '')}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-3 shrink-0">
+                                      <span className="font-bold text-theme-main text-sm">{formatCurrency(val)}</span>
+                                      {activeTab === "edit" && (
+                                        <button 
+                                          onClick={() => setActiveEditCategory({ type: 'expenses', item })}
+                                          className="text-xs font-bold text-indigo-500 bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1.5 rounded-lg transition"
+                                        >
+                                          ✏️ Edit
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Dynamic True Calendar Mini Overview */}
+                                  <div className="grid grid-cols-5 gap-1 mt-1 text-[9px] text-theme-muted bg-theme-header/40 p-1.5 rounded-lg border border-theme/30">
+                                    {['w1', 'w2', 'w3', 'w4', 'w5'].map((wk, wIdx) => {
+                                      const wVal = getWeeklyVal('expenses', item, selectedYear, selectedMonth, wk);
+                                      const dateSpan = getWeekDaysShortText(wIdx, daysInMo);
+                                      return (
+                                        <div key={wk} className="text-center border-r last:border-0 border-theme/30 px-1">
+                                          <span className="block font-semibold text-[8px] text-theme-muted uppercase tracking-tight">{dateSpan}</span>
+                                          <span className={`block font-bold mt-0.5 ${wVal > 0 ? 'text-indigo-500 font-extrabold' : ''}`}>
+                                            {wVal > 0 ? formatCurrency(wVal) : '—'}
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+
                     </div>
 
                     {activeTab === "edit" && (
                       <div className="p-3 bg-theme-footer border-t border-theme flex gap-2">
-                        <input type="text" value={customExpenseInput} onChange={(e) => setCustomExpenseInput(e.target.value)} placeholder={t('addPlaceholder')} className="flex-grow bg-theme-input border border-theme text-theme-input rounded px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition" />
-                        <button onClick={() => handleAddCategory('expenses', customExpenseInput, setCustomExpenseInput)} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-bold transition flex items-center gap-1 shrink-0"><i className="fa-solid fa-plus"></i> Add</button>
+                        <input type="text" value={customExpenseInput} onChange={(e) => setCustomExpenseInput(e.target.value)} placeholder={t('addPlaceholder')} className="flex-grow bg-theme-input border border-theme text-theme-input rounded-xl px-3 py-1.5 text-sm outline-none focus:border-indigo-500 transition" />
+                        <button onClick={() => handleAddCategory('expenses', customExpenseInput, setCustomExpenseInput)} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-xl font-bold transition flex items-center gap-1 shrink-0"><i className="fa-solid fa-plus"></i> Add</button>
                       </div>
                     )}
                   </section>
@@ -1624,6 +1666,190 @@
               </div>
             )}
           </main>
+
+          {/* DEDICATED LAYER / DRAWER PANEL FOR EDITING */}
+          {activeEditCategory && (() => {
+            const { type, item } = activeEditCategory;
+            const categoryMode = data.categoryModes?.[item] || (type === 'incomes' ? 'fixed' : 'variable');
+            const isVariable = categoryMode === 'variable';
+            const paymentDay = data.fixedPaymentDays?.[item];
+            const val = getSafeValue(type, item, selectedYear, selectedMonth);
+
+            return (
+              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex justify-end transition-all">
+                {/* Backdrop click to close */}
+                <div className="absolute inset-0" onClick={() => setActiveEditCategory(null)} />
+                
+                <div className="bg-theme-card border-l border-theme w-full max-w-lg h-full shadow-2xl relative z-10 flex flex-col justify-between animate-slideLeft">
+                  
+                  {/* Header */}
+                  <div className="p-5 border-b border-theme flex justify-between items-center bg-theme-header">
+                    <div>
+                      <h3 className="font-bold text-theme-main text-lg flex items-center gap-2">
+                        <i className="fa-solid fa-sliders text-indigo-500"></i> {t('editorTitle')}
+                      </h3>
+                      <p className="text-xs text-theme-muted truncate max-w-[280px] mt-0.5">{item}</p>
+                    </div>
+                    <button 
+                      onClick={() => setActiveEditCategory(null)} 
+                      className="text-theme-muted hover:text-rose-500 transition w-8 h-8 rounded-full bg-theme-card flex items-center justify-center border border-theme"
+                    >
+                      <i className="fa-solid fa-xmark"></i>
+                    </button>
+                  </div>
+
+                  {/* Body Content */}
+                  <div className="p-6 space-y-6 flex-grow overflow-y-auto">
+                    
+                    {/* Rename */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">{t('posten')}</label>
+                      <input 
+                        type="text" 
+                        defaultValue={item} 
+                        onBlur={(e) => handleSaveRenameInModal(type, item, e.target.value)}
+                        className="w-full bg-theme-input border border-theme rounded-xl px-3 py-2.5 text-sm font-semibold text-theme-input outline-none focus:border-indigo-500 transition" 
+                      />
+                    </div>
+
+                    {/* Bracket (only for expenses) */}
+                    {type === 'expenses' && (
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">{t('bracketLabel')}</label>
+                        <select
+                          value={data.categoryOverrides?.[item] || "auto"}
+                          onChange={(e) => { const v = e.target.value === "auto" ? null : e.target.value; saveStateAndDispatch({ ...data, categoryOverrides: { ...(data.categoryOverrides || {}), [item]: v } }, Date.now()); }}
+                          className="w-full bg-theme-input border border-theme text-theme-main rounded-xl px-3 py-2.5 text-sm font-semibold outline-none focus:border-indigo-500 transition"
+                        >
+                          <option value="auto">Auto 🤖</option>
+                          <option value="housing">{t('bracketHousing')} 🏠</option>
+                          <option value="living">{t('bracketLiving')} 🍎</option>
+                          <option value="subscriptions">{t('bracketSubscriptions')} 🎟️</option>
+                          <option value="leisure">{t('bracketLeisure')} 🎭</option>
+                          <option value="professional">{t('bracketProfessional')} 🎓</option>
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Classification Type Selection (Fixed vs Variable) */}
+                    <div className="space-y-3">
+                      <label className="text-xs font-bold text-theme-muted uppercase tracking-wider block">{t('classificationLabel')}</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => { if (isVariable) handleToggleCategoryMode(type, item); }}
+                          className={`p-4 rounded-xl border text-left flex flex-col justify-between h-24 transition ${!isVariable ? 'border-indigo-500 bg-indigo-500/5' : 'border-theme hover:border-theme-main'}`}
+                        >
+                          <span className="text-lg">🏢</span>
+                          <div>
+                            <span className="font-bold text-sm block text-theme-main">{t('fixedType')}</span>
+                            <span className="text-[10px] text-theme-muted">Regelmäßige Abbuchungen</span>
+                          </div>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => { if (!isVariable) handleToggleCategoryMode(type, item); }}
+                          className={`p-4 rounded-xl border text-left flex flex-col justify-between h-24 transition ${isVariable ? 'border-indigo-500 bg-indigo-500/5' : 'border-theme hover:border-theme-main'}`}
+                        >
+                          <span className="text-lg">🛒</span>
+                          <div>
+                            <span className="font-bold text-sm block text-theme-main">{t('variableType')}</span>
+                            <span className="text-[10px] text-theme-muted">Wöchentlich fluktuativ</span>
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Numeric Input Layer depending on Type */}
+                    {!isVariable ? (
+                      // Fixed value input & payment day
+                      <div className="space-y-4 pt-4 border-t border-theme">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-theme-muted uppercase tracking-wider block">{t('valueLabel')}</label>
+                            <input 
+                              type="number" 
+                              step="any"
+                              value={val !== 0 ? val : ""} 
+                              placeholder="0"
+                              onChange={(e) => handleValueChange(type, item, selectedMonth, e.target.value)}
+                              className="w-full bg-theme-input border border-theme rounded-xl px-3 py-2.5 text-sm font-semibold text-theme-input outline-none focus:border-indigo-500 text-right transition" 
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-theme-muted uppercase tracking-wider block">{t('paymentDayLabel')}</label>
+                            <input 
+                              type="number" 
+                              min="1"
+                              max="31"
+                              value={paymentDay || ""}
+                              placeholder="1 - 31"
+                              onChange={(e) => handlePaymentDayChange(item, e.target.value)}
+                              className="w-full bg-theme-input border border-theme rounded-xl px-3 py-2.5 text-sm font-semibold text-theme-input outline-none focus:border-indigo-500 text-right transition" 
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      // Variable weeks split - True calendar view
+                      <div className="space-y-4 pt-4 border-t border-theme">
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">{t('weeksLabel')}</label>
+                          <span className="text-xs font-bold text-theme-main bg-theme-header px-2 py-1 rounded-lg">
+                            Summe: <span className="text-indigo-500">{formatCurrency(val)}</span>
+                          </span>
+                        </div>
+
+                        <div className="space-y-3">
+                          {['w1', 'w2', 'w3', 'w4', 'w5'].map((wk, wIdx) => {
+                            const wVal = getWeeklyVal(type, item, selectedYear, selectedMonth, wk);
+                            const weekDateLabel = getWeekLabelText(wIdx, selectedYear, selectedMonth);
+                            return (
+                              <div key={wk} className="bg-theme-main/50 p-3 rounded-xl border border-theme flex items-center justify-between gap-4">
+                                <div className="min-w-0">
+                                  <span className="text-xs font-bold block text-theme-main">{t('week')} {wIdx + 1}</span>
+                                  <span className="text-[11px] text-theme-muted mt-0.5 block">{weekDateLabel}</span>
+                                </div>
+                                <input 
+                                  type="number"
+                                  step="any"
+                                  value={wVal !== 0 ? wVal : ""}
+                                  placeholder="0"
+                                  onChange={(e) => handleWeeklyValueChange(type, item, selectedMonth, wk, e.target.value)}
+                                  className="w-28 bg-theme-input border border-theme rounded-lg px-2 py-1.5 text-sm font-semibold text-right outline-none focus:border-indigo-500 text-theme-input"
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                  </div>
+
+                  {/* Footer */}
+                  <div className="p-5 border-t border-theme bg-theme-header flex flex-col gap-3">
+                    <button 
+                      onClick={() => setActiveEditCategory(null)}
+                      className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl text-sm transition shadow-lg shadow-indigo-600/10 flex items-center justify-center gap-1"
+                    >
+                      <i className="fa-solid fa-circle-check"></i> {t('saveClose')}
+                    </button>
+                    
+                    <button 
+                      onClick={() => handleDeleteCategory(type, item)}
+                      className="w-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 font-bold py-2.5 rounded-xl text-xs transition border border-rose-500/10 flex items-center justify-center gap-1.5"
+                    >
+                      <i className="fa-solid fa-trash-can"></i> {t('deleteCategoryBtn')}
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+            );
+          })()}
 
           {recurringSetup && (
             <div className="fixed inset-0 bg-slate-950/60 z-[60] backdrop-blur-sm flex items-center justify-center p-4">
