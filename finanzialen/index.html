@@ -400,20 +400,34 @@
           "Jul": 6, "Aug": 7, "Sep": 8, "Okt": 9, "Nov": 10, "Dez": 11
         };
         const mIdx = monthMap[monthStr] !== undefined ? monthMap[monthStr] : 5;
+        
         const firstOfMonth = new Date(year, mIdx, 1);
-        const dayOfW = firstOfMonth.getDay(); // 0 is Sunday, 1 is Mon...
-        const offset = dayOfW === 0 ? 6 : dayOfW - 1;
+        const lastOfMonth = new Date(year, mIdx + 1, 0); // Gets the last day of the month
         
-        // Monday of the first week
-        const startOfWeek1 = new Date(firstOfMonth);
-        startOfWeek1.setDate(firstOfMonth.getDate() - offset);
+        const dayOfW = firstOfMonth.getDay(); 
+        const offset = dayOfW === 0 ? 6 : dayOfW - 1; // 0 for Monday, 6 for Sunday
+        const firstSundayDate = 1 + (6 - offset);
         
-        // Current week start & end
-        const startOfCurrentWeek = new Date(startOfWeek1);
-        startOfCurrentWeek.setDate(startOfWeek1.getDate() + (weekIdx * 7));
+        let startD, endD;
         
-        const endOfCurrentWeek = new Date(startOfCurrentWeek);
-        endOfCurrentWeek.setDate(startOfCurrentWeek.getDate() + 6);
+        // Strict boundary clamping for weeks
+        if (weekIdx === 0) {
+          startD = 1;
+          endD = firstSundayDate;
+        } else if (weekIdx < 4) {
+          startD = firstSundayDate + 1 + (weekIdx - 1) * 7;
+          endD = startD + 6;
+        } else {
+          startD = firstSundayDate + 22;
+          endD = lastOfMonth.getDate(); // Week 5 always absorbs to the end of the month
+        }
+        
+        // Safety clamps for short months like February
+        if (startD > lastOfMonth.getDate()) { startD = lastOfMonth.getDate(); }
+        if (endD > lastOfMonth.getDate()) { endD = lastOfMonth.getDate(); }
+        
+        const startObj = new Date(year, mIdx, startD);
+        const endObj = new Date(year, mIdx, endD);
         
         const formatDayMonth = (dateObj) => {
           const d = dateObj.getDate();
@@ -424,7 +438,7 @@
           return lang === 'de' ? `${d}. ${mLabel}` : `${mLabel} ${d}`;
         };
         
-        return `${formatDayMonth(startOfCurrentWeek)} - ${formatDayMonth(endOfCurrentWeek)}`;
+        return `${formatDayMonth(startObj)} - ${formatDayMonth(endObj)}`;
       };
 
       // Compact version for the main dashboard grid
@@ -434,27 +448,35 @@
           "Jul": 6, "Aug": 7, "Sep": 8, "Okt": 9, "Nov": 10, "Dez": 11
         };
         const mIdx = monthMap[monthStr] !== undefined ? monthMap[monthStr] : 5;
+        
         const firstOfMonth = new Date(year, mIdx, 1);
+        const lastOfMonth = new Date(year, mIdx + 1, 0);
+        
         const dayOfW = firstOfMonth.getDay();
         const offset = dayOfW === 0 ? 6 : dayOfW - 1;
+        const firstSundayDate = 1 + (6 - offset);
         
-        const startOfWeek1 = new Date(firstOfMonth);
-        startOfWeek1.setDate(firstOfMonth.getDate() - offset);
+        let startD, endD;
         
-        const startOfCurrentWeek = new Date(startOfWeek1);
-        startOfCurrentWeek.setDate(startOfWeek1.getDate() + (weekIdx * 7));
+        if (weekIdx === 0) {
+          startD = 1;
+          endD = firstSundayDate;
+        } else if (weekIdx < 4) {
+          startD = firstSundayDate + 1 + (weekIdx - 1) * 7;
+          endD = startD + 6;
+        } else {
+          startD = firstSundayDate + 22;
+          endD = lastOfMonth.getDate();
+        }
         
-        const endOfCurrentWeek = new Date(startOfCurrentWeek);
-        endOfCurrentWeek.setDate(startOfCurrentWeek.getDate() + 6);
+        if (startD > lastOfMonth.getDate()) { startD = lastOfMonth.getDate(); }
+        if (endD > lastOfMonth.getDate()) { endD = lastOfMonth.getDate(); }
 
-        const startD = startOfCurrentWeek.getDate();
-        const startM = startOfCurrentWeek.getMonth() + 1;
-        const endD = endOfCurrentWeek.getDate();
-        const endM = endOfCurrentWeek.getMonth() + 1;
+        const startM = mIdx + 1;
+        const endM = mIdx + 1;
 
         return `${startD}/${startM}-${endD}/${endM}`;
       };
-
       useEffect(() => {
         safeSetStorage('budget_hide_zeroes', hideZeroes ? 'true' : 'false');
       }, [hideZeroes]);
