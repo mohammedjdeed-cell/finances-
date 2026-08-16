@@ -667,7 +667,11 @@
         return <span className="text-[8px] text-theme-muted font-medium">{t('statusTrack')}</span>;
       };
 
-      // Main Dashboard Bar Chart
+     // ========================================================
+      // 🎨 ENHANCED VISUAL CHARTS ENGINE (GRADIENTS & MODERN UI)
+      // ========================================================
+
+      // 1. Enhanced Main Monthly Bar Chart with Gradients
       useEffect(() => {
         if (selectedMonth === "AnnualOverview" || !chartRef.current) return;
         const ctx = chartRef.current.getContext('2d');
@@ -677,67 +681,171 @@
 
         if (chartInstanceRef.current) chartInstanceRef.current.destroy();
 
-        const isDarkTheme = document.documentElement.classList.contains('dark');
-        const axisColor = isDarkTheme ? '#8b949e' : '#6b7280';
-        const gridColor = isDarkTheme ? 'rgba(201, 209, 217, 0.08)' : 'rgba(31, 41, 55, 0.08)';
+        const isDark = document.documentElement.classList.contains('dark');
+        const axisColor = isDark ? '#94a3b8' : '#64748b';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.04)';
+
+        // Dynamic Gradient Generators
+        const createGradient = (colorStart, colorEnd) => {
+          const grad = ctx.createLinearGradient(0, 0, 0, 260);
+          grad.addColorStop(0, colorStart);
+          grad.addColorStop(1, colorEnd);
+          return grad;
+        };
+
+        const incomeGrad = createGradient('rgba(16, 185, 129, 0.9)', 'rgba(5, 150, 105, 0.4)');
+        const housingGrad = createGradient('rgba(100, 116, 139, 0.9)', 'rgba(71, 85, 105, 0.5)');
+        const livingGrad = createGradient('rgba(245, 158, 11, 0.9)', 'rgba(217, 119, 6, 0.5)');
+        const subsGrad = createGradient('rgba(139, 92, 246, 0.9)', 'rgba(109, 40, 217, 0.5)');
+        const leisureGrad = createGradient('rgba(236, 72, 153, 0.9)', 'rgba(190, 24, 93, 0.5)');
+        const profGrad = createGradient('rgba(20, 184, 166, 0.9)', 'rgba(13, 148, 136, 0.5)');
 
         chartInstanceRef.current = new Chart(ctx, {
           type: 'bar',
           data: {
             labels: translatedLabels,
             datasets: [
-              { label: t('incomesHeader'), data: incomeData, backgroundColor: '#10b981', stack: 'Stack0', borderRadius: 4 },
-              { label: t('bracketHousing'), data: monthsForYear.map(m => getBracketMonthlyTotal('housing', m)), backgroundColor: '#475569', stack: 'Stack1', borderRadius: 4 },
-              { label: t('bracketLiving'), data: monthsForYear.map(m => getBracketMonthlyTotal('living', m)), backgroundColor: '#f59e0b', stack: 'Stack1', borderRadius: 4 },
-              { label: t('bracketSubscriptions'), data: monthsForYear.map(m => getBracketMonthlyTotal('subscriptions', m)), backgroundColor: '#7c3aed', stack: 'Stack1', borderRadius: 4 },
-              { label: t('bracketLeisure'), data: monthsForYear.map(m => getBracketMonthlyTotal('leisure', m)), backgroundColor: '#ec4899', stack: 'Stack1', borderRadius: 4 },
-              { label: t('bracketProfessional'), data: monthsForYear.map(m => getBracketMonthlyTotal('professional', m)), backgroundColor: '#14b8a6', stack: 'Stack1', borderRadius: 4 }
+              {
+                label: t('incomesHeader'),
+                data: incomeData,
+                backgroundColor: incomeGrad,
+                borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 2, bottomRight: 2 },
+                borderSkipped: false,
+                stack: 'Stack0',
+                barPercentage: 0.65,
+                categoryPercentage: 0.75
+              },
+              {
+                label: t('bracketHousing'),
+                data: monthsForYear.map(m => getBracketMonthlyTotal('housing', m)),
+                backgroundColor: housingGrad,
+                stack: 'Stack1',
+                borderRadius: 2,
+                barPercentage: 0.65,
+                categoryPercentage: 0.75
+              },
+              {
+                label: t('bracketLiving'),
+                data: monthsForYear.map(m => getBracketMonthlyTotal('living', m)),
+                backgroundColor: livingGrad,
+                stack: 'Stack1',
+                borderRadius: 2,
+                barPercentage: 0.65,
+                categoryPercentage: 0.75
+              },
+              {
+                label: t('bracketSubscriptions'),
+                data: monthsForYear.map(m => getBracketMonthlyTotal('subscriptions', m)),
+                backgroundColor: subsGrad,
+                stack: 'Stack1',
+                borderRadius: 2,
+                barPercentage: 0.65,
+                categoryPercentage: 0.75
+              },
+              {
+                label: t('bracketLeisure'),
+                data: monthsForYear.map(m => getBracketMonthlyTotal('leisure', m)),
+                backgroundColor: leisureGrad,
+                stack: 'Stack1',
+                borderRadius: 2,
+                barPercentage: 0.65,
+                categoryPercentage: 0.75
+              },
+              {
+                label: t('bracketProfessional'),
+                data: monthsForYear.map(m => getBracketMonthlyTotal('professional', m)),
+                backgroundColor: profGrad,
+                stack: 'Stack1',
+                borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 0, bottomRight: 0 },
+                borderSkipped: false,
+                barPercentage: 0.65,
+                categoryPercentage: 0.75
+              }
             ]
           },
           options: {
-            responsive: true, maintainAspectRatio: false,
-            scales: {
-              x: { ticks: { color: axisColor }, grid: { color: gridColor } },
-              y: { beginAtZero: true, ticks: { color: axisColor, callback: function(value) { return value.toLocaleString(i18n.language === 'de' ? 'de-DE' : 'en-US', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }); } }, grid: { color: gridColor } }
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+              duration: 850,
+              easing: 'easeOutQuart'
             },
-            plugins: { legend: { labels: { color: axisColor } }, tooltip: { callbacks: { label: function(context) { let label = context.dataset.label || ''; if (label) label += ': '; if (context.parsed.y !== null) { label += new Intl.NumberFormat(i18n.language === 'de' ? 'de-DE' : 'en-US', { style: 'currency', currency: 'EUR' }).format(context.parsed.y); } return label; } } } }
+            interaction: {
+              mode: 'index',
+              intersect: false,
+            },
+            scales: {
+              x: {
+                ticks: { color: axisColor, font: { weight: '600', size: 11 } },
+                grid: { display: false }
+              },
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  color: axisColor,
+                  font: { size: 10 },
+                  callback: (value) => value.toLocaleString(i18n.language === 'de' ? 'de-DE' : 'en-US', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })
+                },
+                grid: { color: gridColor, drawBorder: false }
+              }
+            },
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: {
+                  color: axisColor,
+                  usePointStyle: true,
+                  pointStyle: 'circle',
+                  padding: 15,
+                  font: { weight: '600', size: 11 }
+                }
+              },
+              tooltip: {
+                backgroundColor: isDark ? 'rgba(15, 23, 42, 0.92)' : 'rgba(255, 255, 255, 0.95)',
+                titleColor: isDark ? '#f8fafc' : '#0f172a',
+                bodyColor: isDark ? '#cbd5e1' : '#334155',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
+                borderWidth: 1,
+                padding: 12,
+                cornerRadius: 10,
+                boxPadding: 6,
+                usePointStyle: true,
+                callbacks: {
+                  label: function(context) {
+                    let label = context.dataset.label || '';
+                    if (label) label += ': ';
+                    if (context.parsed.y !== null) {
+                      label += new Intl.NumberFormat(i18n.language === 'de' ? 'de-DE' : 'en-US', { style: 'currency', currency: 'EUR' }).format(context.parsed.y);
+                    }
+                    return label;
+                  }
+                }
+              }
+            }
           }
         });
         return () => { if (chartInstanceRef.current) chartInstanceRef.current.destroy(); };
       }, [data, selectedYear, selectedMonth, i18n.language, theme]);
 
-      // Annual Overview Chart
-      const annualOverviewData = useMemo(() => {
-        const yearValues = data.values[selectedYear];
-        const monthsForYear = getMonthsForYear(selectedYear);
-        const totalsByCategory = {};
-        let totalYearlyIn = 0; let totalYearlyEx = 0;
-        const monthTotals = {};
-
-        data.categories.expenses.forEach(category => { totalsByCategory[category] = 0; });
-        monthsForYear.forEach(m => {
-          let mIn = 0; let mEx = 0;
-          data.categories.incomes.forEach(category => { const val = getSafeValue('incomes', category, selectedYear, m); totalYearlyIn += val; mIn += val; });
-          data.categories.expenses.forEach(category => { const val = getSafeValue('expenses', category, selectedYear, m); totalYearlyEx += val; totalsByCategory[category] += val; mEx += val; });
-          monthTotals[m] = { income: mIn, expenses: mEx };
-        });
-
-        const sortedExpenses = Object.keys(totalsByCategory).map(cat => ({ category: cat, total: totalsByCategory[cat] })).sort((a, b) => b.total - a.total);
-        const peakCategory = sortedExpenses[0]?.total > 0 ? sortedExpenses[0].category : null;
-        let highestMonth = null; let maxMonthEx = 0;
-        monthsForYear.forEach(m => { if (monthTotals[m].expenses > maxMonthEx) { maxMonthEx = monthTotals[m].expenses; highestMonth = m; } });
-        const savingsRate = totalYearlyIn > 0 ? ((totalYearlyIn - totalYearlyEx) / totalYearlyIn) * 100 : 0;
-        return { totalYearlyIn, totalYearlyEx, sortedExpenses, peakCategory, highestMonth, savingsRate, monthTotals };
-      }, [data, selectedYear]);
-
+      // 2. Enhanced Annual Ring Donut Chart
       useEffect(() => {
         if (selectedMonth !== "AnnualOverview" || !annualChartRef.current) return;
         const ctx = annualChartRef.current.getContext('2d');
         if (annualChartInstanceRef.current) annualChartInstanceRef.current.destroy();
 
-        const isDarkTheme = document.documentElement.classList.contains('dark');
-        const axisColor = isDarkTheme ? '#8b949e' : '#6b7280';
+        const isDark = document.documentElement.classList.contains('dark');
+        const axisColor = isDark ? '#94a3b8' : '#64748b';
         const topExpenses = annualOverviewData.sortedExpenses.filter(e => e.total > 0).slice(0, 6);
+
+        // Sleek modern color palette
+        const palette = [
+          '#6366f1', // Indigo
+          '#ec4899', // Pink
+          '#f59e0b', // Amber
+          '#10b981', // Emerald
+          '#06b6d4', // Cyan
+          '#8b5cf6'  // Purple
+        ];
 
         annualChartInstanceRef.current = new Chart(ctx, {
           type: 'doughnut',
@@ -745,22 +853,59 @@
             labels: topExpenses.map(e => t(`categories.${e.category}`).replace('categories.', '')),
             datasets: [{
               data: topExpenses.map(e => e.total),
-              backgroundColor: ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#8b5cf6'],
-              borderWidth: 0
+              backgroundColor: palette,
+              hoverBackgroundColor: palette,
+              borderWidth: 3,
+              borderColor: isDark ? '#161b22' : '#ffffff',
+              borderRadius: 6,
+              spacing: 3,
+              hoverOffset: 8
             }]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            cutout: '72%', // Elegant thin-ring donut
+            animation: {
+              animateRotate: true,
+              animateScale: true,
+              duration: 900
+            },
             plugins: {
-              legend: { position: 'bottom', labels: { color: axisColor, boxWidth: 12 } }
+              legend: {
+                position: 'bottom',
+                labels: {
+                  color: axisColor,
+                  usePointStyle: true,
+                  pointStyle: 'circle',
+                  padding: 12,
+                  font: { weight: '600', size: 11 }
+                }
+              },
+              tooltip: {
+                backgroundColor: isDark ? 'rgba(15, 23, 42, 0.92)' : 'rgba(255, 255, 255, 0.95)',
+                titleColor: isDark ? '#f8fafc' : '#0f172a',
+                bodyColor: isDark ? '#cbd5e1' : '#334155',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
+                borderWidth: 1,
+                padding: 10,
+                cornerRadius: 10,
+                boxPadding: 4,
+                callbacks: {
+                  label: function(context) {
+                    const val = context.raw || 0;
+                    const total = annualOverviewData.totalYearlyEx || 1;
+                    const pct = ((val / total) * 100).toFixed(1);
+                    return ` ${formatCurrency(val)} (${pct}%)`;
+                  }
+                }
+              }
             }
           }
         });
 
         return () => { if (annualChartInstanceRef.current) annualChartInstanceRef.current.destroy(); };
-      }, [selectedMonth, annualOverviewData, i18n.language]);
-
+      }, [selectedMonth, annualOverviewData, i18n.language, theme]);
       const triggerLocalToCloudSync = async () => {
         setSyncStatus("syncing");
         try {
