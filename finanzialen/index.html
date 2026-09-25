@@ -1,13 +1,27 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Finanzplaner - Forward Cashflow & Liquidity Engine</title>
+  <title>Liquid - Forward Cashflow & Capital Runway</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
-      darkMode: 'class'
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"Inter"', '"Segoe UI"', 'Roboto', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace']
+          },
+          colors: {
+            projected: { DEFAULT: '#6366f1', light: '#818cf8', bg: 'rgba(99, 102, 241, 0.08)' },
+            actualIn: { DEFAULT: '#10b981', light: '#34d399', bg: 'rgba(16, 185, 129, 0.08)' },
+            actualEx: { DEFAULT: '#f43f5e', light: '#fb7185', bg: 'rgba(244, 63, 94, 0.08)' },
+            pacing: { DEFAULT: '#f59e0b', light: '#fbbf24', bg: 'rgba(245, 158, 11, 0.08)' }
+          }
+        }
+      }
     }
   </script>
   <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js" crossorigin></script>
@@ -20,83 +34,66 @@
   
   <style>
     :root, [data-theme="light"] {
-        --color-bg: #f8fafc;
-        --color-card: #ffffff;
-        --color-header-row: #f1f5f9;
-        --color-footer-row: #f8fafc;
-        --color-text-main: #0f172a;
-        --color-text-muted: #64748b;
-        --color-border: #e2e8f0;
-        --color-input-bg: #ffffff;
-        --color-input-text: #0f172a;
-        --color-row-hover: #f1f5f9;
+      --bg-app: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #f1f5f9;
+      --bg-subtle: #f8fafc;
+      --border-subtle: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --text-primary: #0f172a;
+      --text-secondary: #64748b;
+      --text-tertiary: #94a3b8;
     }
     
     [data-theme="dark"] {
-        --color-bg: #0b0f17;
-        --color-card: #131b26;
-        --color-header-row: #1a2432;
-        --color-footer-row: #131b26;
-        --color-text-main: #f1f5f9;
-        --color-text-muted: #8e9fb5;
-        --color-border: #243042;
-        --color-input-bg: #0d1520;
-        --color-input-text: #f1f5f9;
-        --color-row-hover: #1a2332;
+      --bg-app: #080c14;
+      --bg-surface: #0f1623;
+      --bg-surface-elevated: #162032;
+      --bg-subtle: #0b111c;
+      --border-subtle: rgba(255, 255, 255, 0.07);
+      --border-strong: rgba(255, 255, 255, 0.15);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-tertiary: #64748b;
     }
-
-    .bg-theme-main { background-color: var(--color-bg) !important; }
-    .bg-theme-card { background-color: var(--color-card) !important; }
-    .bg-theme-header { background-color: var(--color-header-row) !important; }
-    .bg-theme-footer { background-color: var(--color-footer-row) !important; }
-    .bg-theme-input { background-color: var(--color-input-bg) !important; }
-    .text-theme-main { color: var(--color-text-main) !important; }
-    .text-theme-muted { color: var(--color-text-muted) !important; }
-    .text-theme-input { color: var(--color-input-text) !important; }
-    .border-theme { border-color: var(--color-border) !important; }
-    .hover-theme-row:hover { background-color: var(--color-row-hover) !important; }
 
     body {
-      background-color: var(--color-bg) !important;
-      color: var(--color-text-main) !important;
-      transition: background-color 0.25s ease, color 0.25s ease;
-      padding-bottom: max(env(safe-area-inset-bottom), 30px);
-      padding-left: env(safe-area-inset-left);
-      padding-right: env(safe-area-inset-right);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-app) !important;
+      color: var(--text-primary) !important;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: max(env(safe-area-inset-bottom), 32px);
     }
 
-    .annual-grid-row {
-      display: grid !important;
-      grid-template-columns: 2fr 3fr 3fr 3fr 3fr !important;
-      align-items: center !important;
-      gap: 12px !important;
-      width: 100% !important;
-      box-sizing: border-box !important;
-      padding: 12px 16px !important;
-    }
+    .bg-surface { background-color: var(--bg-surface) !important; }
+    .bg-surface-elevated { background-color: var(--bg-surface-elevated) !important; }
+    .bg-subtle { background-color: var(--bg-subtle) !important; }
+    .border-subtle { border-color: var(--border-subtle) !important; }
+    .border-strong { border-color: var(--border-strong) !important; }
+    .text-primary { color: var(--text-primary) !important; }
+    .text-secondary { color: var(--text-secondary) !important; }
+    .text-tertiary { color: var(--text-tertiary) !important; }
 
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
+      -webkit-appearance: none; margin: 0;
     }
     input[type="number"] { -moz-appearance: textfield; }
     .scrollbar-none::-webkit-scrollbar { display: none; }
     .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 
-    @keyframes slideLeft {
+    @keyframes slideIn {
       from { transform: translateX(100%); }
       to { transform: translateX(0); }
     }
-    .animate-slideLeft { animation: slideLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-slideIn { animation: slideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
   </style>
 </head>
-<body class="min-h-screen bg-theme-main text-theme-main">
+<body class="min-h-screen">
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useMemo, createContext, useContext, useRef } = React;
+    const { useState, useEffect, useMemo, useRef, createContext, useContext } = React;
 
     const firebaseConfig = {
       apiKey: "AIzaSyCvKICFZCwQz5e70HTLDA_eDD4Us8XqNas",
@@ -112,23 +109,21 @@
     try {
       firebase.initializeApp(firebaseConfig);
       db = firebase.firestore();
-    } catch (error) {
-      console.warn("Firebase offline mode active.");
+    } catch (e) {
+      console.warn("Offline Firebase mode");
     }
 
-    const safeGetStorage = (key, fallback) => {
-      try { return localStorage.getItem(key) || fallback; } catch (e) { return fallback; }
-    };
-    const safeSetStorage = (key, value) => {
-      try { localStorage.setItem(key, value); } catch (e) { }
+    const safeStorage = {
+      get: (k, fb) => { try { return localStorage.getItem(k) || fb; } catch(e) { return fb; } },
+      set: (k, v) => { try { localStorage.setItem(k, v); } catch(e) {} }
     };
 
     const ALL_MONTHS = ["Jan", "Feb", "Mrz", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
-    const getMonthsForYear = (year) => year === 2026 ? ["Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"] : ALL_MONTHS;
+    const getMonthsForYear = (yr) => yr === 2026 ? ["Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"] : ALL_MONTHS;
 
     const getDaysInMonth = (year, monthStr) => {
-      const monthMap = { "Jan": 0, "Feb": 1, "Mrz": 2, "Apr": 3, "Mai": 4, "Jun": 5, "Jul": 6, "Aug": 7, "Sep": 8, "Okt": 9, "Nov": 10, "Dez": 11 };
-      const mIdx = monthMap[monthStr] !== undefined ? monthMap[monthStr] : 5;
+      const map = { Jan:0, Feb:1, Mrz:2, Apr:3, Mai:4, Jun:5, Jul:6, Aug:7, Sep:8, Okt:9, Nov:10, Dez:11 };
+      const mIdx = map[monthStr] !== undefined ? map[monthStr] : 5;
       return new Date(year, mIdx + 1, 0).getDate();
     };
 
@@ -167,120 +162,117 @@
 
     const autoClassifyCategory = (name) => {
       const p = name.toLowerCase();
-      if (["netflix", "spotify", "prime", "abo", "subscription", "youtube", "disney", "icloud", "apple", "google"].some(k => p.includes(k))) {
+      if (["netflix", "spotify", "prime", "abo", "subscription", "youtube", "disney", "icloud", "apple"].some(k => p.includes(k))) {
         return { bracket: 'subscriptions', mode: 'fixed', isOneTime: false };
       }
       if (["miete", "rent", "kaution", "deposit", "strom", "gas", "heizung", "radio", "internet", "wlan", "handy"].some(k => p.includes(k))) {
-        const isOneTime = p.includes("kaution") || p.includes("deposit");
-        return { bracket: 'housing', mode: 'fixed', isOneTime };
+        return { bracket: 'housing', mode: 'fixed', isOneTime: p.includes("kaution") || p.includes("deposit") };
       }
-      if (["essen", "food", "lebensmittel", "restaurant", "cafe", "döner", "supermarkt", "bäcker", "rewe", "lidl", "aldi", "dm", "rossmann", "kleidung", "clothes", "ticket", "transport", "bus", "bahn"].some(k => p.includes(k))) {
+      if (["essen", "food", "lebensmittel", "restaurant", "cafe", "supermarkt", "bäcker", "rewe", "lidl", "aldi", "dm", "rossmann", "kleidung", "ticket", "transport"].some(k => p.includes(k))) {
         return { bracket: 'living', mode: 'variable', isOneTime: false };
       }
-      if (["exam", "prüfung", "schule", "school", "b2", "fsp", "swan", "kurs", "course", "versicherung", "insurance", "care concept", "arzt", "doctor", "health", "apotheke"].some(k => p.includes(k))) {
-        const isOneTime = p.includes("exam") || p.includes("anmeldung") || p.includes("fee") || p.includes("kaution");
-        return { bracket: 'professional', mode: isOneTime ? 'variable' : 'fixed', isOneTime };
+      if (["exam", "prüfung", "schule", "school", "b2", "fsp", "swan", "kurs", "versicherung", "insurance", "care concept", "arzt", "health"].some(k => p.includes(k))) {
+        return { bracket: 'professional', mode: 'variable', isOneTime: p.includes("exam") || p.includes("anmeldung") || p.includes("kaution") };
       }
       return { bracket: 'leisure', mode: 'variable', isOneTime: false };
     };
 
     const translations = {
       de: {
-        title: "Finanzplaner & Cashflow",
-        online: "Online", offline: "Offline", syncing: "Synchronisiere...", synced: "Cloud Synchronisiert",
-        startingCapital: "Startkapital",
-        totalIncome: "Monatseinnahmen (Ist)",
-        totalExpenses: "Monatsausgaben (Ist)",
-        projectedExpenses: "Hochrechnung Monatsende",
-        actualSaldo: "Aktueller Monats-Saldo",
-        projectedSaldo: "Prognostizierter Monats-Saldo",
-        dailySafeAllowance: "Tägliches Restbudget",
-        dailySafeHelp: "Handlungsspielraum für verbleibende Tage",
-        cumulativeReserve: "Kumulative Reserve (Ende Monat)",
-        cumulativeHelp: "Echter Kontostand im Zeitverlauf",
+        title: "Liquid Cashflow",
+        online: "Online", offline: "Offline", syncing: "Sync...", synced: "Synchronisiert",
+        startingCapital: "Startkapital (Depot / Bar)",
+        kpiActualNet: "Ist-Saldo (Bisher)",
+        kpiProjectedNet: "Prognostizierter Endsaldo",
+        kpiDailyRoom: "Tägliches Restbudget",
+        kpiCumulative: "Kumulativer Kontostand",
+        kpiCumulativeSub: "Voraussichtlich per Monatsende",
+        legendActual: "Ist-Wert",
+        legendPlan: "Planung / Budget",
+        legendPacing: "Tages-Pacing",
         incomesHeader: "Einnahmen & Zuflüsse",
         expensesHeader: "Ausgaben & Pacing",
-        fixedIncomeType: "Feste Einnahmen / Sperrkonto",
-        variableIncomeType: "Variable Einnahmen",
-        fixedExpenseType: "Fixkosten & Verträge",
-        variableExpenseType: "Variable Lebenshaltung",
-        planBudget: "Plan (Budget)",
-        actualSpent: "Ist (Ausgegeben)",
+        fixedIncomes: "Fixe Einnahmen / Payouts",
+        variableIncomes: "Variable Einnahmen",
+        fixedExpenses: "Fixkosten & Wohnen",
+        variableExpenses: "Variable Lebenshaltung",
+        planLabel: "Plan",
+        actualLabel: "Ist",
         asOfDayLabel: "Stand Tag",
-        restBudget: "Rest",
-        forRemainingDays: "für verbl. {{days}} Tage",
-        statusOver: "Über Plan",
+        restBudgetLabel: "Rest",
+        perDayLabel: "pro Tag",
+        daysRemaining: "{{days}} Tage verbleibend",
+        statusOver: "Über Pace",
         statusTrack: "Im Plan",
         statusFrugal: "Sparsam",
-        oneTimeBadge: "Einmalig",
-        fixedBadge: "Fix",
-        options: "Einstellungen & Backup",
+        badgeOneTime: "Einmalig",
+        badgeFixed: "Fix",
+        options: "Optionen & Backup",
         selectYear: "Planungsjahr",
         selectLanguage: "Sprache",
         themeLabel: "Erscheinungsbild",
         themeLight: "Hell", themeDark: "Dunkel", themeSystem: "System",
-        backupSection: "Datensicherung",
+        backupSection: "Sicherung",
         exportBackup: "Backup Herunterladen (JSON)",
         importBackup: "Backup Wiederherstellen (JSON)",
         importSuccess: "Erfolgreich importiert!",
         importError: "Fehlerhafte Backup-Datei.",
         clearAll: "Alle Daten zurücksetzen",
         confirmClear: "Möchten Sie alle Daten unwiderruflich löschen?",
-        viewTab: "Budget-Cockpit",
-        editTab: "Kategorien Verwalten",
-        hideZeroesLabel: "Nullwerte ausblenden",
-        showAllLabel: "Alle Posten zeigen",
-        annualOverview: "Zukunft & Jahresanalyse",
+        viewTab: "Cockpit",
+        editTab: "Kategorien verwalten",
+        hideZeroesLabel: "Nullbeträge aus",
+        showAllLabel: "Alle anzeigen",
+        annualOverview: "Zukunft & Runway",
         savingsRate: "Sparsatz",
-        peakSpendingCategory: "Größter Ausgabenposten",
-        highestExpenseMonth: "Ausgaben-Spitzenmonat",
+        peakSpendingCategory: "Größter Posten",
+        highestExpenseMonth: "Spitzenmonat",
         noData: "Keine Daten",
-        bracketHousing: "Wohnen & Fixes",
-        bracketLiving: "Alltag & Verpflegung",
-        bracketSubscriptions: "Abos & Verträge",
-        bracketLeisure: "Freizeit & Kultur",
-        bracketProfessional: "Beruf & Prüfungen",
-        forwardRunwayTitle: "Dynamischer Zukunfts-Kontostand (Forward Liquidity)",
-        forwardRunwaySub: "Monats-zu-Monat Saldo-Übertrag von 2026 bis Ende 2028",
-        ruleNeeds: "Grundbedarf (50%)", ruleWants: "Wünsche (30%)", ruleGoals: "Zukunft/Sparen (20%)",
-        iouTitle: "Geld verliehen / Offene Forderungen (IOU)",
+        bracketHousing: "Wohnen",
+        bracketLiving: "Alltag & Food",
+        bracketSubscriptions: "Abos",
+        bracketLeisure: "Freizeit",
+        bracketProfessional: "Bildung & Karriere",
+        chartTitle: "Cashflow Verlauf {{year}}",
+        iouTitle: "Offene Forderungen & Verliehenes Geld (IOU)",
         iouAddBtn: "Eintragen",
         iouPersonPlaceholder: "Person / Zweck...",
-        iouAmountPlaceholder: "Betrag (€)",
+        iouAmountPlaceholder: "Betrag",
         iouMarkReturned: "Erhalten",
-        iouEmpty: "Kein ausstehendes geliehenes Geld.",
+        iouEmpty: "Keine offenen Posten.",
+        iouTotalPending: "Gesamt offen",
         editorTitle: "Kategorie bearbeiten",
         posten: "Bezeichnung",
-        isOneTimeLabel: "Einmalige Großausgabe (Kein tägliches Pacing)",
-        bracketLabel: "Kostenbereich",
-        classificationLabel: "Abrechnungsart",
+        isOneTimeLabel: "Einmalige Ausgabe (Kein Tages-Burn)",
+        bracketLabel: "Kategorie-Bereich",
+        classificationLabel: "Abrechnungstyp",
         paymentDayShort: "Zahltag",
-        paymentDayLabel: "Monatlicher Zahltag (1-31)",
+        paymentDayLabel: "Zahltag im Monat (1-31)",
         deleteCategoryBtn: "Kategorie löschen",
-        deleteConfirmation: "Möchten Sie die Kategorie \"{{name}}\" wirklich löschen?",
-        saveClose: "Speichern & Schließen",
+        deleteConfirmation: "Kategorie \"{{name}}\" wirklich löschen?",
+        saveClose: "Speichern",
         addPlaceholder: "Neue Kategorie...",
         duplicateCategoryAlert: "Kategorie existiert bereits.",
-        setRecurringBudget: "Plan in Folgemonate kopieren",
+        setRecurringBudget: "Budget in Folgemonate übertragen",
         durationInMonths: "Dauer",
         applyBtn: "Anwenden",
         cancelBtn: "Abbrechen",
         categories: {
           "mohammed sperrkonto installmant": "Sperrkonto (Mohammed)",
           "mai sperrkonto installmant": "Sperrkonto (Mai)",
-          "side income": "Nebeneinkünfte",
-          "savings": "Ersparnisse / Auszahlung",
+          "side income": "Nebeneinkommen",
+          "savings": "Ersparnisse",
           "Hause mieten": "Wohnungsmiete",
           "Hause kaution": "Mietkaution",
-          "Lebensmittel 🍞🍲": "Lebensmittel & Supermarkt 🍞🍲",
+          "Lebensmittel 🍞🍲": "Lebensmittel 🍞🍲",
           "Hausrat 🛋️": "Hausrat & Möbel 🛋️",
           "strom ⚡": "Strom ⚡",
           "Gas/ Heißung": "Gas / Heizung",
           "Unterhaltung 🎊": "Unterhaltung 🎊",
           "essen im freien 🍔": "Auswärts essen 🍔",
           "Geschenke": "Geschenke",
-          "Gesundheit ❤️(beauty, medical items)": "Gesundheit ❤️",
-          "Ausbildung B2 exam": "B2 Sprachprüfung",
+          "Gesundheit ❤️(beauty, medical items)": "Gesundheit & Beauty ❤️",
+          "Ausbildung B2 exam": "B2 Prüfung",
           "Versicherung Care concept": "Care Concept Versicherung",
           "kleidung": "Kleidung",
           "radio": "Rundfunkbeitrag (GEZ)",
@@ -290,39 +282,40 @@
           "Sparkasse card fee": "Sparkasse Kartengebühr",
           "Swan Schule": "Swan Schule",
           "FSP exam registration": "FSP Prüfungsanmeldung",
+          "furniture from Vormieter": "Möbelübernahme Vormieter",
           "Sonstiges": "Sonstiges"
         },
         months: { Jan: "Jan", Feb: "Feb", Mrz: "Mrz", Apr: "Apr", Mai: "Mai", Jun: "Jun", Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Okt", Nov: "Nov", Dez: "Dez" }
       },
       en: {
-        title: "Finance Planner & Cashflow",
-        online: "Online", offline: "Offline", syncing: "Syncing...", synced: "Cloud Synced",
-        startingCapital: "Starting Capital",
-        totalIncome: "Total Incomes (Actual)",
-        totalExpenses: "Total Expenses (Actual)",
-        projectedExpenses: "Projected Month-End",
-        actualSaldo: "Current Month Net",
-        projectedSaldo: "Projected Month Net",
-        dailySafeAllowance: "Safe Daily Spend",
-        dailySafeHelp: "Remaining room for rest of month",
-        cumulativeReserve: "Cumulative Reserve (Month End)",
-        cumulativeHelp: "Projected bank balance trajectory",
+        title: "Liquid Cashflow",
+        online: "Online", offline: "Offline", syncing: "Syncing...", synced: "Synced",
+        startingCapital: "Starting Capital (Bank / Cash)",
+        kpiActualNet: "Actual Net (To Date)",
+        kpiProjectedNet: "Projected Month-End Net",
+        kpiDailyRoom: "Safe Daily Allowance",
+        kpiCumulative: "Cumulative Bank Balance",
+        kpiCumulativeSub: "Projected end of month cash",
+        legendActual: "Actual Spent",
+        legendPlan: "Planned Budget",
+        legendPacing: "Daily Pace",
         incomesHeader: "Incomes & Inflows",
         expensesHeader: "Expenses & Pacing",
-        fixedIncomeType: "Fixed Incomes / Payouts",
-        variableIncomeType: "Variable Incomes",
-        fixedExpenseType: "Fixed Bills & Housing",
-        variableExpenseType: "Variable Daily Expenses",
-        planBudget: "Plan (Budget)",
-        actualSpent: "Actual (Spent)",
+        fixedIncomes: "Fixed Incomes / Sperrkonto",
+        variableIncomes: "Variable Incomes",
+        fixedExpenses: "Fixed Bills & Housing",
+        variableExpenses: "Variable Expenses",
+        planLabel: "Plan",
+        actualLabel: "Actual",
         asOfDayLabel: "As of Day",
-        restBudget: "Left",
-        forRemainingDays: "for {{days}} days left",
+        restBudgetLabel: "Left",
+        perDayLabel: "per day",
+        daysRemaining: "{{days}} days left",
         statusOver: "Over Pace",
         statusTrack: "On Track",
-        statusFrugal: "Under Pace",
-        oneTimeBadge: "One-Time",
-        fixedBadge: "Fixed",
+        statusFrugal: "Frugal",
+        badgeOneTime: "One-Time",
+        badgeFixed: "Fixed",
         options: "Settings & Backup",
         selectYear: "Planning Year",
         selectLanguage: "Language",
@@ -332,45 +325,44 @@
         exportBackup: "Export Backup (JSON)",
         importBackup: "Import Backup (JSON)",
         importSuccess: "Successfully restored!",
-        importError: "Corrupted backup file.",
+        importError: "Corrupted file.",
         clearAll: "Reset All Data",
         confirmClear: "Do you really want to delete all data permanently?",
-        viewTab: "Budget Cockpit",
+        viewTab: "Cockpit",
         editTab: "Manage Categories",
         hideZeroesLabel: "Hide Zeroes",
-        showAllLabel: "Show All Items",
-        annualOverview: "Runway & Annual Analysis",
+        showAllLabel: "Show All",
+        annualOverview: "Forward Runway & Annual",
         savingsRate: "Savings Rate",
         peakSpendingCategory: "Peak Expense Category",
         highestExpenseMonth: "Peak Spending Month",
         noData: "No Data",
-        bracketHousing: "Housing & Fixed",
-        bracketLiving: "Daily Living & Food",
+        bracketHousing: "Housing",
+        bracketLiving: "Living & Food",
         bracketSubscriptions: "Subscriptions",
-        bracketLeisure: "Leisure & Culture",
-        bracketProfessional: "Career & Exams",
-        forwardRunwayTitle: "Dynamic Forward Runway (Projected Cash Balance)",
-        forwardRunwaySub: "Continuous rollover balance trajectory from 2026 to 2028",
-        ruleNeeds: "Needs (50%)", ruleWants: "Wants (30%)", ruleGoals: "Goals (20%)",
-        iouTitle: "Money Lent / Pending Receivables (IOU)",
-        iouAddBtn: "Add Record",
+        bracketLeisure: "Leisure",
+        bracketProfessional: "Education & Exams",
+        chartTitle: "Cashflow Trajectory {{year}}",
+        iouTitle: "Money Lent / Receivables (IOU)",
+        iouAddBtn: "Add Entry",
         iouPersonPlaceholder: "Person / Reason...",
-        iouAmountPlaceholder: "Amount (€)",
+        iouAmountPlaceholder: "Amount",
         iouMarkReturned: "Settled",
         iouEmpty: "No pending loaned money.",
+        iouTotalPending: "Total pending",
         editorTitle: "Configure Category",
         posten: "Category Name",
-        isOneTimeLabel: "One-Time Big Payment (Excluded from daily burn rate)",
+        isOneTimeLabel: "One-Time Payment (Excluded from daily burn)",
         bracketLabel: "Budget Bracket",
         classificationLabel: "Billing Type",
         paymentDayShort: "Payday",
-        paymentDayLabel: "Payment Due Day (1-31)",
+        paymentDayLabel: "Monthly Due Day (1-31)",
         deleteCategoryBtn: "Delete Category",
         deleteConfirmation: "Delete category \"{{name}}\"?",
-        saveClose: "Save & Close",
+        saveClose: "Save",
         addPlaceholder: "New category...",
         duplicateCategoryAlert: "Category already exists.",
-        setRecurringBudget: "Replicate Budget to Future Months",
+        setRecurringBudget: "Replicate Budget Forward",
         durationInMonths: "Duration",
         applyBtn: "Apply",
         cancelBtn: "Cancel",
@@ -381,15 +373,15 @@
           "savings": "Savings Payout",
           "Hause mieten": "Apartment Rent",
           "Hause kaution": "Apartment Deposit",
-          "Lebensmittel 🍞🍲": "Groceries & Supermarket 🍞🍲",
+          "Lebensmittel 🍞🍲": "Groceries 🍞🍲",
           "Hausrat 🛋️": "Household Goods 🛋️",
           "strom ⚡": "Electricity ⚡",
           "Gas/ Heißung": "Gas / Heating",
           "Unterhaltung 🎊": "Entertainment 🎊",
           "essen im freien 🍔": "Dining Out 🍔",
           "Geschenke": "Gifts",
-          "Gesundheit ❤️(beauty, medical items)": "Health ❤️",
-          "Ausbildung B2 exam": "B2 German Exam",
+          "Gesundheit ❤️(beauty, medical items)": "Health & Beauty ❤️",
+          "Ausbildung B2 exam": "B2 Exam",
           "Versicherung Care concept": "Care Concept Insurance",
           "kleidung": "Clothing",
           "radio": "Radio Tax (GEZ)",
@@ -398,7 +390,8 @@
           "bank": "Bank Charges",
           "Sparkasse card fee": "Sparkasse Card Fee",
           "Swan Schule": "Swan School",
-          "FSP exam registration": "FSP Medical Exam Fee",
+          "FSP exam registration": "FSP Medical Registration",
+          "furniture from Vormieter": "Furniture from Previous Tenant",
           "Sonstiges": "Miscellaneous"
         },
         months: { Jan: "Jan", Feb: "Feb", Mrz: "Mar", Apr: "Apr", Mai: "May", Jun: "Jun", Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Oct", Nov: "Nov", Dez: "Dec" }
@@ -407,19 +400,16 @@
 
     const LanguageContext = createContext();
     function LanguageProvider({ children }) {
-      const [lang, setLang] = useState(() => safeGetStorage('budget_app_lang', 'de'));
-      const changeLanguage = (newLang) => { setLang(newLang); safeSetStorage('budget_app_lang', newLang); };
+      const [lang, setLang] = useState(() => safeStorage.get('budget_app_lang', 'en'));
+      const changeLanguage = (l) => { setLang(l); safeStorage.set('budget_app_lang', l); };
       const t = (path, params = {}) => {
-        const keys = path.split('.');
         let res = translations[lang];
-        for (const k of keys) {
+        for (const k of path.split('.')) {
           if (res && res[k] !== undefined) res = res[k];
           else { res = translations['en']?.[path] || path; break; }
         }
         if (typeof res === 'string') {
-          Object.keys(params).forEach(p => {
-            res = res.replace(new RegExp(`{{${p}}}`, 'g'), params[p]);
-          });
+          Object.keys(params).forEach(p => { res = res.replace(new RegExp(`{{${p}}}`, 'g'), params[p]); });
         }
         return res;
       };
@@ -427,61 +417,57 @@
     }
     const useTranslation = () => useContext(LanguageContext);
 
-    // IndexedDB Layer for safe offline caching
     const IDB = {
-      dbName: 'LiquidEngine_v7',
+      dbName: 'LiquidCashflow_v8',
       open() {
-        return new Promise((resolve, reject) => {
-          const request = indexedDB.open(this.dbName, 1);
-          request.onupgradeneeded = (e) => {
-            const database = e.target.result;
-            if (!database.objectStoreNames.contains('store')) database.createObjectStore('store', { keyPath: 'id' });
-          };
-          request.onsuccess = (e) => resolve(e.target.result);
-          request.onerror = (e) => reject(e.target.error);
+        return new Promise((res, rej) => {
+          const r = indexedDB.open(this.dbName, 1);
+          r.onupgradeneeded = (e) => e.target.result.createObjectStore('store', { keyPath: 'id' });
+          r.onsuccess = () => res(r.result);
+          r.onerror = () => rej(r.error);
         });
       },
-      async get(key) {
+      async get(k) {
         try {
-          const dbInstance = await this.open();
-          return new Promise((resolve) => {
-            const tx = dbInstance.transaction('store', 'readonly');
-            const req = tx.objectStore('store').get(key);
-            req.onsuccess = () => resolve(req.result?.data);
-            req.onerror = () => resolve(null);
+          const db = await this.open();
+          return new Promise(res => {
+            const tx = db.transaction('store', 'readonly');
+            const req = tx.objectStore('store').get(k);
+            req.onsuccess = () => res(req.result?.data);
+            req.onerror = () => res(null);
           });
-        } catch (e) { return null; }
+        } catch(e) { return null; }
       },
-      async set(key, val) {
+      async set(k, data) {
         try {
-          const dbInstance = await this.open();
-          return new Promise((resolve, reject) => {
-            const tx = dbInstance.transaction('store', 'readwrite');
-            tx.objectStore('store').put({ id: key, data: val });
-            tx.oncomplete = () => resolve();
-            tx.onerror = () => reject(tx.error);
+          const db = await this.open();
+          return new Promise((res, rej) => {
+            const tx = db.transaction('store', 'readwrite');
+            tx.objectStore('store').put({ id: k, data });
+            tx.oncomplete = () => res(true);
+            tx.onerror = () => rej(tx.error);
           });
-        } catch (e) {}
+        } catch(e) {}
       }
     };
 
-    // Data normalizer: Smoothly migrates older 5-week structures ({w1, w2..}) or raw numbers to {budget, actual, asOfDate}
-    const normalizeAndLockState = (loaded) => {
+    // Smooth migration: Converts any legacy weekly format ({w1, w2..}) or raw numbers to {budget, actual, asOfDate}
+    const normalizeState = (raw) => {
       const state = {
-        startingCapital: typeof loaded?.startingCapital === 'number' ? loaded.startingCapital : 0,
+        startingCapital: typeof raw?.startingCapital === 'number' ? raw.startingCapital : 0,
         categories: {
-          incomes: [...(loaded?.categories?.incomes || INITIAL_CATEGORIES.incomes)],
-          expenses: [...(loaded?.categories?.expenses || INITIAL_CATEGORIES.expenses)]
+          incomes: [...(raw?.categories?.incomes || INITIAL_CATEGORIES.incomes)],
+          expenses: [...(raw?.categories?.expenses || INITIAL_CATEGORIES.expenses)]
         },
-        categoryOverrides: { ...(loaded?.categoryOverrides || {}) },
-        categoryModes: { ...(loaded?.categoryModes || {}) },
-        fixedPaymentDays: { ...(loaded?.fixedPaymentDays || {}) },
-        categoryOneTime: { ...(loaded?.categoryOneTime || { "Hause kaution": true, "FSP exam registration": true }) },
-        ious: loaded?.ious || [],
+        categoryOverrides: { ...(raw?.categoryOverrides || {}) },
+        categoryModes: { ...(raw?.categoryModes || {}) },
+        fixedPaymentDays: { ...(raw?.fixedPaymentDays || {}) },
+        categoryOneTime: { ...(raw?.categoryOneTime || { "Hause kaution": true, "FSP exam registration": true, "furniture from Vormieter": true }) },
+        ious: raw?.ious || [],
         values: {}
       };
 
-      // Ensure defaults
+      // Set defaults for categories
       state.categories.expenses.forEach(cat => {
         if (!state.categoryModes[cat]) state.categoryModes[cat] = autoClassifyCategory(cat).mode;
         if (state.categoryOneTime[cat] === undefined) state.categoryOneTime[cat] = autoClassifyCategory(cat).isOneTime;
@@ -490,68 +476,54 @@
         if (!state.categoryModes[cat]) state.categoryModes[cat] = (cat.includes("side") || cat.includes("Sonstiges")) ? 'variable' : 'fixed';
       });
 
-      // Populate timeline 2026, 2027, 2028
-      ["2026", "2027", "2028"].forEach(yearStr => {
-        const yNum = parseInt(yearStr);
-        state.values[yearStr] = { incomes: {}, expenses: {} };
+      // Populate years
+      ["2026", "2027", "2028"].forEach(y => {
+        const yNum = parseInt(y);
+        state.values[y] = { incomes: {}, expenses: {} };
         const months = getMonthsForYear(yNum);
 
         ['incomes', 'expenses'].forEach(type => {
           state.categories[type].forEach(cat => {
-            state.values[yearStr][type][cat] = {};
+            state.values[y][type][cat] = {};
             months.forEach(m => {
-              const old = loaded?.values?.[yearStr]?.[type]?.[cat]?.[m];
+              const old = raw?.values?.[y]?.[type]?.[cat]?.[m];
               const monthDays = getDaysInMonth(yNum, m);
 
               if (typeof old === 'object' && old !== null) {
-                // If it had the old w1..w5 format
                 if (old.w1 !== undefined || old.w2 !== undefined || old.w3 !== undefined) {
-                  const sumWeekly = (parseFloat(old.w1) || 0) + (parseFloat(old.w2) || 0) + (parseFloat(old.w3) || 0) + (parseFloat(old.w4) || 0) + (parseFloat(old.w5) || 0);
-                  state.values[yearStr][type][cat][m] = {
-                    budget: sumWeekly || 0,
-                    actual: sumWeekly || 0,
-                    asOfDate: monthDays
-                  };
+                  const sumWeekly = (parseFloat(old.w1)||0) + (parseFloat(old.w2)||0) + (parseFloat(old.w3)||0) + (parseFloat(old.w4)||0) + (parseFloat(old.w5)||0);
+                  state.values[y][type][cat][m] = { budget: sumWeekly, actual: sumWeekly, asOfDate: monthDays };
                 } else {
-                  state.values[yearStr][type][cat][m] = {
-                    budget: typeof old.budget === 'number' ? old.budget : 0,
-                    actual: typeof old.actual === 'number' ? old.actual : 0,
+                  state.values[y][type][cat][m] = {
+                    budget: typeof old.budget === 'number' ? old.budget : (parseFloat(old.total) || 0),
+                    actual: typeof old.actual === 'number' ? old.actual : (parseFloat(old.total) || 0),
                     asOfDate: typeof old.asOfDate === 'number' ? old.asOfDate : monthDays
                   };
                 }
               } else if (typeof old === 'number') {
-                state.values[yearStr][type][cat][m] = {
-                  budget: old,
-                  actual: old,
-                  asOfDate: monthDays
-                };
+                state.values[y][type][cat][m] = { budget: old, actual: old, asOfDate: monthDays };
               } else {
-                state.values[yearStr][type][cat][m] = {
-                  budget: 0,
-                  actual: 0,
-                  asOfDate: monthDays
-                };
+                state.values[y][type][cat][m] = { budget: 0, actual: 0, asOfDate: monthDays };
               }
             });
           });
         });
       });
-
       return state;
     };
 
     function MainApp() {
       const { t, lang, changeLanguage } = useTranslation();
-      const [data, setData] = useState(() => normalizeAndLockState(null));
+      const [data, setData] = useState(() => normalizeState(null));
       const [selectedYear, setSelectedYear] = useState(2026);
-      const [selectedMonth, setSelectedMonth] = useState("Jun");
+      const [selectedMonth, setSelectedMonth] = useState("Mai");
       const [isOnline, setIsOnline] = useState(navigator.onLine);
       const [syncStatus, setSyncStatus] = useState("initialized");
       
-      const [activeTab, setActiveTab] = useState("view"); // "view" | "edit"
-      const [hideZeroes, setHideZeroes] = useState(() => safeGetStorage('budget_hide_zeroes', 'false') === 'true');
+      const [activeTab, setActiveTab] = useState("view");
+      const [hideZeroes, setHideZeroes] = useState(() => safeStorage.get('budget_hide_zeroes', 'false') === 'true');
       const [isBurgerOpen, setIsBurgerOpen] = useState(false);
-      const [theme, setTheme] = useState(() => safeGetStorage('budget_app_theme', 'dark'));
+      const [theme, setTheme] = useState(() => safeStorage.get('budget_app_theme', 'dark'));
 
       // Modals
       const [activeEditCat, setActiveEditCat] = useState(null);
@@ -559,112 +531,99 @@
       const [recurringModal, setRecurringModal] = useState(null);
       const [recurringCount, setRecurringCount] = useState(6);
 
-      // Fast category adds
+      // Category inputs
       const [newIncomeName, setNewIncomeName] = useState("");
       const [newExpenseName, setNewExpenseName] = useState("");
 
-      // IOU form
+      // IOU
       const [iouPerson, setIouPerson] = useState("");
       const [iouAmount, setIouAmount] = useState("");
 
-      const [draggedInfo, setDraggedInfo] = useState(null);
-
-      // Chart references
       const chartRef = useRef(null);
       const chartInstanceRef = useRef(null);
       const annualChartRef = useRef(null);
       const annualChartInstanceRef = useRef(null);
       const fileInputRef = useRef(null);
 
-      // Theme handler
+      // Theme toggle
       useEffect(() => {
-        safeSetStorage('budget_app_theme', theme);
+        safeStorage.set('budget_app_theme', theme);
         const root = document.documentElement;
-        const resolved = theme === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme;
-        root.setAttribute('data-theme', resolved);
-        if (resolved === 'dark') root.classList.add('dark');
+        const res = theme === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme;
+        root.setAttribute('data-theme', res);
+        if (res === 'dark') root.classList.add('dark');
         else root.classList.remove('dark');
       }, [theme]);
 
-      // Hide zeroes persistence
       useEffect(() => {
-        safeSetStorage('budget_hide_zeroes', hideZeroes ? 'true' : 'false');
+        safeStorage.set('budget_hide_zeroes', hideZeroes ? 'true' : 'false');
       }, [hideZeroes]);
 
-      // Network listener
+      // Online status
       useEffect(() => {
-        const setOn = () => setIsOnline(true);
-        const setOff = () => setIsOnline(false);
-        window.addEventListener('online', setOn);
-        window.addEventListener('offline', setOff);
-        return () => { window.removeEventListener('online', setOn); window.removeEventListener('offline', setOff); };
+        const on = () => setIsOnline(true);
+        const off = () => setIsOnline(false);
+        window.addEventListener('online', on);
+        window.addEventListener('offline', off);
+        return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
       }, []);
 
-      // Load data & Firestore sync
+      // DB Sync
       useEffect(() => {
         (async () => {
-          const cached = await IDB.get('budget_state');
-          if (cached) setData(normalizeAndLockState(cached));
+          const cached = await IDB.get('app_state');
+          if (cached) setData(normalizeState(cached));
         })();
 
-        let unsubscribe = () => {};
+        let unsub = () => {};
         if (db) {
-          unsubscribe = db.collection('monthly_logs').doc('house_finanzen_state').onSnapshot(async (doc) => {
+          unsub = db.collection('monthly_logs').doc('house_finanzen_state').onSnapshot(async (doc) => {
             if (doc.exists) {
               const remote = doc.data();
-              const merged = normalizeAndLockState(remote.payload);
+              const merged = normalizeState(remote.payload);
               setData(merged);
-              await IDB.set('budget_state', merged);
+              await IDB.set('app_state', merged);
               setSyncStatus("synced");
             }
           }, () => setSyncStatus("offline"));
         }
-        return () => unsubscribe();
+        return () => unsub();
       }, []);
 
-      const saveStateAndDispatch = async (updated) => {
+      const saveState = async (updated) => {
         setData(updated);
-        await IDB.set('budget_state', updated);
+        await IDB.set('app_state', updated);
         if (navigator.onLine && db) {
           setSyncStatus("syncing");
           try {
             await db.collection('monthly_logs').doc('house_finanzen_state').set({ payload: updated, updatedAt: Date.now() });
             setSyncStatus("synced");
-          } catch (e) {
-            setSyncStatus("pending_sync");
-          }
+          } catch(e) { setSyncStatus("offline"); }
         } else {
           setSyncStatus("offline");
         }
       };
 
-      const formatCurrency = (val) => new Intl.NumberFormat(lang === 'de' ? 'de-DE' : 'en-US', {
-        style: 'currency',
-        currency: 'EUR',
-        maximumFractionDigits: 0
-      }).format(val || 0);
+      const fmt = (v) => new Intl.NumberFormat(lang === 'de' ? 'de-DE' : 'en-US', {
+        style: 'currency', currency: 'EUR', maximumFractionDigits: 0
+      }).format(v || 0);
 
-      // Safe Node Fetcher
-      const getNode = (type, item, year, month) => {
-        const n = data.values[year]?.[type]?.[item]?.[month];
-        if (n && typeof n.budget === 'number') return n;
-        return { budget: 0, actual: 0, asOfDate: getDaysInMonth(year, month) };
+      const getNode = (type, cat, yr, m) => {
+        return data.values[yr]?.[type]?.[cat]?.[m] || { budget: 0, actual: 0, asOfDate: getDaysInMonth(yr, m) };
       };
 
-      // Node mutator
-      const handleUpdateNode = async (type, item, year, month, field, value) => {
-        const updated = JSON.parse(JSON.stringify(data));
-        if (!updated.values[year][type][item]) updated.values[year][type][item] = {};
-        if (!updated.values[year][type][item][month]) {
-          updated.values[year][type][item][month] = { budget: 0, actual: 0, asOfDate: getDaysInMonth(year, month) };
+      const updateNode = async (type, cat, yr, m, field, val) => {
+        const copy = JSON.parse(JSON.stringify(data));
+        if (!copy.values[yr][type][cat]) copy.values[yr][type][cat] = {};
+        if (!copy.values[yr][type][cat][m]) {
+          copy.values[yr][type][cat][m] = { budget: 0, actual: 0, asOfDate: getDaysInMonth(yr, m) };
         }
-        const numVal = parseFloat(value);
-        updated.values[year][type][item][month][field] = isNaN(numVal) ? 0 : numVal;
-        await saveStateAndDispatch(updated);
+        const num = parseFloat(val);
+        copy.values[yr][type][cat][m][field] = isNaN(num) ? 0 : num;
+        await saveState(copy);
       };
 
-      // 🧠 DYNAMIC FORWARD TIMELINE & CASHFLOW ENGINE
-      // Computes realistic liquidity trajectory from starting capital forward
+      // 🧠 DYNAMIC FORWARD TIMELINE ENGINE
       const forwardTimeline = useMemo(() => {
         let runningBalance = data.startingCapital || 0;
         const timeline = [];
@@ -674,48 +633,44 @@
           const months = getMonthsForYear(yr);
           months.forEach(m => {
             const daysInMonth = getDaysInMonth(yr, m);
-            let monthBudgetIn = 0; let monthActualIn = 0;
-            let monthBudgetEx = 0; let monthActualEx = 0;
-            let projectedEndMonthEx = 0;
+            let budgetIn = 0, actualIn = 0;
+            let budgetEx = 0, actualEx = 0;
+            let projectedEx = 0;
 
-            // Incomes
             data.categories.incomes.forEach(cat => {
               const node = getNode('incomes', cat, yr, m);
-              monthBudgetIn += node.budget;
-              monthActualIn += node.actual;
+              budgetIn += node.budget;
+              actualIn += node.actual;
             });
 
-            // Expenses with Pacing Logic
             data.categories.expenses.forEach(cat => {
               const node = getNode('expenses', cat, yr, m);
               const mode = data.categoryModes[cat] || 'variable';
               const isOneTime = data.categoryOneTime[cat];
-              monthBudgetEx += node.budget;
-              monthActualEx += node.actual;
+              budgetEx += node.budget;
+              actualEx += node.actual;
 
               if (mode === 'fixed' || isOneTime) {
-                // Fixed or one-time payment: projected is actual if already paid, else budgeted commitment
-                projectedEndMonthEx += (node.actual > 0 ? node.actual : node.budget);
+                projectedEx += (node.actual > 0 ? node.actual : node.budget);
               } else {
-                // Variable expense: burn rate projection based on asOfDate
                 const asOf = Math.min(daysInMonth, Math.max(1, node.asOfDate || daysInMonth));
                 if (node.actual > 0) {
-                  const dailyBurnRate = node.actual / asOf;
-                  const remainingDays = Math.max(0, daysInMonth - asOf);
-                  projectedEndMonthEx += (node.actual + (dailyBurnRate * remainingDays));
+                  const burn = node.actual / asOf;
+                  const remainDays = Math.max(0, daysInMonth - asOf);
+                  projectedEx += (node.actual + (burn * remainDays));
                 } else {
-                  projectedEndMonthEx += node.budget;
+                  projectedEx += node.budget;
                 }
               }
             });
 
-            const effectiveIn = monthActualIn > 0 ? monthActualIn : monthBudgetIn;
-            const actualNet = monthActualIn - monthActualEx;
-            const projectedNet = effectiveIn - projectedEndMonthEx;
+            const effectiveIn = actualIn > 0 ? actualIn : budgetIn;
+            const actualNet = actualIn - actualEx;
+            const projectedNet = effectiveIn - projectedEx;
 
-            // If actual expenses were entered, roll over using projectedNet, else use projected budget net
-            const monthNetRollover = monthActualEx > 0 ? projectedNet : (monthBudgetIn - monthBudgetEx);
-            const startBalance = runningBalance;
+            // Rollover logic: if actual spend is logged, roll over projected net; otherwise use budgeted net
+            const monthNetRollover = actualEx > 0 ? projectedNet : (budgetIn - budgetEx);
+            const startBal = runningBalance;
             runningBalance += monthNetRollover;
 
             timeline.push({
@@ -723,33 +678,29 @@
               month: m,
               key: `${m} ${yr}`,
               daysInMonth,
-              monthBudgetIn,
-              monthActualIn,
-              monthBudgetEx,
-              monthActualEx,
-              projectedEndMonthEx,
+              budgetIn, actualIn,
+              budgetEx, actualEx,
+              projectedEx,
               actualNet,
               projectedNet,
-              startBalance,
+              startBal,
               endProjectedBalance: runningBalance
             });
           });
         });
-
         return timeline;
       }, [data]);
 
-      // Current active month metrics
-      const currentMonthMetrics = useMemo(() => {
+      const currentMetrics = useMemo(() => {
         if (selectedMonth === "AnnualOverview") return forwardTimeline[0];
         const match = forwardTimeline.find(t => t.year === selectedYear && t.month === selectedMonth);
         return match || forwardTimeline[0];
       }, [forwardTimeline, selectedYear, selectedMonth]);
 
       // Category level detailed analytics for active month
-      const currentCategoryAnalytics = useMemo(() => {
+      const categoryAnalytics = useMemo(() => {
         if (selectedMonth === "AnnualOverview") return [];
-        const daysInMonth = currentMonthMetrics.daysInMonth;
+        const daysInMonth = currentMetrics.daysInMonth;
 
         return data.categories.expenses.map(cat => {
           const node = getNode('expenses', cat, selectedYear, selectedMonth);
@@ -758,21 +709,21 @@
           const asOf = Math.min(daysInMonth, Math.max(1, node.asOfDate || daysInMonth));
           const daysLeft = Math.max(0, daysInMonth - asOf);
 
-          const expectedPaceBenchmark = (node.budget / daysInMonth) * asOf;
+          const expectedPace = (node.budget / daysInMonth) * asOf;
           const remainingBudget = node.budget - node.actual;
           const safeDailySpend = daysLeft > 0 ? Math.max(0, remainingBudget / daysLeft) : 0;
 
           let paceStatus = "ontrack";
           if (mode === 'variable' && node.budget > 0) {
-            if (node.actual > expectedPaceBenchmark * 1.1) paceStatus = "over";
-            else if (node.actual < expectedPaceBenchmark * 0.85) paceStatus = "frugal";
+            if (node.actual > expectedPace * 1.08) paceStatus = "over";
+            else if (node.actual < expectedPace * 0.85) paceStatus = "frugal";
           }
 
-          let projectedCategoryTotal = node.budget;
+          let projectedTotal = node.budget;
           if (mode === 'fixed' || isOneTime) {
-            projectedCategoryTotal = node.actual > 0 ? node.actual : node.budget;
+            projectedTotal = node.actual > 0 ? node.actual : node.budget;
           } else if (node.actual > 0) {
-            projectedCategoryTotal = node.actual + ((node.actual / asOf) * daysLeft);
+            projectedTotal = node.actual + ((node.actual / asOf) * daysLeft);
           }
 
           return {
@@ -783,40 +734,39 @@
             daysLeft,
             remainingBudget,
             safeDailySpend,
-            projectedCategoryTotal,
+            projectedTotal,
             paceStatus,
             bracket: data.categoryOverrides[cat] || autoClassifyCategory(cat).bracket,
             mode,
             isOneTime
           };
         });
-      }, [data, selectedYear, selectedMonth, currentMonthMetrics]);
+      }, [data, selectedYear, selectedMonth, currentMetrics]);
 
-      // IOU Float
-      const activePendingIous = useMemo(() => (data.ious || []).filter(i => !i.settled), [data.ious]);
-      const totalPendingIou = useMemo(() => activePendingIous.reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0), [activePendingIous]);
+      // IOUs
+      const activeIous = useMemo(() => (data.ious || []).filter(i => !i.settled), [data.ious]);
+      const totalIou = useMemo(() => activeIous.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0), [activeIous]);
 
       const handleAddIou = async () => {
         if (!iouPerson.trim() || !iouAmount || isNaN(parseFloat(iouAmount))) return;
-        const newRecord = {
+        const copy = { ...data, ious: [...(data.ious || []), {
           id: 'iou_' + Date.now(),
           person: iouPerson.trim(),
           amount: parseFloat(iouAmount),
           date: new Date().toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US', { day: '2-digit', month: 'short' }),
           settled: false
-        };
-        const updated = { ...data, ious: [...(data.ious || []), newRecord] };
+        }]};
         setIouPerson("");
         setIouAmount("");
-        await saveStateAndDispatch(updated);
+        await saveState(copy);
       };
 
       const handleSettleIou = async (id) => {
-        const updated = { ...data, ious: (data.ious || []).map(i => i.id === id ? { ...i, settled: true } : i) };
-        await saveStateAndDispatch(updated);
+        const copy = { ...data, ious: data.ious.map(i => i.id === id ? { ...i, settled: true } : i) };
+        await saveState(copy);
       };
 
-      // Monthly Bar Chart (Month view)
+      // Bar Chart for Current Year
       useEffect(() => {
         if (selectedMonth === "AnnualOverview" || !chartRef.current) return;
         const ctx = chartRef.current.getContext('2d');
@@ -830,20 +780,20 @@
 
         const brackets = ['housing', 'living', 'subscriptions', 'leisure', 'professional'];
         const bracketColors = {
-          housing: 'rgba(100, 116, 139, 0.85)',
-          living: 'rgba(245, 158, 11, 0.85)',
-          subscriptions: 'rgba(139, 92, 246, 0.85)',
-          leisure: 'rgba(236, 72, 153, 0.85)',
-          professional: 'rgba(20, 184, 166, 0.85)'
+          housing: '#64748b',
+          living: '#f59e0b',
+          subscriptions: '#8b5cf6',
+          leisure: '#ec4899',
+          professional: '#14b8a6'
         };
 
         const datasets = [
           {
             label: t('incomesHeader'),
             data: incomesData,
-            backgroundColor: 'rgba(16, 185, 129, 0.85)',
-            stack: 'Stack0',
-            borderRadius: 4
+            backgroundColor: '#10b981',
+            borderRadius: 6,
+            stack: 'Stack0'
           },
           ...brackets.map(bKey => ({
             label: t(`bracket${bKey.charAt(0).toUpperCase() + bKey.slice(1)}`),
@@ -853,8 +803,8 @@
                 .reduce((s, cat) => s + getNode('expenses', cat, selectedYear, m).actual, 0);
             }),
             backgroundColor: bracketColors[bKey],
-            stack: 'Stack1',
-            borderRadius: 2
+            borderRadius: 2,
+            stack: 'Stack1'
           }))
         ];
 
@@ -865,14 +815,13 @@
           type: 'bar',
           data: { labels: translatedLabels, datasets },
           options: {
-            responsive: true,
-            maintainAspectRatio: false,
+            responsive: true, maintainAspectRatio: false,
             scales: {
-              x: { ticks: { color: axisColor, font: { weight: '600', size: 10 } }, grid: { display: false } },
-              y: { beginAtZero: true, ticks: { color: axisColor, font: { size: 10 }, callback: v => formatCurrency(v) }, grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' } }
+              x: { ticks: { color: axisColor, font: { family: 'inherit', size: 11, weight: '600' } }, grid: { display: false } },
+              y: { beginAtZero: true, ticks: { color: axisColor, font: { family: 'inherit', size: 10 }, callback: v => fmt(v) }, grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' } }
             },
             plugins: {
-              legend: { position: 'top', labels: { color: axisColor, usePointStyle: true, font: { size: 10, weight: 600 } } }
+              legend: { position: 'top', labels: { color: axisColor, usePointStyle: true, boxWidth: 6, font: { family: 'inherit', size: 11, weight: '600' } } }
             }
           }
         });
@@ -880,37 +829,25 @@
         return () => { if (chartInstanceRef.current) chartInstanceRef.current.destroy(); };
       }, [data, selectedYear, selectedMonth, lang, theme]);
 
-      // Annual Doughnut & Summary
+      // Annual Data & Doughnut
       const annualData = useMemo(() => {
         const months = getMonthsForYear(selectedYear);
-        let totalYearIn = 0; let totalYearEx = 0;
-        const catTotals = {};
-        const monthTotals = {};
-
-        data.categories.expenses.forEach(cat => catTotals[cat] = 0);
+        let totIn = 0, totEx = 0;
+        const catMap = {};
+        data.categories.expenses.forEach(c => catMap[c] = 0);
         months.forEach(m => {
-          let mIn = 0; let mEx = 0;
-          data.categories.incomes.forEach(cat => {
-            const v = getNode('incomes', cat, selectedYear, m).actual;
-            totalYearIn += v; mIn += v;
+          data.categories.incomes.forEach(c => totIn += getNode('incomes', c, selectedYear, m).actual);
+          data.categories.expenses.forEach(c => {
+            const v = getNode('expenses', c, selectedYear, m).actual;
+            totEx += v;
+            catMap[c] += v;
           });
-          data.categories.expenses.forEach(cat => {
-            const v = getNode('expenses', cat, selectedYear, m).actual;
-            totalYearEx += v; mEx += v;
-            catTotals[cat] += v;
-          });
-          monthTotals[m] = { income: mIn, expenses: mEx, net: mIn - mEx };
         });
 
-        const sortedExpenses = Object.keys(catTotals).map(c => ({ category: c, total: catTotals[c] })).sort((a, b) => b.total - a.total);
-        const peakCategory = sortedExpenses[0]?.total > 0 ? sortedExpenses[0].category : null;
-        let highestMonth = null; let maxEx = 0;
-        months.forEach(m => {
-          if (monthTotals[m].expenses > maxEx) { maxEx = monthTotals[m].expenses; highestMonth = m; }
-        });
-        const savingsRate = totalYearIn > 0 ? ((totalYearIn - totalYearEx) / totalYearIn) * 100 : 0;
-
-        return { totalYearIn, totalYearEx, sortedExpenses, peakCategory, highestMonth, savingsRate, monthTotals };
+        const sorted = Object.keys(catMap).map(c => ({ category: c, total: catMap[c] })).sort((a,b) => b.total - a.total);
+        const peakCategory = sorted[0]?.total > 0 ? sorted[0].category : null;
+        const savingsRate = totIn > 0 ? ((totIn - totEx) / totIn) * 100 : 0;
+        return { totIn, totEx, sorted, peakCategory, savingsRate };
       }, [data, selectedYear]);
 
       useEffect(() => {
@@ -918,431 +855,453 @@
         const ctx = annualChartRef.current.getContext('2d');
         if (annualChartInstanceRef.current) annualChartInstanceRef.current.destroy();
 
+        const top = annualData.sorted.filter(e => e.total > 0).slice(0, 6);
         const isDark = theme === 'dark';
-        const topCats = annualData.sortedExpenses.filter(e => e.total > 0).slice(0, 7);
-        const palette = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#8b5cf6', '#64748b'];
 
         annualChartInstanceRef.current = new Chart(ctx, {
           type: 'doughnut',
           data: {
-            labels: topCats.map(e => t(`categories.${e.category}`).replace('categories.', '')),
+            labels: top.map(e => t(`categories.${e.category}`).replace('categories.', '')),
             datasets: [{
-              data: topCats.map(e => e.total),
-              backgroundColor: palette,
+              data: top.map(e => e.total),
+              backgroundColor: ['#6366f1', '#f43f5e', '#f59e0b', '#10b981', '#06b6d4', '#8b5cf6'],
               borderWidth: 2,
-              borderColor: isDark ? '#131b26' : '#ffffff'
+              borderColor: isDark ? '#0f1623' : '#ffffff'
             }]
           },
           options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '70%',
+            responsive: true, maintainAspectRatio: false, cutout: '72%',
             plugins: {
-              legend: { position: 'bottom', labels: { color: isDark ? '#94a3b8' : '#64748b', usePointStyle: true, font: { size: 11, weight: 600 } } }
+              legend: { position: 'bottom', labels: { color: isDark ? '#94a3b8' : '#64748b', usePointStyle: true, font: { family: 'inherit', size: 11, weight: '600' } } }
             }
           }
         });
-
         return () => { if (annualChartInstanceRef.current) annualChartInstanceRef.current.destroy(); };
       }, [selectedMonth, annualData, lang, theme]);
 
-      // Category Drag and Drop
-      const handleDragStart = (e, index, type) => {
-        setDraggedInfo({ index, type });
-        e.dataTransfer.effectAllowed = "move";
-      };
-      const handleDragOver = (e) => e.preventDefault();
-      const handleGroupedDrop = async (e, targetIdxInGroup, type, isFixed) => {
-        e.preventDefault();
-        if (!draggedInfo || draggedInfo.type !== type) return;
-
-        const updated = { ...data };
-        const masterList = [...updated.categories[type]];
-        const groupItems = masterList.filter(cat => {
-          const mode = data.categoryModes[cat] || (type === 'incomes' ? 'fixed' : 'variable');
-          return (mode === 'fixed') === isFixed;
-        });
-
-        const draggedName = masterList[draggedInfo.index];
-        const draggedIdxInGroup = groupItems.indexOf(draggedName);
-        if (draggedIdxInGroup === -1 || draggedIdxInGroup === targetIdxInGroup) return;
-
-        const [removed] = groupItems.splice(draggedIdxInGroup, 1);
-        groupItems.splice(targetIdxInGroup, 0, removed);
-
-        let groupCtr = 0;
-        const reordered = masterList.map(cat => {
-          const mode = data.categoryModes[cat] || (type === 'incomes' ? 'fixed' : 'variable');
-          if ((mode === 'fixed') === isFixed) {
-            const item = groupItems[groupCtr];
-            groupCtr++;
-            return item;
-          }
-          return cat;
-        });
-
-        updated.categories[type] = reordered;
-        await saveStateAndDispatch(updated);
-        setDraggedInfo(null);
-      };
-
-      // Add Category
-      const handleAddCategory = async (type, name, setter) => {
+      // Category modifiers
+      const addCategory = async (type, name, setter) => {
         if (!name.trim()) return;
         const trimmed = name.trim();
         if (data.categories[type].includes(trimmed)) return alert(t('duplicateCategoryAlert'));
 
         const auto = autoClassifyCategory(trimmed);
-        const updated = { ...data };
-        updated.categories[type].push(trimmed);
-        updated.categoryModes[trimmed] = type === 'incomes' ? 'fixed' : auto.mode;
-        updated.categoryOverrides[trimmed] = auto.bracket;
-        updated.categoryOneTime[trimmed] = auto.isOneTime;
+        const copy = JSON.parse(JSON.stringify(data));
+        copy.categories[type].push(trimmed);
+        copy.categoryModes[trimmed] = type === 'incomes' ? 'fixed' : auto.mode;
+        copy.categoryOverrides[trimmed] = auto.bracket;
+        copy.categoryOneTime[trimmed] = auto.isOneTime;
 
         ["2026", "2027", "2028"].forEach(y => {
-          if (!updated.values[y][type][trimmed]) updated.values[y][type][trimmed] = {};
+          if (!copy.values[y][type][trimmed]) copy.values[y][type][trimmed] = {};
           getMonthsForYear(parseInt(y)).forEach(m => {
-            updated.values[y][type][trimmed][m] = { budget: 0, actual: 0, asOfDate: getDaysInMonth(parseInt(y), m) };
+            copy.values[y][type][trimmed][m] = { budget: 0, actual: 0, asOfDate: getDaysInMonth(parseInt(y), m) };
           });
         });
-
         setter("");
-        await saveStateAndDispatch(updated);
+        await saveState(copy);
       };
 
-      // Delete Category
-      const handleDeleteCategory = async (type, item) => {
-        const cleanName = t(`categories.${item}`).replace('categories.', '');
-        if (!confirm(t('deleteConfirmation', { name: cleanName }))) return;
-
-        const updated = { ...data };
-        updated.categories[type] = updated.categories[type].filter(c => c !== item);
+      const deleteCategory = async (type, cat) => {
+        if (!confirm(t('deleteConfirmation', { name: t(`categories.${cat}`).replace('categories.', '') }))) return;
+        const copy = JSON.parse(JSON.stringify(data));
+        copy.categories[type] = copy.categories[type].filter(c => c !== cat);
         ["2026", "2027", "2028"].forEach(y => {
-          if (updated.values[y]?.[type]?.[item]) delete updated.values[y][type][item];
+          if (copy.values[y]?.[type]?.[cat]) delete copy.values[y][type][cat];
         });
-        delete updated.categoryModes[item];
-        delete updated.categoryOverrides[item];
-        delete updated.categoryOneTime[item];
-        delete updated.fixedPaymentDays[item];
-
-        await saveStateAndDispatch(updated);
+        delete copy.categoryModes[cat];
+        delete copy.categoryOverrides[cat];
+        delete copy.categoryOneTime[cat];
+        delete copy.fixedPaymentDays[cat];
+        await saveState(copy);
         setActiveEditCat(null);
-      };
-
-      // Replicate Recurring Budget
-      const handleApplyRecurring = async (type, item, startMonth, startYear, monthsCount, budgetVal) => {
-        const updated = { ...data };
-        const timeline = [];
-        [2026, 2027, 2028].forEach(yr => { getMonthsForYear(yr).forEach(mo => timeline.push({ yr, mo })); });
-        const startIdx = timeline.findIndex(t => t.yr === parseInt(startYear) && t.mo === startMonth);
-        if (startIdx !== -1) {
-          for (let i = 0; i < monthsCount; i++) {
-            const target = timeline[startIdx + i];
-            if (target) {
-              const { yr, mo } = target;
-              if (!updated.values[yr][type][item]) updated.values[yr][type][item] = {};
-              const current = getNode(type, item, yr, mo);
-              updated.values[yr][type][item][mo] = { ...current, budget: budgetVal };
-            }
-          }
-        }
-        await saveStateAndDispatch(updated);
       };
 
       return (
         <div className="flex flex-col min-h-screen">
 
-          {/* HEADER */}
-          <header className="bg-indigo-700 text-white sticky top-0 z-50 shadow-md h-14">
+          {/* 2026 MINIMAL NAVIGATION BAR */}
+          <header className="sticky top-0 z-50 bg-surface/90 backdrop-blur-md border-b border-subtle h-14">
             <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
-              <div className="flex items-center space-x-2.5">
-                <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white font-bold">
-                  <i className="fa-solid fa-chart-line text-lg"></i>
+              
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center text-white shadow-sm font-black text-sm">
+                  <i className="fa-solid fa-layer-group"></i>
                 </div>
                 <div>
-                  <h1 className="text-base font-extrabold tracking-tight leading-none">{t('title')}</h1>
-                  <span className="text-[10px] text-indigo-200 font-medium flex items-center gap-1 mt-0.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-rose-400'}`}></span>
+                  <h1 className="text-sm sm:text-base font-extrabold tracking-tight leading-none text-primary">
+                    {t('title')}
+                  </h1>
+                  <span className="text-[10px] text-tertiary font-mono flex items-center gap-1.5 mt-0.5">
+                    <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-rose-500'}`}></span>
                     {isOnline ? t('synced') : t('offline')}
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <button onClick={() => changeLanguage(lang === 'de' ? 'en' : 'de')} className="text-xs font-bold px-2 py-1 rounded bg-indigo-800 text-white border border-indigo-600">
-                  {lang.toUpperCase()}
-                </button>
-                <button onClick={() => setIsBurgerOpen(true)} className="w-9 h-9 rounded-lg hover:bg-indigo-600 transition flex items-center justify-center text-lg">
-                  <i className="fa-solid fa-bars"></i>
-                </button>
-              </div>
-            </div>
-          </header>
-
-          {/* MONTH NAVBAR */}
-          <nav className="bg-theme-card border-b border-theme sticky top-14 z-40 shadow-sm">
-            <div className="max-w-7xl mx-auto px-4 flex items-center justify-between overflow-x-auto scrollbar-none">
-              <div className="flex items-center space-x-1 py-1">
+              {/* Center Year Selector */}
+              <div className="hidden sm:flex items-center bg-surface-elevated p-1 rounded-xl border border-subtle">
                 {[2026, 2027, 2028].map(yr => (
-                  <button key={yr} onClick={() => setSelectedYear(yr)} className={`px-2.5 py-1 text-xs font-bold rounded-lg transition ${selectedYear === yr ? 'bg-indigo-600 text-white shadow-sm' : 'text-theme-muted hover:text-theme-main bg-theme-header/60'}`}>
+                  <button
+                    key={yr}
+                    onClick={() => setSelectedYear(yr)}
+                    className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition ${selectedYear === yr ? 'bg-indigo-600 text-white shadow-sm' : 'text-secondary hover:text-primary'}`}
+                  >
                     {yr}
                   </button>
                 ))}
               </div>
 
-              <div className="h-4 w-[1px] bg-theme-border mx-2 shrink-0"></div>
+              {/* Actions Right */}
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => changeLanguage(lang === 'de' ? 'en' : 'de')}
+                  className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-surface-elevated border border-subtle text-primary hover:border-strong transition"
+                >
+                  {lang.toUpperCase()}
+                </button>
+                <button
+                  onClick={() => setIsBurgerOpen(true)}
+                  className="w-8 h-8 rounded-lg bg-surface-elevated border border-subtle text-secondary hover:text-primary transition flex items-center justify-center"
+                >
+                  <i className="fa-solid fa-sliders text-xs"></i>
+                </button>
+              </div>
 
-              <div className="flex items-center overflow-x-auto scrollbar-none space-x-1 py-2">
+            </div>
+          </header>
+
+          {/* MONTH SUBNAV WITH LIQUID PILL SELECTORS */}
+          <nav className="sticky top-14 z-40 bg-surface/80 backdrop-blur-md border-b border-subtle">
+            <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between overflow-x-auto scrollbar-none gap-2">
+              <div className="flex sm:hidden items-center bg-surface-elevated p-0.5 rounded-lg border border-subtle shrink-0">
+                {[2026, 2027, 2028].map(yr => (
+                  <button
+                    key={yr}
+                    onClick={() => setSelectedYear(yr)}
+                    className={`px-2 py-0.5 rounded-md text-[11px] font-mono font-bold ${selectedYear === yr ? 'bg-indigo-600 text-white' : 'text-secondary'}`}
+                  >
+                    {yr}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center space-x-1 overflow-x-auto scrollbar-none">
                 {getMonthsForYear(selectedYear).map(m => (
                   <button
                     key={m}
                     onClick={() => setSelectedMonth(m)}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-xl transition whitespace-nowrap ${selectedMonth === m ? 'bg-indigo-500/10 text-indigo-600 border border-indigo-500/30 font-black' : 'text-theme-muted hover:text-theme-main'}`}
+                    className={`px-3 py-1 rounded-lg text-xs font-mono font-semibold transition whitespace-nowrap ${selectedMonth === m ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 font-bold' : 'text-secondary hover:text-primary'}`}
                   >
                     {t(`months.${m}`)}
                   </button>
                 ))}
-                <button
-                  onClick={() => setSelectedMonth("AnnualOverview")}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-xl transition whitespace-nowrap flex items-center gap-1.5 ${selectedMonth === "AnnualOverview" ? 'bg-indigo-600 text-white shadow-sm' : 'text-theme-muted hover:text-theme-main bg-theme-header/50'}`}
-                >
-                  <i className="fa-solid fa-compass"></i>
-                  <span>{t('annualOverview')}</span>
-                </button>
               </div>
+
+              <div className="h-4 w-[1px] bg-subtle shrink-0 mx-1"></div>
+
+              <button
+                onClick={() => setSelectedMonth("AnnualOverview")}
+                className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition whitespace-nowrap flex items-center gap-1.5 shrink-0 ${selectedMonth === "AnnualOverview" ? 'bg-indigo-600 text-white shadow-sm' : 'text-secondary hover:text-primary bg-surface-elevated border border-subtle'}`}
+              >
+                <i className="fa-solid fa-compass text-[11px]"></i>
+                <span>{t('annualOverview')}</span>
+              </button>
             </div>
           </nav>
 
-          {/* MAIN WORKSPACE */}
-          <main className="max-w-7xl mx-auto w-full px-4 pt-5 pb-12 flex-grow space-y-6">
+          {/* MAIN CONTAINER */}
+          <main className="max-w-7xl mx-auto w-full px-4 pt-6 pb-12 flex-grow space-y-6">
 
             {selectedMonth === "AnnualOverview" ? (
-              /* ================== ANNUAL OVERVIEW & FORWARD RUNWAY ================== */
+              /* ANNUAL / FORWARD RUNWAY VIEW */
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-theme-card border border-theme rounded-2xl p-5 flex items-center justify-between shadow-sm">
-                    <div>
-                      <p className="text-xs font-bold text-indigo-500 uppercase tracking-wider">{t('savingsRate')}</p>
-                      <p className="text-3xl font-black text-theme-main mt-1">{annualData.savingsRate.toFixed(1)}%</p>
-                    </div>
-                    <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 text-xl font-bold">
-                      %
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="bg-surface border border-subtle rounded-2xl p-5">
+                    <p className="text-xs font-mono font-bold text-indigo-400 uppercase tracking-wider">{t('savingsRate')}</p>
+                    <p className="text-3xl font-mono font-black text-primary mt-2">{annualData.savingsRate.toFixed(1)}%</p>
                   </div>
-
-                  <div className="bg-theme-card border border-theme rounded-2xl p-5 flex items-center justify-between shadow-sm">
-                    <div>
-                      <p className="text-xs font-bold text-rose-500 uppercase tracking-wider">{t('peakSpendingCategory')}</p>
-                      <p className="text-base font-black text-theme-main mt-1 truncate max-w-[200px]">
-                        {annualData.peakCategory ? t(`categories.${annualData.peakCategory}`).replace('categories.', '') : t('noData')}
-                      </p>
-                    </div>
-                    <div className="w-12 h-12 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500 text-xl font-bold">
-                      <i className="fa-solid fa-fire"></i>
-                    </div>
+                  <div className="bg-surface border border-subtle rounded-2xl p-5">
+                    <p className="text-xs font-mono font-bold text-rose-400 uppercase tracking-wider">{t('peakSpendingCategory')}</p>
+                    <p className="text-lg font-bold text-primary mt-2 truncate">
+                      {annualData.peakCategory ? t(`categories.${annualData.peakCategory}`).replace('categories.', '') : t('noData')}
+                    </p>
                   </div>
-
-                  <div className="bg-theme-card border border-theme rounded-2xl p-5 flex items-center justify-between shadow-sm">
-                    <div>
-                      <p className="text-xs font-bold text-theme-muted uppercase tracking-wider">{t('highestExpenseMonth')}</p>
-                      <p className="text-2xl font-black text-theme-main mt-1">
-                        {annualData.highestMonth ? `${t(`months.${annualData.highestMonth}`)} ${selectedYear}` : t('noData')}
-                      </p>
-                    </div>
-                    <div className="w-12 h-12 rounded-2xl bg-theme-header flex items-center justify-center text-theme-muted text-xl font-bold">
-                      <i className="fa-solid fa-calendar-days"></i>
-                    </div>
+                  <div className="bg-surface border border-subtle rounded-2xl p-5">
+                    <p className="text-xs font-mono font-bold text-tertiary uppercase tracking-wider">{t('incomesHeader')} / {t('expensesHeader')}</p>
+                    <p className="text-lg font-mono font-bold text-emerald-400 mt-2">
+                      +{fmt(annualData.totIn)} <span className="text-rose-400 text-sm font-normal">(-{fmt(annualData.totEx)})</span>
+                    </p>
                   </div>
                 </div>
 
-                {/* Annual Doughnut Chart & Ranking */}
-                <div className="bg-theme-card rounded-2xl border border-theme shadow-sm p-5 grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+                <div className="bg-surface rounded-2xl border border-subtle p-5 grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
                   <div>
-                    <h3 className="text-sm font-bold text-theme-main mb-1 uppercase tracking-wider">{t('bracketHousing')} & Co.</h3>
-                    <p className="text-xs text-theme-muted mb-4">Verteilung der Gesamtausgaben im Jahr {selectedYear}</p>
-                    <div className="h-[260px] relative w-full flex justify-center">
+                    <h3 className="text-xs font-mono font-bold text-secondary uppercase tracking-wider mb-4">Ausgabenverteilung {selectedYear}</h3>
+                    <div className="h-[250px] relative w-full flex justify-center">
                       <canvas ref={annualChartRef}></canvas>
                     </div>
                   </div>
-
-                  <div className="space-y-3 max-h-[300px] overflow-y-auto scrollbar-none">
-                    {annualData.sortedExpenses.map(({ category, total }) => {
+                  <div className="space-y-2.5 max-h-[280px] overflow-y-auto scrollbar-none">
+                    {annualData.sorted.map(({ category, total }) => {
                       if (total === 0) return null;
-                      const share = annualData.totalYearEx > 0 ? (total / annualData.totalYearEx) * 100 : 0;
+                      const share = annualData.totEx > 0 ? (total / annualData.totEx) * 100 : 0;
                       return (
-                        <div key={category} className="flex justify-between items-center text-xs border-b border-theme pb-2">
-                          <span className="font-semibold text-theme-muted">{t(`categories.${category}`).replace('categories.', '')}</span>
-                          <span className="font-bold text-theme-main">{formatCurrency(total)} ({share.toFixed(1)}%)</span>
+                        <div key={category} className="flex justify-between items-center text-xs py-1.5 border-b border-subtle">
+                          <span className="font-medium text-secondary">{t(`categories.${category}`).replace('categories.', '')}</span>
+                          <span className="font-mono font-bold text-primary">{fmt(total)} <span className="text-tertiary text-[10px]">({share.toFixed(0)}%)</span></span>
                         </div>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Datasheet Table */}
-                <div className="bg-theme-card rounded-2xl border border-theme shadow-sm overflow-hidden">
-                  <div className="p-4 border-b border-theme bg-theme-header">
-                    <h3 className="font-bold text-theme-main text-sm">{selectedYear} - Jahresübersicht (Datasheet)</h3>
+                {/* Forward Runway Table */}
+                <div className="bg-surface rounded-2xl border border-subtle overflow-hidden">
+                  <div className="p-4 border-b border-subtle bg-surface-elevated flex justify-between items-center">
+                    <h3 className="text-xs font-mono font-bold text-primary uppercase tracking-wider">Multi-Year Forward Cash Balance Datasheet</h3>
                   </div>
                   <div className="overflow-x-auto scrollbar-none">
-                    <div className="min-w-[550px] divide-y divide-theme">
-                      <div className="annual-grid-row font-bold text-xs text-theme-muted uppercase bg-theme-header">
-                        <div>Monat</div>
-                        <div className="text-right">Einnahmen</div>
-                        <div className="text-right">Ausgaben</div>
-                        <div className="text-right">Monatssaldo</div>
-                        <div className="text-right">Kumulativ</div>
-                      </div>
-                      {getMonthsForYear(selectedYear).map(m => {
-                        const row = forwardTimeline.find(t => t.year === selectedYear && t.month === m);
-                        if (!row) return null;
-                        return (
-                          <div key={m} className="annual-grid-row hover-theme-row transition text-xs font-medium">
-                            <div className="font-bold text-theme-main">{t(`months.${m}`)}</div>
-                            <div className="text-right text-emerald-500 font-semibold">{formatCurrency(row.monthActualIn > 0 ? row.monthActualIn : row.monthBudgetIn)}</div>
-                            <div className="text-right text-rose-500 font-semibold">{formatCurrency(row.monthActualEx > 0 ? row.monthActualEx : row.monthBudgetEx)}</div>
-                            <div className={`text-right font-black ${row.projectedNet >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                              {formatCurrency(row.projectedNet)}
-                            </div>
-                            <div className="text-right font-extrabold text-indigo-500">{formatCurrency(row.endProjectedBalance)}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <table className="w-full text-left text-xs font-mono">
+                      <thead className="bg-surface-elevated text-tertiary uppercase text-[10px] border-b border-subtle">
+                        <tr>
+                          <th className="p-3">Month</th>
+                          <th className="p-3 text-right">Incomes (Actual/Plan)</th>
+                          <th className="p-3 text-right">Expenses (Spend)</th>
+                          <th className="p-3 text-right">Net Month</th>
+                          <th className="p-3 text-right">Cumulative Balance</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-subtle">
+                        {getMonthsForYear(selectedYear).map(m => {
+                          const row = forwardTimeline.find(t => t.year === selectedYear && t.month === m);
+                          if (!row) return null;
+                          return (
+                            <tr key={m} className="hover:bg-subtle/50 transition">
+                              <td className="p-3 font-bold text-primary">{t(`months.${m}`)} {selectedYear}</td>
+                              <td className="p-3 text-right text-emerald-400 font-bold">{fmt(row.actualIn > 0 ? row.actualIn : row.budgetIn)}</td>
+                              <td className="p-3 text-right text-rose-400 font-bold">{fmt(row.actualEx > 0 ? row.actualEx : row.budgetEx)}</td>
+                              <td className={`p-3 text-right font-black ${row.projectedNet >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                {fmt(row.projectedNet)}
+                              </td>
+                              <td className="p-3 text-right font-black text-indigo-400 text-sm">
+                                {fmt(row.endProjectedBalance)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
             ) : (
-              /* ================== MONTHLY WORKSPACE ================== */
+              /* MONTHLY COCKPIT VIEW */
               <div className="space-y-6">
 
-                {/* VIEW / EDIT TOGGLE */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                  <div className="flex bg-theme-header p-1 rounded-xl shadow-inner border border-theme w-full sm:w-80">
-                    <button
-                      onClick={() => setActiveTab('view')}
-                      className={`flex-1 py-1.5 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${activeTab === 'view' ? 'bg-theme-card text-indigo-600 shadow' : 'text-theme-muted'}`}
-                    >
-                      <i className="fa-solid fa-eye"></i> {t('viewTab')}
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('edit')}
-                      className={`flex-1 py-1.5 text-center rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${activeTab === 'edit' ? 'bg-theme-card text-indigo-600 shadow' : 'text-theme-muted'}`}
-                    >
-                      <i className="fa-solid fa-pen-to-square"></i> {t('editTab')}
-                    </button>
+                {/* SUBHEADER: COLOR LEGEND & VIEW TOGGLE */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  
+                  {/* Visual Color Variable Indicators */}
+                  <div className="flex items-center gap-3 text-[11px] font-mono font-medium">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_#10b981]"></span>
+                      <span className="text-secondary">{t('legendActual')}</span>
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_6px_#6366f1]"></span>
+                      <span className="text-secondary">{t('legendPlan')}</span>
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_6px_#f59e0b]"></span>
+                      <span className="text-secondary">{t('legendPacing')}</span>
+                    </span>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  {/* Mode Buttons */}
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <div className="flex bg-surface-elevated p-1 rounded-xl border border-subtle flex-1 sm:flex-none">
+                      <button
+                        onClick={() => setActiveTab('view')}
+                        className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-xs font-mono font-bold transition flex items-center justify-center gap-1.5 ${activeTab === 'view' ? 'bg-surface text-indigo-400 shadow-sm' : 'text-secondary'}`}
+                      >
+                        <i className="fa-solid fa-table-cells text-[10px]"></i>
+                        <span>{t('viewTab')}</span>
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('edit')}
+                        className={`flex-1 sm:flex-none px-3 py-1 rounded-lg text-xs font-mono font-bold transition flex items-center justify-center gap-1.5 ${activeTab === 'edit' ? 'bg-surface text-indigo-400 shadow-sm' : 'text-secondary'}`}
+                      >
+                        <i className="fa-solid fa-pen-to-square text-[10px]"></i>
+                        <span>{t('editTab')}</span>
+                      </button>
+                    </div>
+
                     <button
                       onClick={() => setHideZeroes(!hideZeroes)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border ${hideZeroes ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-theme-card text-theme-muted border-theme'}`}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition flex items-center gap-1.5 border ${hideZeroes ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-surface text-secondary border-subtle hover:text-primary'}`}
                     >
-                      <i className={`fa-solid ${hideZeroes ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-                      <span>{hideZeroes ? t('hideZeroesLabel') : t('showAllLabel')}</span>
+                      <i className={`fa-solid ${hideZeroes ? 'fa-eye-slash' : 'fa-eye'} text-[10px]`}></i>
+                      <span className="hidden sm:inline">{hideZeroes ? t('hideZeroesLabel') : t('showAllLabel')}</span>
                     </button>
                   </div>
                 </div>
 
-                {/* 🎯 FORWARD CASHFLOW & LIQUIDITY KPI DASHBOARD */}
-                <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {/* 🎯 2026 EXECUTIVE KPI CARDS */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   
-                  {/* Current Month Actual Leftover */}
-                  <div className="bg-theme-card border border-theme rounded-2xl p-4 shadow-sm relative overflow-hidden">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-theme-muted">{t('actualSaldo')}</p>
-                    <p className={`text-2xl font-black mt-1 ${currentMonthMetrics.actualNet >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                      {formatCurrency(currentMonthMetrics.actualNet)}
-                    </p>
-                    <p className="text-[11px] text-theme-muted mt-0.5">
-                      Ist: In {formatCurrency(currentMonthMetrics.monthActualIn)} | Out {formatCurrency(currentMonthMetrics.monthActualEx)}
-                    </p>
-                    <div className="absolute top-3 right-3 text-emerald-500/10 text-3xl font-black">
-                      <i className="fa-solid fa-scale-balanced"></i>
+                  {/* Card 1: Actual Net (Ist) */}
+                  <div className="bg-surface border border-subtle rounded-2xl p-4 relative overflow-hidden flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-secondary">
+                        {t('kpiActualNet')}
+                      </span>
+                      <span className="w-5 h-5 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-[10px]">
+                        <i className="fa-solid fa-receipt"></i>
+                      </span>
+                    </div>
+                    <div className="my-2">
+                      <div className={`text-2xl font-mono font-black tracking-tight ${currentMetrics.actualNet >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {fmt(currentMetrics.actualNet)}
+                      </div>
+                      <div className="text-[11px] font-mono text-tertiary mt-1">
+                        In {fmt(currentMetrics.actualIn)} <span className="text-secondary">/</span> Out {fmt(currentMetrics.actualEx)}
+                      </div>
+                    </div>
+                    <div className="h-1 w-full bg-subtle rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500" style={{ width: `${Math.min(100, currentMetrics.actualIn > 0 ? (currentMetrics.actualEx / currentMetrics.actualIn) * 100 : 0)}%` }}></div>
                     </div>
                   </div>
 
-                  {/* Projected Month End Net */}
-                  <div className="bg-theme-card border border-indigo-500/30 rounded-2xl p-4 shadow-sm relative overflow-hidden bg-gradient-to-br from-indigo-500/5 to-transparent">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-500">{t('projectedSaldo')}</p>
-                    <p className={`text-2xl font-black mt-1 ${currentMonthMetrics.projectedNet >= 0 ? 'text-indigo-500' : 'text-rose-500'}`}>
-                      {formatCurrency(currentMonthMetrics.projectedNet)}
-                    </p>
-                    <p className="text-[11px] text-theme-muted mt-0.5">
-                      {t('projectedExpenses')}: <b className="text-theme-main">{formatCurrency(currentMonthMetrics.projectedEndMonthEx)}</b>
-                    </p>
-                    <div className="absolute top-3 right-3 text-indigo-500/10 text-3xl font-black">
-                      <i className="fa-solid fa-wand-magic-sparkles"></i>
+                  {/* Card 2: Projected Net (Plan Finish) */}
+                  <div className="bg-surface border border-indigo-500/30 rounded-2xl p-4 relative overflow-hidden bg-gradient-to-br from-indigo-500/5 to-transparent flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-indigo-400">
+                        {t('kpiProjectedNet')}
+                      </span>
+                      <span className="w-5 h-5 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 text-[10px]">
+                        <i className="fa-solid fa-wand-magic-sparkles"></i>
+                      </span>
+                    </div>
+                    <div className="my-2">
+                      <div className={`text-2xl font-mono font-black tracking-tight ${currentMetrics.projectedNet >= 0 ? 'text-indigo-400' : 'text-rose-400'}`}>
+                        {fmt(currentMetrics.projectedNet)}
+                      </div>
+                      <div className="text-[11px] font-mono text-tertiary mt-1">
+                        Prognose Out: <b className="text-primary font-bold">{fmt(currentMetrics.projectedEx)}</b>
+                      </div>
+                    </div>
+                    <div className="h-1 w-full bg-indigo-950/40 rounded-full overflow-hidden">
+                      <div className="h-full bg-indigo-500 rounded-full" style={{ width: '100%' }}></div>
                     </div>
                   </div>
 
-                  {/* Safe Daily Spend Allowance */}
-                  <div className="bg-theme-card border border-theme rounded-2xl p-4 shadow-sm relative overflow-hidden">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-amber-500">{t('dailySafeAllowance')}</p>
-                    <p className="text-2xl font-black text-amber-500 mt-1">
-                      {formatCurrency(currentCategoryAnalytics.reduce((s, c) => s + (c.mode === 'variable' ? c.safeDailySpend : 0), 0))}
-                      <span className="text-xs font-semibold text-theme-muted"> / Tag</span>
-                    </p>
-                    <p className="text-[11px] text-theme-muted mt-0.5">{t('dailySafeHelp')}</p>
-                    <div className="absolute top-3 right-3 text-amber-500/10 text-3xl font-black">
-                      <i className="fa-solid fa-bolt"></i>
+                  {/* Card 3: Safe Daily Burn Allowance */}
+                  <div className="bg-surface border border-subtle rounded-2xl p-4 relative overflow-hidden flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-500">
+                        {t('kpiDailyRoom')}
+                      </span>
+                      <span className="w-5 h-5 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500 text-[10px]">
+                        <i className="fa-solid fa-fire-flame-curved"></i>
+                      </span>
+                    </div>
+                    <div className="my-2">
+                      <div className="text-2xl font-mono font-black tracking-tight text-amber-400">
+                        {fmt(categoryAnalytics.reduce((s, c) => s + (c.mode === 'variable' ? c.safeDailySpend : 0), 0))}
+                        <span className="text-xs font-mono font-normal text-secondary"> {t('perDayLabel')}</span>
+                      </div>
+                      <div className="text-[11px] font-mono text-tertiary mt-1">
+                        Discretionary burn allowance
+                      </div>
+                    </div>
+                    <div className="h-1 w-full bg-subtle rounded-full overflow-hidden">
+                      <div className="h-full bg-amber-500 rounded-full" style={{ width: '70%' }}></div>
                     </div>
                   </div>
 
-                  {/* Cumulative Bank Reserve Trajectory */}
-                  <div className="bg-theme-card border border-theme rounded-2xl p-4 shadow-sm relative overflow-hidden">
-                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-theme-muted">{t('cumulativeReserve')}</p>
-                    <p className={`text-2xl font-black mt-1 ${currentMonthMetrics.endProjectedBalance >= 0 ? 'text-theme-main' : 'text-rose-500 font-extrabold'}`}>
-                      {formatCurrency(currentMonthMetrics.endProjectedBalance)}
-                    </p>
-                    <p className="text-[11px] text-theme-muted mt-0.5">{t('cumulativeHelp')}</p>
-                    <div className="absolute top-3 right-3 text-theme-muted/15 text-3xl font-black">
-                      <i className="fa-solid fa-vault"></i>
+                  {/* Card 4: Cumulative Bank Balance (End of Month) */}
+                  <div className="bg-surface border border-subtle rounded-2xl p-4 relative overflow-hidden flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-secondary">
+                        {t('kpiCumulative')}
+                      </span>
+                      <span className="w-5 h-5 rounded-lg bg-surface-elevated flex items-center justify-center text-tertiary text-[10px]">
+                        <i className="fa-solid fa-vault"></i>
+                      </span>
+                    </div>
+                    <div className="my-2">
+                      <div className={`text-2xl font-mono font-black tracking-tight ${currentMetrics.endProjectedBalance >= 0 ? 'text-primary' : 'text-rose-400'}`}>
+                        {fmt(currentMetrics.endProjectedBalance)}
+                      </div>
+                      <div className="text-[11px] font-mono text-tertiary mt-1">
+                        {t('kpiCumulativeSub')}
+                      </div>
+                    </div>
+                    <div className="h-1 w-full bg-subtle rounded-full overflow-hidden">
+                      <div className="h-full bg-indigo-600 rounded-full" style={{ width: '100%' }}></div>
                     </div>
                   </div>
-                </section>
 
-                {/* 🤝 IOU / MONEY LENT WIDGET */}
-                <section className="bg-theme-card rounded-2xl border border-theme p-4 shadow-sm space-y-3">
-                  <div className="flex justify-between items-center border-b border-theme pb-2">
-                    <h3 className="text-xs font-bold text-theme-main uppercase tracking-wider flex items-center gap-1.5">
-                      <i className="fa-solid fa-hand-holding-dollar text-amber-500"></i> {t('iouTitle')}
-                    </h3>
-                    <span className="text-xs font-extrabold text-amber-500">
-                      Offen: {formatCurrency(totalPendingIou)}
+                </div>
+
+                {/* 🤝 IOU / MONEY LENT MODULE */}
+                <div className="bg-surface border border-subtle rounded-2xl p-4">
+                  <div className="flex items-center justify-between border-b border-subtle pb-3 mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                      <h3 className="text-xs font-mono font-bold text-primary uppercase tracking-wider">
+                        {t('iouTitle')}
+                      </h3>
+                    </div>
+                    <span className="text-xs font-mono font-bold text-amber-400">
+                      {t('iouTotalPending')}: {fmt(totalIou)}
                     </span>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2 mb-3">
                     <input
                       type="text"
+                      placeholder={t('iouPersonPlaceholder')}
                       value={iouPerson}
                       onChange={(e) => setIouPerson(e.target.value)}
-                      placeholder={t('iouPersonPlaceholder')}
-                      className="flex-1 bg-theme-input border border-theme text-theme-input rounded-xl px-3 py-1.5 text-xs outline-none focus:border-indigo-500"
+                      className="flex-1 bg-subtle border border-subtle text-primary text-xs font-mono rounded-xl px-3 py-2 outline-none focus:border-indigo-500 transition"
                     />
-                    <input
-                      type="number"
-                      value={iouAmount}
-                      onChange={(e) => setIouAmount(e.target.value)}
-                      placeholder={t('iouAmountPlaceholder')}
-                      className="w-full sm:w-28 bg-theme-input border border-theme text-theme-input rounded-xl px-3 py-1.5 text-xs outline-none focus:border-indigo-500 text-right"
-                    />
-                    <button onClick={handleAddIou} className="bg-amber-600 hover:bg-amber-500 text-white font-bold px-4 py-1.5 rounded-xl text-xs whitespace-nowrap">
+                    
+                    {/* Fixed Euro Container */}
+                    <div className="flex items-center bg-subtle border border-subtle rounded-xl px-3 py-1.5 focus-within:border-indigo-500 transition w-full sm:w-36">
+                      <input
+                        type="number"
+                        placeholder={t('iouAmountPlaceholder')}
+                        value={iouAmount}
+                        onChange={(e) => setIouAmount(e.target.value)}
+                        className="w-full bg-transparent text-primary text-xs font-mono font-bold outline-none text-right"
+                      />
+                      <span className="text-xs font-mono text-tertiary ml-1.5 font-bold">€</span>
+                    </div>
+
+                    <button
+                      onClick={handleAddIou}
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white font-mono font-bold px-4 py-2 rounded-xl text-xs transition"
+                    >
                       + {t('iouAddBtn')}
                     </button>
                   </div>
 
-                  {activePendingIous.length > 0 ? (
+                  {activeIous.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                      {activePendingIous.map(item => (
-                        <div key={item.id} className="p-2.5 bg-theme-header/50 border border-theme rounded-xl flex items-center justify-between">
+                      {activeIous.map(item => (
+                        <div key={item.id} className="p-2.5 rounded-xl bg-surface-elevated border border-subtle flex items-center justify-between">
                           <div>
-                            <span className="font-bold text-xs text-theme-main block">{item.person}</span>
-                            <span className="text-[10px] text-theme-muted">{item.date}</span>
+                            <div className="text-xs font-bold text-primary">{item.person}</div>
+                            <div className="text-[10px] font-mono text-tertiary">{item.date}</div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="font-extrabold text-xs text-amber-500">{formatCurrency(item.amount)}</span>
-                            <button onClick={() => handleSettleIou(item.id)} className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 font-bold px-2 py-0.5 rounded text-[10px]">
+                            <span className="text-xs font-mono font-bold text-amber-400">{fmt(item.amount)}</span>
+                            <button
+                              onClick={() => handleSettleIou(item.id)}
+                              className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition"
+                            >
                               ✓ {t('iouMarkReturned')}
                             </button>
                           </div>
@@ -1350,382 +1309,358 @@
                       ))}
                     </div>
                   ) : (
-                    <p className="text-[11px] text-theme-muted italic text-center py-1">{t('iouEmpty')}</p>
+                    <div className="text-center py-2 text-xs font-mono text-tertiary italic">
+                      {t('iouEmpty')}
+                    </div>
                   )}
-                </section>
+                </div>
 
-                {/* MONTHLY BAR CHART */}
-                <section className="bg-theme-card rounded-2xl border border-theme shadow-sm p-4">
-                  <h3 className="text-xs font-bold text-theme-main mb-3 uppercase tracking-wider flex items-center gap-2">
-                    <i className="fa-solid fa-chart-column text-indigo-500"></i> Cashflow Verlauf {selectedYear}
-                  </h3>
-                  <div className="h-[240px] relative w-full">
+                {/* MONTHLY CASHFLOW BAR CHART */}
+                <div className="bg-surface rounded-2xl border border-subtle p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xs font-mono font-bold text-secondary uppercase tracking-wider">
+                      {t('chartTitle', { year: selectedYear })}
+                    </h3>
+                  </div>
+                  <div className="h-[230px] relative w-full">
                     <canvas ref={chartRef}></canvas>
                   </div>
-                </section>
+                </div>
 
-                {/* ================== INCOMES & EXPENSES WITH AS-OF-DATE PACING ================== */}
+                {/* ================== INCOMES & EXPENSES WITH BULLETPROOF INPUTS ================== */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
-                  {/* INCOMES COLUMN */}
-                  <section className="bg-theme-card rounded-2xl border border-theme shadow-sm overflow-hidden flex flex-col">
-                    <div className="p-4 border-b border-theme bg-theme-header flex items-center justify-between">
-                      <h3 className="text-base font-extrabold text-theme-main flex items-center gap-2">
-                        <i className="fa-solid fa-money-bill-wave text-emerald-500"></i> {t('incomesHeader')}
-                      </h3>
-                      <span className="text-xs font-extrabold px-2.5 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full">
-                        Ist: {formatCurrency(currentMonthMetrics.monthActualIn)}
+                  {/* LEFT: INCOMES COLUMN */}
+                  <div className="bg-surface rounded-2xl border border-subtle overflow-hidden flex flex-col">
+                    <div className="p-4 border-b border-subtle bg-surface-elevated flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
+                        <h2 className="text-xs font-mono font-bold text-primary uppercase tracking-wider">
+                          {t('incomesHeader')}
+                        </h2>
+                      </div>
+                      <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        {fmt(currentMetrics.actualIn)}
                       </span>
                     </div>
 
-                    <div className="p-4 space-y-6">
-                      {/* Fixed Incomes */}
-                      <div>
-                        <div className="flex justify-between items-center mb-2.5 border-b border-theme pb-1">
-                          <h4 className="text-[11px] font-extrabold text-theme-muted uppercase tracking-wider flex items-center gap-1.5">
-                            <i className="fa-solid fa-building-columns text-slate-400"></i> {t('fixedIncomeType')}
-                          </h4>
-                          <span className="text-xs font-bold text-theme-main">
-                            {formatCurrency(data.categories.incomes.filter(c => (data.categoryModes[c] || 'fixed') === 'fixed').reduce((s, c) => s + getNode('incomes', c, selectedYear, selectedMonth).actual, 0))}
-                          </span>
+                    <div className="p-4 space-y-5">
+                      
+                      {/* Fixed Incomes Section */}
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center text-[10px] font-mono font-bold uppercase text-tertiary pb-1 border-b border-subtle">
+                          <span>{t('fixedIncomes')}</span>
                         </div>
 
-                        <div onDragOver={handleDragOver} onDrop={(e) => handleGroupedDrop(e, 0, 'incomes', true)} className="space-y-2">
-                          {data.categories.incomes.filter(c => (data.categoryModes[c] || 'fixed') === 'fixed').map((cat, idx) => {
-                            const node = getNode('incomes', cat, selectedYear, selectedMonth);
-                            if (hideZeroes && node.budget === 0 && node.actual === 0) return null;
-                            const pDay = data.fixedPaymentDays?.[cat];
+                        {data.categories.incomes.filter(c => (data.categoryModes[c] || 'fixed') === 'fixed').map(cat => {
+                          const node = getNode('incomes', cat, selectedYear, selectedMonth);
+                          if (hideZeroes && node.actual === 0) return null;
+                          const pDay = data.fixedPaymentDays?.[cat];
 
-                            return (
-                              <div
-                                key={cat}
-                                draggable={activeTab === 'edit'}
-                                onDragStart={(e) => handleDragStart(e, data.categories.incomes.indexOf(cat), 'incomes')}
-                                onDragOver={handleDragOver}
-                                onDrop={(e) => handleGroupedDrop(e, idx, 'incomes', true)}
-                                className="p-3 bg-theme-main/50 border border-theme rounded-xl flex items-center justify-between gap-3"
-                              >
-                                <div className="truncate flex-1">
-                                  <span className="font-bold text-xs text-theme-main block truncate">{t(`categories.${cat}`).replace('categories.', '')}</span>
-                                  {pDay && <span className="text-[10px] text-theme-muted">{t('paymentDayShort')} {pDay}.</span>}
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                  <div className="relative w-28">
-                                    <input
-                                      type="number"
-                                      value={node.actual !== 0 ? node.actual : ""}
-                                      placeholder="0"
-                                      onChange={(e) => handleUpdateNode('incomes', cat, selectedYear, selectedMonth, 'actual', e.target.value)}
-                                      className="w-full bg-theme-input border border-theme text-theme-main text-xs font-black rounded-lg px-2 py-1.5 text-right outline-none focus:border-emerald-500"
-                                    />
-                                    <span className="absolute right-1.5 top-1.5 text-[10px] text-theme-muted pointer-events-none">€</span>
-                                  </div>
-
-                                  {activeTab === 'edit' ? (
-                                    <button onClick={() => { setActiveEditCat({ type: 'incomes', cat }); setEditCatNameInput(cat); }} className="text-xs text-theme-muted hover:text-indigo-500 p-1">
-                                      <i className="fa-solid fa-gear"></i>
-                                    </button>
-                                  ) : (
-                                    node.actual > 0 && (
-                                      <button onClick={() => setRecurringModal({ type: 'incomes', item: cat, value: node.actual })} className="text-theme-muted hover:text-indigo-500 p-1" title={t('setRecurringBudget')}>
-                                        <i className="fa-solid fa-arrows-spin"></i>
-                                      </button>
-                                    )
-                                  )}
-                                </div>
+                          return (
+                            <div key={cat} className="p-3 rounded-xl bg-subtle border border-subtle flex items-center justify-between gap-3">
+                              <div className="truncate flex-1">
+                                <span className="font-semibold text-xs text-primary block truncate">
+                                  {t(`categories.${cat}`).replace('categories.', '')}
+                                </span>
+                                {pDay && <span className="text-[10px] font-mono text-tertiary">{t('paymentDayShort')} {pDay}</span>}
                               </div>
-                            );
-                          })}
-                        </div>
+
+                              <div className="flex items-center gap-2">
+                                {/* Flexbox Input Container - Never overlaps Euro */}
+                                <div className="flex items-center bg-surface-elevated border border-subtle rounded-xl px-2.5 py-1.5 focus-within:border-emerald-500 transition w-32">
+                                  <input
+                                    type="number"
+                                    value={node.actual !== 0 ? node.actual : ""}
+                                    placeholder="0"
+                                    onChange={(e) => updateNode('incomes', cat, selectedYear, selectedMonth, 'actual', e.target.value)}
+                                    className="w-full bg-transparent text-right font-mono font-bold text-xs text-emerald-400 outline-none"
+                                  />
+                                  <span className="text-xs font-mono text-tertiary ml-1.5 font-bold">€</span>
+                                </div>
+
+                                {activeTab === 'edit' ? (
+                                  <button onClick={() => { setActiveEditCat({ type: 'incomes', cat }); setEditCatNameInput(cat); }} className="text-tertiary hover:text-primary p-1">
+                                    <i className="fa-solid fa-gear text-xs"></i>
+                                  </button>
+                                ) : (
+                                  node.actual > 0 && (
+                                    <button onClick={() => setRecurringModal({ type: 'incomes', item: cat, value: node.actual })} className="text-tertiary hover:text-indigo-400 p-1">
+                                      <i className="fa-solid fa-arrows-spin text-xs"></i>
+                                    </button>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
 
-                      {/* Variable Incomes */}
-                      <div>
-                        <div className="flex justify-between items-center mb-2.5 border-b border-theme pb-1">
-                          <h4 className="text-[11px] font-extrabold text-theme-muted uppercase tracking-wider flex items-center gap-1.5">
-                            <i className="fa-solid fa-coins text-emerald-500"></i> {t('variableIncomeType')}
-                          </h4>
-                          <span className="text-xs font-bold text-theme-main">
-                            {formatCurrency(data.categories.incomes.filter(c => (data.categoryModes[c] || 'fixed') === 'variable').reduce((s, c) => s + getNode('incomes', c, selectedYear, selectedMonth).actual, 0))}
-                          </span>
+                      {/* Variable Incomes Section */}
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center text-[10px] font-mono font-bold uppercase text-tertiary pb-1 border-b border-subtle">
+                          <span>{t('variableIncomes')}</span>
                         </div>
 
-                        <div onDragOver={handleDragOver} onDrop={(e) => handleGroupedDrop(e, 0, 'incomes', false)} className="space-y-2">
-                          {data.categories.incomes.filter(c => (data.categoryModes[c] || 'fixed') === 'variable').map((cat, idx) => {
-                            const node = getNode('incomes', cat, selectedYear, selectedMonth);
-                            if (hideZeroes && node.budget === 0 && node.actual === 0) return null;
+                        {data.categories.incomes.filter(c => (data.categoryModes[c] || 'fixed') === 'variable').map(cat => {
+                          const node = getNode('incomes', cat, selectedYear, selectedMonth);
+                          if (hideZeroes && node.actual === 0) return null;
 
-                            return (
-                              <div
-                                key={cat}
-                                draggable={activeTab === 'edit'}
-                                onDragStart={(e) => handleDragStart(e, data.categories.incomes.indexOf(cat), 'incomes')}
-                                onDragOver={handleDragOver}
-                                onDrop={(e) => handleGroupedDrop(e, idx, 'incomes', false)}
-                                className="p-3 bg-theme-main/50 border border-theme rounded-xl flex items-center justify-between gap-3"
-                              >
-                                <div className="truncate flex-1">
-                                  <span className="font-bold text-xs text-theme-main block truncate">{t(`categories.${cat}`).replace('categories.', '')}</span>
+                          return (
+                            <div key={cat} className="p-3 rounded-xl bg-subtle border border-subtle flex items-center justify-between gap-3">
+                              <span className="font-semibold text-xs text-primary truncate flex-1">
+                                {t(`categories.${cat}`).replace('categories.', '')}
+                              </span>
+
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center bg-surface-elevated border border-subtle rounded-xl px-2.5 py-1.5 focus-within:border-emerald-500 transition w-32">
+                                  <input
+                                    type="number"
+                                    value={node.actual !== 0 ? node.actual : ""}
+                                    placeholder="0"
+                                    onChange={(e) => updateNode('incomes', cat, selectedYear, selectedMonth, 'actual', e.target.value)}
+                                    className="w-full bg-transparent text-right font-mono font-bold text-xs text-emerald-400 outline-none"
+                                  />
+                                  <span className="text-xs font-mono text-tertiary ml-1.5 font-bold">€</span>
                                 </div>
 
-                                <div className="flex items-center gap-2">
-                                  <div className="relative w-28">
-                                    <input
-                                      type="number"
-                                      value={node.actual !== 0 ? node.actual : ""}
-                                      placeholder="0"
-                                      onChange={(e) => handleUpdateNode('incomes', cat, selectedYear, selectedMonth, 'actual', e.target.value)}
-                                      className="w-full bg-theme-input border border-theme text-theme-main text-xs font-black rounded-lg px-2 py-1.5 text-right outline-none focus:border-emerald-500"
-                                    />
-                                    <span className="absolute right-1.5 top-1.5 text-[10px] text-theme-muted pointer-events-none">€</span>
-                                  </div>
-
-                                  {activeTab === 'edit' && (
-                                    <button onClick={() => { setActiveEditCat({ type: 'incomes', cat }); setEditCatNameInput(cat); }} className="text-xs text-theme-muted hover:text-indigo-500 p-1">
-                                      <i className="fa-solid fa-gear"></i>
-                                    </button>
-                                  )}
-                                </div>
+                                {activeTab === 'edit' && (
+                                  <button onClick={() => { setActiveEditCat({ type: 'incomes', cat }); setEditCatNameInput(cat); }} className="text-tertiary hover:text-primary p-1">
+                                    <i className="fa-solid fa-gear text-xs"></i>
+                                  </button>
+                                )}
                               </div>
-                            );
-                          })}
-                        </div>
+                            </div>
+                          );
+                        })}
                       </div>
+
                     </div>
 
                     {activeTab === 'edit' && (
-                      <div className="p-3 bg-theme-footer border-t border-theme flex gap-2">
+                      <div className="p-3 bg-surface-elevated border-t border-subtle flex gap-2">
                         <input
                           type="text"
                           value={newIncomeName}
                           onChange={(e) => setNewIncomeName(e.target.value)}
                           placeholder={t('addPlaceholder')}
-                          className="flex-1 bg-theme-input border border-theme text-theme-input rounded-xl px-3 py-1.5 text-xs outline-none"
+                          className="flex-1 bg-subtle border border-subtle text-primary rounded-xl px-3 py-1.5 text-xs font-mono outline-none"
                         />
-                        <button onClick={() => handleAddCategory('incomes', newIncomeName, setNewIncomeName)} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1.5 rounded-xl text-xs">
+                        <button onClick={() => addCategory('incomes', newIncomeName, setNewIncomeName)} className="bg-indigo-600 hover:bg-indigo-500 text-white font-mono font-bold px-3 py-1.5 rounded-xl text-xs">
                           + Add
                         </button>
                       </div>
                     )}
-                  </section>
+                  </div>
 
-                  {/* EXPENSES COLUMN */}
-                  <section className="bg-theme-card rounded-2xl border border-theme shadow-sm overflow-hidden flex flex-col">
-                    <div className="p-4 border-b border-theme bg-theme-header flex items-center justify-between">
-                      <h3 className="text-base font-extrabold text-theme-main flex items-center gap-2">
-                        <i className="fa-solid fa-receipt text-rose-500"></i> {t('expensesHeader')}
-                      </h3>
-                      <span className="text-xs font-extrabold px-2.5 py-1 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-full">
-                        Ist: {formatCurrency(currentMonthMetrics.monthActualEx)}
+                  {/* RIGHT: EXPENSES COLUMN (PLAN VS ACTUAL WITH CLEAN FLEXBOX) */}
+                  <div className="bg-surface rounded-2xl border border-subtle overflow-hidden flex flex-col">
+                    <div className="p-4 border-b border-subtle bg-surface-elevated flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]"></span>
+                        <h2 className="text-xs font-mono font-bold text-primary uppercase tracking-wider">
+                          {t('expensesHeader')}
+                        </h2>
+                      </div>
+                      <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                        {fmt(currentMetrics.actualEx)}
                       </span>
                     </div>
 
-                    <div className="p-4 space-y-6">
+                    <div className="p-4 space-y-5">
 
                       {/* Fixed Expenses */}
-                      <div>
-                        <div className="flex justify-between items-center mb-2.5 border-b border-theme pb-1">
-                          <h4 className="text-[11px] font-extrabold text-theme-muted uppercase tracking-wider flex items-center gap-1.5">
-                            <i className="fa-solid fa-file-invoice text-slate-400"></i> {t('fixedExpenseType')}
-                          </h4>
-                          <span className="text-xs font-bold text-theme-main">
-                            {formatCurrency(currentCategoryAnalytics.filter(c => c.mode === 'fixed').reduce((s, c) => s + c.actual, 0))}
-                          </span>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center text-[10px] font-mono font-bold uppercase text-tertiary pb-1 border-b border-subtle">
+                          <span>{t('fixedExpenses')}</span>
                         </div>
 
-                        <div onDragOver={handleDragOver} onDrop={(e) => handleGroupedDrop(e, 0, 'expenses', true)} className="space-y-2">
-                          {currentCategoryAnalytics.filter(c => c.mode === 'fixed').map((item, idx) => {
-                            if (hideZeroes && item.budget === 0 && item.actual === 0) return null;
-                            const pDay = data.fixedPaymentDays?.[item.category];
-                            const isOneTime = item.isOneTime;
+                        {categoryAnalytics.filter(c => c.mode === 'fixed').map(item => {
+                          if (hideZeroes && item.actual === 0 && item.budget === 0) return null;
+                          const pDay = data.fixedPaymentDays?.[item.category];
 
-                            return (
-                              <div
-                                key={item.category}
-                                draggable={activeTab === 'edit'}
-                                onDragStart={(e) => handleDragStart(e, data.categories.expenses.indexOf(item.category), 'expenses')}
-                                onDragOver={handleDragOver}
-                                onDrop={(e) => handleGroupedDrop(e, idx, 'expenses', true)}
-                                className="p-3 bg-theme-main/50 border border-theme rounded-xl flex items-center justify-between gap-3"
-                              >
-                                <div className="truncate flex-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="font-bold text-xs text-theme-main block truncate">{t(`categories.${item.category}`).replace('categories.', '')}</span>
-                                    {isOneTime && <span className="text-[9px] bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 px-1 rounded font-black">{t('oneTimeBadge')}</span>}
-                                  </div>
-                                  {pDay && <span className="text-[10px] text-theme-muted">{t('paymentDayShort')} {pDay}.</span>}
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                  <div className="relative w-28">
-                                    <input
-                                      type="number"
-                                      value={item.actual !== 0 ? item.actual : ""}
-                                      placeholder="0"
-                                      onChange={(e) => handleUpdateNode('expenses', item.category, selectedYear, selectedMonth, 'actual', e.target.value)}
-                                      className="w-full bg-theme-input border border-theme text-theme-main text-xs font-black rounded-lg px-2 py-1.5 text-right outline-none focus:border-rose-500"
-                                    />
-                                    <span className="absolute right-1.5 top-1.5 text-[10px] text-theme-muted pointer-events-none">€</span>
-                                  </div>
-
-                                  {activeTab === 'edit' ? (
-                                    <button onClick={() => { setActiveEditCat({ type: 'expenses', cat: item.category }); setEditCatNameInput(item.category); }} className="text-xs text-theme-muted hover:text-indigo-500 p-1">
-                                      <i className="fa-solid fa-gear"></i>
-                                    </button>
-                                  ) : (
-                                    item.actual > 0 && (
-                                      <button onClick={() => setRecurringModal({ type: 'expenses', item: item.category, value: item.actual })} className="text-theme-muted hover:text-indigo-500 p-1" title={t('setRecurringBudget')}>
-                                        <i className="fa-solid fa-arrows-spin"></i>
-                                      </button>
-                                    )
+                          return (
+                            <div key={item.category} className="p-3 rounded-xl bg-subtle border border-subtle flex items-center justify-between gap-3">
+                              <div className="truncate flex-1">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-semibold text-xs text-primary block truncate">
+                                    {t(`categories.${item.category}`).replace('categories.', '')}
+                                  </span>
+                                  {item.isOneTime && (
+                                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                                      {t('badgeOneTime')}
+                                    </span>
                                   )}
                                 </div>
+                                {pDay && <span className="text-[10px] font-mono text-tertiary">{t('paymentDayShort')} {pDay}</span>}
                               </div>
-                            );
-                          })}
-                        </div>
+
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center bg-surface-elevated border border-subtle rounded-xl px-2.5 py-1.5 focus-within:border-rose-500 transition w-32">
+                                  <input
+                                    type="number"
+                                    value={item.actual !== 0 ? item.actual : ""}
+                                    placeholder="0"
+                                    onChange={(e) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'actual', e.target.value)}
+                                    className="w-full bg-transparent text-right font-mono font-bold text-xs text-rose-400 outline-none"
+                                  />
+                                  <span className="text-xs font-mono text-tertiary ml-1.5 font-bold">€</span>
+                                </div>
+
+                                {activeTab === 'edit' ? (
+                                  <button onClick={() => { setActiveEditCat({ type: 'expenses', cat: item.category }); setEditCatNameInput(item.category); }} className="text-tertiary hover:text-primary p-1">
+                                    <i className="fa-solid fa-gear text-xs"></i>
+                                  </button>
+                                ) : (
+                                  item.actual > 0 && (
+                                    <button onClick={() => setRecurringModal({ type: 'expenses', item: item.category, value: item.actual })} className="text-tertiary hover:text-indigo-400 p-1">
+                                      <i className="fa-solid fa-arrows-spin text-xs"></i>
+                                    </button>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
 
-                      {/* Variable Expenses (Plan vs Actual vs As-Of-Day) */}
-                      <div>
-                        <div className="flex justify-between items-center mb-2.5 border-b border-theme pb-1">
-                          <h4 className="text-[11px] font-extrabold text-theme-muted uppercase tracking-wider flex items-center gap-1.5">
-                            <i className="fa-solid fa-cart-shopping text-rose-500"></i> {t('variableExpenseType')}
-                          </h4>
-                          <span className="text-xs font-bold text-theme-main">
-                            {formatCurrency(currentCategoryAnalytics.filter(c => c.mode === 'variable').reduce((s, c) => s + c.actual, 0))}
-                          </span>
+                      {/* Variable Expenses (Plan vs Actual with As of Day & Bulletproof Inputs) */}
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center text-[10px] font-mono font-bold uppercase text-tertiary pb-1 border-b border-subtle">
+                          <span>{t('variableExpenses')}</span>
                         </div>
 
-                        <div onDragOver={handleDragOver} onDrop={(e) => handleGroupedDrop(e, 0, 'expenses', false)} className="space-y-3">
-                          {currentCategoryAnalytics.filter(c => c.mode === 'variable').map((item, idx) => {
-                            if (hideZeroes && item.budget === 0 && item.actual === 0) return null;
-                            const daysInMonth = currentMonthMetrics.daysInMonth;
-                            const pctSpent = item.budget > 0 ? (item.actual / item.budget) * 100 : 0;
-                            const pctTime = (item.asOfDate / daysInMonth) * 100;
+                        {categoryAnalytics.filter(c => c.mode === 'variable').map(item => {
+                          if (hideZeroes && item.actual === 0 && item.budget === 0) return null;
+                          const daysInMonth = currentMetrics.daysInMonth;
+                          const pctSpent = item.budget > 0 ? (item.actual / item.budget) * 100 : 0;
+                          const pctTime = (item.asOfDate / daysInMonth) * 100;
 
-                            return (
-                              <div
-                                key={item.category}
-                                draggable={activeTab === 'edit'}
-                                onDragStart={(e) => handleDragStart(e, data.categories.expenses.indexOf(item.category), 'expenses')}
-                                onDragOver={handleDragOver}
-                                onDrop={(e) => handleGroupedDrop(e, idx, 'expenses', false)}
-                                className="p-3 bg-theme-main/50 border border-theme rounded-xl flex flex-col gap-2"
-                              >
-                                <div className="flex items-center justify-between gap-2">
-                                  <div className="flex items-center gap-1.5 truncate flex-1">
-                                    <span className="font-bold text-xs text-theme-main block truncate">{t(`categories.${item.category}`).replace('categories.', '')}</span>
-                                    {item.paceStatus === 'over' ? (
-                                      <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-500 border border-rose-500/20">{t('statusOver')}</span>
-                                    ) : item.paceStatus === 'frugal' ? (
-                                      <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">{t('statusFrugal')}</span>
-                                    ) : (
-                                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-theme-header text-theme-muted">{t('statusTrack')}</span>
-                                    )}
-                                  </div>
-
-                                  {activeTab === 'edit' && (
-                                    <button onClick={() => { setActiveEditCat({ type: 'expenses', cat: item.category }); setEditCatNameInput(item.category); }} className="text-xs text-theme-muted hover:text-indigo-500 p-1">
-                                      <i className="fa-solid fa-gear"></i>
-                                    </button>
-                                  )}
+                          return (
+                            <div key={item.category} className="p-3 rounded-xl bg-subtle border border-subtle space-y-2.5">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5 truncate flex-1">
+                                  <span className="font-bold text-xs text-primary block truncate">
+                                    {t(`categories.${item.category}`).replace('categories.', '')}
+                                  </span>
+                                  <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${
+                                    item.paceStatus === 'over' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' :
+                                    item.paceStatus === 'frugal' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                                    'bg-surface-elevated text-secondary'
+                                  }`}>
+                                    {item.paceStatus === 'over' ? t('statusOver') : item.paceStatus === 'frugal' ? t('statusFrugal') : t('statusTrack')}
+                                  </span>
                                 </div>
 
-                                {/* Plan & Actual Grid */}
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div className="relative">
-                                    <span className="text-[9px] font-bold text-theme-muted block mb-0.5">{t('planBudget')}</span>
+                                {activeTab === 'edit' && (
+                                  <button onClick={() => { setActiveEditCat({ type: 'expenses', cat: item.category }); setEditCatNameInput(item.category); }} className="text-tertiary hover:text-primary p-1">
+                                    <i className="fa-solid fa-gear text-xs"></i>
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Input Pair: Plan (Budget) vs Actual (Ist) */}
+                              <div className="grid grid-cols-2 gap-2">
+                                
+                                {/* Plan Input */}
+                                <div>
+                                  <div className="text-[10px] font-mono font-bold text-indigo-400 mb-1 flex items-center gap-1">
+                                    <span>{t('planLabel')}</span>
+                                  </div>
+                                  <div className="flex items-center bg-surface-elevated border border-indigo-500/20 rounded-xl px-2.5 py-1.5 focus-within:border-indigo-500 transition">
                                     <input
                                       type="number"
                                       value={item.budget !== 0 ? item.budget : ""}
                                       placeholder="0"
-                                      onChange={(e) => handleUpdateNode('expenses', item.category, selectedYear, selectedMonth, 'budget', e.target.value)}
-                                      className="w-full bg-theme-input border border-theme text-theme-main text-xs font-black rounded-lg px-2 py-1.5 text-right outline-none focus:border-indigo-500"
+                                      onChange={(e) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'budget', e.target.value)}
+                                      className="w-full bg-transparent text-right font-mono font-bold text-xs text-indigo-300 outline-none"
                                     />
-                                    <span className="absolute right-1.5 top-5 text-[10px] text-theme-muted pointer-events-none">€</span>
+                                    <span className="text-xs font-mono text-tertiary ml-1.5 font-bold">€</span>
                                   </div>
+                                </div>
 
-                                  <div className="relative">
-                                    <div className="flex justify-between items-center mb-0.5">
-                                      <span className="text-[9px] font-bold text-theme-muted">{t('actualSpent')}</span>
-                                      <div className="flex items-center gap-0.5 text-[9px] text-theme-muted font-bold" title={t('asOfDayLabel')}>
-                                        <span>Tag</span>
-                                        <input
-                                          type="number"
-                                          min="1"
-                                          max={daysInMonth}
-                                          value={item.asOfDate}
-                                          onChange={(e) => handleUpdateNode('expenses', item.category, selectedYear, selectedMonth, 'asOfDate', Math.min(daysInMonth, Math.max(1, parseInt(e.target.value) || 1)))}
-                                          className="w-6 text-center font-black bg-theme-header rounded text-theme-main outline-none"
-                                        />
-                                      </div>
+                                {/* Actual Input + As of Day */}
+                                <div>
+                                  <div className="text-[10px] font-mono font-bold text-rose-400 mb-1 flex items-center justify-between">
+                                    <span>{t('actualLabel')}</span>
+                                    <div className="flex items-center gap-1 text-tertiary text-[9px]">
+                                      <span>{t('asOfDayLabel')}</span>
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        max={daysInMonth}
+                                        value={item.asOfDate}
+                                        onChange={(e) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'asOfDate', Math.min(daysInMonth, Math.max(1, parseInt(e.target.value) || 1)))}
+                                        className="w-5 text-center font-mono font-bold text-primary bg-surface rounded"
+                                      />
                                     </div>
+                                  </div>
+                                  <div className="flex items-center bg-surface-elevated border border-rose-500/20 rounded-xl px-2.5 py-1.5 focus-within:border-rose-500 transition">
                                     <input
                                       type="number"
                                       value={item.actual !== 0 ? item.actual : ""}
                                       placeholder="0"
-                                      onChange={(e) => handleUpdateNode('expenses', item.category, selectedYear, selectedMonth, 'actual', e.target.value)}
-                                      className="w-full bg-theme-input border border-theme text-theme-main text-xs font-black rounded-lg px-2 py-1.5 text-right outline-none focus:border-rose-500"
+                                      onChange={(e) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'actual', e.target.value)}
+                                      className="w-full bg-transparent text-right font-mono font-bold text-xs text-rose-400 outline-none"
                                     />
-                                    <span className="absolute right-1.5 top-5 text-[10px] text-theme-muted pointer-events-none">€</span>
+                                    <span className="text-xs font-mono text-tertiary ml-1.5 font-bold">€</span>
                                   </div>
                                 </div>
 
-                                {/* Dynamic Pacing & Safe Burn Line */}
-                                <div className="flex justify-between items-center text-[10px] pt-1">
-                                  <span className="font-bold text-theme-muted">
-                                    {t('restBudget')}: <b className={item.remainingBudget >= 0 ? 'text-theme-main' : 'text-rose-500'}>{formatCurrency(item.remainingBudget)}</b>
-                                  </span>
-                                  <span className="font-semibold text-theme-muted">
-                                    Safe: <b className="text-emerald-500">{formatCurrency(item.safeDailySpend)}/Tag</b> ({item.daysLeft}T)
-                                  </span>
-                                </div>
-
-                                {/* Visual Progress Bar */}
-                                {item.budget > 0 && (
-                                  <div className="w-full bg-theme-header h-1.5 rounded-full overflow-hidden relative mt-0.5">
-                                    <div
-                                      className={`h-full transition-all duration-300 ${pctSpent > 100 ? 'bg-rose-500' : pctSpent > pctTime + 10 ? 'bg-amber-500' : 'bg-indigo-500'}`}
-                                      style={{ width: `${Math.min(100, pctSpent)}%` }}
-                                    ></div>
-                                    <div
-                                      className="absolute top-0 bottom-0 w-0.5 bg-theme-main z-10 opacity-70"
-                                      style={{ left: `${Math.min(100, pctTime)}%` }}
-                                      title={`Monatsfortschritt: ${pctTime.toFixed(0)}%`}
-                                    ></div>
-                                  </div>
-                                )}
                               </div>
-                            );
-                          })}
-                        </div>
+
+                              {/* Pacing Info Line */}
+                              <div className="flex justify-between items-center text-[10px] font-mono pt-0.5">
+                                <span className="text-tertiary">
+                                  {t('restBudgetLabel')}: <b className={item.remainingBudget >= 0 ? 'text-primary' : 'text-rose-400'}>{fmt(item.remainingBudget)}</b>
+                                </span>
+                                <span className="text-amber-400 font-bold">
+                                  {fmt(item.safeDailySpend)} {t('perDayLabel')} <span className="text-tertiary font-normal">({item.daysLeft}d)</span>
+                                </span>
+                              </div>
+
+                              {/* Progress bar */}
+                              {item.budget > 0 && (
+                                <div className="w-full bg-surface-elevated h-1 rounded-full overflow-hidden relative">
+                                  <div
+                                    className={`h-full transition-all duration-300 ${pctSpent > 100 ? 'bg-rose-500' : pctSpent > pctTime + 10 ? 'bg-amber-500' : 'bg-indigo-500'}`}
+                                    style={{ width: `${Math.min(100, pctSpent)}%` }}
+                                  ></div>
+                                  <div
+                                    className="absolute top-0 bottom-0 w-0.5 bg-primary z-10 opacity-70"
+                                    style={{ left: `${Math.min(100, pctTime)}%` }}
+                                  ></div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
+
                     </div>
 
                     {activeTab === 'edit' && (
-                      <div className="p-3 bg-theme-footer border-t border-theme flex gap-2">
+                      <div className="p-3 bg-surface-elevated border-t border-subtle flex gap-2">
                         <input
                           type="text"
                           value={newExpenseName}
                           onChange={(e) => setNewExpenseName(e.target.value)}
                           placeholder={t('addPlaceholder')}
-                          className="flex-1 bg-theme-input border border-theme text-theme-input rounded-xl px-3 py-1.5 text-xs outline-none"
+                          className="flex-1 bg-subtle border border-subtle text-primary rounded-xl px-3 py-1.5 text-xs font-mono outline-none"
                         />
-                        <button onClick={() => handleAddCategory('expenses', newExpenseName, setNewExpenseName)} className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1.5 rounded-xl text-xs">
+                        <button onClick={() => addCategory('expenses', newExpenseName, setNewExpenseName)} className="bg-indigo-600 hover:bg-indigo-500 text-white font-mono font-bold px-3 py-1.5 rounded-xl text-xs">
                           + Add
                         </button>
                       </div>
                     )}
-                  </section>
+                  </div>
 
                 </div>
               </div>
             )}
           </main>
 
-          {/* EDIT CATEGORY MODAL DRAWER */}
+          {/* EDIT DRAWER */}
           {activeEditCat && (() => {
             const { type, cat } = activeEditCat;
             const mode = data.categoryModes[cat] || (type === 'incomes' ? 'fixed' : 'variable');
@@ -1733,21 +1668,19 @@
             const pDay = data.fixedPaymentDays?.[cat];
 
             return (
-              <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex justify-end">
-                <div className="bg-theme-card border-l border-theme w-full max-w-sm h-full shadow-2xl p-6 overflow-y-auto flex flex-col justify-between animate-slideLeft">
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end">
+                <div className="bg-surface border-l border-subtle w-full max-w-sm h-full shadow-2xl p-6 overflow-y-auto flex flex-col justify-between animate-slideIn">
                   <div className="space-y-6">
-                    <div className="flex justify-between items-center pb-4 border-b border-theme">
-                      <h3 className="font-extrabold text-base text-theme-main flex items-center gap-2">
-                        <i className="fa-solid fa-sliders text-indigo-500"></i> {t('editorTitle')}
-                      </h3>
-                      <button onClick={() => setActiveEditCat(null)} className="text-theme-muted hover:text-rose-500">
-                        <i className="fa-solid fa-xmark text-lg"></i>
+                    <div className="flex justify-between items-center pb-4 border-b border-subtle">
+                      <h3 className="font-mono font-bold text-sm text-primary uppercase tracking-wider">{t('editorTitle')}</h3>
+                      <button onClick={() => setActiveEditCat(null)} className="text-secondary hover:text-rose-400">
+                        <i className="fa-solid fa-xmark text-base"></i>
                       </button>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-4 font-mono text-xs">
                       <div>
-                        <label className="text-[10px] font-extrabold text-theme-muted uppercase tracking-wider block mb-1">{t('posten')}</label>
+                        <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('posten')}</label>
                         <input
                           type="text"
                           value={editCatNameInput}
@@ -1755,117 +1688,85 @@
                           onBlur={async () => {
                             const trimmed = editCatNameInput.trim();
                             if (!trimmed || trimmed === cat) return;
-                            if (data.categories[type].includes(trimmed)) return alert(t('duplicateCategoryAlert'));
-                            const updated = { ...data };
-                            updated.categories[type] = updated.categories[type].map(c => c === cat ? trimmed : c);
-                            if (updated.categoryModes[cat]) { updated.categoryModes[trimmed] = updated.categoryModes[cat]; delete updated.categoryModes[cat]; }
-                            if (updated.categoryOverrides[cat]) { updated.categoryOverrides[trimmed] = updated.categoryOverrides[cat]; delete updated.categoryOverrides[cat]; }
-                            if (updated.categoryOneTime[cat] !== undefined) { updated.categoryOneTime[trimmed] = updated.categoryOneTime[cat]; delete updated.categoryOneTime[cat]; }
-                            if (updated.fixedPaymentDays[cat]) { updated.fixedPaymentDays[trimmed] = updated.fixedPaymentDays[cat]; delete updated.fixedPaymentDays[cat]; }
+                            const copy = JSON.parse(JSON.stringify(data));
+                            copy.categories[type] = copy.categories[type].map(c => c === cat ? trimmed : c);
+                            if (copy.categoryModes[cat]) { copy.categoryModes[trimmed] = copy.categoryModes[cat]; delete copy.categoryModes[cat]; }
+                            if (copy.categoryOverrides[cat]) { copy.categoryOverrides[trimmed] = copy.categoryOverrides[cat]; delete copy.categoryOverrides[cat]; }
+                            if (copy.categoryOneTime[cat] !== undefined) { copy.categoryOneTime[trimmed] = copy.categoryOneTime[cat]; delete copy.categoryOneTime[cat]; }
+                            if (copy.fixedPaymentDays[cat]) { copy.fixedPaymentDays[trimmed] = copy.fixedPaymentDays[cat]; delete copy.fixedPaymentDays[cat]; }
                             ["2026", "2027", "2028"].forEach(y => {
-                              if (updated.values[y]?.[type]?.[cat]) {
-                                updated.values[y][type][trimmed] = updated.values[y][type][cat];
-                                delete updated.values[y][type][cat];
+                              if (copy.values[y]?.[type]?.[cat]) {
+                                copy.values[y][type][trimmed] = copy.values[y][type][cat];
+                                delete copy.values[y][type][cat];
                               }
                             });
-                            await saveStateAndDispatch(updated);
+                            await saveState(copy);
                             setActiveEditCat({ type, cat: trimmed });
                           }}
-                          className="w-full bg-theme-input border border-theme text-theme-input font-bold rounded-xl px-3 py-2 text-sm outline-none focus:border-indigo-500"
+                          className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2 text-primary font-bold outline-none"
                         />
                       </div>
 
                       {type === 'expenses' && (
-                        <>
-                          <div className="flex items-center justify-between p-3 bg-theme-header rounded-xl border border-theme">
-                            <div>
-                              <span className="font-bold text-xs text-theme-main block">Einmalige Sonderausgabe</span>
-                              <span className="text-[10px] text-theme-muted">{t('isOneTimeLabel')}</span>
-                            </div>
-                            <input
-                              type="checkbox"
-                              checked={isOneTime}
-                              onChange={(e) => {
-                                const updated = { ...data, categoryOneTime: { ...data.categoryOneTime, [cat]: e.target.checked } };
-                                saveStateAndDispatch(updated);
-                              }}
-                              className="w-4 h-4 text-indigo-600 rounded"
-                            />
-                          </div>
-
+                        <div className="flex items-center justify-between p-3 rounded-xl bg-surface-elevated border border-subtle">
                           <div>
-                            <label className="text-[10px] font-extrabold text-theme-muted uppercase tracking-wider block mb-1">{t('bracketLabel')}</label>
-                            <select
-                              value={data.categoryOverrides[cat] || "auto"}
-                              onChange={(e) => {
-                                const v = e.target.value === "auto" ? null : e.target.value;
-                                saveStateAndDispatch({ ...data, categoryOverrides: { ...(data.categoryOverrides || {}), [cat]: v } });
-                              }}
-                              className="w-full bg-theme-input border border-theme text-theme-main rounded-xl px-3 py-2 text-xs font-bold outline-none"
-                            >
-                              <option value="auto">Auto 🤖</option>
-                              <option value="housing">{t('bracketHousing')}</option>
-                              <option value="living">{t('bracketLiving')}</option>
-                              <option value="subscriptions">{t('bracketSubscriptions')}</option>
-                              <option value="leisure">{t('bracketLeisure')}</option>
-                              <option value="professional">{t('bracketProfessional')}</option>
-                            </select>
+                            <span className="font-bold text-primary block">{t('badgeOneTime')}</span>
+                            <span className="text-[10px] text-secondary">{t('isOneTimeLabel')}</span>
                           </div>
-                        </>
+                          <input
+                            type="checkbox"
+                            checked={isOneTime}
+                            onChange={(e) => {
+                              const copy = { ...data, categoryOneTime: { ...data.categoryOneTime, [cat]: e.target.checked } };
+                              saveState(copy);
+                            }}
+                            className="w-4 h-4 text-indigo-600 rounded"
+                          />
+                        </div>
                       )}
 
                       <div>
-                        <label className="text-[10px] font-extrabold text-theme-muted uppercase tracking-wider block mb-1">{t('classificationLabel')}</label>
+                        <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('classificationLabel')}</label>
                         <div className="grid grid-cols-2 gap-2">
                           <button
                             type="button"
-                            onClick={() => {
-                              const updated = { ...data, categoryModes: { ...data.categoryModes, [cat]: 'fixed' } };
-                              saveStateAndDispatch(updated);
-                            }}
-                            className={`p-3 rounded-xl border text-center transition font-bold text-xs ${mode === 'fixed' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600' : 'border-theme text-theme-muted'}`}
+                            onClick={() => saveState({ ...data, categoryModes: { ...data.categoryModes, [cat]: 'fixed' } })}
+                            className={`p-2.5 rounded-xl border text-center font-bold text-xs ${mode === 'fixed' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-subtle text-secondary'}`}
                           >
-                            {type === 'incomes' ? t('fixedIncomeType') : t('fixedExpenseType')}
+                            {t('badgeFixed')}
                           </button>
                           <button
                             type="button"
-                            onClick={() => {
-                              const updated = { ...data, categoryModes: { ...data.categoryModes, [cat]: 'variable' } };
-                              saveStateAndDispatch(updated);
-                            }}
-                            className={`p-3 rounded-xl border text-center transition font-bold text-xs ${mode === 'variable' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600' : 'border-theme text-theme-muted'}`}
+                            onClick={() => saveState({ ...data, categoryModes: { ...data.categoryModes, [cat]: 'variable' } })}
+                            className={`p-2.5 rounded-xl border text-center font-bold text-xs ${mode === 'variable' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-subtle text-secondary'}`}
                           >
-                            {type === 'incomes' ? t('variableIncomeType') : t('variableExpenseType')}
+                            Variabel
                           </button>
                         </div>
                       </div>
 
                       {mode === 'fixed' && (
                         <div>
-                          <label className="text-[10px] font-extrabold text-theme-muted uppercase tracking-wider block mb-1">{t('paymentDayLabel')}</label>
+                          <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('paymentDayLabel')}</label>
                           <input
-                            type="number"
-                            min="1"
-                            max="31"
+                            type="number" min="1" max="31"
                             value={pDay || ""}
-                            placeholder="1 - 31"
                             onChange={(e) => {
                               const day = parseInt(e.target.value);
-                              const updated = { ...data, fixedPaymentDays: { ...(data.fixedPaymentDays || {}), [cat]: isNaN(day) ? null : day } };
-                              saveStateAndDispatch(updated);
+                              saveState({ ...data, fixedPaymentDays: { ...(data.fixedPaymentDays || {}), [cat]: isNaN(day) ? null : day } });
                             }}
-                            className="w-full bg-theme-input border border-theme text-theme-main rounded-xl px-3 py-2 text-xs font-bold outline-none text-right"
+                            className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2 text-primary font-bold text-right outline-none"
                           />
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-theme space-y-2">
-                    <button onClick={() => setActiveEditCat(null)} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs transition">
+                  <div className="pt-4 border-t border-subtle space-y-2 font-mono">
+                    <button onClick={() => setActiveEditCat(null)} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs">
                       {t('saveClose')}
                     </button>
-                    <button onClick={() => handleDeleteCategory(type, cat)} className="w-full text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 py-2 rounded-xl text-xs font-bold border border-rose-500/20 transition">
+                    <button onClick={() => deleteCategory(type, cat)} className="w-full text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 py-2 rounded-xl text-xs font-bold border border-rose-500/20">
                       {t('deleteCategoryBtn')}
                     </button>
                   </div>
@@ -1876,38 +1777,48 @@
 
           {/* RECURRING MODAL */}
           {recurringModal && (
-            <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-theme-card border border-theme rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
-                <div className="flex justify-between items-center border-b border-theme pb-2">
-                  <h3 className="font-bold text-sm text-theme-main flex items-center gap-1.5">
-                    <i className="fa-solid fa-arrows-spin text-indigo-500"></i> {t('setRecurringBudget')}
-                  </h3>
-                  <button onClick={() => setRecurringModal(null)} className="text-theme-muted hover:text-rose-500">
-                    <i className="fa-solid fa-xmark"></i>
-                  </button>
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-surface border border-subtle rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl font-mono">
+                <div className="flex justify-between items-center border-b border-subtle pb-2">
+                  <h3 className="font-bold text-xs text-primary uppercase">{t('setRecurringBudget')}</h3>
+                  <button onClick={() => setRecurringModal(null)} className="text-secondary hover:text-rose-400"><i className="fa-solid fa-xmark"></i></button>
                 </div>
-                <p className="text-xs text-theme-muted">
-                  {t(`categories.${recurringModal.item}`).replace('categories.', '')}: <b className="text-theme-main">{formatCurrency(recurringModal.value)}</b>
+                <p className="text-xs text-secondary">
+                  {t(`categories.${recurringModal.item}`).replace('categories.', '')}: <b className="text-primary font-bold">{fmt(recurringModal.value)}</b>
                 </p>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-extrabold text-theme-muted uppercase">{t('durationInMonths')}</label>
+                  <label className="text-[10px] font-bold text-tertiary uppercase">{t('durationInMonths')}</label>
                   <select
                     value={recurringCount}
                     onChange={(e) => setRecurringCount(parseInt(e.target.value))}
-                    className="w-full bg-theme-input border border-theme rounded-xl px-3 py-2 text-xs font-bold text-theme-main outline-none"
+                    className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2 text-xs font-bold text-primary outline-none"
                   >
-                    <option value={3}>3 Monate</option>
-                    <option value={6}>6 Monate</option>
-                    <option value={12}>12 Monate</option>
+                    <option value={3}>3 Months</option>
+                    <option value={6}>6 Months</option>
+                    <option value={12}>12 Months</option>
                   </select>
                 </div>
                 <div className="flex gap-2 pt-2">
-                  <button onClick={() => setRecurringModal(null)} className="flex-1 bg-theme-header text-theme-main font-bold py-2 rounded-xl text-xs border border-theme">
+                  <button onClick={() => setRecurringModal(null)} className="flex-1 bg-surface-elevated text-secondary font-bold py-2 rounded-xl text-xs border border-subtle">
                     {t('cancelBtn')}
                   </button>
                   <button
                     onClick={async () => {
-                      await handleApplyRecurring(recurringModal.type, recurringModal.item, selectedMonth, selectedYear, recurringCount, recurringModal.value);
+                      const copy = JSON.parse(JSON.stringify(data));
+                      const timeline = [];
+                      [2026, 2027, 2028].forEach(yr => { getMonthsForYear(yr).forEach(mo => timeline.push({ yr, mo })); });
+                      const idx = timeline.findIndex(t => t.yr === parseInt(selectedYear) && t.mo === selectedMonth);
+                      if (idx !== -1) {
+                        for (let i = 0; i < recurringCount; i++) {
+                          const tg = timeline[idx + i];
+                          if (tg) {
+                            if (!copy.values[tg.yr][recurringModal.type][recurringModal.item]) copy.values[tg.yr][recurringModal.type][recurringModal.item] = {};
+                            const cur = getNode(recurringModal.type, recurringModal.item, tg.yr, tg.mo);
+                            copy.values[tg.yr][recurringModal.type][recurringModal.item][tg.mo] = { ...cur, actual: recurringModal.value };
+                          }
+                        }
+                      }
+                      await saveState(copy);
                       setRecurringModal(null);
                     }}
                     className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-xl text-xs"
@@ -1919,41 +1830,43 @@
             </div>
           )}
 
-          {/* SETTINGS / BURGER DRAWER */}
+          {/* SETTINGS DRAWER */}
           {isBurgerOpen && (
-            <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex justify-end">
-              <div className="bg-theme-card border-l border-theme w-80 h-full shadow-2xl p-5 overflow-y-auto flex flex-col justify-between animate-slideLeft">
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end">
+              <div className="bg-surface border-l border-subtle w-80 h-full shadow-2xl p-5 overflow-y-auto flex flex-col justify-between animate-slideIn font-mono text-xs">
                 <div className="space-y-6">
-                  <div className="flex justify-between items-center pb-3 border-b border-theme">
-                    <h3 className="font-extrabold text-base text-theme-main flex items-center gap-2">
-                      <i className="fa-solid fa-gear text-indigo-500"></i> {t('options')}
-                    </h3>
-                    <button onClick={() => setIsBurgerOpen(false)} className="text-theme-muted hover:text-rose-500">
-                      <i className="fa-solid fa-xmark text-lg"></i>
+                  <div className="flex justify-between items-center pb-3 border-b border-subtle">
+                    <h3 className="font-bold text-sm text-primary uppercase">{t('options')}</h3>
+                    <button onClick={() => setIsBurgerOpen(false)} className="text-secondary hover:text-rose-400">
+                      <i className="fa-solid fa-xmark text-base"></i>
                     </button>
                   </div>
 
-                  {/* Starting Capital Config */}
+                  {/* Starting Capital */}
                   <div className="space-y-1">
-                    <p className="text-[10px] font-extrabold text-theme-muted uppercase tracking-wider">{t('startingCapital')}</p>
-                    <div className="relative">
+                    <p className="text-[10px] font-bold text-tertiary uppercase">{t('startingCapital')}</p>
+                    <div className="flex items-center bg-subtle border border-subtle rounded-xl px-3 py-1.5 focus-within:border-indigo-500 transition">
                       <input
                         type="number"
-                        value={data.startingCapital !== 0 ? data.startingCapital : ""}
+                        value={data.startingCapital || ""}
                         placeholder="0"
-                        onChange={(e) => saveStateAndDispatch({ ...data, startingCapital: parseFloat(e.target.value) || 0 })}
-                        className="w-full bg-theme-input border border-theme text-theme-main text-xs font-black rounded-xl px-3 py-2 text-right outline-none focus:border-indigo-500"
+                        onChange={(e) => saveState({ ...data, startingCapital: parseFloat(e.target.value) || 0 })}
+                        className="w-full bg-transparent text-right font-mono font-bold text-xs text-primary outline-none"
                       />
-                      <span className="absolute right-2 top-2 text-xs text-theme-muted pointer-events-none">€</span>
+                      <span className="text-xs font-mono text-tertiary ml-1.5 font-bold">€</span>
                     </div>
                   </div>
 
-                  {/* Theme */}
-                  <div className="space-y-1 pt-3 border-t border-theme">
-                    <p className="text-[10px] font-extrabold text-theme-muted uppercase tracking-wider">{t('themeLabel')}</p>
-                    <div className="grid grid-cols-3 gap-1 bg-theme-header border border-theme rounded-xl p-1">
+                  {/* Theme Switcher */}
+                  <div className="space-y-1 pt-3 border-t border-subtle">
+                    <p className="text-[10px] font-bold text-tertiary uppercase">{t('themeLabel')}</p>
+                    <div className="grid grid-cols-3 gap-1 bg-surface-elevated border border-subtle rounded-xl p-1">
                       {['light', 'dark', 'system'].map(m => (
-                        <button key={m} onClick={() => setTheme(m)} className={`py-1.5 rounded-lg text-[10px] font-bold transition ${theme === m ? 'bg-theme-card text-indigo-600 shadow-sm' : 'text-theme-muted hover:text-theme-main'}`}>
+                        <button
+                          key={m}
+                          onClick={() => setTheme(m)}
+                          className={`py-1 rounded-lg text-[10px] font-bold transition ${theme === m ? 'bg-surface text-indigo-400 shadow-sm' : 'text-secondary'}`}
+                        >
                           {t(`theme${m.charAt(0).toUpperCase() + m.slice(1)}`)}
                         </button>
                       ))}
@@ -1961,30 +1874,30 @@
                   </div>
 
                   {/* Language */}
-                  <div className="space-y-1 pt-3 border-t border-theme">
-                    <p className="text-[10px] font-extrabold text-theme-muted uppercase tracking-wider">{t('selectLanguage')}</p>
+                  <div className="space-y-1 pt-3 border-t border-subtle">
+                    <p className="text-[10px] font-bold text-tertiary uppercase">{t('selectLanguage')}</p>
                     <div className="flex gap-2">
-                      <button onClick={() => changeLanguage('de')} className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition ${lang === 'de' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-theme-input text-theme-muted border-theme'}`}>Deutsch</button>
-                      <button onClick={() => changeLanguage('en')} className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition ${lang === 'en' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-theme-input text-theme-muted border-theme'}`}>English</button>
+                      <button onClick={() => changeLanguage('de')} className={`flex-1 py-1 rounded-xl text-xs font-bold border ${lang === 'de' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-subtle text-secondary border-subtle'}`}>DE</button>
+                      <button onClick={() => changeLanguage('en')} className={`flex-1 py-1 rounded-xl text-xs font-bold border ${lang === 'en' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-subtle text-secondary border-subtle'}`}>EN</button>
                     </div>
                   </div>
 
-                  {/* Backup */}
-                  <div className="space-y-2 pt-3 border-t border-theme">
-                    <p className="text-[10px] font-extrabold text-theme-muted uppercase tracking-wider">{t('backupSection')}</p>
+                  {/* Backups */}
+                  <div className="space-y-2 pt-3 border-t border-subtle">
+                    <p className="text-[10px] font-bold text-tertiary uppercase">{t('backupSection')}</p>
                     <button
                       onClick={() => {
                         const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
                         const a = document.createElement('a');
                         a.href = URL.createObjectURL(blob);
-                        a.download = `finanzen_backup_${Date.now()}.json`;
+                        a.download = `cashflow_backup_${Date.now()}.json`;
                         a.click();
                       }}
-                      className="w-full bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-2"
+                      className="w-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-2"
                     >
                       <i className="fa-solid fa-download"></i> {t('exportBackup')}
                     </button>
-                    <button onClick={() => fileInputRef.current?.click()} className="w-full bg-theme-header border border-theme text-theme-main font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-2">
+                    <button onClick={() => fileInputRef.current?.click()} className="w-full bg-surface-elevated border border-subtle text-primary font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-2">
                       <i className="fa-solid fa-upload"></i> {t('importBackup')}
                     </button>
                     <input
@@ -1992,18 +1905,18 @@
                       type="file"
                       accept=".json"
                       onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onload = async (ev) => {
+                        const f = e.target.files[0];
+                        if (f) {
+                          const r = new FileReader();
+                          r.onload = async (ev) => {
                             try {
                               const parsed = JSON.parse(ev.target.result);
-                              await saveStateAndDispatch(normalizeAndLockState(parsed));
+                              await saveState(normalizeState(parsed));
                               alert(t('importSuccess'));
                               setIsBurgerOpen(false);
-                            } catch (err) { alert(t('importError')); }
+                            } catch(err) { alert(t('importError')); }
                           };
-                          reader.readAsText(file);
+                          r.readAsText(f);
                         }
                       }}
                       className="hidden"
@@ -2011,17 +1924,17 @@
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-theme">
+                <div className="pt-4 border-t border-subtle">
                   <button
                     onClick={async () => {
                       if (confirm(t('confirmClear'))) {
-                        await saveStateAndDispatch(normalizeAndLockState(null));
+                        await saveState(normalizeState(null));
                         setIsBurgerOpen(false);
                       }
                     }}
-                    className="text-xs text-rose-500 underline flex items-center gap-2 font-medium"
+                    className="text-xs text-rose-400 underline font-bold"
                   >
-                    <i className="fa-solid fa-triangle-exclamation"></i> {t('clearAll')}
+                    {t('clearAll')}
                   </button>
                 </div>
               </div>
