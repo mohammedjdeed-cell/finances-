@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de" class="dark">
 <head>
@@ -109,7 +110,7 @@
       firebase.initializeApp(firebaseConfig);
       db = firebase.firestore();
     } catch (e) {
-      console.warn("Offline Firebase mode");
+      console.warn("Offline Firebase mode active.");
     }
 
     const safeStorage = {
@@ -126,20 +127,27 @@
       return new Date(year, mIdx + 1, 0).getDate();
     };
 
-    // Logical Parent Hierarchy
-    const EXPENSE_BRACKETS = [
-      { id: 'housing', icon: 'fa-house', labelDe: 'Wohnen & Fixkosten', labelEn: 'Housing & Utilities', defaultMode: 'fixed' },
-      { id: 'subscriptions', icon: 'fa-ticket', labelDe: 'Abos & Medien (Netflix, Prime...)', labelEn: 'Subscriptions & Media', defaultMode: 'fixed' },
-      { id: 'living', icon: 'fa-basket-shopping', labelDe: 'Alltag & Verpflegung', labelEn: 'Daily Living & Food', defaultMode: 'variable' },
-      { id: 'professional', icon: 'fa-graduation-cap', labelDe: 'Bildung, Prüfungen & Gesundheit', labelEn: 'Career, Exams & Health', defaultMode: 'variable' },
-      { id: 'leisure', icon: 'fa-champagne-glasses', labelDe: 'Freizeit & Kultur', labelEn: 'Leisure & Dining', defaultMode: 'variable' },
-      { id: 'other', icon: 'fa-box-archive', labelDe: 'Sonstiges & Bankgebühren', labelEn: 'Miscellaneous & Banking', defaultMode: 'fixed' }
+    const POPULAR_ICONS = [
+      'fa-house', 'fa-ticket', 'fa-basket-shopping', 'fa-graduation-cap', 
+      'fa-champagne-glasses', 'fa-box-archive', 'fa-building-columns', 
+      'fa-coins', 'fa-car', 'fa-heart-pulse', 'fa-tv', 'fa-dumbbell', 
+      'fa-briefcase', 'fa-plane', 'fa-wifi', 'fa-shield-halved'
     ];
 
-    const INCOME_BRACKETS = [
-      { id: 'fixed_in', icon: 'fa-building-columns', labelDe: 'Feste Einnahmen / Sperrkonto', labelEn: 'Fixed Inflows & Blocked Accounts', defaultMode: 'fixed' },
-      { id: 'variable_in', icon: 'fa-coins', labelDe: 'Variable Einnahmen & Nebeneinkünfte', labelEn: 'Variable & Freelance Incomes', defaultMode: 'variable' }
-    ];
+    const DEFAULT_BRACKETS = {
+      expenses: [
+        { id: 'housing', name: 'Wohnen & Fixkosten', icon: 'fa-house', color: '#64748b' },
+        { id: 'subscriptions', name: 'Abos & Medien (Netflix, Prime...)', icon: 'fa-ticket', color: '#8b5cf6' },
+        { id: 'living', name: 'Alltag & Verpflegung', icon: 'fa-basket-shopping', color: '#f59e0b' },
+        { id: 'professional', name: 'Bildung, Prüfungen & Gesundheit', icon: 'fa-graduation-cap', color: '#14b8a6' },
+        { id: 'leisure', name: 'Freizeit & Kultur', icon: 'fa-champagne-glasses', color: '#ec4899' },
+        { id: 'other', name: 'Sonstiges & Bankgebühren', icon: 'fa-box-archive', color: '#475569' }
+      ],
+      incomes: [
+        { id: 'fixed_in', name: 'Feste Einnahmen / Sperrkonto', icon: 'fa-building-columns', color: '#10b981' },
+        { id: 'variable_in', name: 'Variable Einnahmen & Nebeneinkünfte', icon: 'fa-coins', color: '#38bdf8' }
+      ]
+    };
 
     const INITIAL_CATEGORIES = {
       incomes: [
@@ -215,7 +223,6 @@
         asOfDayLabel: "Stand Tag",
         restBudgetLabel: "Rest",
         perDayLabel: "pro Tag",
-        daysRemaining: "{{days}} Tage verbleibend",
         statusOver: "Über Pace",
         statusTrack: "Im Plan",
         statusFrugal: "Sparsam",
@@ -251,15 +258,15 @@
         iouMarkReturned: "Erledigt",
         iouEmpty: "Keine offenen Posten.",
         iouTotalPending: "Gesamt offen",
-        editorTitle: "Kategorie konfigurieren",
+        editorTitle: "Kategorie bearbeiten",
         posten: "Bezeichnung",
         isOneTimeLabel: "Einmalige Ausgabe (Kein Tages-Burn)",
-        bracketLabel: "Oberkategorie",
+        bracketLabel: "Hauptkategorie",
         classificationLabel: "Abrechnungstyp",
         paymentDayShort: "Zahltag",
         paymentDayLabel: "Zahltag im Monat (1-31)",
         deleteCategoryBtn: "Kategorie löschen",
-        saveClose: "Speichern",
+        saveClose: "Änderungen speichern",
         addSubPlaceholder: "Neue Unterkategorie in {{bracket}}...",
         duplicateCategoryAlert: "Kategorie existiert bereits!",
         duplicateWarningText: "⚠️ Existiert bereits in {{bracket}}",
@@ -270,42 +277,21 @@
         deleteModalTitle: "Kategorie \"{{name}}\" löschen",
         deleteModalDesc: "Wählen Sie, wie mit bisherigen und zukünftigen Buchungen verfahren werden soll:",
         deleteFutureOnly: "Nur für zukünftige Monate löschen",
-        deleteFutureOnlyDesc: "Vergangene Monate & aktueller Monat bleiben erhalten. Ab nächstem Monat auf 0 € gesetzt.",
+        deleteFutureOnlyDesc: "Vergangene Monate & aktueller Monat bleiben erhalten. Ab folgendem Monat auf 0 € gesetzt.",
         deleteAndMerge: "Vollständig löschen & in 'Sonstiges' überführen",
         deleteAndMergeDesc: "Sämtliche Beträge werden lückenlos in die Auffangkategorie 'Sonstiges' gebucht. Kein Bilanzverlust.",
-        categories: {
-          "mohammed sperrkonto installmant": "Sperrkonto (Mohammed)",
-          "mai sperrkonto installmant": "Sperrkonto (Mai)",
-          "side income": "Nebeneinkommen",
-          "savings": "Ersparnisse",
-          "Hause mieten": "Wohnungsmiete",
-          "Hause kaution": "Mietkaution",
-          "Lebensmittel 🍞🍲": "Lebensmittel 🍞🍲",
-          "Hausrat 🛋️": "Hausrat & Möbel 🛋️",
-          "strom ⚡": "Strom ⚡",
-          "Gas/ Heißung": "Gas / Heizung",
-          "Unterhaltung 🎊": "Unterhaltung 🎊",
-          "essen im freien 🍔": "Auswärts essen 🍔",
-          "Geschenke": "Geschenke",
-          "Gesundheit ❤️(beauty, medical items)": "Gesundheit & Beauty ❤️",
-          "Ausbildung B2 exam": "B2 Prüfung",
-          "Versicherung Care concept": "Care Concept Versicherung",
-          "kleidung": "Kleidung",
-          "radio": "Rundfunkbeitrag (GEZ)",
-          "internet/ Handy": "Internet & Mobilfunk",
-          "transport/ tickets": "ÖPNV & Tickets",
-          "bank": "Bankgebühren",
-          "Sparkasse card fee": "Sparkasse Kartengebühr",
-          "Swan Schule": "Swan Schule",
-          "FSP exam registration": "FSP Prüfungsanmeldung",
-          "furniture from Vormieter": "Möbelübernahme Vormieter",
-          "Sonstiges": "Sonstiges"
-        },
-        months: { Jan: "Jan", Feb: "Feb", Mrz: "Mrz", Apr: "Apr", Mai: "Mai", Jun: "Jun", Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Okt", Nov: "Nov", Dez: "Dez" }
+        addBracketBtn: "+ Neue Hauptkategorie",
+        editBracketTitle: "Hauptkategorie bearbeiten",
+        newBracketTitle: "Neue Hauptkategorie anlegen",
+        bracketNameLabel: "Name der Hauptkategorie",
+        bracketIconLabel: "Symbol wählen",
+        notesTitle: "Notizen & Stichpunkte (Bullet Points)",
+        addNotePlaceholder: "Neuen Stichpunkt hinzufügen...",
+        noNotesYet: "Keine Notizen hinterlegt."
       },
       en: {
         title: "Liquid Cashflow",
-        online: "Online", offline: "Offline", syncing: "Syncing...", synced: "Synced",
+        online: "Online", offline: "Offline", syncing: "Sync...", synced: "Synced",
         startingCapital: "Starting Capital (Bank / Cash)",
         kpiActualNet: "Actual Net (To Date)",
         kpiProjectedNet: "Projected Month-End Net",
@@ -322,7 +308,6 @@
         asOfDayLabel: "As of Day",
         restBudgetLabel: "Left",
         perDayLabel: "per day",
-        daysRemaining: "{{days}} days left",
         statusOver: "Over Pace",
         statusTrack: "On Track",
         statusFrugal: "Frugal",
@@ -361,12 +346,12 @@
         editorTitle: "Configure Category",
         posten: "Category Name",
         isOneTimeLabel: "One-Time Payment (Excluded from daily burn)",
-        bracketLabel: "Parent Group",
+        bracketLabel: "Main Category",
         classificationLabel: "Billing Type",
         paymentDayShort: "Payday",
         paymentDayLabel: "Monthly Due Day (1-31)",
         deleteCategoryBtn: "Delete Category",
-        saveClose: "Save",
+        saveClose: "Save Changes",
         addSubPlaceholder: "New item in {{bracket}}...",
         duplicateCategoryAlert: "Category already exists!",
         duplicateWarningText: "⚠️ Already exists in {{bracket}}",
@@ -380,35 +365,14 @@
         deleteFutureOnlyDesc: "Past and current months stay intact. Set to 0 € starting next month.",
         deleteAndMerge: "Delete completely & merge into 'Sonstiges'",
         deleteAndMergeDesc: "All past & present entries are seamlessly merged into 'Sonstiges' bucket. Zero budget loss.",
-        categories: {
-          "mohammed sperrkonto installmant": "Blocked Account (Mohammed)",
-          "mai sperrkonto installmant": "Blocked Account (Mai)",
-          "side income": "Side Income",
-          "savings": "Savings Payout",
-          "Hause mieten": "Apartment Rent",
-          "Hause kaution": "Apartment Deposit",
-          "Lebensmittel 🍞🍲": "Groceries 🍞🍲",
-          "Hausrat 🛋️": "Household Goods 🛋️",
-          "strom ⚡": "Electricity ⚡",
-          "Gas/ Heißung": "Gas / Heating",
-          "Unterhaltung 🎊": "Entertainment 🎊",
-          "essen im freien 🍔": "Dining Out 🍔",
-          "Geschenke": "Gifts",
-          "Gesundheit ❤️(beauty, medical items)": "Health & Beauty ❤️",
-          "Ausbildung B2 exam": "B2 Exam",
-          "Versicherung Care concept": "Care Concept Insurance",
-          "kleidung": "Clothing",
-          "radio": "Radio Tax (GEZ)",
-          "internet/ Handy": "Internet & Mobile",
-          "transport/ tickets": "Public Transit & Tickets",
-          "bank": "Bank Charges",
-          "Sparkasse card fee": "Sparkasse Card Fee",
-          "Swan Schule": "Swan School",
-          "FSP exam registration": "FSP Medical Registration",
-          "furniture from Vormieter": "Furniture from Previous Tenant",
-          "Sonstiges": "Sonstiges"
-        },
-        months: { Jan: "Jan", Feb: "Feb", Mrz: "Mar", Apr: "Apr", Mai: "May", Jun: "Jun", Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Oct", Nov: "Nov", Dez: "Dec" }
+        addBracketBtn: "+ New Main Category",
+        editBracketTitle: "Edit Main Category",
+        newBracketTitle: "Create Main Category",
+        bracketNameLabel: "Main Category Name",
+        bracketIconLabel: "Choose Icon",
+        notesTitle: "Notes & Bullet Points",
+        addNotePlaceholder: "Add a bullet point...",
+        noNotesYet: "No notes added yet."
       }
     };
 
@@ -432,7 +396,7 @@
     const useTranslation = () => useContext(LanguageContext);
 
     const IDB = {
-      dbName: 'LiquidCashflow_v9',
+      dbName: 'LiquidCashflow_v10',
       open() {
         return new Promise((res, rej) => {
           const r = indexedDB.open(this.dbName, 1);
@@ -468,12 +432,17 @@
     const normalizeState = (raw) => {
       const state = {
         startingCapital: typeof raw?.startingCapital === 'number' ? raw.startingCapital : 0,
+        brackets: {
+          expenses: raw?.brackets?.expenses || [...DEFAULT_BRACKETS.expenses],
+          incomes: raw?.brackets?.incomes || [...DEFAULT_BRACKETS.incomes]
+        },
         categories: {
           incomes: [...(raw?.categories?.incomes || INITIAL_CATEGORIES.incomes)],
           expenses: [...(raw?.categories?.expenses || INITIAL_CATEGORIES.expenses)]
         },
         categoryOverrides: { ...(raw?.categoryOverrides || {}) },
         categoryModes: { ...(raw?.categoryModes || {}) },
+        categoryNotes: { ...(raw?.categoryNotes || {}) },
         fixedPaymentDays: { ...(raw?.fixedPaymentDays || {}) },
         categoryOneTime: { ...(raw?.categoryOneTime || { "Hause kaution": true, "FSP exam registration": true, "furniture from Vormieter": true }) },
         ious: raw?.ious || [],
@@ -484,10 +453,13 @@
         if (!state.categoryModes[cat]) state.categoryModes[cat] = autoClassifyCategory(cat).mode;
         if (!state.categoryOverrides[cat]) state.categoryOverrides[cat] = autoClassifyCategory(cat).bracket;
         if (state.categoryOneTime[cat] === undefined) state.categoryOneTime[cat] = autoClassifyCategory(cat).isOneTime;
+        if (!state.categoryNotes[cat]) state.categoryNotes[cat] = [];
       });
+
       state.categories.incomes.forEach(cat => {
         if (!state.categoryModes[cat]) state.categoryModes[cat] = (cat.includes("side") || cat.includes("Sonstiges")) ? 'variable' : 'fixed';
         if (!state.categoryOverrides[cat]) state.categoryOverrides[cat] = state.categoryModes[cat] === 'fixed' ? 'fixed_in' : 'variable_in';
+        if (!state.categoryNotes[cat]) state.categoryNotes[cat] = [];
       });
 
       ["2026", "2027", "2028"].forEach(y => {
@@ -538,7 +510,7 @@
       const [isBurgerOpen, setIsBurgerOpen] = useState(false);
       const [theme, setTheme] = useState(() => safeStorage.get('budget_app_theme', 'dark'));
 
-      // Accordion state: Stores open/close boolean per category bracket
+      // Accordion State
       const [openBrackets, setOpenBrackets] = useState({
         housing: true,
         subscriptions: true,
@@ -550,14 +522,23 @@
         variable_in: true
       });
 
+      // Inline note preview toggles: { [catName]: boolean }
+      const [openNoteRows, setOpenNoteRows] = useState({});
+
       // Modals
-      const [activeEditCat, setActiveEditCat] = useState(null);
-      const [editCatNameInput, setEditCatNameInput] = useState("");
-      const [smartDeleteModal, setSmartDeleteModal] = useState(null); // { type, cat }
+      const [activeEditCat, setActiveEditCat] = useState(null); // { type, cat }
+      const [editCatForm, setEditCatForm] = useState({ name: "", bracket: "", mode: "fixed", isOneTime: false, pDay: "", notes: [] });
+      const [newBulletText, setNewBulletText] = useState("");
+      const [saveFeedback, setSaveFeedback] = useState(false);
+
+      // Bracket Editor Modals
+      const [bracketModal, setBracketModal] = useState(null); // { mode: 'add'|'edit', type: 'expenses'|'incomes', bracket?: object }
+      const [bracketForm, setBracketForm] = useState({ name: "", icon: "fa-house", color: "#6366f1" });
+
+      const [smartDeleteModal, setSmartDeleteModal] = useState(null);
       const [recurringModal, setRecurringModal] = useState(null);
       const [recurringCount, setRecurringCount] = useState(6);
 
-      // Inline add states per bracket
       const [bracketInputs, setBracketInputs] = useState({});
 
       // IOU
@@ -584,7 +565,6 @@
         safeStorage.set('budget_hide_zeroes', hideZeroes ? 'true' : 'false');
       }, [hideZeroes]);
 
-      // Online status
       useEffect(() => {
         const on = () => setIsOnline(true);
         const off = () => setIsOnline(false);
@@ -648,7 +628,7 @@
         await saveState(copy);
       };
 
-      // 🧠 DYNAMIC FORWARD TIMELINE ENGINE
+      // 🧠 FORWARD TIMELINE ENGINE
       const forwardTimeline = useMemo(() => {
         let runningBalance = data.startingCapital || 0;
         const timeline = [];
@@ -762,37 +742,42 @@
             paceStatus,
             bracket: data.categoryOverrides[cat] || autoClassifyCategory(cat).bracket,
             mode,
-            isOneTime
+            isOneTime,
+            notes: data.categoryNotes?.[cat] || []
           };
         });
       }, [data, selectedYear, selectedMonth, currentMetrics]);
 
-      // Helper: Check duplicate item across all database entries
-      const checkDuplicate = (name) => {
+      // Check Duplicates
+      const checkDuplicate = (name, excludeCat = null) => {
         if (!name.trim()) return null;
         const test = name.trim().toLowerCase();
         for (const cat of data.categories.expenses) {
+          if (excludeCat && cat.toLowerCase() === excludeCat.toLowerCase()) continue;
           if (cat.toLowerCase() === test) {
             const b = data.categoryOverrides[cat] || autoClassifyCategory(cat).bracket;
-            return { exists: true, type: 'expenses', bracket: b, name: cat };
+            const bObj = data.brackets.expenses.find(x => x.id === b);
+            return { exists: true, type: 'expenses', bracket: bObj?.name || b, name: cat };
           }
         }
         for (const cat of data.categories.incomes) {
+          if (excludeCat && cat.toLowerCase() === excludeCat.toLowerCase()) continue;
           if (cat.toLowerCase() === test) {
             const b = data.categoryOverrides[cat] || 'incomes';
-            return { exists: true, type: 'incomes', bracket: b, name: cat };
+            const bObj = data.brackets.incomes.find(x => x.id === b);
+            return { exists: true, type: 'incomes', bracket: bObj?.name || b, name: cat };
           }
         }
         return null;
       };
 
-      // Add Subcategory under Bracket
+      // Add Subcategory
       const handleAddSubcategory = async (type, bracketId, defaultMode) => {
         const val = bracketInputs[bracketId]?.trim();
         if (!val) return;
         const dup = checkDuplicate(val);
         if (dup) {
-          alert(`${t('duplicateCategoryAlert')}: "${dup.name}"`);
+          alert(`${t('duplicateCategoryAlert')}: "${dup.name}" (${dup.bracket})`);
           return;
         }
 
@@ -801,6 +786,7 @@
         copy.categoryOverrides[val] = bracketId;
         copy.categoryModes[val] = defaultMode || 'variable';
         copy.categoryOneTime[val] = false;
+        copy.categoryNotes[val] = [];
 
         ["2026", "2027", "2028"].forEach(y => {
           if (!copy.values[y][type][val]) copy.values[y][type][val] = {};
@@ -813,7 +799,84 @@
         await saveState(copy);
       };
 
-      // Smart Delete Handler
+      // Open Edit Drawer
+      const handleOpenEditCategory = (type, cat) => {
+        setActiveEditCat({ type, cat });
+        setEditCatForm({
+          name: cat,
+          bracket: data.categoryOverrides[cat] || (type === 'incomes' ? 'fixed_in' : 'other'),
+          mode: data.categoryModes[cat] || 'fixed',
+          isOneTime: !!data.categoryOneTime[cat],
+          pDay: data.fixedPaymentDays?.[cat] || "",
+          notes: [...(data.categoryNotes?.[cat] || [])]
+        });
+        setNewBulletText("");
+        setSaveFeedback(false);
+      };
+
+      // Save Edited Category (Name, Bracket, Mode, Notes, Payment Day)
+      const handleSaveCategoryChanges = async () => {
+        if (!activeEditCat) return;
+        const { type, cat: oldName } = activeEditCat;
+        const newName = editCatForm.name.trim();
+
+        if (!newName) return;
+        if (newName !== oldName) {
+          const dup = checkDuplicate(newName, oldName);
+          if (dup) {
+            alert(`${t('duplicateCategoryAlert')}: "${dup.name}"`);
+            return;
+          }
+        }
+
+        const copy = JSON.parse(JSON.stringify(data));
+
+        // Rename across list
+        if (newName !== oldName) {
+          copy.categories[type] = copy.categories[type].map(c => c === oldName ? newName : c);
+          ["2026", "2027", "2028"].forEach(y => {
+            if (copy.values[y]?.[type]?.[oldName]) {
+              copy.values[y][type][newName] = copy.values[y][type][oldName];
+              delete copy.values[y][type][oldName];
+            }
+          });
+        }
+
+        // Update Overrides & Modes
+        copy.categoryOverrides[newName] = editCatForm.bracket;
+        copy.categoryModes[newName] = editCatForm.mode;
+        copy.categoryOneTime[newName] = editCatForm.isOneTime;
+        copy.categoryNotes[newName] = editCatForm.notes;
+
+        const dayNum = parseInt(editCatForm.pDay);
+        copy.fixedPaymentDays[newName] = isNaN(dayNum) ? null : dayNum;
+
+        if (newName !== oldName) {
+          delete copy.categoryOverrides[oldName];
+          delete copy.categoryModes[oldName];
+          delete copy.categoryOneTime[oldName];
+          delete copy.categoryNotes[oldName];
+          delete copy.fixedPaymentDays[oldName];
+        }
+
+        await saveState(copy);
+        setActiveEditCat({ type, cat: newName });
+        setSaveFeedback(true);
+        setTimeout(() => setSaveFeedback(false), 2000);
+      };
+
+      // Bullet Point Management in Drawer
+      const handleAddBulletPoint = () => {
+        if (!newBulletText.trim()) return;
+        setEditCatForm(prev => ({ ...prev, notes: [...prev.notes, newBulletText.trim()] }));
+        setNewBulletText("");
+      };
+
+      const handleRemoveBulletPoint = (index) => {
+        setEditCatForm(prev => ({ ...prev, notes: prev.notes.filter((_, i) => i !== index) }));
+      };
+
+      // Smart Delete Category
       const executeSmartDelete = async (type, cat, deleteScope) => {
         const copy = JSON.parse(JSON.stringify(data));
         const allMonthsTimeline = [];
@@ -823,7 +886,6 @@
         const currentIdx = allMonthsTimeline.findIndex(t => t.y === String(selectedYear) && t.m === selectedMonth);
 
         if (deleteScope === 'future_only') {
-          // Zero out future months only; keep past & current
           for (let i = currentIdx + 1; i < allMonthsTimeline.length; i++) {
             const { y, m } = allMonthsTimeline[i];
             if (copy.values[y]?.[type]?.[cat]?.[m]) {
@@ -831,12 +893,11 @@
             }
           }
         } else if (deleteScope === 'purge_and_merge') {
-          // Merge historical values into "Sonstiges"
           const fallback = "Sonstiges";
           if (!copy.categories[type].includes(fallback)) {
             copy.categories[type].push(fallback);
             copy.categoryModes[fallback] = copy.categoryModes[cat] || 'fixed';
-            copy.categoryOverrides[fallback] = 'other';
+            copy.categoryOverrides[fallback] = type === 'incomes' ? 'variable_in' : 'other';
           }
 
           allMonthsTimeline.forEach(({ y, m }) => {
@@ -849,7 +910,6 @@
             copy.values[y][type][fallback][m].actual += incoming.actual;
           });
 
-          // Remove the category completely
           copy.categories[type] = copy.categories[type].filter(c => c !== cat);
           ["2026", "2027", "2028"].forEach(y => {
             if (copy.values[y]?.[type]?.[cat]) delete copy.values[y][type][cat];
@@ -857,6 +917,7 @@
           delete copy.categoryModes[cat];
           delete copy.categoryOverrides[cat];
           delete copy.categoryOneTime[cat];
+          delete copy.categoryNotes[cat];
           delete copy.fixedPaymentDays[cat];
         }
 
@@ -864,10 +925,62 @@
         setSmartDeleteModal(null);
       };
 
-      // Toggle Accordion Bracket
-      const toggleBracket = (id) => {
-        setOpenBrackets(prev => ({ ...prev, [id]: !prev[id] }));
+      // Main Category (Bracket) Operations
+      const handleOpenBracketModal = (mode, type, bracket = null) => {
+        setBracketModal({ mode, type, bracket });
+        if (mode === 'edit' && bracket) {
+          setBracketForm({ name: bracket.name, icon: bracket.icon, color: bracket.color || "#6366f1" });
+        } else {
+          setBracketForm({ name: "", icon: "fa-house", color: "#6366f1" });
+        }
       };
+
+      const handleSaveBracket = async () => {
+        if (!bracketForm.name.trim() || !bracketModal) return;
+        const copy = JSON.parse(JSON.stringify(data));
+        const { mode, type, bracket } = bracketModal;
+
+        if (mode === 'add') {
+          const id = 'bracket_' + Date.now();
+          copy.brackets[type].push({
+            id,
+            name: bracketForm.name.trim(),
+            icon: bracketForm.icon,
+            color: bracketForm.color
+          });
+          setOpenBrackets(prev => ({ ...prev, [id]: true }));
+        } else if (mode === 'edit' && bracket) {
+          copy.brackets[type] = copy.brackets[type].map(b => b.id === bracket.id ? {
+            ...b,
+            name: bracketForm.name.trim(),
+            icon: bracketForm.icon,
+            color: bracketForm.color
+          } : b);
+        }
+
+        await saveState(copy);
+        setBracketModal(null);
+      };
+
+      const handleDeleteBracket = async (type, bracketId) => {
+        if (!confirm("Hauptkategorie löschen? Alle enthaltenen Posten werden nach 'Sonstiges' verschoben.")) return;
+        const copy = JSON.parse(JSON.stringify(data));
+        const fallbackBracket = type === 'incomes' ? 'variable_in' : 'other';
+
+        // Reassign children
+        copy.categories[type].forEach(cat => {
+          if (copy.categoryOverrides[cat] === bracketId) {
+            copy.categoryOverrides[cat] = fallbackBracket;
+          }
+        });
+
+        copy.brackets[type] = copy.brackets[type].filter(b => b.id !== bracketId);
+        await saveState(copy);
+        setBracketModal(null);
+      };
+
+      // Toggle Accordion
+      const toggleBracket = (id) => setOpenBrackets(prev => ({ ...prev, [id]: !prev[id] }));
 
       // IOUs
       const activeIous = useMemo(() => (data.ious || []).filter(i => !i.settled), [data.ious]);
@@ -892,7 +1005,7 @@
         await saveState(copy);
       };
 
-      // Cashflow Bar Chart
+      // Dynamic Bar Chart with User's Brackets
       useEffect(() => {
         if (selectedMonth === "AnnualOverview" || !chartRef.current) return;
         const ctx = chartRef.current.getContext('2d');
@@ -904,15 +1017,6 @@
           return data.categories.incomes.reduce((s, cat) => s + getNode('incomes', cat, selectedYear, m).actual, 0);
         });
 
-        const bracketColors = {
-          housing: '#64748b',
-          subscriptions: '#8b5cf6',
-          living: '#f59e0b',
-          professional: '#14b8a6',
-          leisure: '#ec4899',
-          other: '#475569'
-        };
-
         const datasets = [
           {
             label: t('incomesHeader'),
@@ -921,14 +1025,14 @@
             borderRadius: 6,
             stack: 'Stack0'
           },
-          ...EXPENSE_BRACKETS.map(b => ({
-            label: lang === 'de' ? b.labelDe : b.labelEn,
+          ...data.brackets.expenses.map(b => ({
+            label: b.name,
             data: monthsForYear.map(m => {
               return data.categories.expenses
                 .filter(cat => (data.categoryOverrides[cat] || autoClassifyCategory(cat).bracket) === b.id)
                 .reduce((s, cat) => s + getNode('expenses', cat, selectedYear, m).actual, 0);
             }),
-            backgroundColor: bracketColors[b.id] || '#64748b',
+            backgroundColor: b.color || '#64748b',
             borderRadius: 2,
             stack: 'Stack1'
           }))
@@ -958,7 +1062,7 @@
       return (
         <div className="flex flex-col min-h-screen">
 
-          {/* TOP BAR */}
+          {/* TOP NAV */}
           <header className="sticky top-0 z-50 bg-surface/90 backdrop-blur-md border-b border-subtle h-14">
             <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
               
@@ -990,7 +1094,7 @@
                 ))}
               </div>
 
-              {/* Quick Actions */}
+              {/* Actions Right */}
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => changeLanguage(lang === 'de' ? 'en' : 'de')}
@@ -1048,7 +1152,7 @@
             </div>
           </nav>
 
-          {/* MAIN VIEW */}
+          {/* MAIN WORKSPACE */}
           <main className="max-w-7xl mx-auto w-full px-4 pt-6 pb-12 flex-grow space-y-6">
 
             {/* KPI CARDS */}
@@ -1113,7 +1217,7 @@
               </div>
             </div>
 
-            {/* IOU BAR */}
+            {/* IOU WIDGET */}
             <div className="bg-surface border border-subtle rounded-2xl p-4">
               <div className="flex items-center justify-between border-b border-subtle pb-3 mb-3">
                 <div className="flex items-center gap-2">
@@ -1140,7 +1244,7 @@
                   + {t('iouAddBtn')}
                 </button>
               </div>
-              {activeIous.length > 0 ? (
+              {activeIous.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                   {activeIous.map(item => (
                     <div key={item.id} className="p-2.5 rounded-xl bg-surface-elevated border border-subtle flex items-center justify-between">
@@ -1157,33 +1261,41 @@
                     </div>
                   ))}
                 </div>
-              ) : null}
+              )}
             </div>
 
-            {/* MONTHLY CASHFLOW BAR CHART */}
+            {/* BAR CHART */}
             <div className="bg-surface rounded-2xl border border-subtle p-4">
               <div className="h-[220px] relative w-full">
                 <canvas ref={chartRef}></canvas>
               </div>
             </div>
 
-            {/* ================== HIERARCHICAL ACCORDIONS (EXPENSES & INCOMES) ================== */}
+            {/* ================== HIERARCHICAL ACCORDIONS WITH EDITABLE MAIN BRACKETS ================== */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
-              {/* LEFT: INCOMES ACCORDION GROUPS */}
+              {/* LEFT: INCOMES GROUPS */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between pb-1">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
                     <h2 className="text-xs font-mono font-bold text-primary uppercase tracking-wider">{t('incomesHeader')}</h2>
                   </div>
-                  <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    {fmt(currentMetrics.actualIn)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      {fmt(currentMetrics.actualIn)}
+                    </span>
+                    <button
+                      onClick={() => handleOpenBracketModal('add', 'incomes')}
+                      className="text-[11px] font-mono text-indigo-400 hover:text-indigo-300 font-bold px-2 py-1 rounded-lg bg-surface-elevated border border-subtle"
+                    >
+                      {t('addBracketBtn')}
+                    </button>
+                  </div>
                 </div>
 
-                {INCOME_BRACKETS.map(b => {
-                  const items = data.categories.incomes.filter(c => (data.categoryOverrides[c] || (data.categoryModes[c] === 'fixed' ? 'fixed_in' : 'variable_in')) === b.id);
+                {data.brackets.incomes.map(b => {
+                  const items = data.categories.incomes.filter(c => (data.categoryOverrides[c] || 'fixed_in') === b.id);
                   const bracketActual = items.reduce((s, c) => s + getNode('incomes', c, selectedYear, selectedMonth).actual, 0);
                   const bracketBudget = items.reduce((s, c) => s + getNode('incomes', c, selectedYear, selectedMonth).budget, 0);
                   const isOpen = !!openBrackets[b.id];
@@ -1192,59 +1304,86 @@
 
                   return (
                     <div key={b.id} className="bg-surface rounded-2xl border border-subtle overflow-hidden transition-all">
-                      {/* Accordion Header */}
-                      <div
-                        onClick={() => toggleBracket(b.id)}
-                        className="p-3.5 bg-surface-elevated hover:bg-subtle transition flex items-center justify-between cursor-pointer select-none border-b border-subtle"
-                      >
-                        <div className="flex items-center gap-2.5">
+                      <div className="p-3.5 bg-surface-elevated hover:bg-subtle transition flex items-center justify-between select-none border-b border-subtle">
+                        <div onClick={() => toggleBracket(b.id)} className="flex items-center gap-2.5 cursor-pointer flex-1">
                           <i className={`fa-solid ${b.icon} text-emerald-400 text-xs w-4 text-center`}></i>
-                          <span className="font-mono font-bold text-xs text-primary">{lang === 'de' ? b.labelDe : b.labelEn}</span>
+                          <span className="font-mono font-bold text-xs text-primary">{b.name}</span>
                           <span className="text-[10px] font-mono text-tertiary">({items.length})</span>
                         </div>
+
                         <div className="flex items-center gap-3">
                           <div className="text-right text-xs font-mono">
                             <span className="font-bold text-emerald-400">{fmt(bracketActual)}</span>
                             {bracketBudget > 0 && <span className="text-tertiary text-[10px] ml-1">/ {fmt(bracketBudget)}</span>}
                           </div>
-                          <i className={`fa-solid fa-chevron-down text-tertiary text-[10px] transition-transform ${isOpen ? 'rotate-180' : ''}`}></i>
+                          <button onClick={() => handleOpenBracketModal('edit', 'incomes', b)} className="text-tertiary hover:text-primary p-1">
+                            <i className="fa-solid fa-pen-to-square text-xs"></i>
+                          </button>
+                          <i onClick={() => toggleBracket(b.id)} className={`fa-solid fa-chevron-down text-tertiary text-[10px] transition-transform cursor-pointer ${isOpen ? 'rotate-180' : ''}`}></i>
                         </div>
                       </div>
 
-                      {/* Accordion Body */}
                       {isOpen && (
                         <div className="p-3 space-y-2 bg-surface">
                           {items.map(cat => {
                             const node = getNode('incomes', cat, selectedYear, selectedMonth);
                             if (hideZeroes && node.actual === 0 && node.budget === 0) return null;
                             const pDay = data.fixedPaymentDays?.[cat];
+                            const notes = data.categoryNotes?.[cat] || [];
+                            const isNoteOpen = !!openNoteRows[cat];
 
                             return (
-                              <div key={cat} className="p-2.5 rounded-xl bg-subtle border border-subtle flex items-center justify-between gap-2">
-                                <div className="truncate flex-1">
-                                  <span className="font-semibold text-xs text-primary block truncate">
-                                    {t(`categories.${cat}`).replace('categories.', '')}
-                                  </span>
-                                  {pDay && <span className="text-[10px] font-mono text-tertiary">{t('paymentDayShort')} {pDay}</span>}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <div className="flex items-center bg-surface-elevated border border-subtle rounded-xl px-2.5 py-1.5 focus-within:border-emerald-500 w-28">
-                                    <input
-                                      type="number" value={node.actual !== 0 ? node.actual : ""} placeholder="0"
-                                      onChange={(e) => updateNode('incomes', cat, selectedYear, selectedMonth, 'actual', e.target.value)}
-                                      className="w-full bg-transparent text-right font-mono font-bold text-xs text-emerald-400 outline-none"
-                                    />
-                                    <span className="text-xs font-mono text-tertiary ml-1 font-bold">€</span>
+                              <div key={cat} className="space-y-1">
+                                <div className="p-2.5 rounded-xl bg-subtle border border-subtle flex items-center justify-between gap-2">
+                                  <div className="truncate flex-1">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-semibold text-xs text-primary block truncate">{cat}</span>
+                                      {notes.length > 0 && (
+                                        <button
+                                          onClick={() => setOpenNoteRows(p => ({ ...p, [cat]: !p[cat] }))}
+                                          className="text-[10px] font-mono text-indigo-400 hover:text-indigo-300 flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-500/10"
+                                        >
+                                          <i className="fa-solid fa-note-sticky text-[9px]"></i>
+                                          <span>{notes.length}</span>
+                                        </button>
+                                      )}
+                                    </div>
+                                    {pDay && <span className="text-[10px] font-mono text-tertiary">{t('paymentDayShort')} {pDay}</span>}
                                   </div>
-                                  <button onClick={() => setSmartDeleteModal({ type: 'incomes', cat })} className="text-tertiary hover:text-rose-400 p-1">
-                                    <i className="fa-solid fa-trash-can text-xs"></i>
-                                  </button>
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex items-center bg-surface-elevated border border-subtle rounded-xl px-2.5 py-1.5 focus-within:border-emerald-500 w-28">
+                                      <input
+                                        type="number" value={node.actual !== 0 ? node.actual : ""} placeholder="0"
+                                        onChange={(e) => updateNode('incomes', cat, selectedYear, selectedMonth, 'actual', e.target.value)}
+                                        className="w-full bg-transparent text-right font-mono font-bold text-xs text-emerald-400 outline-none"
+                                      />
+                                      <span className="text-xs font-mono text-tertiary ml-1 font-bold">€</span>
+                                    </div>
+                                    <button onClick={() => handleOpenEditCategory('incomes', cat)} className="text-tertiary hover:text-primary p-1">
+                                      <i className="fa-solid fa-gear text-xs"></i>
+                                    </button>
+                                    <button onClick={() => setSmartDeleteModal({ type: 'incomes', cat })} className="text-tertiary hover:text-rose-400 p-1">
+                                      <i className="fa-solid fa-trash-can text-xs"></i>
+                                    </button>
+                                  </div>
                                 </div>
+
+                                {/* Inline Bullet Notes Preview */}
+                                {isNoteOpen && notes.length > 0 && (
+                                  <div className="mx-2 p-2 rounded-lg bg-surface-elevated border border-subtle text-[11px] font-mono text-secondary space-y-1">
+                                    {notes.map((bullet, bIdx) => (
+                                      <div key={bIdx} className="flex items-start gap-1.5">
+                                        <span className="text-indigo-400">•</span>
+                                        <span className="leading-tight">{bullet}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
 
-                          {/* Quick Add Subcategory with Duplicate Flag */}
+                          {/* Quick Add Subcategory */}
                           <div className="pt-2 border-t border-subtle">
                             {dupWarn && (
                               <div className="text-[10px] font-mono text-amber-400 mb-1 px-1">
@@ -1254,15 +1393,15 @@
                             <div className="flex gap-2">
                               <input
                                 type="text"
-                                placeholder={t('addSubPlaceholder', { bracket: lang === 'de' ? b.labelDe : b.labelEn })}
+                                placeholder={t('addSubPlaceholder', { bracket: b.name })}
                                 value={currentInput}
                                 onChange={(e) => setBracketInputs(prev => ({ ...prev, [b.id]: e.target.value }))}
-                                onKeyDown={(e) => { if (e.key === 'Enter') handleAddSubcategory('incomes', b.id, b.defaultMode); }}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleAddSubcategory('incomes', b.id, 'variable'); }}
                                 className="flex-1 bg-subtle border border-subtle rounded-xl px-2.5 py-1.5 text-xs font-mono text-primary outline-none focus:border-indigo-500"
                               />
                               <button
                                 disabled={!currentInput.trim() || !!dupWarn}
-                                onClick={() => handleAddSubcategory('incomes', b.id, b.defaultMode)}
+                                onClick={() => handleAddSubcategory('incomes', b.id, 'variable')}
                                 className={`px-3 py-1.5 rounded-xl font-mono text-xs font-bold transition ${!currentInput.trim() || !!dupWarn ? 'bg-subtle text-tertiary opacity-40 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 text-white'}`}
                               >
                                 + Add
@@ -1276,19 +1415,27 @@
                 })}
               </div>
 
-              {/* RIGHT: EXPENSES ACCORDION GROUPS */}
+              {/* RIGHT: EXPENSES GROUPS */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between pb-1">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]"></span>
                     <h2 className="text-xs font-mono font-bold text-primary uppercase tracking-wider">{t('expensesHeader')}</h2>
                   </div>
-                  <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                    {fmt(currentMetrics.actualEx)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                      {fmt(currentMetrics.actualEx)}
+                    </span>
+                    <button
+                      onClick={() => handleOpenBracketModal('add', 'expenses')}
+                      className="text-[11px] font-mono text-indigo-400 hover:text-indigo-300 font-bold px-2 py-1 rounded-lg bg-surface-elevated border border-subtle"
+                    >
+                      {t('addBracketBtn')}
+                    </button>
+                  </div>
                 </div>
 
-                {EXPENSE_BRACKETS.map(b => {
+                {data.brackets.expenses.map(b => {
                   const items = categoryAnalytics.filter(c => c.bracket === b.id);
                   const bracketActual = items.reduce((s, c) => s + c.actual, 0);
                   const bracketBudget = items.reduce((s, c) => s + c.budget, 0);
@@ -1298,115 +1445,136 @@
 
                   return (
                     <div key={b.id} className="bg-surface rounded-2xl border border-subtle overflow-hidden transition-all">
-                      {/* Accordion Header */}
-                      <div
-                        onClick={() => toggleBracket(b.id)}
-                        className="p-3.5 bg-surface-elevated hover:bg-subtle transition flex items-center justify-between cursor-pointer select-none border-b border-subtle"
-                      >
-                        <div className="flex items-center gap-2.5">
+                      <div className="p-3.5 bg-surface-elevated hover:bg-subtle transition flex items-center justify-between select-none border-b border-subtle">
+                        <div onClick={() => toggleBracket(b.id)} className="flex items-center gap-2.5 cursor-pointer flex-1">
                           <i className={`fa-solid ${b.icon} text-indigo-400 text-xs w-4 text-center`}></i>
-                          <span className="font-mono font-bold text-xs text-primary">{lang === 'de' ? b.labelDe : b.labelEn}</span>
+                          <span className="font-mono font-bold text-xs text-primary">{b.name}</span>
                           <span className="text-[10px] font-mono text-tertiary">({items.length})</span>
                         </div>
+
                         <div className="flex items-center gap-3">
                           <div className="text-right text-xs font-mono">
                             <span className="font-bold text-rose-400">{fmt(bracketActual)}</span>
                             {bracketBudget > 0 && <span className="text-indigo-400 text-[10px] ml-1 font-semibold">/ {fmt(bracketBudget)}</span>}
                           </div>
-                          <i className={`fa-solid fa-chevron-down text-tertiary text-[10px] transition-transform ${isOpen ? 'rotate-180' : ''}`}></i>
+                          <button onClick={() => handleOpenBracketModal('edit', 'expenses', b)} className="text-tertiary hover:text-primary p-1">
+                            <i className="fa-solid fa-pen-to-square text-xs"></i>
+                          </button>
+                          <i onClick={() => toggleBracket(b.id)} className={`fa-solid fa-chevron-down text-tertiary text-[10px] transition-transform cursor-pointer ${isOpen ? 'rotate-180' : ''}`}></i>
                         </div>
                       </div>
 
-                      {/* Accordion Body */}
                       {isOpen && (
                         <div className="p-3 space-y-3 bg-surface">
                           {items.map(item => {
                             if (hideZeroes && item.actual === 0 && item.budget === 0) return null;
                             const daysInMonth = currentMetrics.daysInMonth;
                             const isVar = item.mode === 'variable';
+                            const isNoteOpen = !!openNoteRows[item.category];
 
                             return (
-                              <div key={item.category} className="p-3 rounded-xl bg-subtle border border-subtle space-y-2">
-                                <div className="flex items-center justify-between gap-2">
-                                  <div className="flex items-center gap-1.5 truncate flex-1">
-                                    <span className="font-bold text-xs text-primary block truncate">
-                                      {t(`categories.${item.category}`).replace('categories.', '')}
-                                    </span>
-                                    {item.isOneTime && (
-                                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                                        {t('badgeOneTime')}
-                                      </span>
-                                    )}
-                                    {isVar && (
-                                      <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded ${
-                                        item.paceStatus === 'over' ? 'bg-rose-500/10 text-rose-400' :
-                                        item.paceStatus === 'frugal' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-surface-elevated text-secondary'
-                                      }`}>
-                                        {item.paceStatus === 'over' ? t('statusOver') : item.paceStatus === 'frugal' ? t('statusFrugal') : t('statusTrack')}
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  <div className="flex items-center gap-1">
-                                    <button onClick={() => { setActiveEditCat({ type: 'expenses', cat: item.category }); setEditCatNameInput(item.category); }} className="text-tertiary hover:text-primary p-1">
-                                      <i className="fa-solid fa-gear text-xs"></i>
-                                    </button>
-                                    <button onClick={() => setSmartDeleteModal({ type: 'expenses', cat: item.category })} className="text-tertiary hover:text-rose-400 p-1">
-                                      <i className="fa-solid fa-trash-can text-xs"></i>
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* Inputs */}
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div>
-                                    <span className="text-[9px] font-mono font-bold text-indigo-400 block mb-1">{t('planLabel')}</span>
-                                    <div className="flex items-center bg-surface-elevated border border-indigo-500/20 rounded-xl px-2.5 py-1.5 focus-within:border-indigo-500">
-                                      <input
-                                        type="number" value={item.budget !== 0 ? item.budget : ""} placeholder="0"
-                                        onChange={(e) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'budget', e.target.value)}
-                                        className="w-full bg-transparent text-right font-mono font-bold text-xs text-indigo-300 outline-none"
-                                      />
-                                      <span className="text-xs font-mono text-tertiary ml-1 font-bold">€</span>
-                                    </div>
-                                  </div>
-
-                                  <div>
-                                    <div className="flex justify-between items-center mb-1 text-[9px] font-mono font-bold text-rose-400">
-                                      <span>{t('actualLabel')}</span>
+                              <div key={item.category} className="space-y-1">
+                                <div className="p-3 rounded-xl bg-subtle border border-subtle space-y-2">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-1.5 truncate flex-1">
+                                      <span className="font-bold text-xs text-primary block truncate">{item.category}</span>
+                                      {item.isOneTime && (
+                                        <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                                          {t('badgeOneTime')}
+                                        </span>
+                                      )}
                                       {isVar && (
-                                        <div className="flex items-center gap-1 text-tertiary text-[9px]">
-                                          <span>{t('asOfDayLabel')}</span>
-                                          <input
-                                            type="number" min="1" max={daysInMonth} value={item.asOfDate}
-                                            onChange={(e) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'asOfDate', Math.min(daysInMonth, Math.max(1, parseInt(e.target.value)||1)))}
-                                            className="w-5 text-center bg-surface rounded text-primary font-mono"
-                                          />
-                                        </div>
+                                        <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded ${
+                                          item.paceStatus === 'over' ? 'bg-rose-500/10 text-rose-400' :
+                                          item.paceStatus === 'frugal' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-surface-elevated text-secondary'
+                                        }`}>
+                                          {item.paceStatus === 'over' ? t('statusOver') : item.paceStatus === 'frugal' ? t('statusFrugal') : t('statusTrack')}
+                                        </span>
+                                      )}
+                                      {item.notes.length > 0 && (
+                                        <button
+                                          onClick={() => setOpenNoteRows(p => ({ ...p, [item.category]: !p[item.category] }))}
+                                          className="text-[10px] font-mono text-indigo-400 hover:text-indigo-300 flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-500/10 ml-1"
+                                        >
+                                          <i className="fa-solid fa-note-sticky text-[9px]"></i>
+                                          <span>{item.notes.length}</span>
+                                        </button>
                                       )}
                                     </div>
-                                    <div className="flex items-center bg-surface-elevated border border-rose-500/20 rounded-xl px-2.5 py-1.5 focus-within:border-rose-500">
-                                      <input
-                                        type="number" value={item.actual !== 0 ? item.actual : ""} placeholder="0"
-                                        onChange={(e) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'actual', e.target.value)}
-                                        className="w-full bg-transparent text-right font-mono font-bold text-xs text-rose-400 outline-none"
-                                      />
-                                      <span className="text-xs font-mono text-tertiary ml-1 font-bold">€</span>
+
+                                    <div className="flex items-center gap-1">
+                                      <button onClick={() => handleOpenEditCategory('expenses', item.category)} className="text-tertiary hover:text-primary p-1">
+                                        <i className="fa-solid fa-gear text-xs"></i>
+                                      </button>
+                                      <button onClick={() => setSmartDeleteModal({ type: 'expenses', cat: item.category })} className="text-tertiary hover:text-rose-400 p-1">
+                                        <i className="fa-solid fa-trash-can text-xs"></i>
+                                      </button>
                                     </div>
                                   </div>
+
+                                  {/* Inputs */}
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <span className="text-[9px] font-mono font-bold text-indigo-400 block mb-1">{t('planLabel')}</span>
+                                      <div className="flex items-center bg-surface-elevated border border-indigo-500/20 rounded-xl px-2.5 py-1.5 focus-within:border-indigo-500">
+                                        <input
+                                          type="number" value={item.budget !== 0 ? item.budget : ""} placeholder="0"
+                                          onChange={(e) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'budget', e.target.value)}
+                                          className="w-full bg-transparent text-right font-mono font-bold text-xs text-indigo-300 outline-none"
+                                        />
+                                        <span className="text-xs font-mono text-tertiary ml-1 font-bold">€</span>
+                                      </div>
+                                    </div>
+
+                                    <div>
+                                      <div className="flex justify-between items-center mb-1 text-[9px] font-mono font-bold text-rose-400">
+                                        <span>{t('actualLabel')}</span>
+                                        {isVar && (
+                                          <div className="flex items-center gap-1 text-tertiary text-[9px]">
+                                            <span>{t('asOfDayLabel')}</span>
+                                            <input
+                                              type="number" min="1" max={daysInMonth} value={item.asOfDate}
+                                              onChange={(e) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'asOfDate', Math.min(daysInMonth, Math.max(1, parseInt(e.target.value)||1)))}
+                                              className="w-5 text-center bg-surface rounded text-primary font-mono"
+                                            />
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center bg-surface-elevated border border-rose-500/20 rounded-xl px-2.5 py-1.5 focus-within:border-rose-500">
+                                        <input
+                                          type="number" value={item.actual !== 0 ? item.actual : ""} placeholder="0"
+                                          onChange={(e) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'actual', e.target.value)}
+                                          className="w-full bg-transparent text-right font-mono font-bold text-xs text-rose-400 outline-none"
+                                        />
+                                        <span className="text-xs font-mono text-tertiary ml-1 font-bold">€</span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {isVar && (
+                                    <div className="flex justify-between items-center text-[10px] font-mono pt-1 text-tertiary">
+                                      <span>{t('restBudgetLabel')}: <b className={item.remainingBudget >= 0 ? 'text-primary' : 'text-rose-400'}>{fmt(item.remainingBudget)}</b></span>
+                                      <span className="text-amber-400 font-bold">{fmt(item.safeDailySpend)} {t('perDayLabel')} ({item.daysLeft}d)</span>
+                                    </div>
+                                  )}
                                 </div>
 
-                                {isVar && (
-                                  <div className="flex justify-between items-center text-[10px] font-mono pt-1 text-tertiary">
-                                    <span>{t('restBudgetLabel')}: <b className={item.remainingBudget >= 0 ? 'text-primary' : 'text-rose-400'}>{fmt(item.remainingBudget)}</b></span>
-                                    <span className="text-amber-400 font-bold">{fmt(item.safeDailySpend)} {t('perDayLabel')} ({item.daysLeft}d)</span>
+                                {/* Inline Bullet Notes Preview */}
+                                {isNoteOpen && item.notes.length > 0 && (
+                                  <div className="mx-2 p-2 rounded-lg bg-surface-elevated border border-subtle text-[11px] font-mono text-secondary space-y-1">
+                                    {item.notes.map((bullet, bIdx) => (
+                                      <div key={bIdx} className="flex items-start gap-1.5">
+                                        <span className="text-indigo-400">•</span>
+                                        <span className="leading-tight">{bullet}</span>
+                                      </div>
+                                    ))}
                                   </div>
                                 )}
                               </div>
                             );
                           })}
 
-                          {/* Quick Add Subcategory with Duplicate Flag */}
+                          {/* Quick Add Subcategory */}
                           <div className="pt-2 border-t border-subtle">
                             {dupWarn && (
                               <div className="text-[10px] font-mono text-amber-400 mb-1 px-1">
@@ -1416,15 +1584,15 @@
                             <div className="flex gap-2">
                               <input
                                 type="text"
-                                placeholder={t('addSubPlaceholder', { bracket: lang === 'de' ? b.labelDe : b.labelEn })}
+                                placeholder={t('addSubPlaceholder', { bracket: b.name })}
                                 value={currentInput}
                                 onChange={(e) => setBracketInputs(prev => ({ ...prev, [b.id]: e.target.value }))}
-                                onKeyDown={(e) => { if (e.key === 'Enter') handleAddSubcategory('expenses', b.id, b.defaultMode); }}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleAddSubcategory('expenses', b.id, 'variable'); }}
                                 className="flex-1 bg-subtle border border-subtle rounded-xl px-2.5 py-1.5 text-xs font-mono text-primary outline-none focus:border-indigo-500"
                               />
                               <button
                                 disabled={!currentInput.trim() || !!dupWarn}
-                                onClick={() => handleAddSubcategory('expenses', b.id, b.defaultMode)}
+                                onClick={() => handleAddSubcategory('expenses', b.id, 'variable')}
                                 className={`px-3 py-1.5 rounded-xl font-mono text-xs font-bold transition ${!currentInput.trim() || !!dupWarn ? 'bg-subtle text-tertiary opacity-40 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 text-white'}`}
                               >
                                 + Add
@@ -1440,6 +1608,216 @@
 
             </div>
           </main>
+
+          {/* EDIT CATEGORY DRAWER WITH RELIABLE RENAME & BULLET NOTES */}
+          {activeEditCat && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end">
+              <div className="bg-surface border-l border-subtle w-full max-w-md h-full shadow-2xl p-6 overflow-y-auto flex flex-col justify-between animate-slideIn font-mono text-xs">
+                <div className="space-y-5">
+                  <div className="flex justify-between items-center pb-3 border-b border-subtle">
+                    <h3 className="font-bold text-sm text-primary uppercase">{t('editorTitle')}</h3>
+                    <button onClick={() => setActiveEditCat(null)} className="text-secondary hover:text-rose-400">
+                      <i className="fa-solid fa-xmark text-base"></i>
+                    </button>
+                  </div>
+
+                  {/* Name Input with Rename Capability */}
+                  <div>
+                    <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('posten')}</label>
+                    <input
+                      type="text"
+                      value={editCatForm.name}
+                      onChange={(e) => setEditCatForm(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2 text-primary font-bold outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  {/* Parent Bracket selector */}
+                  <div>
+                    <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('bracketLabel')}</label>
+                    <select
+                      value={editCatForm.bracket}
+                      onChange={(e) => setEditCatForm(prev => ({ ...prev, bracket: e.target.value }))}
+                      className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2 text-primary font-bold outline-none"
+                    >
+                      {(activeEditCat.type === 'incomes' ? data.brackets.incomes : data.brackets.expenses).map(b => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Classification: Fixed vs Variable */}
+                  <div>
+                    <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('classificationLabel')}</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setEditCatForm(prev => ({ ...prev, mode: 'fixed' }))}
+                        className={`p-2.5 rounded-xl border font-bold text-xs ${editCatForm.mode === 'fixed' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-subtle text-secondary'}`}
+                      >
+                        {t('badgeFixed')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditCatForm(prev => ({ ...prev, mode: 'variable' }))}
+                        className={`p-2.5 rounded-xl border font-bold text-xs ${editCatForm.mode === 'variable' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-subtle text-secondary'}`}
+                      >
+                        {t('badgeVariable')}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* One-Time & Payday */}
+                  {activeEditCat.type === 'expenses' && (
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-surface-elevated border border-subtle">
+                      <div>
+                        <span className="font-bold text-primary block">{t('badgeOneTime')}</span>
+                        <span className="text-[10px] text-secondary">{t('isOneTimeLabel')}</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={editCatForm.isOneTime}
+                        onChange={(e) => setEditCatForm(prev => ({ ...prev, isOneTime: e.target.checked }))}
+                        className="w-4 h-4 text-indigo-600 rounded"
+                      />
+                    </div>
+                  )}
+
+                  {editCatForm.mode === 'fixed' && (
+                    <div>
+                      <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('paymentDayLabel')}</label>
+                      <input
+                        type="number" min="1" max="31"
+                        value={editCatForm.pDay}
+                        onChange={(e) => setEditCatForm(prev => ({ ...prev, pDay: e.target.value }))}
+                        placeholder="1 - 31"
+                        className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2 text-primary font-bold text-right outline-none"
+                      />
+                    </div>
+                  )}
+
+                  {/* NOTES & BULLET POINTS SECTION */}
+                  <div className="space-y-2 pt-2 border-t border-subtle">
+                    <label className="text-[10px] font-bold text-secondary uppercase flex items-center justify-between">
+                      <span>{t('notesTitle')}</span>
+                      <span className="text-tertiary">({editCatForm.notes.length})</span>
+                    </label>
+
+                    {/* Bullet List */}
+                    <div className="space-y-1.5 max-h-36 overflow-y-auto scrollbar-none">
+                      {editCatForm.notes.length === 0 ? (
+                        <p className="text-[11px] text-tertiary italic py-1">{t('noNotesYet')}</p>
+                      ) : (
+                        editCatForm.notes.map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-surface-elevated border border-subtle gap-2">
+                            <div className="flex items-start gap-1.5 flex-1">
+                              <span className="text-indigo-400 font-bold">•</span>
+                              <span className="text-primary text-xs leading-tight">{item}</span>
+                            </div>
+                            <button onClick={() => handleRemoveBulletPoint(idx)} className="text-tertiary hover:text-rose-400 p-1">
+                              <i className="fa-solid fa-xmark text-xs"></i>
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Add Bullet Input */}
+                    <div className="flex gap-2 pt-1">
+                      <input
+                        type="text"
+                        placeholder={t('addNotePlaceholder')}
+                        value={newBulletText}
+                        onChange={(e) => setNewBulletText(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleAddBulletPoint(); }}
+                        className="flex-1 bg-subtle border border-subtle rounded-xl px-3 py-1.5 text-xs text-primary outline-none focus:border-indigo-500"
+                      />
+                      <button onClick={handleAddBulletPoint} className="bg-surface-elevated hover:bg-subtle text-primary border border-subtle px-3 py-1.5 rounded-xl font-bold">
+                        + Bullet
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+
+                <div className="pt-4 border-t border-subtle space-y-2">
+                  <button
+                    onClick={handleSaveCategoryChanges}
+                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2"
+                  >
+                    <i className="fa-solid fa-floppy-disk"></i>
+                    <span>{t('saveClose')}</span>
+                  </button>
+
+                  {saveFeedback && (
+                    <div className="text-center text-emerald-400 text-[11px] font-bold animate-pulse">
+                      ✓ Erfolgreich gespeichert!
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MAIN CATEGORY (BRACKET) MODAL: CREATE / EDIT */}
+          {bracketModal && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-surface border border-subtle rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl font-mono text-xs animate-slideIn">
+                <div className="flex justify-between items-center border-b border-subtle pb-3">
+                  <h3 className="font-bold text-xs text-primary uppercase">
+                    {bracketModal.mode === 'add' ? t('newBracketTitle') : t('editBracketTitle')}
+                  </h3>
+                  <button onClick={() => setBracketModal(null)} className="text-secondary hover:text-primary">
+                    <i className="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('bracketNameLabel')}</label>
+                  <input
+                    type="text"
+                    value={bracketForm.name}
+                    onChange={(e) => setBracketForm(p => ({ ...p, name: e.target.value }))}
+                    placeholder="Z.B. Haustiere, Auto & Mobilität..."
+                    className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2 text-primary font-bold outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('bracketIconLabel')}</label>
+                  <div className="grid grid-cols-4 gap-2 pt-1">
+                    {POPULAR_ICONS.map(ic => (
+                      <button
+                        key={ic}
+                        type="button"
+                        onClick={() => setBracketForm(p => ({ ...p, icon: ic }))}
+                        className={`p-2.5 rounded-xl border flex items-center justify-center text-sm transition ${bracketForm.icon === ic ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-subtle text-secondary hover:text-primary'}`}
+                      >
+                        <i className={`fa-solid ${ic}`}></i>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2 border-t border-subtle">
+                  {bracketModal.mode === 'edit' && bracketModal.bracket && (
+                    <button
+                      onClick={() => handleDeleteBracket(bracketModal.type, bracketModal.bracket.id)}
+                      className="px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl font-bold"
+                    >
+                      <i className="fa-solid fa-trash-can"></i>
+                    </button>
+                  )}
+                  <button onClick={() => setBracketModal(null)} className="flex-1 py-2 bg-surface-elevated text-secondary font-bold rounded-xl">
+                    {t('cancelBtn')}
+                  </button>
+                  <button onClick={handleSaveBracket} className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl">
+                    {t('applyBtn')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* SMART DELETE MODAL */}
           {smartDeleteModal && (
@@ -1487,109 +1865,6 @@
               </div>
             </div>
           )}
-
-          {/* EDIT CATEGORY DRAWER */}
-          {activeEditCat && (() => {
-            const { type, cat } = activeEditCat;
-            const mode = data.categoryModes[cat] || (type === 'incomes' ? 'fixed' : 'variable');
-            const isOneTime = !!data.categoryOneTime[cat];
-            const pDay = data.fixedPaymentDays?.[cat];
-            const currentBracket = data.categoryOverrides[cat] || 'other';
-
-            return (
-              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end">
-                <div className="bg-surface border-l border-subtle w-full max-w-sm h-full shadow-2xl p-6 overflow-y-auto flex flex-col justify-between animate-slideIn font-mono text-xs">
-                  <div className="space-y-6">
-                    <div className="flex justify-between items-center pb-4 border-b border-subtle">
-                      <h3 className="font-bold text-sm text-primary uppercase">{t('editorTitle')}</h3>
-                      <button onClick={() => setActiveEditCat(null)} className="text-secondary hover:text-rose-400">
-                        <i className="fa-solid fa-xmark text-base"></i>
-                      </button>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div>
-                        <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('posten')}</label>
-                        <input
-                          type="text" value={editCatNameInput} onChange={(e) => setEditCatNameInput(e.target.value)}
-                          className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2 text-primary font-bold outline-none"
-                        />
-                      </div>
-
-                      {/* Parent Bracket selector */}
-                      <div>
-                        <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('bracketLabel')}</label>
-                        <select
-                          value={currentBracket}
-                          onChange={(e) => saveState({ ...data, categoryOverrides: { ...data.categoryOverrides, [cat]: e.target.value } })}
-                          className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2 text-primary font-bold outline-none"
-                        >
-                          {EXPENSE_BRACKETS.map(b => (
-                            <option key={b.id} value={b.id}>{lang === 'de' ? b.labelDe : b.labelEn}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Classification: Fixed vs Variable */}
-                      <div>
-                        <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('classificationLabel')}</label>
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            type="button"
-                            onClick={() => saveState({ ...data, categoryModes: { ...data.categoryModes, [cat]: 'fixed' } })}
-                            className={`p-2.5 rounded-xl border font-bold text-xs ${mode === 'fixed' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-subtle text-secondary'}`}
-                          >
-                            {t('badgeFixed')}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => saveState({ ...data, categoryModes: { ...data.categoryModes, [cat]: 'variable' } })}
-                            className={`p-2.5 rounded-xl border font-bold text-xs ${mode === 'variable' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-subtle text-secondary'}`}
-                          >
-                            {t('badgeVariable')}
-                          </button>
-                        </div>
-                      </div>
-
-                      {type === 'expenses' && (
-                        <div className="flex items-center justify-between p-3 rounded-xl bg-surface-elevated border border-subtle">
-                          <div>
-                            <span className="font-bold text-primary block">{t('badgeOneTime')}</span>
-                            <span className="text-[10px] text-secondary">{t('isOneTimeLabel')}</span>
-                          </div>
-                          <input
-                            type="checkbox" checked={isOneTime}
-                            onChange={(e) => saveState({ ...data, categoryOneTime: { ...data.categoryOneTime, [cat]: e.target.checked } })}
-                            className="w-4 h-4 text-indigo-600 rounded"
-                          />
-                        </div>
-                      )}
-
-                      {mode === 'fixed' && (
-                        <div>
-                          <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('paymentDayLabel')}</label>
-                          <input
-                            type="number" min="1" max="31" value={pDay || ""}
-                            onChange={(e) => {
-                              const day = parseInt(e.target.value);
-                              saveState({ ...data, fixedPaymentDays: { ...(data.fixedPaymentDays || {}), [cat]: isNaN(day) ? null : day } });
-                            }}
-                            className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2 text-primary font-bold text-right outline-none"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-subtle space-y-2">
-                    <button onClick={() => setActiveEditCat(null)} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs">
-                      {t('saveClose')}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
 
           {/* SETTINGS DRAWER */}
           {isBurgerOpen && (
