@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="de" class="dark">
 <head>
@@ -120,6 +119,15 @@
 
     const ALL_MONTHS = ["Jan", "Feb", "Mrz", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
     const getMonthsForYear = (yr) => yr === 2026 ? ["Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"] : ALL_MONTHS;
+
+    const MONTH_NAMES = {
+      de: { Jan: "Jan", Feb: "Feb", Mrz: "Mär", Apr: "Apr", Mai: "Mai", Jun: "Jun", Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Okt", Nov: "Nov", Dez: "Dez" },
+      en: { Jan: "Jan", Feb: "Feb", Mrz: "Mar", Apr: "Apr", Mai: "May", Jun: "Jun", Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Oct", Nov: "Nov", Dez: "Dec" }
+    };
+
+    const formatMonth = (mKey, lang) => {
+      return MONTH_NAMES[lang]?.[mKey] || MONTH_NAMES['en']?.[mKey] || mKey;
+    };
 
     const getDaysInMonth = (year, monthStr) => {
       const map = { Jan:0, Feb:1, Mrz:2, Apr:3, Mai:4, Jun:5, Jul:6, Aug:7, Sep:8, Okt:9, Nov:10, Dez:11 };
@@ -258,7 +266,7 @@
         iouMarkReturned: "Erledigt",
         iouEmpty: "Keine offenen Posten.",
         iouTotalPending: "Gesamt offen",
-        editorTitle: "Kategorie bearbeiten",
+        editorTitle: "Kategorie konfigurieren",
         posten: "Bezeichnung",
         isOneTimeLabel: "Einmalige Ausgabe (Kein Tages-Burn)",
         bracketLabel: "Hauptkategorie",
@@ -287,7 +295,8 @@
         bracketIconLabel: "Symbol wählen",
         notesTitle: "Notizen & Stichpunkte (Bullet Points)",
         addNotePlaceholder: "Neuen Stichpunkt hinzufügen...",
-        noNotesYet: "Keine Notizen hinterlegt."
+        noNotesYet: "Keine Notizen hinterlegt.",
+        months: MONTH_NAMES.de
       },
       en: {
         title: "Liquid Cashflow",
@@ -372,7 +381,8 @@
         bracketIconLabel: "Choose Icon",
         notesTitle: "Notes & Bullet Points",
         addNotePlaceholder: "Add a bullet point...",
-        noNotesYet: "No notes added yet."
+        noNotesYet: "No notes added yet.",
+        months: MONTH_NAMES.en
       }
     };
 
@@ -380,11 +390,20 @@
     function LanguageProvider({ children }) {
       const [lang, setLang] = useState(() => safeStorage.get('budget_app_lang', 'de'));
       const changeLanguage = (l) => { setLang(l); safeStorage.set('budget_app_lang', l); };
+
+      const getNested = (obj, path) => {
+        if (!obj) return undefined;
+        return path.split('.').reduce((acc, part) => (acc && acc[part] !== undefined) ? acc[part] : undefined, obj);
+      };
+
       const t = (path, params = {}) => {
-        let res = translations[lang];
-        for (const k of path.split('.')) {
-          if (res && res[k] !== undefined) res = res[k];
-          else { res = translations['en']?.[path] || path; break; }
+        let res = getNested(translations[lang], path);
+        if (res === undefined) {
+          res = getNested(translations['en'], path);
+        }
+        if (res === undefined) {
+          if (path.startsWith('months.')) return path.replace('months.', '');
+          return path;
         }
         if (typeof res === 'string') {
           Object.keys(params).forEach(p => { res = res.replace(new RegExp(`{{${p}}}`, 'g'), params[p]); });
@@ -396,7 +415,7 @@
     const useTranslation = () => useContext(LanguageContext);
 
     const IDB = {
-      dbName: 'LiquidCashflow_v10',
+      dbName: 'LiquidCashflow_v11',
       open() {
         return new Promise((res, rej) => {
           const r = indexedDB.open(this.dbName, 1);
@@ -510,7 +529,6 @@
       const [isBurgerOpen, setIsBurgerOpen] = useState(false);
       const [theme, setTheme] = useState(() => safeStorage.get('budget_app_theme', 'dark'));
 
-      // Accordion State
       const [openBrackets, setOpenBrackets] = useState({
         housing: true,
         subscriptions: true,
@@ -522,17 +540,14 @@
         variable_in: true
       });
 
-      // Inline note preview toggles: { [catName]: boolean }
       const [openNoteRows, setOpenNoteRows] = useState({});
 
-      // Modals
-      const [activeEditCat, setActiveEditCat] = useState(null); // { type, cat }
+      const [activeEditCat, setActiveEditCat] = useState(null);
       const [editCatForm, setEditCatForm] = useState({ name: "", bracket: "", mode: "fixed", isOneTime: false, pDay: "", notes: [] });
       const [newBulletText, setNewBulletText] = useState("");
       const [saveFeedback, setSaveFeedback] = useState(false);
 
-      // Bracket Editor Modals
-      const [bracketModal, setBracketModal] = useState(null); // { mode: 'add'|'edit', type: 'expenses'|'incomes', bracket?: object }
+      const [bracketModal, setBracketModal] = useState(null);
       const [bracketForm, setBracketForm] = useState({ name: "", icon: "fa-house", color: "#6366f1" });
 
       const [smartDeleteModal, setSmartDeleteModal] = useState(null);
@@ -541,7 +556,6 @@
 
       const [bracketInputs, setBracketInputs] = useState({});
 
-      // IOU
       const [iouPerson, setIouPerson] = useState("");
       const [iouAmount, setIouAmount] = useState("");
 
@@ -551,7 +565,6 @@
       const annualChartInstanceRef = useRef(null);
       const fileInputRef = useRef(null);
 
-      // Theme toggle
       useEffect(() => {
         safeStorage.set('budget_app_theme', theme);
         const root = document.documentElement;
@@ -573,7 +586,6 @@
         return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
       }, []);
 
-      // DB Sync
       useEffect(() => {
         (async () => {
           const cached = await IDB.get('app_state');
@@ -628,7 +640,6 @@
         await saveState(copy);
       };
 
-      // 🧠 FORWARD TIMELINE ENGINE
       const forwardTimeline = useMemo(() => {
         let runningBalance = data.startingCapital || 0;
         const timeline = [];
@@ -701,7 +712,6 @@
         return match || forwardTimeline[0];
       }, [forwardTimeline, selectedYear, selectedMonth]);
 
-      // Category Analytics List
       const categoryAnalytics = useMemo(() => {
         if (selectedMonth === "AnnualOverview") return [];
         const daysInMonth = currentMetrics.daysInMonth;
@@ -748,7 +758,6 @@
         });
       }, [data, selectedYear, selectedMonth, currentMetrics]);
 
-      // Check Duplicates
       const checkDuplicate = (name, excludeCat = null) => {
         if (!name.trim()) return null;
         const test = name.trim().toLowerCase();
@@ -771,7 +780,6 @@
         return null;
       };
 
-      // Add Subcategory
       const handleAddSubcategory = async (type, bracketId, defaultMode) => {
         const val = bracketInputs[bracketId]?.trim();
         if (!val) return;
@@ -799,7 +807,6 @@
         await saveState(copy);
       };
 
-      // Open Edit Drawer
       const handleOpenEditCategory = (type, cat) => {
         setActiveEditCat({ type, cat });
         setEditCatForm({
@@ -814,7 +821,6 @@
         setSaveFeedback(false);
       };
 
-      // Save Edited Category (Name, Bracket, Mode, Notes, Payment Day)
       const handleSaveCategoryChanges = async () => {
         if (!activeEditCat) return;
         const { type, cat: oldName } = activeEditCat;
@@ -831,7 +837,6 @@
 
         const copy = JSON.parse(JSON.stringify(data));
 
-        // Rename across list
         if (newName !== oldName) {
           copy.categories[type] = copy.categories[type].map(c => c === oldName ? newName : c);
           ["2026", "2027", "2028"].forEach(y => {
@@ -842,7 +847,6 @@
           });
         }
 
-        // Update Overrides & Modes
         copy.categoryOverrides[newName] = editCatForm.bracket;
         copy.categoryModes[newName] = editCatForm.mode;
         copy.categoryOneTime[newName] = editCatForm.isOneTime;
@@ -865,7 +869,6 @@
         setTimeout(() => setSaveFeedback(false), 2000);
       };
 
-      // Bullet Point Management in Drawer
       const handleAddBulletPoint = () => {
         if (!newBulletText.trim()) return;
         setEditCatForm(prev => ({ ...prev, notes: [...prev.notes, newBulletText.trim()] }));
@@ -876,7 +879,6 @@
         setEditCatForm(prev => ({ ...prev, notes: prev.notes.filter((_, i) => i !== index) }));
       };
 
-      // Smart Delete Category
       const executeSmartDelete = async (type, cat, deleteScope) => {
         const copy = JSON.parse(JSON.stringify(data));
         const allMonthsTimeline = [];
@@ -925,7 +927,6 @@
         setSmartDeleteModal(null);
       };
 
-      // Main Category (Bracket) Operations
       const handleOpenBracketModal = (mode, type, bracket = null) => {
         setBracketModal({ mode, type, bracket });
         if (mode === 'edit' && bracket) {
@@ -967,7 +968,6 @@
         const copy = JSON.parse(JSON.stringify(data));
         const fallbackBracket = type === 'incomes' ? 'variable_in' : 'other';
 
-        // Reassign children
         copy.categories[type].forEach(cat => {
           if (copy.categoryOverrides[cat] === bracketId) {
             copy.categoryOverrides[cat] = fallbackBracket;
@@ -979,10 +979,8 @@
         setBracketModal(null);
       };
 
-      // Toggle Accordion
       const toggleBracket = (id) => setOpenBrackets(prev => ({ ...prev, [id]: !prev[id] }));
 
-      // IOUs
       const activeIous = useMemo(() => (data.ious || []).filter(i => !i.settled), [data.ious]);
       const totalIou = useMemo(() => activeIous.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0), [activeIous]);
 
@@ -1005,14 +1003,13 @@
         await saveState(copy);
       };
 
-      // Dynamic Bar Chart with User's Brackets
       useEffect(() => {
         if (selectedMonth === "AnnualOverview" || !chartRef.current) return;
         const ctx = chartRef.current.getContext('2d');
         if (chartInstanceRef.current) chartInstanceRef.current.destroy();
 
         const monthsForYear = getMonthsForYear(selectedYear);
-        const translatedLabels = monthsForYear.map(m => t(`months.${m}`));
+        const translatedLabels = monthsForYear.map(m => formatMonth(m, lang));
         const incomesData = monthsForYear.map(m => {
           return data.categories.incomes.reduce((s, cat) => s + getNode('incomes', cat, selectedYear, m).actual, 0);
         });
@@ -1113,7 +1110,7 @@
             </div>
           </header>
 
-          {/* MONTH SUBNAV */}
+          {/* MONTH SUBNAV WITH CLEAN NAMES */}
           <nav className="sticky top-14 z-40 bg-surface/80 backdrop-blur-md border-b border-subtle">
             <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between overflow-x-auto scrollbar-none gap-2">
               <div className="flex sm:hidden items-center bg-surface-elevated p-0.5 rounded-lg border border-subtle shrink-0">
@@ -1135,7 +1132,7 @@
                     onClick={() => setSelectedMonth(m)}
                     className={`px-3 py-1 rounded-lg text-xs font-mono font-semibold transition whitespace-nowrap ${selectedMonth === m ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 font-bold' : 'text-secondary hover:text-primary'}`}
                   >
-                    {t(`months.${m}`)}
+                    {formatMonth(m, lang)}
                   </button>
                 ))}
               </div>
@@ -1271,10 +1268,10 @@
               </div>
             </div>
 
-            {/* ================== HIERARCHICAL ACCORDIONS WITH EDITABLE MAIN BRACKETS ================== */}
+            {/* HIERARCHICAL ACCORDIONS */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
-              {/* LEFT: INCOMES GROUPS */}
+              {/* INCOMES */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between pb-1">
                   <div className="flex items-center gap-2">
@@ -1368,7 +1365,6 @@
                                   </div>
                                 </div>
 
-                                {/* Inline Bullet Notes Preview */}
                                 {isNoteOpen && notes.length > 0 && (
                                   <div className="mx-2 p-2 rounded-lg bg-surface-elevated border border-subtle text-[11px] font-mono text-secondary space-y-1">
                                     {notes.map((bullet, bIdx) => (
@@ -1383,7 +1379,6 @@
                             );
                           })}
 
-                          {/* Quick Add Subcategory */}
                           <div className="pt-2 border-t border-subtle">
                             {dupWarn && (
                               <div className="text-[10px] font-mono text-amber-400 mb-1 px-1">
@@ -1415,7 +1410,7 @@
                 })}
               </div>
 
-              {/* RIGHT: EXPENSES GROUPS */}
+              {/* EXPENSES */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between pb-1">
                   <div className="flex items-center gap-2">
@@ -1512,7 +1507,6 @@
                                     </div>
                                   </div>
 
-                                  {/* Inputs */}
                                   <div className="grid grid-cols-2 gap-2">
                                     <div>
                                       <span className="text-[9px] font-mono font-bold text-indigo-400 block mb-1">{t('planLabel')}</span>
@@ -1559,7 +1553,6 @@
                                   )}
                                 </div>
 
-                                {/* Inline Bullet Notes Preview */}
                                 {isNoteOpen && item.notes.length > 0 && (
                                   <div className="mx-2 p-2 rounded-lg bg-surface-elevated border border-subtle text-[11px] font-mono text-secondary space-y-1">
                                     {item.notes.map((bullet, bIdx) => (
@@ -1574,7 +1567,6 @@
                             );
                           })}
 
-                          {/* Quick Add Subcategory */}
                           <div className="pt-2 border-t border-subtle">
                             {dupWarn && (
                               <div className="text-[10px] font-mono text-amber-400 mb-1 px-1">
@@ -1609,7 +1601,7 @@
             </div>
           </main>
 
-          {/* EDIT CATEGORY DRAWER WITH RELIABLE RENAME & BULLET NOTES */}
+          {/* EDIT CATEGORY DRAWER */}
           {activeEditCat && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end">
               <div className="bg-surface border-l border-subtle w-full max-w-md h-full shadow-2xl p-6 overflow-y-auto flex flex-col justify-between animate-slideIn font-mono text-xs">
@@ -1621,7 +1613,6 @@
                     </button>
                   </div>
 
-                  {/* Name Input with Rename Capability */}
                   <div>
                     <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('posten')}</label>
                     <input
@@ -1632,7 +1623,6 @@
                     />
                   </div>
 
-                  {/* Parent Bracket selector */}
                   <div>
                     <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('bracketLabel')}</label>
                     <select
@@ -1646,7 +1636,6 @@
                     </select>
                   </div>
 
-                  {/* Classification: Fixed vs Variable */}
                   <div>
                     <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('classificationLabel')}</label>
                     <div className="grid grid-cols-2 gap-2">
@@ -1667,7 +1656,6 @@
                     </div>
                   </div>
 
-                  {/* One-Time & Payday */}
                   {activeEditCat.type === 'expenses' && (
                     <div className="flex items-center justify-between p-3 rounded-xl bg-surface-elevated border border-subtle">
                       <div>
@@ -1696,14 +1684,13 @@
                     </div>
                   )}
 
-                  {/* NOTES & BULLET POINTS SECTION */}
+                  {/* NOTES / BULLET POINTS */}
                   <div className="space-y-2 pt-2 border-t border-subtle">
                     <label className="text-[10px] font-bold text-secondary uppercase flex items-center justify-between">
                       <span>{t('notesTitle')}</span>
                       <span className="text-tertiary">({editCatForm.notes.length})</span>
                     </label>
 
-                    {/* Bullet List */}
                     <div className="space-y-1.5 max-h-36 overflow-y-auto scrollbar-none">
                       {editCatForm.notes.length === 0 ? (
                         <p className="text-[11px] text-tertiary italic py-1">{t('noNotesYet')}</p>
@@ -1722,7 +1709,6 @@
                       )}
                     </div>
 
-                    {/* Add Bullet Input */}
                     <div className="flex gap-2 pt-1">
                       <input
                         type="text"
@@ -1751,7 +1737,7 @@
 
                   {saveFeedback && (
                     <div className="text-center text-emerald-400 text-[11px] font-bold animate-pulse">
-                      ✓ Erfolgreich gespeichert!
+                      ✓ Gespeichert!
                     </div>
                   )}
                 </div>
@@ -1759,7 +1745,7 @@
             </div>
           )}
 
-          {/* MAIN CATEGORY (BRACKET) MODAL: CREATE / EDIT */}
+          {/* MAIN CATEGORY MODAL */}
           {bracketModal && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <div className="bg-surface border border-subtle rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl font-mono text-xs animate-slideIn">
@@ -1778,7 +1764,7 @@
                     type="text"
                     value={bracketForm.name}
                     onChange={(e) => setBracketForm(p => ({ ...p, name: e.target.value }))}
-                    placeholder="Z.B. Haustiere, Auto & Mobilität..."
+                    placeholder="Z.B. Auto, Haustiere..."
                     className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2 text-primary font-bold outline-none focus:border-indigo-500"
                   />
                 </div>
