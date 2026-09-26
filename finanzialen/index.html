@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="de" class="dark">
 <head>
@@ -81,6 +83,12 @@
     .scrollbar-none::-webkit-scrollbar { display: none; }
     .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 
+    @keyframes flashHighlight {
+      0% { background-color: rgba(99, 102, 241, 0.35); }
+      100% { background-color: transparent; }
+    }
+    .animate-flash { animation: flashHighlight 1.8s ease-out; }
+
     @keyframes slideIn {
       from { transform: translateX(100%); }
       to { transform: translateX(0); }
@@ -125,9 +133,7 @@
       en: { Jan: "Jan", Feb: "Feb", Mrz: "Mar", Apr: "Apr", Mai: "May", Jun: "Jun", Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Oct", Nov: "Nov", Dez: "Dec" }
     };
 
-    const formatMonth = (mKey, lang) => {
-      return MONTH_NAMES[lang]?.[mKey] || MONTH_NAMES['en']?.[mKey] || mKey;
-    };
+    const formatMonth = (mKey, lang) => MONTH_NAMES[lang]?.[mKey] || MONTH_NAMES['en']?.[mKey] || mKey;
 
     const getDaysInMonth = (year, monthStr) => {
       const map = { Jan:0, Feb:1, Mrz:2, Apr:3, Mai:4, Jun:5, Jul:6, Aug:7, Sep:8, Okt:9, Nov:10, Dez:11 };
@@ -251,7 +257,7 @@
         confirmClear: "Möchten Sie alle Daten unwiderruflich löschen?",
         viewTab: "Cockpit",
         editTab: "Kategorien verwalten",
-        hideZeroesLabel: "Nullbeträge aus",
+        hideZeroesLabel: "Nullbeträge ausblenden",
         showAllLabel: "Alle anzeigen",
         annualOverview: "Zukunft & Runway",
         savingsRate: "Sparsatz",
@@ -266,7 +272,7 @@
         iouMarkReturned: "Erledigt",
         iouEmpty: "Keine offenen Posten.",
         iouTotalPending: "Gesamt offen",
-        editorTitle: "Kategorie konfigurieren",
+        editorTitle: "Kategorie bearbeiten",
         posten: "Bezeichnung",
         isOneTimeLabel: "Einmalige Ausgabe (Kein Tages-Burn)",
         bracketLabel: "Hauptkategorie",
@@ -275,20 +281,8 @@
         paymentDayLabel: "Zahltag im Monat (1-31)",
         deleteCategoryBtn: "Kategorie löschen",
         saveClose: "Änderungen speichern",
-        addSubPlaceholder: "Neue Unterkategorie in {{bracket}}...",
-        duplicateCategoryAlert: "Kategorie existiert bereits!",
-        duplicateWarningText: "⚠️ Existiert bereits in {{bracket}}",
-        setRecurringBudget: "Budget in Folgemonate übertragen",
-        durationInMonths: "Dauer",
-        applyBtn: "Anwenden",
-        cancelBtn: "Abbrechen",
-        deleteModalTitle: "Kategorie \"{{name}}\" löschen",
-        deleteModalDesc: "Wählen Sie, wie mit bisherigen und zukünftigen Buchungen verfahren werden soll:",
-        deleteFutureOnly: "Nur für zukünftige Monate löschen",
-        deleteFutureOnlyDesc: "Vergangene Monate & aktueller Monat bleiben erhalten. Ab folgendem Monat auf 0 € gesetzt.",
-        deleteAndMerge: "Vollständig löschen & in 'Sonstiges' überführen",
-        deleteAndMergeDesc: "Sämtliche Beträge werden lückenlos in die Auffangkategorie 'Sonstiges' gebucht. Kein Bilanzverlust.",
-        addBracketBtn: "+ Neue Hauptkategorie",
+        addItemBtn: "+ Neuer Posten",
+        addBracketBtn: "+ Neue Gruppe",
         editBracketTitle: "Hauptkategorie bearbeiten",
         newBracketTitle: "Neue Hauptkategorie anlegen",
         bracketNameLabel: "Name der Hauptkategorie",
@@ -296,6 +290,9 @@
         notesTitle: "Notizen & Stichpunkte (Bullet Points)",
         addNotePlaceholder: "Neuen Stichpunkt hinzufügen...",
         noNotesYet: "Keine Notizen hinterlegt.",
+        quickAddModalTitle: "Neuen Posten anlegen",
+        quickAddNamePlaceholder: "Z.B. Netflix, Amazon Prime, Strom...",
+        initialBudgetLabel: "Geplanter Monatsbetrag (Plan €)",
         months: MONTH_NAMES.de
       },
       en: {
@@ -361,20 +358,8 @@
         paymentDayLabel: "Monthly Due Day (1-31)",
         deleteCategoryBtn: "Delete Category",
         saveClose: "Save Changes",
-        addSubPlaceholder: "New item in {{bracket}}...",
-        duplicateCategoryAlert: "Category already exists!",
-        duplicateWarningText: "⚠️ Already exists in {{bracket}}",
-        setRecurringBudget: "Replicate Budget Forward",
-        durationInMonths: "Duration",
-        applyBtn: "Apply",
-        cancelBtn: "Cancel",
-        deleteModalTitle: "Delete Category \"{{name}}\"",
-        deleteModalDesc: "Choose how past and future values should be handled:",
-        deleteFutureOnly: "Delete for future months only",
-        deleteFutureOnlyDesc: "Past and current months stay intact. Set to 0 € starting next month.",
-        deleteAndMerge: "Delete completely & merge into 'Sonstiges'",
-        deleteAndMergeDesc: "All past & present entries are seamlessly merged into 'Sonstiges' bucket. Zero budget loss.",
-        addBracketBtn: "+ New Main Category",
+        addItemBtn: "+ New Item",
+        addBracketBtn: "+ New Group",
         editBracketTitle: "Edit Main Category",
         newBracketTitle: "Create Main Category",
         bracketNameLabel: "Main Category Name",
@@ -382,6 +367,9 @@
         notesTitle: "Notes & Bullet Points",
         addNotePlaceholder: "Add a bullet point...",
         noNotesYet: "No notes added yet.",
+        quickAddModalTitle: "Create New Item",
+        quickAddNamePlaceholder: "E.g. Netflix, Amazon Prime, Electricity...",
+        initialBudgetLabel: "Planned Monthly Budget (Plan €)",
         months: MONTH_NAMES.en
       }
     };
@@ -397,10 +385,7 @@
       };
 
       const t = (path, params = {}) => {
-        let res = getNested(translations[lang], path);
-        if (res === undefined) {
-          res = getNested(translations['en'], path);
-        }
+        let res = getNested(translations[lang], path) || getNested(translations['en'], path);
         if (res === undefined) {
           if (path.startsWith('months.')) return path.replace('months.', '');
           return path;
@@ -415,7 +400,7 @@
     const useTranslation = () => useContext(LanguageContext);
 
     const IDB = {
-      dbName: 'LiquidCashflow_v11',
+      dbName: 'LiquidCashflow_v12',
       open() {
         return new Promise((res, rej) => {
           const r = indexedDB.open(this.dbName, 1);
@@ -530,39 +515,32 @@
       const [theme, setTheme] = useState(() => safeStorage.get('budget_app_theme', 'dark'));
 
       const [openBrackets, setOpenBrackets] = useState({
-        housing: true,
-        subscriptions: true,
-        living: true,
-        professional: true,
-        leisure: false,
-        other: false,
-        fixed_in: true,
-        variable_in: true
+        housing: true, subscriptions: true, living: true, professional: true, leisure: false, other: false, fixed_in: true, variable_in: true
       });
 
       const [openNoteRows, setOpenNoteRows] = useState({});
+      const [highlightedCategory, setHighlightedCategory] = useState(null);
 
+      // Category Edit Drawer
       const [activeEditCat, setActiveEditCat] = useState(null);
       const [editCatForm, setEditCatForm] = useState({ name: "", bracket: "", mode: "fixed", isOneTime: false, pDay: "", notes: [] });
       const [newBulletText, setNewBulletText] = useState("");
       const [saveFeedback, setSaveFeedback] = useState(false);
 
+      // Bracket Modal
       const [bracketModal, setBracketModal] = useState(null);
       const [bracketForm, setBracketForm] = useState({ name: "", icon: "fa-house", color: "#6366f1" });
 
+      // Global Quick Add Modal
+      const [quickAddModal, setQuickAddModal] = useState(null); // { type: 'expenses' | 'incomes', defaultBracket?: string }
+      const [quickAddForm, setQuickAddForm] = useState({ name: "", bracket: "", budget: "", mode: "variable" });
+
       const [smartDeleteModal, setSmartDeleteModal] = useState(null);
-      const [recurringModal, setRecurringModal] = useState(null);
-      const [recurringCount, setRecurringCount] = useState(6);
-
-      const [bracketInputs, setBracketInputs] = useState({});
-
       const [iouPerson, setIouPerson] = useState("");
       const [iouAmount, setIouAmount] = useState("");
 
       const chartRef = useRef(null);
       const chartInstanceRef = useRef(null);
-      const annualChartRef = useRef(null);
-      const annualChartInstanceRef = useRef(null);
       const fileInputRef = useRef(null);
 
       useEffect(() => {
@@ -689,17 +667,9 @@
             runningBalance += monthNetRollover;
 
             timeline.push({
-              year: yr,
-              month: m,
-              key: `${m} ${yr}`,
-              daysInMonth,
-              budgetIn, actualIn,
-              budgetEx, actualEx,
-              projectedEx,
-              actualNet,
-              projectedNet,
-              startBal,
-              endProjectedBalance: runningBalance
+              year: yr, month: m, key: `${m} ${yr}`, daysInMonth,
+              budgetIn, actualIn, budgetEx, actualEx, projectedEx,
+              actualNet, projectedNet, startBal, endProjectedBalance: runningBalance
             });
           });
         });
@@ -741,19 +711,11 @@
           }
 
           return {
-            category: cat,
-            budget: node.budget,
-            actual: node.actual,
-            asOfDate: asOf,
-            daysLeft,
-            remainingBudget,
-            safeDailySpend,
-            projectedTotal,
-            paceStatus,
+            category: cat, budget: node.budget, actual: node.actual,
+            asOfDate: asOf, daysLeft, remainingBudget, safeDailySpend,
+            projectedTotal, paceStatus,
             bracket: data.categoryOverrides[cat] || autoClassifyCategory(cat).bracket,
-            mode,
-            isOneTime,
-            notes: data.categoryNotes?.[cat] || []
+            mode, isOneTime, notes: data.categoryNotes?.[cat] || []
           };
         });
       }, [data, selectedYear, selectedMonth, currentMetrics]);
@@ -780,31 +742,53 @@
         return null;
       };
 
-      const handleAddSubcategory = async (type, bracketId, defaultMode) => {
-        const val = bracketInputs[bracketId]?.trim();
+      // BULLETPROOF ADD ITEM
+      const handleCreateCategory = async (type, name, bracketId, mode, initialBudget = 0) => {
+        const val = name.trim();
         if (!val) return;
         const dup = checkDuplicate(val);
         if (dup) {
-          alert(`${t('duplicateCategoryAlert')}: "${dup.name}" (${dup.bracket})`);
+          alert(`Kategorie existiert bereits: "${dup.name}" (${dup.bracket})`);
           return;
         }
 
         const copy = JSON.parse(JSON.stringify(data));
         copy.categories[type].push(val);
         copy.categoryOverrides[val] = bracketId;
-        copy.categoryModes[val] = defaultMode || 'variable';
+        copy.categoryModes[val] = mode || 'variable';
         copy.categoryOneTime[val] = false;
         copy.categoryNotes[val] = [];
 
         ["2026", "2027", "2028"].forEach(y => {
           if (!copy.values[y][type][val]) copy.values[y][type][val] = {};
           getMonthsForYear(parseInt(y)).forEach(m => {
-            copy.values[y][type][val][m] = { budget: 0, actual: 0, asOfDate: getDaysInMonth(parseInt(y), m) };
+            copy.values[y][type][val][m] = {
+              budget: parseFloat(initialBudget) || 0,
+              actual: 0,
+              asOfDate: getDaysInMonth(parseInt(y), m)
+            };
           });
         });
 
-        setBracketInputs(prev => ({ ...prev, [bracketId]: "" }));
+        // Ensure category is visible!
+        setOpenBrackets(prev => ({ ...prev, [bracketId]: true }));
+        setHighlightedCategory(val);
+        setTimeout(() => setHighlightedCategory(null), 2500);
+
         await saveState(copy);
+        setQuickAddModal(null);
+      };
+
+      const handleOpenQuickAdd = (type, defaultBracket = null) => {
+        const bracketsList = type === 'incomes' ? data.brackets.incomes : data.brackets.expenses;
+        const chosenBracket = defaultBracket || bracketsList[0]?.id || 'other';
+        setQuickAddModal({ type });
+        setQuickAddForm({
+          name: "",
+          bracket: chosenBracket,
+          budget: "",
+          mode: type === 'incomes' ? 'fixed' : 'variable'
+        });
       };
 
       const handleOpenEditCategory = (type, cat) => {
@@ -830,7 +814,7 @@
         if (newName !== oldName) {
           const dup = checkDuplicate(newName, oldName);
           if (dup) {
-            alert(`${t('duplicateCategoryAlert')}: "${dup.name}"`);
+            alert(`Kategorie existiert bereits: "${dup.name}"`);
             return;
           }
         }
@@ -944,18 +928,12 @@
         if (mode === 'add') {
           const id = 'bracket_' + Date.now();
           copy.brackets[type].push({
-            id,
-            name: bracketForm.name.trim(),
-            icon: bracketForm.icon,
-            color: bracketForm.color
+            id, name: bracketForm.name.trim(), icon: bracketForm.icon, color: bracketForm.color
           });
           setOpenBrackets(prev => ({ ...prev, [id]: true }));
         } else if (mode === 'edit' && bracket) {
           copy.brackets[type] = copy.brackets[type].map(b => b.id === bracket.id ? {
-            ...b,
-            name: bracketForm.name.trim(),
-            icon: bracketForm.icon,
-            color: bracketForm.color
+            ...b, name: bracketForm.name.trim(), icon: bracketForm.icon, color: bracketForm.color
           } : b);
         }
 
@@ -969,9 +947,7 @@
         const fallbackBracket = type === 'incomes' ? 'variable_in' : 'other';
 
         copy.categories[type].forEach(cat => {
-          if (copy.categoryOverrides[cat] === bracketId) {
-            copy.categoryOverrides[cat] = fallbackBracket;
-          }
+          if (copy.categoryOverrides[cat] === bracketId) copy.categoryOverrides[cat] = fallbackBracket;
         });
 
         copy.brackets[type] = copy.brackets[type].filter(b => b.id !== bracketId);
@@ -1110,7 +1086,7 @@
             </div>
           </header>
 
-          {/* MONTH SUBNAV WITH CLEAN NAMES */}
+          {/* MONTH SUBNAV */}
           <nav className="sticky top-14 z-40 bg-surface/80 backdrop-blur-md border-b border-subtle">
             <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between overflow-x-auto scrollbar-none gap-2">
               <div className="flex sm:hidden items-center bg-surface-elevated p-0.5 rounded-lg border border-subtle shrink-0">
@@ -1214,53 +1190,6 @@
               </div>
             </div>
 
-            {/* IOU WIDGET */}
-            <div className="bg-surface border border-subtle rounded-2xl p-4">
-              <div className="flex items-center justify-between border-b border-subtle pb-3 mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                  <h3 className="text-xs font-mono font-bold text-primary uppercase tracking-wider">{t('iouTitle')}</h3>
-                </div>
-                <span className="text-xs font-mono font-bold text-amber-400">{t('iouTotalPending')}: {fmt(totalIou)}</span>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-2 mb-3">
-                <input
-                  type="text" placeholder={t('iouPersonPlaceholder')}
-                  value={iouPerson} onChange={(e) => setIouPerson(e.target.value)}
-                  className="flex-1 bg-subtle border border-subtle text-primary text-xs font-mono rounded-xl px-3 py-2 outline-none focus:border-indigo-500"
-                />
-                <div className="flex items-center bg-subtle border border-subtle rounded-xl px-3 py-1.5 focus-within:border-indigo-500 w-full sm:w-36">
-                  <input
-                    type="number" placeholder={t('iouAmountPlaceholder')}
-                    value={iouAmount} onChange={(e) => setIouAmount(e.target.value)}
-                    className="w-full bg-transparent text-primary text-xs font-mono font-bold outline-none text-right"
-                  />
-                  <span className="text-xs font-mono text-tertiary ml-1.5 font-bold">€</span>
-                </div>
-                <button onClick={handleAddIou} className="bg-indigo-600 hover:bg-indigo-500 text-white font-mono font-bold px-4 py-2 rounded-xl text-xs">
-                  + {t('iouAddBtn')}
-                </button>
-              </div>
-              {activeIous.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                  {activeIous.map(item => (
-                    <div key={item.id} className="p-2.5 rounded-xl bg-surface-elevated border border-subtle flex items-center justify-between">
-                      <div>
-                        <div className="text-xs font-bold text-primary">{item.person}</div>
-                        <div className="text-[10px] font-mono text-tertiary">{item.date}</div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold text-amber-400">{fmt(item.amount)}</span>
-                        <button onClick={() => handleSettleIou(item.id)} className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20">
-                          ✓ {t('iouMarkReturned')}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
             {/* BAR CHART */}
             <div className="bg-surface rounded-2xl border border-subtle p-4">
               <div className="h-[220px] relative w-full">
@@ -1268,10 +1197,10 @@
               </div>
             </div>
 
-            {/* HIERARCHICAL ACCORDIONS */}
+            {/* ================== HIERARCHICAL ACCORDIONS ================== */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
-              {/* INCOMES */}
+              {/* LEFT: INCOMES GROUPS */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between pb-1">
                   <div className="flex items-center gap-2">
@@ -1283,8 +1212,15 @@
                       {fmt(currentMetrics.actualIn)}
                     </span>
                     <button
+                      onClick={() => handleOpenQuickAdd('incomes')}
+                      className="text-[11px] font-mono font-bold px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition flex items-center gap-1 shadow-sm"
+                    >
+                      <i className="fa-solid fa-plus text-[10px]"></i>
+                      <span>{t('addItemBtn')}</span>
+                    </button>
+                    <button
                       onClick={() => handleOpenBracketModal('add', 'incomes')}
-                      className="text-[11px] font-mono text-indigo-400 hover:text-indigo-300 font-bold px-2 py-1 rounded-lg bg-surface-elevated border border-subtle"
+                      className="text-[11px] font-mono text-tertiary hover:text-primary font-bold px-2 py-1 rounded-lg bg-surface-elevated border border-subtle"
                     >
                       {t('addBracketBtn')}
                     </button>
@@ -1296,113 +1232,99 @@
                   const bracketActual = items.reduce((s, c) => s + getNode('incomes', c, selectedYear, selectedMonth).actual, 0);
                   const bracketBudget = items.reduce((s, c) => s + getNode('incomes', c, selectedYear, selectedMonth).budget, 0);
                   const isOpen = !!openBrackets[b.id];
-                  const currentInput = bracketInputs[b.id] || "";
-                  const dupWarn = checkDuplicate(currentInput);
 
                   return (
                     <div key={b.id} className="bg-surface rounded-2xl border border-subtle overflow-hidden transition-all">
-                      <div className="p-3.5 bg-surface-elevated hover:bg-subtle transition flex items-center justify-between select-none border-b border-subtle">
+                      <div className="p-3 bg-surface-elevated hover:bg-subtle transition flex items-center justify-between select-none border-b border-subtle">
                         <div onClick={() => toggleBracket(b.id)} className="flex items-center gap-2.5 cursor-pointer flex-1">
                           <i className={`fa-solid ${b.icon} text-emerald-400 text-xs w-4 text-center`}></i>
                           <span className="font-mono font-bold text-xs text-primary">{b.name}</span>
                           <span className="text-[10px] font-mono text-tertiary">({items.length})</span>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                          <div className="text-right text-xs font-mono">
+                        <div className="flex items-center gap-2">
+                          <div className="text-right text-xs font-mono mr-1">
                             <span className="font-bold text-emerald-400">{fmt(bracketActual)}</span>
                             {bracketBudget > 0 && <span className="text-tertiary text-[10px] ml-1">/ {fmt(bracketBudget)}</span>}
                           </div>
+                          <button
+                            onClick={() => handleOpenQuickAdd('incomes', b.id)}
+                            className="w-6 h-6 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs flex items-center justify-center transition"
+                            title="Posten in diese Gruppe einfügen"
+                          >
+                            <i className="fa-solid fa-plus text-[10px]"></i>
+                          </button>
                           <button onClick={() => handleOpenBracketModal('edit', 'incomes', b)} className="text-tertiary hover:text-primary p-1">
                             <i className="fa-solid fa-pen-to-square text-xs"></i>
                           </button>
-                          <i onClick={() => toggleBracket(b.id)} className={`fa-solid fa-chevron-down text-tertiary text-[10px] transition-transform cursor-pointer ${isOpen ? 'rotate-180' : ''}`}></i>
+                          <i onClick={() => toggleBracket(b.id)} className={`fa-solid fa-chevron-down text-tertiary text-[10px] transition-transform cursor-pointer p-1 ${isOpen ? 'rotate-180' : ''}`}></i>
                         </div>
                       </div>
 
                       {isOpen && (
                         <div className="p-3 space-y-2 bg-surface">
-                          {items.map(cat => {
-                            const node = getNode('incomes', cat, selectedYear, selectedMonth);
-                            if (hideZeroes && node.actual === 0 && node.budget === 0) return null;
-                            const pDay = data.fixedPaymentDays?.[cat];
-                            const notes = data.categoryNotes?.[cat] || [];
-                            const isNoteOpen = !!openNoteRows[cat];
+                          {items.length === 0 ? (
+                            <p className="text-center py-2 text-xs font-mono text-tertiary italic">Keine Posten. Klicken Sie oben auf "+", um einen Posten anzulegen.</p>
+                          ) : (
+                            items.map(cat => {
+                              const node = getNode('incomes', cat, selectedYear, selectedMonth);
+                              // Auto-bypass hideZeroes for newly created items!
+                              const isFresh = highlightedCategory === cat;
+                              if (hideZeroes && !isFresh && node.actual === 0 && node.budget === 0) return null;
+                              const pDay = data.fixedPaymentDays?.[cat];
+                              const notes = data.categoryNotes?.[cat] || [];
+                              const isNoteOpen = !!openNoteRows[cat];
 
-                            return (
-                              <div key={cat} className="space-y-1">
-                                <div className="p-2.5 rounded-xl bg-subtle border border-subtle flex items-center justify-between gap-2">
-                                  <div className="truncate flex-1">
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="font-semibold text-xs text-primary block truncate">{cat}</span>
-                                      {notes.length > 0 && (
-                                        <button
-                                          onClick={() => setOpenNoteRows(p => ({ ...p, [cat]: !p[cat] }))}
-                                          className="text-[10px] font-mono text-indigo-400 hover:text-indigo-300 flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-500/10"
-                                        >
-                                          <i className="fa-solid fa-note-sticky text-[9px]"></i>
-                                          <span>{notes.length}</span>
-                                        </button>
-                                      )}
-                                    </div>
-                                    {pDay && <span className="text-[10px] font-mono text-tertiary">{t('paymentDayShort')} {pDay}</span>}
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <div className="flex items-center bg-surface-elevated border border-subtle rounded-xl px-2.5 py-1.5 focus-within:border-emerald-500 w-28">
-                                      <input
-                                        type="number" value={node.actual !== 0 ? node.actual : ""} placeholder="0"
-                                        onChange={(e) => updateNode('incomes', cat, selectedYear, selectedMonth, 'actual', e.target.value)}
-                                        className="w-full bg-transparent text-right font-mono font-bold text-xs text-emerald-400 outline-none"
-                                      />
-                                      <span className="text-xs font-mono text-tertiary ml-1 font-bold">€</span>
-                                    </div>
-                                    <button onClick={() => handleOpenEditCategory('incomes', cat)} className="text-tertiary hover:text-primary p-1">
-                                      <i className="fa-solid fa-gear text-xs"></i>
-                                    </button>
-                                    <button onClick={() => setSmartDeleteModal({ type: 'incomes', cat })} className="text-tertiary hover:text-rose-400 p-1">
-                                      <i className="fa-solid fa-trash-can text-xs"></i>
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {isNoteOpen && notes.length > 0 && (
-                                  <div className="mx-2 p-2 rounded-lg bg-surface-elevated border border-subtle text-[11px] font-mono text-secondary space-y-1">
-                                    {notes.map((bullet, bIdx) => (
-                                      <div key={bIdx} className="flex items-start gap-1.5">
-                                        <span className="text-indigo-400">•</span>
-                                        <span className="leading-tight">{bullet}</span>
+                              return (
+                                <div key={cat} className={`space-y-1 rounded-xl transition ${isFresh ? 'animate-flash ring-2 ring-emerald-500' : ''}`}>
+                                  <div className="p-2.5 rounded-xl bg-subtle border border-subtle flex items-center justify-between gap-2">
+                                    <div className="truncate flex-1">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="font-semibold text-xs text-primary block truncate">{cat}</span>
+                                        {notes.length > 0 && (
+                                          <button
+                                            onClick={() => setOpenNoteRows(p => ({ ...p, [cat]: !p[cat] }))}
+                                            className="text-[10px] font-mono text-indigo-400 hover:text-indigo-300 flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-500/10"
+                                          >
+                                            <i className="fa-solid fa-note-sticky text-[9px]"></i>
+                                            <span>{notes.length}</span>
+                                          </button>
+                                        )}
                                       </div>
-                                    ))}
+                                      {pDay && <span className="text-[10px] font-mono text-tertiary">{t('paymentDayShort')} {pDay}</span>}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex items-center bg-surface-elevated border border-subtle rounded-xl px-2.5 py-1.5 focus-within:border-emerald-500 w-28">
+                                        <input
+                                          type="number" value={node.actual !== 0 ? node.actual : ""} placeholder="0"
+                                          onChange={(e) => updateNode('incomes', cat, selectedYear, selectedMonth, 'actual', e.target.value)}
+                                          className="w-full bg-transparent text-right font-mono font-bold text-xs text-emerald-400 outline-none"
+                                        />
+                                        <span className="text-xs font-mono text-tertiary ml-1 font-bold">€</span>
+                                      </div>
+                                      <button onClick={() => handleOpenEditCategory('incomes', cat)} className="text-tertiary hover:text-primary p-1">
+                                        <i className="fa-solid fa-gear text-xs"></i>
+                                      </button>
+                                      <button onClick={() => setSmartDeleteModal({ type: 'incomes', cat })} className="text-tertiary hover:text-rose-400 p-1">
+                                        <i className="fa-solid fa-trash-can text-xs"></i>
+                                      </button>
+                                    </div>
                                   </div>
-                                )}
-                              </div>
-                            );
-                          })}
 
-                          <div className="pt-2 border-t border-subtle">
-                            {dupWarn && (
-                              <div className="text-[10px] font-mono text-amber-400 mb-1 px-1">
-                                {t('duplicateWarningText', { bracket: dupWarn.bracket })}
-                              </div>
-                            )}
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                placeholder={t('addSubPlaceholder', { bracket: b.name })}
-                                value={currentInput}
-                                onChange={(e) => setBracketInputs(prev => ({ ...prev, [b.id]: e.target.value }))}
-                                onKeyDown={(e) => { if (e.key === 'Enter') handleAddSubcategory('incomes', b.id, 'variable'); }}
-                                className="flex-1 bg-subtle border border-subtle rounded-xl px-2.5 py-1.5 text-xs font-mono text-primary outline-none focus:border-indigo-500"
-                              />
-                              <button
-                                disabled={!currentInput.trim() || !!dupWarn}
-                                onClick={() => handleAddSubcategory('incomes', b.id, 'variable')}
-                                className={`px-3 py-1.5 rounded-xl font-mono text-xs font-bold transition ${!currentInput.trim() || !!dupWarn ? 'bg-subtle text-tertiary opacity-40 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 text-white'}`}
-                              >
-                                + Add
-                              </button>
-                            </div>
-                          </div>
+                                  {isNoteOpen && notes.length > 0 && (
+                                    <div className="mx-2 p-2 rounded-lg bg-surface-elevated border border-subtle text-[11px] font-mono text-secondary space-y-1">
+                                      {notes.map((bullet, bIdx) => (
+                                        <div key={bIdx} className="flex items-start gap-1.5">
+                                          <span className="text-indigo-400">•</span>
+                                          <span className="leading-tight">{bullet}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })
+                          )}
                         </div>
                       )}
                     </div>
@@ -1410,7 +1332,7 @@
                 })}
               </div>
 
-              {/* EXPENSES */}
+              {/* RIGHT: EXPENSES GROUPS */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between pb-1">
                   <div className="flex items-center gap-2">
@@ -1422,8 +1344,15 @@
                       {fmt(currentMetrics.actualEx)}
                     </span>
                     <button
+                      onClick={() => handleOpenQuickAdd('expenses')}
+                      className="text-[11px] font-mono font-bold px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1 shadow-sm"
+                    >
+                      <i className="fa-solid fa-plus text-[10px]"></i>
+                      <span>{t('addItemBtn')}</span>
+                    </button>
+                    <button
                       onClick={() => handleOpenBracketModal('add', 'expenses')}
-                      className="text-[11px] font-mono text-indigo-400 hover:text-indigo-300 font-bold px-2 py-1 rounded-lg bg-surface-elevated border border-subtle"
+                      className="text-[11px] font-mono text-tertiary hover:text-primary font-bold px-2 py-1 rounded-lg bg-surface-elevated border border-subtle"
                     >
                       {t('addBracketBtn')}
                     </button>
@@ -1435,162 +1364,147 @@
                   const bracketActual = items.reduce((s, c) => s + c.actual, 0);
                   const bracketBudget = items.reduce((s, c) => s + c.budget, 0);
                   const isOpen = !!openBrackets[b.id];
-                  const currentInput = bracketInputs[b.id] || "";
-                  const dupWarn = checkDuplicate(currentInput);
 
                   return (
                     <div key={b.id} className="bg-surface rounded-2xl border border-subtle overflow-hidden transition-all">
-                      <div className="p-3.5 bg-surface-elevated hover:bg-subtle transition flex items-center justify-between select-none border-b border-subtle">
+                      <div className="p-3 bg-surface-elevated hover:bg-subtle transition flex items-center justify-between select-none border-b border-subtle">
                         <div onClick={() => toggleBracket(b.id)} className="flex items-center gap-2.5 cursor-pointer flex-1">
                           <i className={`fa-solid ${b.icon} text-indigo-400 text-xs w-4 text-center`}></i>
                           <span className="font-mono font-bold text-xs text-primary">{b.name}</span>
                           <span className="text-[10px] font-mono text-tertiary">({items.length})</span>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                          <div className="text-right text-xs font-mono">
+                        <div className="flex items-center gap-2">
+                          <div className="text-right text-xs font-mono mr-1">
                             <span className="font-bold text-rose-400">{fmt(bracketActual)}</span>
                             {bracketBudget > 0 && <span className="text-indigo-400 text-[10px] ml-1 font-semibold">/ {fmt(bracketBudget)}</span>}
                           </div>
+                          <button
+                            onClick={() => handleOpenQuickAdd('expenses', b.id)}
+                            className="w-6 h-6 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-xs flex items-center justify-center transition"
+                            title="Posten in diese Gruppe einfügen"
+                          >
+                            <i className="fa-solid fa-plus text-[10px]"></i>
+                          </button>
                           <button onClick={() => handleOpenBracketModal('edit', 'expenses', b)} className="text-tertiary hover:text-primary p-1">
                             <i className="fa-solid fa-pen-to-square text-xs"></i>
                           </button>
-                          <i onClick={() => toggleBracket(b.id)} className={`fa-solid fa-chevron-down text-tertiary text-[10px] transition-transform cursor-pointer ${isOpen ? 'rotate-180' : ''}`}></i>
+                          <i onClick={() => toggleBracket(b.id)} className={`fa-solid fa-chevron-down text-tertiary text-[10px] transition-transform cursor-pointer p-1 ${isOpen ? 'rotate-180' : ''}`}></i>
                         </div>
                       </div>
 
                       {isOpen && (
                         <div className="p-3 space-y-3 bg-surface">
-                          {items.map(item => {
-                            if (hideZeroes && item.actual === 0 && item.budget === 0) return null;
-                            const daysInMonth = currentMetrics.daysInMonth;
-                            const isVar = item.mode === 'variable';
-                            const isNoteOpen = !!openNoteRows[item.category];
+                          {items.length === 0 ? (
+                            <p className="text-center py-2 text-xs font-mono text-tertiary italic">Keine Posten. Klicken Sie oben auf "+", um einen Posten anzulegen.</p>
+                          ) : (
+                            items.map(item => {
+                              const isFresh = highlightedCategory === item.category;
+                              if (hideZeroes && !isFresh && item.actual === 0 && item.budget === 0) return null;
+                              const daysInMonth = currentMetrics.daysInMonth;
+                              const isVar = item.mode === 'variable';
+                              const isNoteOpen = !!openNoteRows[item.category];
 
-                            return (
-                              <div key={item.category} className="space-y-1">
-                                <div className="p-3 rounded-xl bg-subtle border border-subtle space-y-2">
-                                  <div className="flex items-center justify-between gap-2">
-                                    <div className="flex items-center gap-1.5 truncate flex-1">
-                                      <span className="font-bold text-xs text-primary block truncate">{item.category}</span>
-                                      {item.isOneTime && (
-                                        <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                                          {t('badgeOneTime')}
-                                        </span>
-                                      )}
-                                      {isVar && (
-                                        <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded ${
-                                          item.paceStatus === 'over' ? 'bg-rose-500/10 text-rose-400' :
-                                          item.paceStatus === 'frugal' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-surface-elevated text-secondary'
-                                        }`}>
-                                          {item.paceStatus === 'over' ? t('statusOver') : item.paceStatus === 'frugal' ? t('statusFrugal') : t('statusTrack')}
-                                        </span>
-                                      )}
-                                      {item.notes.length > 0 && (
-                                        <button
-                                          onClick={() => setOpenNoteRows(p => ({ ...p, [item.category]: !p[item.category] }))}
-                                          className="text-[10px] font-mono text-indigo-400 hover:text-indigo-300 flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-500/10 ml-1"
-                                        >
-                                          <i className="fa-solid fa-note-sticky text-[9px]"></i>
-                                          <span>{item.notes.length}</span>
-                                        </button>
-                                      )}
-                                    </div>
-
-                                    <div className="flex items-center gap-1">
-                                      <button onClick={() => handleOpenEditCategory('expenses', item.category)} className="text-tertiary hover:text-primary p-1">
-                                        <i className="fa-solid fa-gear text-xs"></i>
-                                      </button>
-                                      <button onClick={() => setSmartDeleteModal({ type: 'expenses', cat: item.category })} className="text-tertiary hover:text-rose-400 p-1">
-                                        <i className="fa-solid fa-trash-can text-xs"></i>
-                                      </button>
-                                    </div>
-                                  </div>
-
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                      <span className="text-[9px] font-mono font-bold text-indigo-400 block mb-1">{t('planLabel')}</span>
-                                      <div className="flex items-center bg-surface-elevated border border-indigo-500/20 rounded-xl px-2.5 py-1.5 focus-within:border-indigo-500">
-                                        <input
-                                          type="number" value={item.budget !== 0 ? item.budget : ""} placeholder="0"
-                                          onChange={(e) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'budget', e.target.value)}
-                                          className="w-full bg-transparent text-right font-mono font-bold text-xs text-indigo-300 outline-none"
-                                        />
-                                        <span className="text-xs font-mono text-tertiary ml-1 font-bold">€</span>
-                                      </div>
-                                    </div>
-
-                                    <div>
-                                      <div className="flex justify-between items-center mb-1 text-[9px] font-mono font-bold text-rose-400">
-                                        <span>{t('actualLabel')}</span>
+                              return (
+                                <div key={item.category} className={`space-y-1 rounded-xl transition ${isFresh ? 'animate-flash ring-2 ring-indigo-500' : ''}`}>
+                                  <div className="p-3 rounded-xl bg-subtle border border-subtle space-y-2">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="flex items-center gap-1.5 truncate flex-1">
+                                        <span className="font-bold text-xs text-primary block truncate">{item.category}</span>
+                                        {item.isOneTime && (
+                                          <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                                            {t('badgeOneTime')}
+                                          </span>
+                                        )}
                                         {isVar && (
-                                          <div className="flex items-center gap-1 text-tertiary text-[9px]">
-                                            <span>{t('asOfDayLabel')}</span>
-                                            <input
-                                              type="number" min="1" max={daysInMonth} value={item.asOfDate}
-                                              onChange={(e) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'asOfDate', Math.min(daysInMonth, Math.max(1, parseInt(e.target.value)||1)))}
-                                              className="w-5 text-center bg-surface rounded text-primary font-mono"
-                                            />
-                                          </div>
+                                          <span className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded ${
+                                            item.paceStatus === 'over' ? 'bg-rose-500/10 text-rose-400' :
+                                            item.paceStatus === 'frugal' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-surface-elevated text-secondary'
+                                          }`}>
+                                            {item.paceStatus === 'over' ? t('statusOver') : item.paceStatus === 'frugal' ? t('statusFrugal') : t('statusTrack')}
+                                          </span>
+                                        )}
+                                        {item.notes.length > 0 && (
+                                          <button
+                                            onClick={() => setOpenNoteRows(p => ({ ...p, [item.category]: !p[item.category] }))}
+                                            className="text-[10px] font-mono text-indigo-400 hover:text-indigo-300 flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-500/10 ml-1"
+                                          >
+                                            <i className="fa-solid fa-note-sticky text-[9px]"></i>
+                                            <span>{item.notes.length}</span>
+                                          </button>
                                         )}
                                       </div>
-                                      <div className="flex items-center bg-surface-elevated border border-rose-500/20 rounded-xl px-2.5 py-1.5 focus-within:border-rose-500">
-                                        <input
-                                          type="number" value={item.actual !== 0 ? item.actual : ""} placeholder="0"
-                                          onChange={(e) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'actual', e.target.value)}
-                                          className="w-full bg-transparent text-right font-mono font-bold text-xs text-rose-400 outline-none"
-                                        />
-                                        <span className="text-xs font-mono text-tertiary ml-1 font-bold">€</span>
+
+                                      <div className="flex items-center gap-1">
+                                        <button onClick={() => handleOpenEditCategory('expenses', item.category)} className="text-tertiary hover:text-primary p-1">
+                                          <i className="fa-solid fa-gear text-xs"></i>
+                                        </button>
+                                        <button onClick={() => setSmartDeleteModal({ type: 'expenses', cat: item.category })} className="text-tertiary hover:text-rose-400 p-1">
+                                          <i className="fa-solid fa-trash-can text-xs"></i>
+                                        </button>
                                       </div>
                                     </div>
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <div>
+                                        <span className="text-[9px] font-mono font-bold text-indigo-400 block mb-1">{t('planLabel')}</span>
+                                        <div className="flex items-center bg-surface-elevated border border-indigo-500/20 rounded-xl px-2.5 py-1.5 focus-within:border-indigo-500">
+                                          <input
+                                            type="number" value={item.budget !== 0 ? item.budget : ""} placeholder="0"
+                                            onChange={(e) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'budget', e.target.value)}
+                                            className="w-full bg-transparent text-right font-mono font-bold text-xs text-indigo-300 outline-none"
+                                          />
+                                          <span className="text-xs font-mono text-tertiary ml-1 font-bold">€</span>
+                                        </div>
+                                      </div>
+
+                                      <div>
+                                        <div className="flex justify-between items-center mb-1 text-[9px] font-mono font-bold text-rose-400">
+                                          <span>{t('actualLabel')}</span>
+                                          {isVar && (
+                                            <div className="flex items-center gap-1 text-tertiary text-[9px]">
+                                              <span>{t('asOfDayLabel')}</span>
+                                              <input
+                                                type="number" min="1" max={daysInMonth} value={item.asOfDate}
+                                                onChange={(e) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'asOfDate', Math.min(daysInMonth, Math.max(1, parseInt(e.target.value)||1)))}
+                                                className="w-5 text-center bg-surface rounded text-primary font-mono"
+                                              />
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="flex items-center bg-surface-elevated border border-rose-500/20 rounded-xl px-2.5 py-1.5 focus-within:border-rose-500">
+                                          <input
+                                            type="number" value={item.actual !== 0 ? item.actual : ""} placeholder="0"
+                                            onChange={(e) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'actual', e.target.value)}
+                                            className="w-full bg-transparent text-right font-mono font-bold text-xs text-rose-400 outline-none"
+                                          />
+                                          <span className="text-xs font-mono text-tertiary ml-1 font-bold">€</span>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {isVar && (
+                                      <div className="flex justify-between items-center text-[10px] font-mono pt-1 text-tertiary">
+                                        <span>{t('restBudgetLabel')}: <b className={item.remainingBudget >= 0 ? 'text-primary' : 'text-rose-400'}>{fmt(item.remainingBudget)}</b></span>
+                                        <span className="text-amber-400 font-bold">{fmt(item.safeDailySpend)} {t('perDayLabel')} ({item.daysLeft}d)</span>
+                                      </div>
+                                    )}
                                   </div>
 
-                                  {isVar && (
-                                    <div className="flex justify-between items-center text-[10px] font-mono pt-1 text-tertiary">
-                                      <span>{t('restBudgetLabel')}: <b className={item.remainingBudget >= 0 ? 'text-primary' : 'text-rose-400'}>{fmt(item.remainingBudget)}</b></span>
-                                      <span className="text-amber-400 font-bold">{fmt(item.safeDailySpend)} {t('perDayLabel')} ({item.daysLeft}d)</span>
+                                  {isNoteOpen && item.notes.length > 0 && (
+                                    <div className="mx-2 p-2 rounded-lg bg-surface-elevated border border-subtle text-[11px] font-mono text-secondary space-y-1">
+                                      {item.notes.map((bullet, bIdx) => (
+                                        <div key={bIdx} className="flex items-start gap-1.5">
+                                          <span className="text-indigo-400">•</span>
+                                          <span className="leading-tight">{bullet}</span>
+                                        </div>
+                                      ))}
                                     </div>
                                   )}
                                 </div>
-
-                                {isNoteOpen && item.notes.length > 0 && (
-                                  <div className="mx-2 p-2 rounded-lg bg-surface-elevated border border-subtle text-[11px] font-mono text-secondary space-y-1">
-                                    {item.notes.map((bullet, bIdx) => (
-                                      <div key={bIdx} className="flex items-start gap-1.5">
-                                        <span className="text-indigo-400">•</span>
-                                        <span className="leading-tight">{bullet}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-
-                          <div className="pt-2 border-t border-subtle">
-                            {dupWarn && (
-                              <div className="text-[10px] font-mono text-amber-400 mb-1 px-1">
-                                {t('duplicateWarningText', { bracket: dupWarn.bracket })}
-                              </div>
-                            )}
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                placeholder={t('addSubPlaceholder', { bracket: b.name })}
-                                value={currentInput}
-                                onChange={(e) => setBracketInputs(prev => ({ ...prev, [b.id]: e.target.value }))}
-                                onKeyDown={(e) => { if (e.key === 'Enter') handleAddSubcategory('expenses', b.id, 'variable'); }}
-                                className="flex-1 bg-subtle border border-subtle rounded-xl px-2.5 py-1.5 text-xs font-mono text-primary outline-none focus:border-indigo-500"
-                              />
-                              <button
-                                disabled={!currentInput.trim() || !!dupWarn}
-                                onClick={() => handleAddSubcategory('expenses', b.id, 'variable')}
-                                className={`px-3 py-1.5 rounded-xl font-mono text-xs font-bold transition ${!currentInput.trim() || !!dupWarn ? 'bg-subtle text-tertiary opacity-40 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 text-white'}`}
-                              >
-                                + Add
-                              </button>
-                            </div>
-                          </div>
+                              );
+                            })
+                          )}
                         </div>
                       )}
                     </div>
@@ -1600,6 +1514,97 @@
 
             </div>
           </main>
+
+          {/* GLOBAL QUICK ADD ITEM MODAL */}
+          {quickAddModal && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-surface border border-subtle rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl font-mono text-xs animate-slideIn">
+                <div className="flex justify-between items-center border-b border-subtle pb-3">
+                  <h3 className="font-bold text-xs text-primary uppercase flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                    <span>{t('quickAddModalTitle')}</span>
+                  </h3>
+                  <button onClick={() => setQuickAddModal(null)} className="text-secondary hover:text-primary">
+                    <i className="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('posten')}</label>
+                  <input
+                    type="text"
+                    value={quickAddForm.name}
+                    onChange={(e) => setQuickAddForm(p => ({ ...p, name: e.target.value }))}
+                    placeholder={t('quickAddNamePlaceholder')}
+                    autoFocus
+                    className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2 text-primary font-bold outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('bracketLabel')}</label>
+                  <select
+                    value={quickAddForm.bracket}
+                    onChange={(e) => setQuickAddForm(p => ({ ...p, bracket: e.target.value }))}
+                    className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2 text-primary font-bold outline-none"
+                  >
+                    {(quickAddModal.type === 'incomes' ? data.brackets.incomes : data.brackets.expenses).map(b => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('initialBudgetLabel')}</label>
+                  <div className="flex items-center bg-subtle border border-subtle rounded-xl px-3 py-1.5 focus-within:border-indigo-500">
+                    <input
+                      type="number"
+                      value={quickAddForm.budget}
+                      onChange={(e) => setQuickAddForm(p => ({ ...p, budget: e.target.value }))}
+                      placeholder="0"
+                      className="w-full bg-transparent text-right font-mono font-bold text-xs text-primary outline-none"
+                    />
+                    <span className="text-xs font-mono text-tertiary ml-1.5 font-bold">€</span>
+                  </div>
+                </div>
+
+                {quickAddModal.type === 'expenses' && (
+                  <div>
+                    <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('classificationLabel')}</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setQuickAddForm(p => ({ ...p, mode: 'fixed' }))}
+                        className={`p-2 rounded-xl border font-bold text-xs ${quickAddForm.mode === 'fixed' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-subtle text-secondary'}`}
+                      >
+                        {t('badgeFixed')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setQuickAddForm(p => ({ ...p, mode: 'variable' }))}
+                        className={`p-2 rounded-xl border font-bold text-xs ${quickAddForm.mode === 'variable' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-subtle text-secondary'}`}
+                      >
+                        {t('badgeVariable')}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-2 border-t border-subtle">
+                  <button onClick={() => setQuickAddModal(null)} className="flex-1 py-2 bg-surface-elevated text-secondary font-bold rounded-xl">
+                    {t('cancelBtn')}
+                  </button>
+                  <button
+                    disabled={!quickAddForm.name.trim()}
+                    onClick={() => handleCreateCategory(quickAddModal.type, quickAddForm.name, quickAddForm.bracket, quickAddForm.mode, quickAddForm.budget)}
+                    className={`flex-1 py-2 font-bold rounded-xl text-white ${!quickAddForm.name.trim() ? 'bg-indigo-900 opacity-40 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500'}`}
+                  >
+                    + Erstellen
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* EDIT CATEGORY DRAWER */}
           {activeEditCat && (
@@ -1684,7 +1689,7 @@
                     </div>
                   )}
 
-                  {/* NOTES / BULLET POINTS */}
+                  {/* NOTES / BULLETS */}
                   <div className="space-y-2 pt-2 border-t border-subtle">
                     <label className="text-[10px] font-bold text-secondary uppercase flex items-center justify-between">
                       <span>{t('notesTitle')}</span>
@@ -1745,7 +1750,7 @@
             </div>
           )}
 
-          {/* MAIN CATEGORY MODAL */}
+          {/* MAIN CATEGORY BRACKET MODAL */}
           {bracketModal && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <div className="bg-surface border border-subtle rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl font-mono text-xs animate-slideIn">
@@ -1764,7 +1769,7 @@
                     type="text"
                     value={bracketForm.name}
                     onChange={(e) => setBracketForm(p => ({ ...p, name: e.target.value }))}
-                    placeholder="Z.B. Auto, Haustiere..."
+                    placeholder="Z.B. Auto, Haustiere, Abos..."
                     className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2 text-primary font-bold outline-none focus:border-indigo-500"
                   />
                 </div>
@@ -1811,7 +1816,7 @@
               <div className="bg-surface border border-subtle rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl font-mono animate-slideIn">
                 <div className="flex justify-between items-center border-b border-subtle pb-3">
                   <h3 className="font-bold text-xs text-rose-400 uppercase">
-                    {t('deleteModalTitle', { name: smartDeleteModal.cat })}
+                    Kategorie "{smartDeleteModal.cat}" löschen
                   </h3>
                   <button onClick={() => setSmartDeleteModal(null)} className="text-secondary hover:text-primary">
                     <i className="fa-solid fa-xmark"></i>
@@ -1819,7 +1824,7 @@
                 </div>
 
                 <p className="text-xs text-secondary leading-relaxed">
-                  {t('deleteModalDesc')}
+                  Wählen Sie, wie mit bisherigen und zukünftigen Buchungen verfahren werden soll:
                 </p>
 
                 <div className="space-y-2 pt-1">
@@ -1827,24 +1832,21 @@
                     onClick={() => executeSmartDelete(smartDeleteModal.type, smartDeleteModal.cat, 'future_only')}
                     className="w-full text-left p-3 rounded-xl bg-surface-elevated hover:bg-subtle border border-subtle transition"
                   >
-                    <div className="text-xs font-bold text-primary">{t('deleteFutureOnly')}</div>
-                    <div className="text-[10px] text-tertiary mt-0.5">{t('deleteFutureOnlyDesc')}</div>
+                    <div className="text-xs font-bold text-primary">Nur für zukünftige Monate löschen</div>
+                    <div className="text-[10px] text-tertiary mt-0.5">Vergangene Monate & aktueller Monat bleiben erhalten. Ab folgendem Monat auf 0 € gesetzt.</div>
                   </button>
 
                   <button
                     onClick={() => executeSmartDelete(smartDeleteModal.type, smartDeleteModal.cat, 'purge_and_merge')}
                     className="w-full text-left p-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/15 border border-rose-500/20 transition"
                   >
-                    <div className="text-xs font-bold text-rose-400">{t('deleteAndMerge')}</div>
-                    <div className="text-[10px] text-tertiary mt-0.5">{t('deleteAndMergeDesc')}</div>
+                    <div className="text-xs font-bold text-rose-400">Vollständig löschen & in 'Sonstiges' überführen</div>
+                    <div className="text-[10px] text-tertiary mt-0.5">Sämtliche Beträge werden lückenlos in die Auffangkategorie 'Sonstiges' gebucht. Kein Bilanzverlust.</div>
                   </button>
                 </div>
 
                 <div className="pt-2">
-                  <button
-                    onClick={() => setSmartDeleteModal(null)}
-                    className="w-full py-2 bg-surface-elevated text-secondary font-bold rounded-xl text-xs"
-                  >
+                  <button onClick={() => setSmartDeleteModal(null)} className="w-full py-2 bg-surface-elevated text-secondary font-bold rounded-xl text-xs">
                     {t('cancelBtn')}
                   </button>
                 </div>
