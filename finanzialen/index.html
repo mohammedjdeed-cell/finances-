@@ -291,6 +291,10 @@
         quickAddModalTitle: "Neuen Posten anlegen",
         quickAddNamePlaceholder: "Z.B. Netflix, Amazon Prime, Strom...",
         initialBudgetLabel: "Geplanter Monatsbetrag (Plan €)",
+        replicateTitle: "Wiederkehrende Buchung (Kopieren)",
+        replicateFieldLabel: "Welcher Wert soll übertragen werden?",
+        replicateDurationLabel: "Für wie viele Folgemonate?",
+        replicateActionBtn: "In Folgemonate eintragen",
         months: MONTH_NAMES.de
       },
       en: {
@@ -368,6 +372,10 @@
         quickAddModalTitle: "Create New Item",
         quickAddNamePlaceholder: "E.g. Netflix, Amazon Prime, Electricity...",
         initialBudgetLabel: "Planned Monthly Budget (Plan €)",
+        replicateTitle: "Recurring Payment (Replicate)",
+        replicateFieldLabel: "Which value should be copied?",
+        replicateDurationLabel: "For how many future months?",
+        replicateActionBtn: "Apply to Future Months",
         months: MONTH_NAMES.en
       }
     };
@@ -398,7 +406,7 @@
     const useTranslation = () => useContext(LanguageContext);
 
     const IDB = {
-      dbName: 'LiquidCashflow_v13',
+      dbName: 'LiquidCashflow_v14',
       open() {
         return new Promise((res, rej) => {
           const r = indexedDB.open(this.dbName, 1);
@@ -451,16 +459,30 @@
         values: {}
       };
 
+      // 🛡️ ORPHAN RECOVERY: Ensure ALL categories have a valid, visible bracket!
+      const validExpenseBrackets = state.brackets.expenses.map(b => b.id);
+      const validIncomeBrackets = state.brackets.incomes.map(b => b.id);
+
       state.categories.expenses.forEach(cat => {
         if (!state.categoryModes[cat]) state.categoryModes[cat] = autoClassifyCategory(cat).mode;
-        if (!state.categoryOverrides[cat]) state.categoryOverrides[cat] = autoClassifyCategory(cat).bracket;
+        if (!state.categoryOverrides[cat] || !validExpenseBrackets.includes(state.categoryOverrides[cat])) {
+          state.categoryOverrides[cat] = autoClassifyCategory(cat).bracket;
+          if (!validExpenseBrackets.includes(state.categoryOverrides[cat])) {
+            state.categoryOverrides[cat] = state.brackets.expenses[0]?.id || 'housing';
+          }
+        }
         if (state.categoryOneTime[cat] === undefined) state.categoryOneTime[cat] = autoClassifyCategory(cat).isOneTime;
         if (!state.categoryNotes[cat]) state.categoryNotes[cat] = [];
       });
 
       state.categories.incomes.forEach(cat => {
-        if (!state.categoryModes[cat]) state.categoryModes[cat] = (cat.includes("side") || cat.includes("Sonstiges")) ? 'variable' : 'fixed';
-        if (!state.categoryOverrides[cat]) state.categoryOverrides[cat] = state.categoryModes[cat] === 'fixed' ? 'fixed_in' : 'variable_in';
+        if (!state.categoryModes[cat]) state.categoryModes[cat] = (cat.includes("side") || cat.includes("Sonstiges") || cat.includes("savings")) ? 'variable' : 'fixed';
+        if (!state.categoryOverrides[cat] || !validIncomeBrackets.includes(state.categoryOverrides[cat])) {
+          state.categoryOverrides[cat] = state.categoryModes[cat] === 'fixed' ? 'fixed_in' : 'variable_in';
+          if (!validIncomeBrackets.includes(state.categoryOverrides[cat])) {
+            state.categoryOverrides[cat] = state.brackets.incomes[0]?.id || 'fixed_in';
+          }
+        }
         if (!state.categoryNotes[cat]) state.categoryNotes[cat] = [];
       });
 
@@ -507,7 +529,6 @@
       const [isOnline, setIsOnline] = useState(navigator.onLine);
       const [syncStatus, setSyncStatus] = useState("initialized");
       
-      // Defaults to false so zero items are NEVER hidden by default
       const [hideZeroes, setHideZeroes] = useState(() => safeStorage.get('budget_hide_zeroes', 'false') === 'true');
       const [isBurgerOpen, setIsBurgerOpen] = useState(false);
       const [theme, setTheme] = useState(() => safeStorage.get('budget_app_theme', 'dark'));
@@ -524,6 +545,10 @@
       const [editCatForm, setEditCatForm] = useState({ name: "", bracket: "", mode: "fixed", isOneTime: false, pDay: "", notes: [] });
       const [newBulletText, setNewBulletText] = useState("");
       const [saveFeedback, setSaveFeedback] = useState(false);
+
+      // 🔁 RECURRING MODAL STATE
+      const [recurringModal, setRecurringModal] = useState(null); // { type, cat, defaultVal, isPlan }
+      const [recurringForm, setRecurringForm] = useState({ field: 'budget', amount: 0, duration: 6 });
 
       // Bracket Modal
       const [bracketModal, setBracketModal] = useState(null);
@@ -767,7 +792,6 @@
           });
         });
 
-        // Always show the bracket & disable hideZeroes if on
         setOpenBrackets(prev => ({ ...prev, [bracketId]: true }));
         setHighlightedCategory(val);
         setTimeout(() => setHighlightedCategory(null), 2500);
@@ -786,6 +810,50 @@
           budget: "",
           mode: type === 'incomes' ? 'fixed' : 'variable'
         });
+      };
+
+      // 🔁 RECURRING PAYMENTS HANDLER
+      const handleOpenRecurring = (type, cat) => {
+        const node = getNode(type, cat, selectedYear, selectedMonth);
+        const preferPlan = node.budget > 0;
+        setRecurringModal({ type, cat });
+        setRecurringForm({
+          field: preferPlan ? 'budget' : 'actual',
+          amount: preferPlan ? node.budget : node.actual,
+          duration: 6
+        });
+      };
+
+      const handleExecuteRecurring = async () => {
+        if (!recurringModal) return;
+        const { type, cat } = recurringModal;
+        const { field, amount, duration } = recurringForm;
+
+        const copy = JSON.parse(JSON.stringify(data));
+        const allMonths = [];
+        ["2026", "2027", "2028"].forEach(yr => {
+          getMonthsForYear(parseInt(yr)).forEach(mo => allMonths.push({ yr, mo }));
+        });
+
+        const startIdx = allMonths.findIndex(t => t.yr === String(selectedYear) && t.mo === selectedMonth);
+        if (startIdx !== -1) {
+          const limit = duration === 'all' ? allMonths.length - startIdx : parseInt(duration);
+          for (let i = 0; i < limit; i++) {
+            const target = allMonths[startIdx + i];
+            if (target) {
+              if (!copy.values[target.yr][type][cat]) copy.values[target.yr][type][cat] = {};
+              if (!copy.values[target.yr][type][cat][target.mo]) {
+                copy.values[target.yr][type][cat][target.mo] = {
+                  budget: 0, actual: 0, asOfDate: getDaysInMonth(parseInt(target.yr), target.mo)
+                };
+              }
+              copy.values[target.yr][type][cat][target.mo][field] = parseFloat(amount) || 0;
+            }
+          }
+        }
+
+        await saveState(copy);
+        setRecurringModal(null);
       };
 
       const handleOpenEditCategory = (type, cat) => {
@@ -954,7 +1022,6 @@
 
       const toggleBracket = (id) => setOpenBrackets(prev => ({ ...prev, [id]: !prev[id] }));
 
-      // Toggle All Brackets
       const toggleAllBrackets = () => {
         const anyClosed = Object.values(openBrackets).some(v => !v);
         const nextState = {};
@@ -1244,17 +1311,23 @@
               )}
             </div>
 
-            {/* 🎯 UNMISSABLE FILTER & VISIBILITY TOOLBAR */}
+            {/* BAR CHART */}
+            <div className="bg-surface rounded-2xl border border-subtle p-4">
+              <div className="h-[220px] relative w-full">
+                <canvas ref={chartRef}></canvas>
+              </div>
+            </div>
+
+            {/* FILTER & VISIBILITY TOOLBAR */}
             <div className="flex flex-wrap items-center justify-between gap-3 bg-surface border border-subtle rounded-2xl p-3 shadow-sm">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-mono font-bold text-primary flex items-center gap-1.5">
                   <i className="fa-solid fa-sliders text-indigo-400"></i>
-                  <span>Filter & Posten-Sichtbarkeit:</span>
+                  <span>Filter:</span>
                 </span>
               </div>
 
               <div className="flex items-center gap-2">
-                {/* THE UNMISSABLE SHOW/HIDE ZEROES BUTTON */}
                 <button
                   onClick={() => setHideZeroes(prev => !prev)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition flex items-center gap-2 border shadow-sm ${
@@ -1267,7 +1340,6 @@
                   <span>{hideZeroes ? t('hideZeroesBtn') : t('showAllBtn')}</span>
                 </button>
 
-                {/* Expand / Collapse All Toggle */}
                 <button
                   onClick={toggleAllBrackets}
                   className="px-3 py-1.5 rounded-xl text-xs font-mono font-bold bg-surface-elevated hover:bg-subtle text-secondary hover:text-primary border border-subtle transition flex items-center gap-1.5"
@@ -1278,7 +1350,7 @@
               </div>
             </div>
 
-            {/* ================== HIERARCHICAL ACCORDIONS ================== */}
+            {/* ================== HIERARCHICAL ACCORDIONS WITH RECURRING BUTTONS ================== */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
               {/* INCOMES */}
@@ -1314,7 +1386,6 @@
                   const bracketBudget = items.reduce((s, c) => s + getNode('incomes', c, selectedYear, selectedMonth).budget, 0);
                   const isOpen = !!openBrackets[b.id];
 
-                  // Count how many items in this bracket are currently hidden by hideZeroes
                   const hiddenCount = items.filter(cat => {
                     const node = getNode('incomes', cat, selectedYear, selectedMonth);
                     return node.actual === 0 && node.budget === 0;
@@ -1350,21 +1421,17 @@
 
                       {isOpen && (
                         <div className="p-3 space-y-2 bg-surface">
-                          {/* IN-BRACKET NOTICE IF ITEMS ARE HIDDEN */}
                           {hideZeroes && hiddenCount > 0 && (
                             <div className="p-2 rounded-xl bg-surface-elevated border border-dashed border-subtle text-center text-xs font-mono text-tertiary flex items-center justify-between px-3">
                               <span>{t('hiddenNotice', { count: hiddenCount })}</span>
-                              <button
-                                onClick={() => setHideZeroes(false)}
-                                className="text-indigo-400 hover:underline font-bold"
-                              >
+                              <button onClick={() => setHideZeroes(false)} className="text-indigo-400 hover:underline font-bold">
                                 {t('showNow')}
                               </button>
                             </div>
                           )}
 
                           {items.length === 0 ? (
-                            <p className="text-center py-2 text-xs font-mono text-tertiary italic">Keine Posten. Klicken Sie oben auf "+", um einen Posten anzulegen.</p>
+                            <p className="text-center py-2 text-xs font-mono text-tertiary italic">Keine Posten vorhanden.</p>
                           ) : (
                             items.map(cat => {
                               const node = getNode('incomes', cat, selectedYear, selectedMonth);
@@ -1392,6 +1459,7 @@
                                       </div>
                                       {pDay && <span className="text-[10px] font-mono text-tertiary">{t('paymentDayShort')} {pDay}</span>}
                                     </div>
+
                                     <div className="flex items-center gap-2">
                                       <div className="flex items-center bg-surface-elevated border border-subtle rounded-xl px-2.5 py-1.5 focus-within:border-emerald-500 w-28">
                                         <input
@@ -1401,6 +1469,16 @@
                                         />
                                         <span className="text-xs font-mono text-tertiary ml-1 font-bold">€</span>
                                       </div>
+
+                                      {/* 🔁 REPEAT / RECURRING BUTTON */}
+                                      <button
+                                        onClick={() => handleOpenRecurring('incomes', cat)}
+                                        className="text-tertiary hover:text-indigo-400 p-1"
+                                        title={t('replicateTitle')}
+                                      >
+                                        <i className="fa-solid fa-repeat text-xs"></i>
+                                      </button>
+
                                       <button onClick={() => handleOpenEditCategory('incomes', cat)} className="text-tertiary hover:text-primary p-1">
                                         <i className="fa-solid fa-gear text-xs"></i>
                                       </button>
@@ -1464,7 +1542,6 @@
                   const bracketBudget = items.reduce((s, c) => s + c.budget, 0);
                   const isOpen = !!openBrackets[b.id];
 
-                  // Count how many items in this bracket are currently hidden by hideZeroes
                   const hiddenCount = items.filter(c => c.actual === 0 && c.budget === 0).length;
 
                   return (
@@ -1497,21 +1574,17 @@
 
                       {isOpen && (
                         <div className="p-3 space-y-3 bg-surface">
-                          {/* IN-BRACKET NOTICE IF ITEMS ARE HIDDEN */}
                           {hideZeroes && hiddenCount > 0 && (
                             <div className="p-2 rounded-xl bg-surface-elevated border border-dashed border-subtle text-center text-xs font-mono text-tertiary flex items-center justify-between px-3">
                               <span>{t('hiddenNotice', { count: hiddenCount })}</span>
-                              <button
-                                onClick={() => setHideZeroes(false)}
-                                className="text-indigo-400 hover:underline font-bold"
-                              >
+                              <button onClick={() => setHideZeroes(false)} className="text-indigo-400 hover:underline font-bold">
                                 {t('showNow')}
                               </button>
                             </div>
                           )}
 
                           {items.length === 0 ? (
-                            <p className="text-center py-2 text-xs font-mono text-tertiary italic">Keine Posten. Klicken Sie oben auf "+", um einen Posten anzulegen.</p>
+                            <p className="text-center py-2 text-xs font-mono text-tertiary italic">Keine Posten vorhanden.</p>
                           ) : (
                             items.map(item => {
                               const isFresh = highlightedCategory === item.category;
@@ -1551,6 +1624,15 @@
                                       </div>
 
                                       <div className="flex items-center gap-1">
+                                        {/* 🔁 REPEAT / RECURRING BUTTON */}
+                                        <button
+                                          onClick={() => handleOpenRecurring('expenses', item.category)}
+                                          className="text-tertiary hover:text-indigo-400 p-1"
+                                          title={t('replicateTitle')}
+                                        >
+                                          <i className="fa-solid fa-repeat text-xs"></i>
+                                        </button>
+
                                         <button onClick={() => handleOpenEditCategory('expenses', item.category)} className="text-tertiary hover:text-primary p-1">
                                           <i className="fa-solid fa-gear text-xs"></i>
                                         </button>
@@ -1629,6 +1711,87 @@
 
             </div>
           </main>
+
+          {/* 🔁 RECURRING PAYMENT / REPLICATE MODAL */}
+          {recurringModal && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-surface border border-subtle rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl font-mono text-xs animate-slideIn">
+                <div className="flex justify-between items-center border-b border-subtle pb-3">
+                  <h3 className="font-bold text-xs text-primary uppercase flex items-center gap-2">
+                    <i className="fa-solid fa-repeat text-indigo-400"></i>
+                    <span>{t('replicateTitle')}</span>
+                  </h3>
+                  <button onClick={() => setRecurringModal(null)} className="text-secondary hover:text-primary">
+                    <i className="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-subtle border border-subtle">
+                  <span className="text-secondary text-[10px] uppercase block">Kategorie</span>
+                  <span className="font-bold text-xs text-primary">{recurringModal.cat}</span>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('replicateFieldLabel')}</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setRecurringForm(p => ({ ...p, field: 'budget' }))}
+                      className={`p-2 rounded-xl border font-bold text-xs ${recurringForm.field === 'budget' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-subtle text-secondary'}`}
+                    >
+                      Plan (Budget)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRecurringForm(p => ({ ...p, field: 'actual' }))}
+                      className={`p-2 rounded-xl border font-bold text-xs ${recurringForm.field === 'actual' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-subtle text-secondary'}`}
+                    >
+                      Ist (Ausgegeben)
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-secondary uppercase block mb-1">Betrag (€)</label>
+                  <div className="flex items-center bg-subtle border border-subtle rounded-xl px-3 py-1.5 focus-within:border-indigo-500">
+                    <input
+                      type="number"
+                      value={recurringForm.amount}
+                      onChange={(e) => setRecurringForm(p => ({ ...p, amount: e.target.value }))}
+                      className="w-full bg-transparent text-right font-mono font-bold text-xs text-primary outline-none"
+                    />
+                    <span className="text-xs font-mono text-tertiary ml-1.5 font-bold">€</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-secondary uppercase block mb-1">{t('replicateDurationLabel')}</label>
+                  <select
+                    value={recurringForm.duration}
+                    onChange={(e) => setRecurringForm(p => ({ ...p, duration: e.target.value }))}
+                    className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2 text-primary font-bold outline-none"
+                  >
+                    <option value={3}>3 Monate ({selectedMonth} + 2)</option>
+                    <option value={6}>6 Monate ({selectedMonth} + 5)</option>
+                    <option value={12}>12 Monate (1 Jahr)</option>
+                    <option value="all">Bis Ende 2028 (Kompletter Zeitraum)</option>
+                  </select>
+                </div>
+
+                <div className="flex gap-2 pt-2 border-t border-subtle">
+                  <button onClick={() => setRecurringModal(null)} className="flex-1 py-2 bg-surface-elevated text-secondary font-bold rounded-xl">
+                    {t('cancelBtn')}
+                  </button>
+                  <button
+                    onClick={handleExecuteRecurring}
+                    className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl"
+                  >
+                    {t('replicateActionBtn')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* GLOBAL QUICK ADD ITEM MODAL */}
           {quickAddModal && (
