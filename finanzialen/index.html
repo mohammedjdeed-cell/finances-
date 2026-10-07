@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de" class="dark">
 <head>
@@ -146,18 +147,88 @@
       'fa-briefcase', 'fa-plane', 'fa-wifi', 'fa-shield-halved'
     ];
 
+    // 🎨 HIERARCHICAL COLOR GRADING PALETTES PER CATEGORY GROUP
+    const BRACKET_PALETTES = {
+      housing: {
+        borderL: 'border-l-blue-500',
+        headerGrad: 'from-blue-500/15 via-blue-500/5 to-transparent',
+        iconBg: 'bg-blue-500/15 text-blue-400 border border-blue-500/30',
+        subcardBg: 'bg-blue-950/20 hover:bg-blue-950/30 border-blue-500/20',
+        textAccent: 'text-blue-400'
+      },
+      subscriptions: {
+        borderL: 'border-l-purple-500',
+        headerGrad: 'from-purple-500/15 via-purple-500/5 to-transparent',
+        iconBg: 'bg-purple-500/15 text-purple-400 border border-purple-500/30',
+        subcardBg: 'bg-purple-950/20 hover:bg-purple-950/30 border-purple-500/20',
+        textAccent: 'text-purple-400'
+      },
+      living: {
+        borderL: 'border-l-amber-500',
+        headerGrad: 'from-amber-500/15 via-amber-500/5 to-transparent',
+        iconBg: 'bg-amber-500/15 text-amber-400 border border-amber-500/30',
+        subcardBg: 'bg-amber-950/20 hover:bg-amber-950/30 border-amber-500/20',
+        textAccent: 'text-amber-400'
+      },
+      professional: {
+        borderL: 'border-l-teal-500',
+        headerGrad: 'from-teal-500/15 via-teal-500/5 to-transparent',
+        iconBg: 'bg-teal-500/15 text-teal-400 border border-teal-500/30',
+        subcardBg: 'bg-teal-950/20 hover:bg-teal-950/30 border-teal-500/20',
+        textAccent: 'text-teal-400'
+      },
+      leisure: {
+        borderL: 'border-l-pink-500',
+        headerGrad: 'from-pink-500/15 via-pink-500/5 to-transparent',
+        iconBg: 'bg-pink-500/15 text-pink-400 border border-pink-500/30',
+        subcardBg: 'bg-pink-950/20 hover:bg-pink-950/30 border-pink-500/20',
+        textAccent: 'text-pink-400'
+      },
+      other: {
+        borderL: 'border-l-slate-400',
+        headerGrad: 'from-slate-500/15 via-slate-500/5 to-transparent',
+        iconBg: 'bg-slate-500/15 text-slate-400 border border-slate-500/30',
+        subcardBg: 'bg-slate-950/20 hover:bg-slate-950/30 border-slate-500/20',
+        textAccent: 'text-slate-400'
+      },
+      fixed_in: {
+        borderL: 'border-l-emerald-500',
+        headerGrad: 'from-emerald-500/15 via-emerald-500/5 to-transparent',
+        iconBg: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30',
+        subcardBg: 'bg-emerald-950/20 hover:bg-emerald-950/30 border-emerald-500/20',
+        textAccent: 'text-emerald-400'
+      },
+      variable_in: {
+        borderL: 'border-l-cyan-500',
+        headerGrad: 'from-cyan-500/15 via-cyan-500/5 to-transparent',
+        iconBg: 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30',
+        subcardBg: 'bg-cyan-950/20 hover:bg-cyan-950/30 border-cyan-500/20',
+        textAccent: 'text-cyan-400'
+      }
+    };
+
+    const getPalette = (bracketId) => {
+      return BRACKET_PALETTES[bracketId] || {
+        borderL: 'border-l-indigo-500',
+        headerGrad: 'from-indigo-500/15 via-indigo-500/5 to-transparent',
+        iconBg: 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30',
+        subcardBg: 'bg-surface hover:bg-surface-elevated border-subtle',
+        textAccent: 'text-indigo-400'
+      };
+    };
+
     const DEFAULT_BRACKETS = {
       expenses: [
-        { id: 'housing', name: 'Wohnen & Fixkosten', icon: 'fa-house', color: '#64748b' },
-        { id: 'subscriptions', name: 'Abos & Medien (Netflix, Prime...)', icon: 'fa-ticket', color: '#8b5cf6' },
+        { id: 'housing', name: 'Wohnen & Fixkosten', icon: 'fa-house', color: '#3b82f6' },
+        { id: 'subscriptions', name: 'Abos & Medien (Netflix, Prime...)', icon: 'fa-ticket', color: '#a855f7' },
         { id: 'living', name: 'Alltag & Verpflegung', icon: 'fa-basket-shopping', color: '#f59e0b' },
         { id: 'professional', name: 'Bildung, Prüfungen & Gesundheit', icon: 'fa-graduation-cap', color: '#14b8a6' },
         { id: 'leisure', name: 'Freizeit & Kultur', icon: 'fa-champagne-glasses', color: '#ec4899' },
-        { id: 'other', name: 'Sonstiges & Bankgebühren', icon: 'fa-box-archive', color: '#475569' }
+        { id: 'other', name: 'Sonstiges & Bankgebühren', icon: 'fa-box-archive', color: '#64748b' }
       ],
       incomes: [
         { id: 'fixed_in', name: 'Feste Einnahmen / Sperrkonto', icon: 'fa-building-columns', color: '#10b981' },
-        { id: 'variable_in', name: 'Variable Einnahmen & Nebeneinkünfte', icon: 'fa-coins', color: '#38bdf8' }
+        { id: 'variable_in', name: 'Variable Einnahmen & Nebeneinkünfte', icon: 'fa-coins', color: '#06b6d4' }
       ]
     };
 
@@ -285,9 +356,9 @@
         newBracketTitle: "Neue Hauptkategorie anlegen",
         bracketNameLabel: "Name der Hauptkategorie",
         bracketIconLabel: "Symbol wählen",
-        notesTitle: "Notizen & Stichpunkte (Bullet Points)",
+        notesTitleMonth: "Notizen & Stichpunkte (nur {{month}} {{year}})",
         addNotePlaceholder: "Neuen Stichpunkt hinzufügen...",
-        noNotesYet: "Keine Notizen hinterlegt.",
+        noNotesYetMonth: "Keine Notizen für diesen Monat hinterlegt.",
         quickAddModalTitle: "Neuen Posten anlegen",
         quickAddNamePlaceholder: "Z.B. Netflix, Amazon Prime, Strom...",
         initialBudgetLabel: "Geplanter Monatsbetrag (Plan €)",
@@ -366,9 +437,9 @@
         newBracketTitle: "Create Main Category",
         bracketNameLabel: "Main Category Name",
         bracketIconLabel: "Choose Icon",
-        notesTitle: "Notes & Bullet Points",
+        notesTitleMonth: "Notes & Bullet Points (Only {{month}} {{year}})",
         addNotePlaceholder: "Add a bullet point...",
-        noNotesYet: "No notes added yet.",
+        noNotesYetMonth: "No notes for this month yet.",
         quickAddModalTitle: "Create New Item",
         quickAddNamePlaceholder: "E.g. Netflix, Amazon Prime, Electricity...",
         initialBudgetLabel: "Planned Monthly Budget (Plan €)",
@@ -406,7 +477,7 @@
     const useTranslation = () => useContext(LanguageContext);
 
     const IDB = {
-      dbName: 'LiquidCashflow_v14',
+      dbName: 'LiquidCashflow_v15',
       open() {
         return new Promise((res, rej) => {
           const r = indexedDB.open(this.dbName, 1);
@@ -459,7 +530,6 @@
         values: {}
       };
 
-      // 🛡️ ORPHAN RECOVERY: Ensure ALL categories have a valid, visible bracket!
       const validExpenseBrackets = state.brackets.expenses.map(b => b.id);
       const validIncomeBrackets = state.brackets.incomes.map(b => b.id);
 
@@ -472,7 +542,6 @@
           }
         }
         if (state.categoryOneTime[cat] === undefined) state.categoryOneTime[cat] = autoClassifyCategory(cat).isOneTime;
-        if (!state.categoryNotes[cat]) state.categoryNotes[cat] = [];
       });
 
       state.categories.incomes.forEach(cat => {
@@ -483,7 +552,6 @@
             state.categoryOverrides[cat] = state.brackets.incomes[0]?.id || 'fixed_in';
           }
         }
-        if (!state.categoryNotes[cat]) state.categoryNotes[cat] = [];
       });
 
       ["2026", "2027", "2028"].forEach(y => {
@@ -546,15 +614,15 @@
       const [newBulletText, setNewBulletText] = useState("");
       const [saveFeedback, setSaveFeedback] = useState(false);
 
-      // 🔁 RECURRING MODAL STATE
-      const [recurringModal, setRecurringModal] = useState(null); // { type, cat, defaultVal, isPlan }
+      // Recurring Modal
+      const [recurringModal, setRecurringModal] = useState(null);
       const [recurringForm, setRecurringForm] = useState({ field: 'budget', amount: 0, duration: 6 });
 
       // Bracket Modal
       const [bracketModal, setBracketModal] = useState(null);
       const [bracketForm, setBracketForm] = useState({ name: "", icon: "fa-house", color: "#6366f1" });
 
-      // Global Quick Add Modal
+      // Quick Add Modal
       const [quickAddModal, setQuickAddModal] = useState(null);
       const [quickAddForm, setQuickAddForm] = useState({ name: "", bracket: "", budget: "", mode: "variable" });
 
@@ -628,6 +696,16 @@
 
       const getNode = (type, cat, yr, m) => {
         return data.values[yr]?.[type]?.[cat]?.[m] || { budget: 0, actual: 0, asOfDate: getDaysInMonth(yr, m) };
+      };
+
+      // 📌 MONTH-SCOPED NOTES ACCESSOR:
+      // Notes stick strictly to the current Month + Year!
+      const getMonthScopedNotes = (cat, yr = selectedYear, mo = selectedMonth) => {
+        const key = `${yr}_${mo}_${cat}`;
+        if (data.categoryNotes && Array.isArray(data.categoryNotes[key])) {
+          return data.categoryNotes[key];
+        }
+        return [];
       };
 
       const updateNode = async (type, cat, yr, m, field, val) => {
@@ -738,7 +816,8 @@
             asOfDate: asOf, daysLeft, remainingBudget, safeDailySpend,
             projectedTotal, paceStatus,
             bracket: data.categoryOverrides[cat] || autoClassifyCategory(cat).bracket,
-            mode, isOneTime, notes: data.categoryNotes?.[cat] || []
+            mode, isOneTime,
+            notes: getMonthScopedNotes(cat, selectedYear, selectedMonth)
           };
         });
       }, [data, selectedYear, selectedMonth, currentMetrics]);
@@ -779,7 +858,6 @@
         copy.categoryOverrides[val] = bracketId;
         copy.categoryModes[val] = mode || 'variable';
         copy.categoryOneTime[val] = false;
-        copy.categoryNotes[val] = [];
 
         ["2026", "2027", "2028"].forEach(y => {
           if (!copy.values[y][type][val]) copy.values[y][type][val] = {};
@@ -812,7 +890,6 @@
         });
       };
 
-      // 🔁 RECURRING PAYMENTS HANDLER
       const handleOpenRecurring = (type, cat) => {
         const node = getNode(type, cat, selectedYear, selectedMonth);
         const preferPlan = node.budget > 0;
@@ -864,7 +941,7 @@
           mode: data.categoryModes[cat] || 'fixed',
           isOneTime: !!data.categoryOneTime[cat],
           pDay: data.fixedPaymentDays?.[cat] || "",
-          notes: [...(data.categoryNotes?.[cat] || [])]
+          notes: [...getMonthScopedNotes(cat, selectedYear, selectedMonth)]
         });
         setNewBulletText("");
         setSaveFeedback(false);
@@ -899,7 +976,11 @@
         copy.categoryOverrides[newName] = editCatForm.bracket;
         copy.categoryModes[newName] = editCatForm.mode;
         copy.categoryOneTime[newName] = editCatForm.isOneTime;
-        copy.categoryNotes[newName] = editCatForm.notes;
+
+        // Save notes strictly to CURRENT Month + Year!
+        if (!copy.categoryNotes) copy.categoryNotes = {};
+        const noteKey = `${selectedYear}_${selectedMonth}_${newName}`;
+        copy.categoryNotes[noteKey] = editCatForm.notes;
 
         const dayNum = parseInt(editCatForm.pDay);
         copy.fixedPaymentDays[newName] = isNaN(dayNum) ? null : dayNum;
@@ -908,7 +989,6 @@
           delete copy.categoryOverrides[oldName];
           delete copy.categoryModes[oldName];
           delete copy.categoryOneTime[oldName];
-          delete copy.categoryNotes[oldName];
           delete copy.fixedPaymentDays[oldName];
         }
 
@@ -968,7 +1048,6 @@
           delete copy.categoryModes[cat];
           delete copy.categoryOverrides[cat];
           delete copy.categoryOneTime[cat];
-          delete copy.categoryNotes[cat];
           delete copy.fixedPaymentDays[cat];
         }
 
@@ -1350,7 +1429,7 @@
               </div>
             </div>
 
-            {/* ================== HIERARCHICAL ACCORDIONS WITH RECURRING BUTTONS ================== */}
+            {/* ================== HIERARCHICAL ACCORDIONS WITH VISUAL COLOR GRADING ================== */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
               {/* INCOMES */}
@@ -1385,6 +1464,7 @@
                   const bracketActual = items.reduce((s, c) => s + getNode('incomes', c, selectedYear, selectedMonth).actual, 0);
                   const bracketBudget = items.reduce((s, c) => s + getNode('incomes', c, selectedYear, selectedMonth).budget, 0);
                   const isOpen = !!openBrackets[b.id];
+                  const palette = getPalette(b.id);
 
                   const hiddenCount = items.filter(cat => {
                     const node = getNode('incomes', cat, selectedYear, selectedMonth);
@@ -1392,10 +1472,13 @@
                   }).length;
 
                   return (
-                    <div key={b.id} className="bg-surface rounded-2xl border border-subtle overflow-hidden transition-all">
-                      <div className="p-3 bg-surface-elevated hover:bg-subtle transition flex items-center justify-between select-none border-b border-subtle">
+                    <div key={b.id} className="bg-surface rounded-2xl border border-subtle overflow-hidden transition-all shadow-sm">
+                      {/* Top Banner with Distinct Gradient */}
+                      <div className={`p-3.5 bg-gradient-to-r ${palette.headerGrad} bg-surface-elevated hover:bg-subtle transition flex items-center justify-between select-none border-b border-subtle`}>
                         <div onClick={() => toggleBracket(b.id)} className="flex items-center gap-2.5 cursor-pointer flex-1">
-                          <i className={`fa-solid ${b.icon} text-emerald-400 text-xs w-4 text-center`}></i>
+                          <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs ${palette.iconBg}`}>
+                            <i className={`fa-solid ${b.icon}`}></i>
+                          </span>
                           <span className="font-mono font-bold text-xs text-primary">{b.name}</span>
                           <span className="text-[10px] font-mono text-tertiary">({items.length})</span>
                         </div>
@@ -1420,7 +1503,7 @@
                       </div>
 
                       {isOpen && (
-                        <div className="p-3 space-y-2 bg-surface">
+                        <div className="p-3 space-y-2.5 bg-surface">
                           {hideZeroes && hiddenCount > 0 && (
                             <div className="p-2 rounded-xl bg-surface-elevated border border-dashed border-subtle text-center text-xs font-mono text-tertiary flex items-center justify-between px-3">
                               <span>{t('hiddenNotice', { count: hiddenCount })}</span>
@@ -1438,19 +1521,21 @@
                               const isFresh = highlightedCategory === cat;
                               if (hideZeroes && !isFresh && node.actual === 0 && node.budget === 0) return null;
                               const pDay = data.fixedPaymentDays?.[cat];
-                              const notes = data.categoryNotes?.[cat] || [];
+                              // Strictly Month-Scoped Notes!
+                              const notes = getMonthScopedNotes(cat, selectedYear, selectedMonth);
                               const isNoteOpen = !!openNoteRows[cat];
 
                               return (
                                 <div key={cat} className={`space-y-1 rounded-xl transition ${isFresh ? 'animate-flash ring-2 ring-emerald-500' : ''}`}>
-                                  <div className="p-2.5 rounded-xl bg-subtle border border-subtle flex items-center justify-between gap-2">
+                                  <div className={`p-2.5 rounded-xl border border-l-4 ${palette.borderL} ${palette.subcardBg} flex items-center justify-between gap-2 shadow-xs transition`}>
                                     <div className="truncate flex-1">
                                       <div className="flex items-center gap-1.5">
                                         <span className="font-semibold text-xs text-primary block truncate">{cat}</span>
                                         {notes.length > 0 && (
                                           <button
                                             onClick={() => setOpenNoteRows(p => ({ ...p, [cat]: !p[cat] }))}
-                                            className="text-[10px] font-mono text-indigo-400 hover:text-indigo-300 flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-500/10"
+                                            className="text-[10px] font-mono text-emerald-400 hover:text-emerald-300 flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/10"
+                                            title={`Notizen für ${formatMonth(selectedMonth, lang)}`}
                                           >
                                             <i className="fa-solid fa-note-sticky text-[9px]"></i>
                                             <span>{notes.length}</span>
@@ -1470,7 +1555,6 @@
                                         <span className="text-xs font-mono text-tertiary ml-1 font-bold">€</span>
                                       </div>
 
-                                      {/* 🔁 REPEAT / RECURRING BUTTON */}
                                       <button
                                         onClick={() => handleOpenRecurring('incomes', cat)}
                                         className="text-tertiary hover:text-indigo-400 p-1"
@@ -1478,7 +1562,6 @@
                                       >
                                         <i className="fa-solid fa-repeat text-xs"></i>
                                       </button>
-
                                       <button onClick={() => handleOpenEditCategory('incomes', cat)} className="text-tertiary hover:text-primary p-1">
                                         <i className="fa-solid fa-gear text-xs"></i>
                                       </button>
@@ -1488,12 +1571,16 @@
                                     </div>
                                   </div>
 
+                                  {/* Month-Scoped Notes Dropdown in Row */}
                                   {isNoteOpen && notes.length > 0 && (
-                                    <div className="mx-2 p-2 rounded-lg bg-surface-elevated border border-subtle text-[11px] font-mono text-secondary space-y-1">
+                                    <div className="mx-2 p-2.5 rounded-xl bg-surface-elevated border border-subtle text-[11px] font-mono text-secondary space-y-1 shadow-inner">
+                                      <div className="text-[9px] uppercase font-bold text-tertiary tracking-wider mb-1">
+                                        Notizen ({formatMonth(selectedMonth, lang)} {selectedYear})
+                                      </div>
                                       {notes.map((bullet, bIdx) => (
                                         <div key={bIdx} className="flex items-start gap-1.5">
-                                          <span className="text-indigo-400">•</span>
-                                          <span className="leading-tight">{bullet}</span>
+                                          <span className="text-emerald-400 font-bold">•</span>
+                                          <span className="leading-tight text-primary">{bullet}</span>
                                         </div>
                                       ))}
                                     </div>
@@ -1541,14 +1628,18 @@
                   const bracketActual = items.reduce((s, c) => s + c.actual, 0);
                   const bracketBudget = items.reduce((s, c) => s + c.budget, 0);
                   const isOpen = !!openBrackets[b.id];
+                  const palette = getPalette(b.id);
 
                   const hiddenCount = items.filter(c => c.actual === 0 && c.budget === 0).length;
 
                   return (
-                    <div key={b.id} className="bg-surface rounded-2xl border border-subtle overflow-hidden transition-all">
-                      <div className="p-3 bg-surface-elevated hover:bg-subtle transition flex items-center justify-between select-none border-b border-subtle">
+                    <div key={b.id} className="bg-surface rounded-2xl border border-subtle overflow-hidden transition-all shadow-sm">
+                      {/* Top Banner with Distinct Gradient */}
+                      <div className={`p-3.5 bg-gradient-to-r ${palette.headerGrad} bg-surface-elevated hover:bg-subtle transition flex items-center justify-between select-none border-b border-subtle`}>
                         <div onClick={() => toggleBracket(b.id)} className="flex items-center gap-2.5 cursor-pointer flex-1">
-                          <i className={`fa-solid ${b.icon} text-indigo-400 text-xs w-4 text-center`}></i>
+                          <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs ${palette.iconBg}`}>
+                            <i className={`fa-solid ${b.icon}`}></i>
+                          </span>
                           <span className="font-mono font-bold text-xs text-primary">{b.name}</span>
                           <span className="text-[10px] font-mono text-tertiary">({items.length})</span>
                         </div>
@@ -1573,7 +1664,7 @@
                       </div>
 
                       {isOpen && (
-                        <div className="p-3 space-y-3 bg-surface">
+                        <div className="p-3 space-y-2.5 bg-surface">
                           {hideZeroes && hiddenCount > 0 && (
                             <div className="p-2 rounded-xl bg-surface-elevated border border-dashed border-subtle text-center text-xs font-mono text-tertiary flex items-center justify-between px-3">
                               <span>{t('hiddenNotice', { count: hiddenCount })}</span>
@@ -1591,11 +1682,14 @@
                               if (hideZeroes && !isFresh && item.actual === 0 && item.budget === 0) return null;
                               const daysInMonth = currentMetrics.daysInMonth;
                               const isVar = item.mode === 'variable';
+                              // Strictly Month-Scoped Notes!
+                              const notes = getMonthScopedNotes(item.category, selectedYear, selectedMonth);
                               const isNoteOpen = !!openNoteRows[item.category];
 
                               return (
                                 <div key={item.category} className={`space-y-1 rounded-xl transition ${isFresh ? 'animate-flash ring-2 ring-indigo-500' : ''}`}>
-                                  <div className="p-3 rounded-xl bg-subtle border border-subtle space-y-2">
+                                  {/* Sub-Card with Bracket Color Grading Left Border */}
+                                  <div className={`p-3 rounded-xl border border-l-4 ${palette.borderL} ${palette.subcardBg} space-y-2 shadow-xs transition`}>
                                     <div className="flex items-center justify-between gap-2">
                                       <div className="flex items-center gap-1.5 truncate flex-1">
                                         <span className="font-bold text-xs text-primary block truncate">{item.category}</span>
@@ -1612,19 +1706,19 @@
                                             {item.paceStatus === 'over' ? t('statusOver') : item.paceStatus === 'frugal' ? t('statusFrugal') : t('statusTrack')}
                                           </span>
                                         )}
-                                        {item.notes.length > 0 && (
+                                        {notes.length > 0 && (
                                           <button
                                             onClick={() => setOpenNoteRows(p => ({ ...p, [item.category]: !p[item.category] }))}
                                             className="text-[10px] font-mono text-indigo-400 hover:text-indigo-300 flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-500/10 ml-1"
+                                            title={`Notizen für ${formatMonth(selectedMonth, lang)}`}
                                           >
                                             <i className="fa-solid fa-note-sticky text-[9px]"></i>
-                                            <span>{item.notes.length}</span>
+                                            <span>{notes.length}</span>
                                           </button>
                                         )}
                                       </div>
 
                                       <div className="flex items-center gap-1">
-                                        {/* 🔁 REPEAT / RECURRING BUTTON */}
                                         <button
                                           onClick={() => handleOpenRecurring('expenses', item.category)}
                                           className="text-tertiary hover:text-indigo-400 p-1"
@@ -1632,7 +1726,6 @@
                                         >
                                           <i className="fa-solid fa-repeat text-xs"></i>
                                         </button>
-
                                         <button onClick={() => handleOpenEditCategory('expenses', item.category)} className="text-tertiary hover:text-primary p-1">
                                           <i className="fa-solid fa-gear text-xs"></i>
                                         </button>
@@ -1688,12 +1781,16 @@
                                     )}
                                   </div>
 
-                                  {isNoteOpen && item.notes.length > 0 && (
-                                    <div className="mx-2 p-2 rounded-lg bg-surface-elevated border border-subtle text-[11px] font-mono text-secondary space-y-1">
-                                      {item.notes.map((bullet, bIdx) => (
+                                  {/* Month-Scoped Notes Dropdown in Row */}
+                                  {isNoteOpen && notes.length > 0 && (
+                                    <div className="mx-2 p-2.5 rounded-xl bg-surface-elevated border border-subtle text-[11px] font-mono text-secondary space-y-1 shadow-inner">
+                                      <div className="text-[9px] uppercase font-bold text-tertiary tracking-wider mb-1">
+                                        Notizen ({formatMonth(selectedMonth, lang)} {selectedYear})
+                                      </div>
+                                      {notes.map((bullet, bIdx) => (
                                         <div key={bIdx} className="flex items-start gap-1.5">
-                                          <span className="text-indigo-400">•</span>
-                                          <span className="leading-tight">{bullet}</span>
+                                          <span className="text-indigo-400 font-bold">•</span>
+                                          <span className="leading-tight text-primary">{bullet}</span>
                                         </div>
                                       ))}
                                     </div>
@@ -1712,7 +1809,7 @@
             </div>
           </main>
 
-          {/* 🔁 RECURRING PAYMENT / REPLICATE MODAL */}
+          {/* RECURRING MODAL */}
           {recurringModal && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <div className="bg-surface border border-subtle rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl font-mono text-xs animate-slideIn">
@@ -1771,8 +1868,8 @@
                     onChange={(e) => setRecurringForm(p => ({ ...p, duration: e.target.value }))}
                     className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2 text-primary font-bold outline-none"
                   >
-                    <option value={3}>3 Monate ({selectedMonth} + 2)</option>
-                    <option value={6}>6 Monate ({selectedMonth} + 5)</option>
+                    <option value={3}>3 Monate ({formatMonth(selectedMonth, lang)} + 2)</option>
+                    <option value={6}>6 Monate ({formatMonth(selectedMonth, lang)} + 5)</option>
                     <option value={12}>12 Monate (1 Jahr)</option>
                     <option value="all">Bis Ende 2028 (Kompletter Zeitraum)</option>
                   </select>
@@ -1793,7 +1890,7 @@
             </div>
           )}
 
-          {/* GLOBAL QUICK ADD ITEM MODAL */}
+          {/* QUICK ADD MODAL */}
           {quickAddModal && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <div className="bg-surface border border-subtle rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl font-mono text-xs animate-slideIn">
@@ -1884,7 +1981,7 @@
             </div>
           )}
 
-          {/* EDIT CATEGORY DRAWER */}
+          {/* EDIT CATEGORY DRAWER WITH MONTH-SCOPED NOTES */}
           {activeEditCat && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end">
               <div className="bg-surface border-l border-subtle w-full max-w-md h-full shadow-2xl p-6 overflow-y-auto flex flex-col justify-between animate-slideIn font-mono text-xs">
@@ -1967,16 +2064,18 @@
                     </div>
                   )}
 
-                  {/* NOTES / BULLETS */}
+                  {/* 📌 MONTH-SCOPED NOTES SECTION */}
                   <div className="space-y-2 pt-2 border-t border-subtle">
                     <label className="text-[10px] font-bold text-secondary uppercase flex items-center justify-between">
-                      <span>{t('notesTitle')}</span>
+                      <span className="text-indigo-400">
+                        {t('notesTitleMonth', { month: formatMonth(selectedMonth, lang), year: selectedYear })}
+                      </span>
                       <span className="text-tertiary">({editCatForm.notes.length})</span>
                     </label>
 
                     <div className="space-y-1.5 max-h-36 overflow-y-auto scrollbar-none">
                       {editCatForm.notes.length === 0 ? (
-                        <p className="text-[11px] text-tertiary italic py-1">{t('noNotesYet')}</p>
+                        <p className="text-[11px] text-tertiary italic py-1">{t('noNotesYetMonth')}</p>
                       ) : (
                         editCatForm.notes.map((item, idx) => (
                           <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-surface-elevated border border-subtle gap-2">
