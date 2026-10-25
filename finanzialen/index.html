@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="de" class="dark">
 <head>
@@ -82,7 +83,6 @@
     .scrollbar-none::-webkit-scrollbar { display: none; }
     .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 
-    /* Touch target baseline */
     button, input, select {
       touch-action: manipulation;
     }
@@ -138,6 +138,21 @@
     };
 
     const formatMonth = (mKey, lang) => MONTH_NAMES[lang]?.[mKey] || MONTH_NAMES['en']?.[mKey] || mKey;
+
+    // 🗓️ AUTOMATISCHE ERKENNUNG DES AKTUELLEN KALENDER-MONATS:
+    const getCurrentInitialDate = () => {
+      const now = new Date();
+      const realYear = now.getFullYear();
+      const monthIdx = now.getMonth(); // 0 = Jan, 4 = Mai, 9 = Okt...
+      const MONTH_KEYS = ["Jan", "Feb", "Mrz", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+      const currentMonthKey = MONTH_KEYS[monthIdx];
+
+      let targetYear = (realYear >= 2026 && realYear <= 2028) ? realYear : 2026;
+      const validMonths = getMonthsForYear(targetYear);
+      let targetMonth = validMonths.includes(currentMonthKey) ? currentMonthKey : validMonths[0];
+
+      return { year: targetYear, month: targetMonth };
+    };
 
     const getDaysInMonth = (year, monthStr) => {
       const map = { Jan:0, Feb:1, Mrz:2, Apr:3, Mai:4, Jun:5, Jul:6, Aug:7, Sep:8, Okt:9, Nov:10, Dez:11 };
@@ -326,7 +341,7 @@
     const useTranslation = () => useContext(LanguageContext);
 
     const IDB = {
-      dbName: 'LiquidCashflow_v17',
+      dbName: 'LiquidCashflow_v18',
       open() {
         return new Promise((res, rej) => {
           const r = indexedDB.open(this.dbName, 1);
@@ -441,8 +456,12 @@
     function MainApp() {
       const { t, lang, changeLanguage } = useTranslation();
       const [data, setData] = useState(() => normalizeState(null));
-      const [selectedYear, setSelectedYear] = useState(2026);
-      const [selectedMonth, setSelectedMonth] = useState("Mai");
+      
+      // 🌟 DYNAMISCHER START: Öffnet immer im aktuellen Monat/Jahr!
+      const initialDate = useMemo(() => getCurrentInitialDate(), []);
+      const [selectedYear, setSelectedYear] = useState(initialDate.year);
+      const [selectedMonth, setSelectedMonth] = useState(initialDate.month);
+
       const [isOnline, setIsOnline] = useState(navigator.onLine);
       const [syncStatus, setSyncStatus] = useState("initialized");
       
@@ -450,7 +469,6 @@
       const [isBurgerOpen, setIsBurgerOpen] = useState(false);
       const [theme, setTheme] = useState(() => safeStorage.get('budget_app_theme', 'dark'));
 
-      // 📱 MOBILE SECTION SWITCH: 'expenses' | 'incomes' | 'cockpit'
       const [mobileTab, setMobileTab] = useState('expenses');
 
       const [openBrackets, setOpenBrackets] = useState({
@@ -460,7 +478,6 @@
       const [openNoteRows, setOpenNoteRows] = useState({});
       const [highlightedCategory, setHighlightedCategory] = useState(null);
 
-      // Drawer states
       const [activeEditCat, setActiveEditCat] = useState(null);
       const [editCatForm, setEditCatForm] = useState({ name: "", bracket: "", mode: "fixed", isOneTime: false, pDay: "", notes: [] });
       const [newBulletText, setNewBulletText] = useState("");
@@ -894,7 +911,6 @@
           delete copy.categoryModes[cat];
           delete copy.categoryOverrides[cat];
           delete copy.categoryOneTime[cat];
-          delete copy.categoryNotes[cat];
           delete copy.fixedPaymentDays[cat];
         }
 
@@ -1046,7 +1062,7 @@
               </h1>
             </div>
 
-            {/* Year Segment */}
+            {/* Year Selector */}
             <div className="flex items-center bg-surface-elevated p-0.5 rounded-lg border border-subtle">
               {[2026, 2027, 2028].map(yr => (
                 <button
@@ -1364,6 +1380,7 @@
                                           <button
                                             onClick={() => setOpenNoteRows(p => ({ ...p, [cat]: !p[cat] }))}
                                             className="text-[9px] font-mono text-emerald-400 flex items-center gap-0.5 px-1 py-0.2 rounded bg-emerald-500/10 shrink-0"
+                                            title={`Notizen für ${formatMonth(selectedMonth, lang)}`}
                                           >
                                             <i className="fa-solid fa-note-sticky text-[8px]"></i>
                                             <span>{notes.length}</span>
@@ -1373,7 +1390,7 @@
                                       {pDay && <span className="text-[10px] font-mono text-tertiary">{t('paymentDayShort')} {pDay}</span>}
                                     </div>
 
-                                    <div className="flex items-center gap-1 shrink-0">
+                                    <div className="flex items-center gap-2 shrink-0">
                                       <div className="flex items-center bg-surface-elevated border border-subtle rounded-lg px-2 py-1 w-24 sm:w-28 focus-within:border-emerald-500">
                                         <input
                                           type="number" inputMode="decimal" value={node.actual !== 0 ? node.actual : ""} placeholder="0"
@@ -1383,7 +1400,11 @@
                                         <span className="text-[10px] font-mono text-tertiary ml-1 font-bold">€</span>
                                       </div>
 
-                                      <button onClick={() => handleOpenRecurring('incomes', cat)} className="text-tertiary hover:text-indigo-400 p-1.5" title={t('replicateTitle')}>
+                                      <button
+                                        onClick={() => handleOpenRecurring('incomes', cat)}
+                                        className="text-tertiary hover:text-indigo-400 p-1.5"
+                                        title={t('replicateTitle')}
+                                      >
                                         <i className="fa-solid fa-repeat text-xs"></i>
                                       </button>
                                       <button onClick={() => handleOpenEditCategory('incomes', cat)} className="text-tertiary hover:text-primary p-1.5">
@@ -1396,7 +1417,10 @@
                                   </div>
 
                                   {isNoteOpen && notes.length > 0 && (
-                                    <div className="mx-1 p-2 rounded-lg bg-surface-elevated border border-subtle text-[11px] font-mono text-secondary space-y-0.5">
+                                    <div className="mx-1 p-2.5 rounded-lg bg-surface-elevated border border-subtle text-[11px] font-mono text-secondary space-y-1 shadow-inner">
+                                      <div className="text-[9px] uppercase font-bold text-tertiary tracking-wider mb-1">
+                                        Notizen ({formatMonth(selectedMonth, lang)} {selectedYear})
+                                      </div>
                                       {notes.map((bullet, bIdx) => (
                                         <div key={bIdx} className="flex items-start gap-1.5">
                                           <span className="text-emerald-400 font-bold">•</span>
@@ -1482,7 +1506,7 @@
                       </div>
 
                       {isOpen && (
-                        <div className="p-2 sm:p-3 space-y-2 bg-surface">
+                        <div className="p-2 sm:p-3 space-y-2.5 bg-surface">
                           {hideZeroes && hiddenCount > 0 && (
                             <div className="p-1.5 rounded-lg bg-surface-elevated border border-dashed border-subtle text-xs font-mono text-tertiary flex items-center justify-between px-2">
                               <span>{t('hiddenNotice', { count: hiddenCount })}</span>
@@ -1503,7 +1527,7 @@
 
                               return (
                                 <div key={item.category} className={`space-y-1 rounded-xl transition ${isFresh ? 'animate-flash ring-2 ring-indigo-500' : ''}`}>
-                                  <div className={`p-2.5 rounded-xl border border-l-4 ${palette.borderL} ${palette.subcardBg} space-y-2`}>
+                                  <div className={`p-3 rounded-xl border border-l-4 ${palette.borderL} ${palette.subcardBg} space-y-2 shadow-xs transition`}>
                                     <div className="flex items-center justify-between gap-1.5">
                                       <div className="flex items-center gap-1.5 truncate flex-1 min-w-0">
                                         <span className="font-bold text-xs text-primary block truncate">{item.category}</span>
@@ -1524,6 +1548,7 @@
                                           <button
                                             onClick={() => setOpenNoteRows(p => ({ ...p, [item.category]: !p[item.category] }))}
                                             className="text-[9px] font-mono text-indigo-400 flex items-center gap-0.5 px-1 rounded bg-indigo-500/10 shrink-0"
+                                            title={`Notizen für ${formatMonth(selectedMonth, lang)}`}
                                           >
                                             <i className="fa-solid fa-note-sticky text-[8px]"></i>
                                             <span>{notes.length}</span>
@@ -1532,7 +1557,11 @@
                                       </div>
 
                                       <div className="flex items-center gap-1 shrink-0">
-                                        <button onClick={() => handleOpenRecurring('expenses', item.category)} className="text-tertiary hover:text-indigo-400 p-1.5" title={t('replicateTitle')}>
+                                        <button
+                                          onClick={() => handleOpenRecurring('expenses', item.category)}
+                                          className="text-tertiary hover:text-indigo-400 p-1.5"
+                                          title={t('replicateTitle')}
+                                        >
                                           <i className="fa-solid fa-repeat text-xs"></i>
                                         </button>
                                         <button onClick={() => handleOpenEditCategory('expenses', item.category)} className="text-tertiary hover:text-primary p-1.5">
@@ -1592,10 +1621,13 @@
                                   </div>
 
                                   {isNoteOpen && notes.length > 0 && (
-                                    <div className="mx-1 p-2 rounded-lg bg-surface-elevated border border-subtle text-[11px] font-mono text-secondary space-y-0.5">
+                                    <div className="mx-1 p-2.5 rounded-lg bg-surface-elevated border border-subtle text-[11px] font-mono text-secondary space-y-1 shadow-inner">
+                                      <div className="text-[9px] uppercase font-bold text-tertiary tracking-wider mb-1">
+                                        Notizen ({formatMonth(selectedMonth, lang)} {selectedYear})
+                                      </div>
                                       {notes.map((bullet, bIdx) => (
                                         <div key={bIdx} className="flex items-start gap-1.5">
-                                          <span className="text-indigo-400">•</span>
+                                          <span className="text-indigo-400 font-bold">•</span>
                                           <span className="leading-tight text-primary">{bullet}</span>
                                         </div>
                                       ))}
@@ -1615,7 +1647,7 @@
             </div>
           </main>
 
-          {/* 📱 MOBILE FLOATING ACTION BUTTON (FAB): One-tap to add items anywhere! */}
+          {/* 📱 MOBILE FLOATING ACTION BUTTON (FAB): Schneller Zugriff */}
           <div className="block lg:hidden fixed bottom-4 right-4 z-40">
             <button
               onClick={() => handleOpenQuickAdd(mobileTab === 'incomes' ? 'incomes' : 'expenses')}
@@ -1626,7 +1658,7 @@
             </button>
           </div>
 
-          {/* 📱 RECURRING PAYMENTS BOTTOM-SHEET */}
+          {/* 🔁 RECURRING PAYMENTS BOTTOM-SHEET */}
           {recurringModal && (
             <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
               <div className="bg-surface border border-subtle rounded-t-3xl sm:rounded-2xl max-w-sm w-full p-5 space-y-3 shadow-2xl font-mono text-xs animate-slideUp max-h-[85vh] overflow-y-auto">
@@ -1749,7 +1781,7 @@
 
                 <div>
                   <label className="text-[9px] font-bold text-secondary uppercase block mb-1">{t('initialBudgetLabel')}</label>
-                  <div className="flex items-center bg-subtle border border-subtle rounded-lg px-2.5 py-1.5 focus-within:border-indigo-500">
+                  <div className="flex items-center bg-subtle border border-subtle rounded-lg px-2.5 py-1 focus-within:border-indigo-500">
                     <input
                       type="number" inputMode="decimal"
                       value={quickAddForm.budget}
