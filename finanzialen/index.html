@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="de" class="dark">
 <head>
@@ -113,12 +111,6 @@
       100% { background-color: transparent; }
     }
     .animate-flash { animation: flashHighlight 1.5s ease-out; }
-
-    @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
-    }
-    .animate-slideUp { animation: slideUp 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
   </style>
 </head>
 <body class="min-h-screen">
@@ -214,7 +206,7 @@
     };
 
     const INITIAL_CATEGORIES = {
-      incomes: ["Mohammed Sperrkonto", "Mai Sperrkonto", "Side Income", "Darlehen Schwester", "Savings", "Sonstiges"],
+      incomes: ["Mohammed Sperrkonto", "Mai Sperrkonto", "Side Income", "Darlehen Schwester (Eingang)", "Sonstiges"],
       expenses: [
         "Miete", "Kaution", "Lebensmittel 🍞", "Hausrat 🛋️", "Strom ⚡", "Gas & Heizung",
         "Unterhaltung 🎊", "Restaurant & Cafe 🍔", "Geschenke", "Gesundheit ❤️",
@@ -274,22 +266,23 @@
         importError: "Fehlerhafte Datei.",
         clearAll: "Alle Daten löschen",
         confirmClear: "Möchten Sie wirklich alle Daten unwiderruflich löschen?",
-        showAllBtn: "Alle Posten zeigen",
+        showAllBtn: "0 € sichtbar (Alle zeigen)",
         hideZeroesBtn: "0 € ausgeblendet",
-        hideZeroesHint: "(Einmalige 0 € Posten bleiben sauber ausgeblendet)",
+        hiddenNoticeBracket: "{{count}} inaktive Posten (0 €) ausgeblendet",
+        showNow: "Einblenden",
         expandAll: "Alle aufklappen",
         collapseAll: "Alle schließen",
         annualOverview: "Jahresübersicht",
         iouTitle: "Verbindlichkeiten & Forderungen (Darlehen / IOU)",
-        iouAddBtn: "Hinzufügen",
+        iouAddBtn: "Eintragen",
         iouPersonPlaceholder: "Z. B. Schwester (900€ Leihe)...",
         iouAmountPlaceholder: "Betrag",
         iouOptBorrowed: "Ich schulde (Leihe/Kredit)",
         iouOptLent: "Mir wird geschuldet (Verliehen)",
         iouDebts: "Schulden:",
         iouReceivables: "Forderung:",
-        iouSisterTip: "Schwester leiht 900 €? Automatisch in 2 Raten à 450 € (Okt / Nov) aufteilen:",
-        iouSisterBtn: "⚡ Ratenplan in Budget eintragen",
+        iouSisterTip: "Geld von Schwester geliehen (900 €)?",
+        iouSisterBtn: "⚡ Darlehen erhalten & Rückzahlung planen",
         iouIOweBadge: "Schulde ich",
         iouOwedToMeBadge: "Bekomme ich",
         iouMarkReturned: "Als erledigt markieren",
@@ -320,14 +313,16 @@
         duration12: "12 Monate (1 Jahr)",
         durationAll: "Bis Ende 2028",
         replicateActionBtn: "Kopieren",
-        splitModalTitle: "Darlehen in monatliche Raten umwandeln",
-        splitModalDesc: "Erstellt automatisch Ausgabenposten in den gewählten Monaten:",
-        splitItemLabel: "Bezeichnung des Postens",
-        splitDefaultName: "Rückzahlung Schwester",
-        splitInst1Month: "1. Rate Monat",
-        splitInst2Month: "2. Rate Monat",
-        splitNote: "Hinweis: Der Posten wird als Einmalig markiert und erscheint nur in {{m1}} und {{m2}}.",
-        splitConfirmBtn: "Raten im Haushaltsbuch eintragen",
+        loanModalTitle: "Darlehen eintragen (Geld erhalten & Rückzahlung planen)",
+        loanModalDesc: "Trägt das erhaltene Geld sofort als Einnahme auf Ihr Konto ein (+900 €) und plant die Rückzahlungen als Ausgaben in den gewählten Monaten:",
+        loanReceivedAmountLabel: "Erhaltenes Geld (Einnahme diesen Monat)",
+        loanLenderLabel: "Wer hat das Geld geliehen?",
+        loanIncomeCatLabel: "Bezeichnung Einnahme",
+        loanExpenseCatLabel: "Bezeichnung Rückzahlung",
+        loanInst1Month: "1. Rate Monat (Ausgabe)",
+        loanInst2Month: "2. Rate Monat (Ausgabe)",
+        loanConfirmBtn: "In Einnahmen & Ausgaben buchen",
+        loanSuccessAlert: "Darlehen gebucht! {{inAmount}} als Einnahme in {{inMonth}} verbucht, und je {{a1}} in {{m1}} sowie {{a2}} in {{m2}} als Rückzahlung geplant.",
         deleteItemTitle: "Eintrag löschen: {{name}}",
         deleteFutureOnly: "Nur zukünftige Monate leeren",
         deleteFutureOnlyDesc: "Historische Buchungen bleiben erhalten.",
@@ -335,8 +330,6 @@
         deletePurgeMergeDesc: "Kein Bilanzverlust. Alle Summen bleiben erhalten.",
         cancelBtn: "Abbrechen",
         duplicateAlert: "Kategorie existiert bereits: \"{{name}}\" ({{bracket}})",
-        deleteBracketConfirm: "Kategorie entfernen? Enthaltene Posten werden nach 'Sonstiges' verschoben.",
-        splitSuccessAlert: "Erfolgreich eingetragen: {{name}} mit je {{amount1}} in {{m1}} und {{amount2}} in {{m2}}!",
         hideWhenZeroHint: "In Monaten ohne Buchung ausblenden",
         fallbackCategory: "Sonstiges",
         brackets: {
@@ -390,9 +383,10 @@
         importError: "Corrupted file format.",
         clearAll: "Reset all data",
         confirmClear: "Do you really want to permanently delete all data?",
-        showAllBtn: "Show all items",
+        showAllBtn: "0 € visible (Show all)",
         hideZeroesBtn: "0 € hidden",
-        hideZeroesHint: "(One-time 0 € items remain neatly hidden)",
+        hiddenNoticeBracket: "{{count}} inactive items (0 €) hidden",
+        showNow: "Show",
         expandAll: "Expand all",
         collapseAll: "Collapse all",
         annualOverview: "Annual View",
@@ -404,8 +398,8 @@
         iouOptLent: "Owed to me (Lent)",
         iouDebts: "Debts:",
         iouReceivables: "Receivables:",
-        iouSisterTip: "Sister lent 900 €? Split automatically into 2 installments (Oct / Nov):",
-        iouSisterBtn: "⚡ Schedule installments in budget",
+        iouSisterTip: "Borrowed money from sister (900 €)?",
+        iouSisterBtn: "⚡ Record Loan Received & Plan Repayments",
         iouIOweBadge: "I owe",
         iouOwedToMeBadge: "Owed to me",
         iouMarkReturned: "Mark as settled",
@@ -436,14 +430,16 @@
         duration12: "12 Months (1 Year)",
         durationAll: "Until end of 2028",
         replicateActionBtn: "Apply to upcoming months",
-        splitModalTitle: "Convert Loan into Monthly Installments",
-        splitModalDesc: "Automatically creates scheduled expense records in the selected months:",
-        splitItemLabel: "Item Name",
-        splitDefaultName: "Sister Repayment",
-        splitInst1Month: "1st Installment Month",
-        splitInst2Month: "2nd Installment Month",
-        splitNote: "Note: The item is marked as One-Time and will only appear in {{m1}} and {{m2}}.",
-        splitConfirmBtn: "Schedule installments in budget",
+        loanModalTitle: "Record Loan (Money Received & Plan Repayment)",
+        loanModalDesc: "Adds the received cash as income into your account (+900 €) and automatically schedules repayments as expenses in the target months:",
+        loanReceivedAmountLabel: "Money Received (Income this month)",
+        loanLenderLabel: "Borrowed from whom?",
+        loanIncomeCatLabel: "Income Item Name",
+        loanExpenseCatLabel: "Repayment Item Name",
+        loanInst1Month: "1st Repayment Month (Expense)",
+        loanInst2Month: "2nd Repayment Month (Expense)",
+        loanConfirmBtn: "Book to Incomes & Expenses",
+        loanSuccessAlert: "Loan booked! {{inAmount}} recorded as income in {{inMonth}}, and repayments of {{a1}} in {{m1}} and {{a2}} in {{m2}} scheduled.",
         deleteItemTitle: "Delete Entry: {{name}}",
         deleteFutureOnly: "Clear future months only",
         deleteFutureOnlyDesc: "Past and current month records remain intact.",
@@ -451,8 +447,6 @@
         deletePurgeMergeDesc: "No loss of balance. All amounts are preserved.",
         cancelBtn: "Cancel",
         duplicateAlert: "Category already exists: \"{{name}}\" ({{bracket}})",
-        deleteBracketConfirm: "Remove category group? Contained items will be moved to 'Other'.",
-        splitSuccessAlert: "Successfully scheduled: {{name}} with {{amount1}} in {{m1}} and {{amount2}} in {{m2}}!",
         hideWhenZeroHint: "Hide in months without activity",
         fallbackCategory: "Other",
         brackets: {
@@ -495,7 +489,7 @@
     const useTranslation = () => useContext(LanguageContext);
 
     const IDB = {
-      dbName: 'LiquidCashflow_vStrictLocale',
+      dbName: 'LiquidCashflow_vCleanLoan',
       open() {
         return new Promise((res, rej) => {
           const r = indexedDB.open(this.dbName, 1);
@@ -549,7 +543,7 @@
             "FSP Prüfung": true, 
             "Möbel Vormieter": true,
             "Rückzahlung Schwester": true,
-            "Darlehen Schwester": true
+            "Darlehen Schwester (Eingang)": true
           }) 
         },
         ious: (raw?.ious || []).map(i => ({
@@ -621,6 +615,7 @@
       const [selectedYear, setSelectedYear] = useState(initialDate.year);
       const [selectedMonth, setSelectedMonth] = useState(initialDate.month);
 
+      // Hide / Show 0€ categories toggle
       const [hideZeroes, setHideZeroes] = useState(() => safeStorage.get('budget_hide_zeroes', 'true') === 'true');
       const [isBurgerOpen, setIsBurgerOpen] = useState(false);
       const [theme, setTheme] = useState(() => safeStorage.get('budget_app_theme', 'dark'));
@@ -646,10 +641,13 @@
 
       const [smartDeleteModal, setSmartDeleteModal] = useState(null);
 
-      // Loan Installment Split Modal
-      const [splitModal, setSplitModal] = useState(null);
-      const [splitForm, setSplitForm] = useState({
-        name: "",
+      // Complete Borrowed Loan Workflow Modal (Income now, Repayments later)
+      const [loanModal, setLoanModal] = useState(null);
+      const [loanForm, setLoanForm] = useState({
+        lender: "Schwester",
+        incomeAmount: 900,
+        incomeName: "Darlehen Schwester (Eingang)",
+        expenseName: "Rückzahlung Schwester",
         m1: "Okt",
         a1: 450,
         m2: "Nov",
@@ -1109,42 +1107,87 @@
         await saveState(copy);
       };
 
-      const handleExecuteSplitLoan = async () => {
+      // 🌟 FULL WORKFLOW: BORROWED LOAN (Income Now + Repayments Later + IOU Ledger)
+      const handleExecuteLoanBooking = async () => {
         const copy = JSON.parse(JSON.stringify(data));
-        const catName = splitForm.name.trim() || t('splitDefaultName');
+        const incName = loanForm.incomeName.trim() || "Darlehen Schwester (Eingang)";
+        const expName = loanForm.expenseName.trim() || "Rückzahlung Schwester";
+        const incAmt = parseFloat(loanForm.incomeAmount) || 0;
+        const rep1 = parseFloat(loanForm.a1) || 0;
+        const rep2 = parseFloat(loanForm.a2) || 0;
 
-        if (!copy.categories.expenses.includes(catName)) {
-          copy.categories.expenses.push(catName);
-          copy.categoryOverrides[catName] = 'other';
-          copy.categoryModes[catName] = 'fixed';
-          copy.categoryOneTime[catName] = true;
+        // 1. Register the Income Category (+900 €) into CURRENT Month so bank balance jumps
+        if (!copy.categories.incomes.includes(incName)) {
+          copy.categories.incomes.push(incName);
+          copy.categoryOverrides[incName] = 'variable_in';
+          copy.categoryModes[incName] = 'variable';
+          copy.categoryOneTime[incName] = true;
         }
 
+        // Initialize months for income
         ["2026", "2027", "2028"].forEach(y => {
-          if (!copy.values[y].expenses[catName]) copy.values[y].expenses[catName] = {};
+          if (!copy.values[y].incomes[incName]) copy.values[y].incomes[incName] = {};
           getMonthsForYear(parseInt(y)).forEach(m => {
-            if (!copy.values[y].expenses[catName][m]) {
-              copy.values[y].expenses[catName][m] = { budget: 0, actual: 0, asOfDate: getDaysInMonth(parseInt(y), m) };
+            if (!copy.values[y].incomes[incName][m]) {
+              copy.values[y].incomes[incName][m] = { budget: 0, actual: 0, asOfDate: getDaysInMonth(parseInt(y), m) };
             }
           });
         });
 
-        if (copy.values[selectedYear]?.expenses?.[catName]?.[splitForm.m1]) {
-          copy.values[selectedYear].expenses[catName][splitForm.m1].budget = parseFloat(splitForm.a1) || 0;
+        // Set income in currently viewed month as ACTUAL and BUDGET received!
+        if (copy.values[selectedYear]?.incomes?.[incName]?.[selectedMonth]) {
+          copy.values[selectedYear].incomes[incName][selectedMonth].actual = incAmt;
+          copy.values[selectedYear].incomes[incName][selectedMonth].budget = incAmt;
         }
 
-        if (copy.values[selectedYear]?.expenses?.[catName]?.[splitForm.m2]) {
-          copy.values[selectedYear].expenses[catName][splitForm.m2].budget = parseFloat(splitForm.a2) || 0;
+        // 2. Register the Repayment Expense Category
+        if (!copy.categories.expenses.includes(expName)) {
+          copy.categories.expenses.push(expName);
+          copy.categoryOverrides[expName] = 'other';
+          copy.categoryModes[expName] = 'fixed';
+          copy.categoryOneTime[expName] = true;
         }
+
+        // Initialize months for expense
+        ["2026", "2027", "2028"].forEach(y => {
+          if (!copy.values[y].expenses[expName]) copy.values[y].expenses[expName] = {};
+          getMonthsForYear(parseInt(y)).forEach(m => {
+            if (!copy.values[y].expenses[expName][m]) {
+              copy.values[y].expenses[expName][m] = { budget: 0, actual: 0, asOfDate: getDaysInMonth(parseInt(y), m) };
+            }
+          });
+        });
+
+        // Set Installment 1 in m1
+        if (copy.values[selectedYear]?.expenses?.[expName]?.[loanForm.m1]) {
+          copy.values[selectedYear].expenses[expName][loanForm.m1].budget = rep1;
+        }
+
+        // Set Installment 2 in m2
+        if (copy.values[selectedYear]?.expenses?.[expName]?.[loanForm.m2]) {
+          copy.values[selectedYear].expenses[expName][loanForm.m2].budget = rep2;
+        }
+
+        // 3. Add to IOU ledger automatically
+        if (!copy.ious) copy.ious = [];
+        copy.ious.push({
+          id: 'iou_' + Date.now(),
+          person: loanForm.lender.trim() || "Schwester",
+          amount: incAmt,
+          type: 'borrowed',
+          date: new Date().toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US', { day: '2-digit', month: 'short' }),
+          settled: false
+        });
 
         await saveState(copy);
-        setSplitModal(null);
-        alert(t('splitSuccessAlert', {
-          name: catName,
-          amount1: fmt(splitForm.a1),
-          m1: formatMonth(splitForm.m1, lang),
-          amount2: fmt(splitForm.a2),
-          m2: formatMonth(splitForm.m2, lang)
+        setLoanModal(null);
+        alert(t('loanSuccessAlert', {
+          inAmount: fmt(incAmt),
+          inMonth: formatMonth(selectedMonth, lang),
+          a1: fmt(rep1),
+          m1: formatMonth(loanForm.m1, lang),
+          a2: fmt(rep2),
+          m2: formatMonth(loanForm.m2, lang)
         }));
       };
 
@@ -1232,7 +1275,7 @@
             <div className="flex items-center space-x-1">
               <button
                 onClick={() => changeLanguage(lang === 'de' ? 'en' : 'de')}
-                className="text-[11px] font-mono px-2 py-1 rounded hover:bg-subtle text-secondary hover:text-primary"
+                className="text-[11px] font-mono px-2 py-1 rounded hover:bg-subtle text-secondary hover:text-primary font-semibold"
               >
                 {lang.toUpperCase()}
               </button>
@@ -1316,13 +1359,39 @@
           {/* MAIN CANVAS */}
           <main className="max-w-6xl mx-auto w-full px-3 sm:px-6 pt-4 pb-20 flex-grow space-y-4">
 
-            {/* PAGE HEADING */}
-            <div className="space-y-1">
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-primary flex items-center gap-2">
-                <span>🏠</span>
-                <span>{formatMonth(selectedMonth, lang)} {selectedYear}</span>
-              </h1>
-              <p className="text-xs text-secondary">{t('subtitle')}</p>
+            {/* PAGE HEADING WITH PROMINENT ZERO-FILTER BUTTON */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-subtle pb-3">
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-primary flex items-center gap-2">
+                  <span>🏠</span>
+                  <span>{formatMonth(selectedMonth, lang)} {selectedYear}</span>
+                </h1>
+                <p className="text-xs text-secondary">{t('subtitle')}</p>
+              </div>
+
+              {/* 🎯 PROMINENT 0€ CATEGORY TOGGLE (VISIBLE EVERYWHERE) */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setHideZeroes(prev => !prev)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-2 border ${
+                    !hideZeroes
+                      ? 'bg-primary text-surface border-primary shadow-xs'
+                      : 'bg-subtle text-primary border-subtle hover:bg-subtle/80'
+                  }`}
+                  title={hideZeroes ? "0 € Posten einblenden" : "0 € Posten ausblenden"}
+                >
+                  <i className={`fa-solid ${!hideZeroes ? 'fa-eye' : 'fa-eye-slash'} text-xs`}></i>
+                  <span>{!hideZeroes ? t('showAllBtn') : t('hideZeroesBtn')}</span>
+                </button>
+
+                <button
+                  onClick={toggleAllBrackets}
+                  className="px-2.5 py-1.5 rounded-md text-xs text-secondary hover:text-primary transition border border-subtle bg-surface"
+                >
+                  <i className="fa-solid fa-up-down text-[10px] mr-1"></i>
+                  <span>{Object.values(openBrackets).some(v => !v) ? t('expandAll') : t('collapseAll')}</span>
+                </button>
+              </div>
             </div>
 
             {/* COCKPIT HERO */}
@@ -1389,8 +1458,39 @@
                   </div>
                 </div>
 
+                {/* Direct Action for Sister Loan (+900 Inflow, -450 Repayments) */}
+                <div className="p-3 rounded-lg bg-subtle/70 border border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+                  <div className="flex items-start gap-2">
+                    <span className="text-amber-500 text-sm mt-0.5">💡</span>
+                    <div>
+                      <div className="font-semibold text-primary">{t('iouSisterTip')}</div>
+                      <div className="text-[11px] text-secondary">
+                        Bucht +900 € als Einnahme in {formatMonth(selectedMonth, lang)} und plant zwei Rückzahlungen à 450 € in Okt & Nov.
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setLoanForm({
+                        lender: "Schwester",
+                        incomeAmount: 900,
+                        incomeName: lang === 'de' ? "Darlehen Schwester (Eingang)" : "Sister Loan (Inflow)",
+                        expenseName: lang === 'de' ? "Rückzahlung Schwester" : "Sister Repayment",
+                        m1: "Okt",
+                        a1: 450,
+                        m2: "Nov",
+                        a2: 450
+                      });
+                      setLoanModal(true);
+                    }}
+                    className="px-3 py-1.5 bg-primary text-surface rounded-md text-xs font-semibold hover:opacity-90 transition whitespace-nowrap self-start sm:self-auto shadow-xs"
+                  >
+                    {t('iouSisterBtn')}
+                  </button>
+                </div>
+
                 {/* Entry Inputs */}
-                <div className="flex flex-col sm:flex-row gap-1.5">
+                <div className="flex flex-col sm:flex-row gap-1.5 pt-1">
                   <select
                     value={iouType}
                     onChange={(e) => setIouType(e.target.value)}
@@ -1420,31 +1520,6 @@
                     className="bg-subtle hover:bg-subtle/80 text-primary border border-subtle font-medium px-3 py-1.5 rounded text-xs transition"
                   >
                     + {t('iouAddBtn')}
-                  </button>
-                </div>
-
-                {/* Direct Action for Sister Loan */}
-                <div className="p-2.5 rounded bg-subtle/60 border border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="text-amber-500">💡</span>
-                    <span className="text-secondary leading-snug">
-                      {t('iouSisterTip')}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setSplitForm({
-                        name: t('splitDefaultName'),
-                        m1: "Okt",
-                        a1: 450,
-                        m2: "Nov",
-                        a2: 450
-                      });
-                      setSplitModal(true);
-                    }}
-                    className="px-2.5 py-1 bg-surface border border-subtle text-primary rounded text-xs font-medium hover:bg-subtle transition whitespace-nowrap self-start sm:self-auto"
-                  >
-                    {t('iouSisterBtn')}
                   </button>
                 </div>
 
@@ -1489,35 +1564,6 @@
 
             </div>
 
-            {/* CONTROLS */}
-            <div className={`flex flex-wrap items-center justify-between gap-2 border-b border-subtle pb-2 text-xs ${mobileTab === 'cockpit' ? 'hidden lg:flex' : 'flex'}`}>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setHideZeroes(prev => !prev)}
-                  className={`px-2 py-1 rounded text-xs transition flex items-center gap-1.5 border ${
-                    hideZeroes
-                      ? 'bg-subtle text-primary border-subtle font-medium'
-                      : 'bg-surface text-secondary border-subtle'
-                  }`}
-                >
-                  <i className={`fa-solid ${hideZeroes ? 'fa-eye-slash' : 'fa-eye'} text-[10px]`}></i>
-                  <span>{hideZeroes ? t('hideZeroesBtn') : t('showAllBtn')}</span>
-                </button>
-
-                <span className="text-[11px] text-tertiary">
-                  {t('hideZeroesHint')}
-                </span>
-              </div>
-
-              <button
-                onClick={toggleAllBrackets}
-                className="px-2 py-1 rounded text-xs text-secondary hover:text-primary transition flex items-center gap-1"
-              >
-                <i className="fa-solid fa-up-down text-[10px]"></i>
-                <span>{Object.values(openBrackets).some(v => !v) ? t('expandAll') : t('collapseAll')}</span>
-              </button>
-            </div>
-
             {/* ACCORDIONS */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-start">
 
@@ -1543,18 +1589,21 @@
                 </div>
 
                 {data.brackets.incomes.map(b => {
-                  const items = data.categories.incomes.filter(c => (data.categoryOverrides[c] || 'fixed_in') === b.id);
-                  const bracketActual = items.reduce((s, c) => s + getNode('incomes', c, selectedYear, selectedMonth).actual, 0);
+                  const allItems = data.categories.incomes.filter(c => (data.categoryOverrides[c] || 'fixed_in') === b.id);
+                  const bracketActual = allItems.reduce((s, c) => s + getNode('incomes', c, selectedYear, selectedMonth).actual, 0);
                   const isOpen = !!openBrackets[b.id];
                   const palette = getPalette(b.id);
 
-                  const visibleItems = items.filter(cat => {
+                  // Items filtered by 0€ setting
+                  const visibleItems = allItems.filter(cat => {
                     const node = getNode('incomes', cat, selectedYear, selectedMonth);
-                    const isOneTime = !!data.categoryOneTime[cat];
-                    if (isOneTime && node.actual === 0 && node.budget === 0) return false;
-                    if (hideZeroes && node.actual === 0 && node.budget === 0) return false;
-                    return true;
+                    const isZero = (node.actual === 0 && node.budget === 0);
+                    // If hideZeroes is false, show ALL items unconditionally!
+                    if (!hideZeroes) return true;
+                    return !isZero;
                   });
+
+                  const hiddenCount = allItems.length - visibleItems.length;
 
                   return (
                     <div key={b.id} className="rounded-lg border border-subtle bg-surface overflow-hidden">
@@ -1582,6 +1631,15 @@
 
                       {isOpen && (
                         <div className="p-2 space-y-1.5 bg-surface">
+                          {hiddenCount > 0 && hideZeroes && (
+                            <div className="p-1.5 rounded bg-subtle/50 text-[11px] text-tertiary flex items-center justify-between px-2">
+                              <span>{t('hiddenNoticeBracket', { count: hiddenCount })}</span>
+                              <button onClick={() => setHideZeroes(false)} className="text-notion-blue font-semibold hover:underline">
+                                {t('showNow')}
+                              </button>
+                            </div>
+                          )}
+
                           {visibleItems.length === 0 ? (
                             <p className="text-center py-2 text-xs text-tertiary italic">{t('emptyGroupIncomes')}</p>
                           ) : (
@@ -1682,17 +1740,21 @@
                 </div>
 
                 {data.brackets.expenses.map(b => {
-                  const items = categoryAnalytics.filter(c => c.bracket === b.id);
-                  const bracketActual = items.reduce((s, c) => s + c.actual, 0);
-                  const bracketBudget = items.reduce((s, c) => s + c.budget, 0);
+                  const allItems = categoryAnalytics.filter(c => c.bracket === b.id);
+                  const bracketActual = allItems.reduce((s, c) => s + c.actual, 0);
+                  const bracketBudget = allItems.reduce((s, c) => s + c.budget, 0);
                   const isOpen = !!openBrackets[b.id];
                   const palette = getPalette(b.id);
 
-                  const visibleItems = items.filter(c => {
-                    if (c.isOneTime && c.actual === 0 && c.budget === 0) return false;
-                    if (hideZeroes && c.actual === 0 && c.budget === 0) return false;
-                    return true;
+                  // Items filtered by 0€ setting
+                  const visibleItems = allItems.filter(c => {
+                    const isZero = (c.actual === 0 && c.budget === 0);
+                    // If hideZeroes is false, show ALL items unconditionally!
+                    if (!hideZeroes) return true;
+                    return !isZero;
                   });
+
+                  const hiddenCount = allItems.length - visibleItems.length;
 
                   return (
                     <div key={b.id} className="rounded-lg border border-subtle bg-surface overflow-hidden">
@@ -1723,6 +1785,15 @@
 
                       {isOpen && (
                         <div className="p-2 space-y-2 bg-surface">
+                          {hiddenCount > 0 && hideZeroes && (
+                            <div className="p-1.5 rounded bg-subtle/50 text-[11px] text-tertiary flex items-center justify-between px-2">
+                              <span>{t('hiddenNoticeBracket', { count: hiddenCount })}</span>
+                              <button onClick={() => setHideZeroes(false)} className="text-notion-blue font-semibold hover:underline">
+                                {t('showNow')}
+                              </button>
+                            </div>
+                          )}
+
                           {visibleItems.length === 0 ? (
                             <p className="text-center py-2 text-xs text-tertiary italic">{t('emptyGroupExpenses')}</p>
                           ) : (
@@ -1857,81 +1928,126 @@
             </button>
           </div>
 
-          {/* SPLIT LOAN MODAL */}
-          {splitModal && (
+          {/* 🌟 FULL LOAN WORKFLOW MODAL (INCOME NOW + EXPENSES LATER) */}
+          {loanModal && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-              <div className="bg-surface border border-subtle rounded-xl max-w-sm w-full p-4 space-y-3 shadow-xl text-xs">
+              <div className="bg-surface border border-subtle rounded-xl max-w-md w-full p-4 space-y-3 shadow-xl text-xs max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center border-b border-subtle pb-2">
                   <h3 className="font-semibold text-primary flex items-center gap-1.5">
                     <span>⚡</span>
-                    <span>{t('splitModalTitle')}</span>
+                    <span>{t('loanModalTitle')}</span>
                   </h3>
-                  <button onClick={() => setSplitModal(null)} className="text-secondary hover:text-primary">
+                  <button onClick={() => setLoanModal(null)} className="text-secondary hover:text-primary">
                     <i className="fa-solid fa-xmark"></i>
                   </button>
                 </div>
 
                 <p className="text-secondary text-[11px] leading-relaxed">
-                  {t('splitModalDesc')}
+                  {t('loanModalDesc')}
                 </p>
 
-                <div>
-                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('splitItemLabel')}</label>
-                  <input
-                    type="text"
-                    value={splitForm.name}
-                    placeholder={t('splitDefaultName')}
-                    onChange={(e) => setSplitForm(p => ({ ...p, name: e.target.value }))}
-                    className="w-full bg-subtle border border-subtle rounded px-2.5 py-1.5 text-primary outline-none focus:border-strong font-medium"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-[10px] text-secondary block mb-1">{t('splitInst1Month')}</label>
-                    <select
-                      value={splitForm.m1}
-                      onChange={(e) => setSplitForm(p => ({ ...p, m1: e.target.value }))}
-                      className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-primary outline-none"
-                    >
-                      {getMonthsForYear(selectedYear).map(m => <option key={m} value={m}>{formatMonth(m, lang)}</option>)}
-                    </select>
-                    <input
-                      type="number"
-                      value={splitForm.a1}
-                      onChange={(e) => setSplitForm(p => ({ ...p, a1: e.target.value }))}
-                      className="w-full mt-1 bg-subtle border border-subtle rounded px-2 py-1 text-primary text-right font-mono"
-                    />
+                {/* 1. Money Received (Income) */}
+                <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 space-y-2">
+                  <span className="font-semibold text-notion-green block">1. Geld erhalten (Einnahme für {formatMonth(selectedMonth, lang)} {selectedYear})</span>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] text-secondary font-medium block mb-1">{t('loanLenderLabel')}</label>
+                      <input
+                        type="text"
+                        value={loanForm.lender}
+                        onChange={(e) => setLoanForm(p => ({ ...p, lender: e.target.value }))}
+                        className="w-full bg-surface border border-subtle rounded px-2.5 py-1.5 text-primary outline-none font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-secondary font-medium block mb-1">{t('loanReceivedAmountLabel')}</label>
+                      <div className="flex items-center bg-surface border border-subtle rounded px-2 py-1">
+                        <input
+                          type="number"
+                          value={loanForm.incomeAmount}
+                          onChange={(e) => setLoanForm(p => ({ ...p, incomeAmount: e.target.value }))}
+                          className="w-full bg-transparent text-right font-mono font-bold text-xs text-notion-green outline-none"
+                        />
+                        <span className="text-xs font-mono text-tertiary ml-1">€</span>
+                      </div>
+                    </div>
                   </div>
 
                   <div>
-                    <label className="text-[10px] text-secondary block mb-1">{t('splitInst2Month')}</label>
-                    <select
-                      value={splitForm.m2}
-                      onChange={(e) => setSplitForm(p => ({ ...p, m2: e.target.value }))}
-                      className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-primary outline-none"
-                    >
-                      {getMonthsForYear(selectedYear).map(m => <option key={m} value={m}>{formatMonth(m, lang)}</option>)}
-                    </select>
+                    <label className="text-[10px] text-secondary block mb-0.5">{t('loanIncomeCatLabel')}</label>
                     <input
-                      type="number"
-                      value={splitForm.a2}
-                      onChange={(e) => setSplitForm(p => ({ ...p, a2: e.target.value }))}
-                      className="w-full mt-1 bg-subtle border border-subtle rounded px-2 py-1 text-primary text-right font-mono"
+                      type="text"
+                      value={loanForm.incomeName}
+                      onChange={(e) => setLoanForm(p => ({ ...p, incomeName: e.target.value }))}
+                      className="w-full bg-surface border border-subtle rounded px-2.5 py-1 text-primary text-[11px] outline-none"
                     />
                   </div>
                 </div>
 
-                <div className="p-2 rounded bg-subtle/50 text-[10px] text-tertiary">
-                  {t('splitNote', { m1: formatMonth(splitForm.m1, lang), m2: formatMonth(splitForm.m2, lang) })}
+                {/* 2. Repayments (Expenses) */}
+                <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 space-y-2">
+                  <span className="font-semibold text-notion-red block">2. Rückzahlung planen (Ausgaben)</span>
+                  
+                  <div>
+                    <label className="text-[10px] text-secondary block mb-0.5">{t('loanExpenseCatLabel')}</label>
+                    <input
+                      type="text"
+                      value={loanForm.expenseName}
+                      onChange={(e) => setLoanForm(p => ({ ...p, expenseName: e.target.value }))}
+                      className="w-full bg-surface border border-subtle rounded px-2.5 py-1 text-primary text-[11px] outline-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] text-secondary block mb-1">{t('loanInst1Month')}</label>
+                      <select
+                        value={loanForm.m1}
+                        onChange={(e) => setLoanForm(p => ({ ...p, m1: e.target.value }))}
+                        className="w-full bg-surface border border-subtle rounded px-2 py-1 text-primary outline-none"
+                      >
+                        {getMonthsForYear(selectedYear).map(m => <option key={m} value={m}>{formatMonth(m, lang)}</option>)}
+                      </select>
+                      <div className="flex items-center bg-surface border border-subtle rounded px-2 py-1 mt-1">
+                        <input
+                          type="number"
+                          value={loanForm.a1}
+                          onChange={(e) => setLoanForm(p => ({ ...p, a1: e.target.value }))}
+                          className="w-full bg-transparent text-right font-mono font-bold text-xs text-notion-red outline-none"
+                        />
+                        <span className="text-xs font-mono text-tertiary ml-1">€</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] text-secondary block mb-1">{t('loanInst2Month')}</label>
+                      <select
+                        value={loanForm.m2}
+                        onChange={(e) => setLoanForm(p => ({ ...p, m2: e.target.value }))}
+                        className="w-full bg-surface border border-subtle rounded px-2 py-1 text-primary outline-none"
+                      >
+                        {getMonthsForYear(selectedYear).map(m => <option key={m} value={m}>{formatMonth(m, lang)}</option>)}
+                      </select>
+                      <div className="flex items-center bg-surface border border-subtle rounded px-2 py-1 mt-1">
+                        <input
+                          type="number"
+                          value={loanForm.a2}
+                          onChange={(e) => setLoanForm(p => ({ ...p, a2: e.target.value }))}
+                          className="w-full bg-transparent text-right font-mono font-bold text-xs text-notion-red outline-none"
+                        />
+                        <span className="text-xs font-mono text-tertiary ml-1">€</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex gap-2 pt-2 border-t border-subtle">
-                  <button onClick={() => setSplitModal(null)} className="flex-1 py-1.5 bg-subtle text-secondary rounded hover:text-primary">
+                  <button onClick={() => setLoanModal(null)} className="flex-1 py-2 bg-subtle text-secondary rounded hover:text-primary">
                     {t('cancelBtn')}
                   </button>
-                  <button onClick={handleExecuteSplitLoan} className="flex-1 py-1.5 bg-primary text-surface font-semibold rounded">
-                    {t('splitConfirmBtn')}
+                  <button onClick={handleExecuteLoanBooking} className="flex-1 py-2 bg-primary text-surface font-semibold rounded">
+                    {t('loanConfirmBtn')}
                   </button>
                 </div>
               </div>
