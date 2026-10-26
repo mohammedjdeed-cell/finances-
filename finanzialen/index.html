@@ -1,11 +1,9 @@
-
-
 <!DOCTYPE html>
 <html lang="de" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Liquid - Mobile Cashflow Engine</title>
+  <title>Notion Budget — Household Cashflow</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -13,14 +11,34 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['-apple-system', 'BlinkMacSystemFont', '"Inter"', '"Segoe UI"', 'Roboto', 'sans-serif'],
-            mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace']
+            sans: ['ui-sans-serif', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Helvetica', '"Apple Color Emoji"', 'Arial', 'sans-serif'],
+            mono: ['"SFMono-Regular"', 'Consolas', '"Liberation Mono"', 'Menlo', 'monospace']
           },
           colors: {
-            projected: { DEFAULT: '#6366f1', light: '#818cf8', bg: 'rgba(99, 102, 241, 0.08)' },
-            actualIn: { DEFAULT: '#10b981', light: '#34d399', bg: 'rgba(16, 185, 129, 0.08)' },
-            actualEx: { DEFAULT: '#f43f5e', light: '#fb7185', bg: 'rgba(244, 63, 94, 0.08)' },
-            pacing: { DEFAULT: '#f59e0b', light: '#fbbf24', bg: 'rgba(245, 158, 11, 0.08)' }
+            notion: {
+              bgLight: '#ffffff',
+              bgDark: '#191919',
+              cardLight: '#ffffff',
+              cardDark: '#202020',
+              hoverLight: '#f1f1ef',
+              hoverDark: '#262626',
+              borderLight: '#e9e9e7',
+              borderDark: '#2e2e2e',
+              textLight: '#37352f',
+              textDark: '#ebebeb',
+              subtleLight: '#787774',
+              subtleDark: '#9b9a97',
+              blue: '#2383e2',
+              green: '#0f7b6c',
+              red: '#e03e3e',
+              amber: '#dfab01',
+              tagGray: 'rgba(120, 119, 116, 0.15)',
+              tagBlue: 'rgba(35, 131, 226, 0.12)',
+              tagGreen: 'rgba(15, 123, 108, 0.12)',
+              tagAmber: 'rgba(223, 171, 1, 0.15)',
+              tagRed: 'rgba(224, 62, 62, 0.12)',
+              tagPurple: 'rgba(105, 64, 165, 0.12)'
+            }
           }
         }
       }
@@ -36,27 +54,27 @@
   
   <style>
     :root, [data-theme="light"] {
-      --bg-app: #f8fafc;
+      --bg-app: #ffffff;
       --bg-surface: #ffffff;
-      --bg-surface-elevated: #f1f5f9;
-      --bg-subtle: #f8fafc;
-      --border-subtle: #e2e8f0;
-      --border-strong: #cbd5e1;
-      --text-primary: #0f172a;
-      --text-secondary: #64748b;
-      --text-tertiary: #94a3b8;
+      --bg-surface-elevated: #fbfbfa;
+      --bg-subtle: #f1f1ef;
+      --border-subtle: #e9e9e7;
+      --border-strong: #d3d3d1;
+      --text-primary: #37352f;
+      --text-secondary: #787774;
+      --text-tertiary: #9b9a97;
     }
     
     [data-theme="dark"] {
-      --bg-app: #080c14;
-      --bg-surface: #0f1623;
-      --bg-surface-elevated: #162032;
-      --bg-subtle: #0b111c;
-      --border-subtle: rgba(255, 255, 255, 0.07);
-      --border-strong: rgba(255, 255, 255, 0.15);
-      --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
-      --text-tertiary: #64748b;
+      --bg-app: #191919;
+      --bg-surface: #202020;
+      --bg-surface-elevated: #252525;
+      --bg-subtle: #2b2b2b;
+      --border-subtle: #2f2f2f;
+      --border-strong: #404040;
+      --text-primary: #ebebeb;
+      --text-secondary: #9b9a97;
+      --text-tertiary: #6b6b68;
     }
 
     body {
@@ -64,6 +82,7 @@
       color: var(--text-primary) !important;
       -webkit-font-smoothing: antialiased;
       padding-bottom: max(env(safe-area-inset-bottom), 60px);
+      letter-spacing: -0.01em;
     }
 
     .bg-surface { background-color: var(--bg-surface) !important; }
@@ -88,16 +107,16 @@
     }
 
     @keyframes flashHighlight {
-      0% { background-color: rgba(99, 102, 241, 0.4); }
+      0% { background-color: rgba(35, 131, 226, 0.25); }
       100% { background-color: transparent; }
     }
-    .animate-flash { animation: flashHighlight 1.8s ease-out; }
+    .animate-flash { animation: flashHighlight 1.5s ease-out; }
 
     @keyframes slideUp {
       from { transform: translateY(100%); }
       to { transform: translateY(0); }
     }
-    .animate-slideUp { animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-slideUp { animation: slideUp 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
   </style>
 </head>
 <body class="min-h-screen">
@@ -139,11 +158,10 @@
 
     const formatMonth = (mKey, lang) => MONTH_NAMES[lang]?.[mKey] || MONTH_NAMES['en']?.[mKey] || mKey;
 
-    // 🗓️ AUTOMATISCHE ERKENNUNG DES AKTUELLEN KALENDER-MONATS:
     const getCurrentInitialDate = () => {
       const now = new Date();
       const realYear = now.getFullYear();
-      const monthIdx = now.getMonth(); // 0 = Jan, 4 = Mai, 9 = Okt...
+      const monthIdx = now.getMonth();
       const MONTH_KEYS = ["Jan", "Feb", "Mrz", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
       const currentMonthKey = MONTH_KEYS[monthIdx];
 
@@ -164,153 +182,186 @@
       'fa-house', 'fa-ticket', 'fa-basket-shopping', 'fa-graduation-cap', 
       'fa-champagne-glasses', 'fa-box-archive', 'fa-building-columns', 
       'fa-coins', 'fa-car', 'fa-heart-pulse', 'fa-tv', 'fa-dumbbell', 
-      'fa-briefcase', 'fa-plane', 'fa-wifi', 'fa-shield-halved'
+      'fa-briefcase', 'fa-plane', 'fa-wifi', 'fa-shield-halved', 'fa-handshake'
     ];
 
+    // Notion Style Color Palettes
     const BRACKET_PALETTES = {
-      housing: { borderL: 'border-l-blue-500', headerGrad: 'from-blue-500/15 via-blue-500/5 to-transparent', iconBg: 'bg-blue-500/15 text-blue-400 border border-blue-500/30', subcardBg: 'bg-blue-950/20 hover:bg-blue-950/30 border-blue-500/20', textAccent: 'text-blue-400' },
-      subscriptions: { borderL: 'border-l-purple-500', headerGrad: 'from-purple-500/15 via-purple-500/5 to-transparent', iconBg: 'bg-purple-500/15 text-purple-400 border border-purple-500/30', subcardBg: 'bg-purple-950/20 hover:bg-purple-950/30 border-purple-500/20', textAccent: 'text-purple-400' },
-      living: { borderL: 'border-l-amber-500', headerGrad: 'from-amber-500/15 via-amber-500/5 to-transparent', iconBg: 'bg-amber-500/15 text-amber-400 border border-amber-500/30', subcardBg: 'bg-amber-950/20 hover:bg-amber-950/30 border-amber-500/20', textAccent: 'text-amber-400' },
-      professional: { borderL: 'border-l-teal-500', headerGrad: 'from-teal-500/15 via-teal-500/5 to-transparent', iconBg: 'bg-teal-500/15 text-teal-400 border border-teal-500/30', subcardBg: 'bg-teal-950/20 hover:bg-teal-950/30 border-teal-500/20', textAccent: 'text-teal-400' },
-      leisure: { borderL: 'border-l-pink-500', headerGrad: 'from-pink-500/15 via-pink-500/5 to-transparent', iconBg: 'bg-pink-500/15 text-pink-400 border border-pink-500/30', subcardBg: 'bg-pink-950/20 hover:bg-pink-950/30 border-pink-500/20', textAccent: 'text-pink-400' },
-      other: { borderL: 'border-l-slate-400', headerGrad: 'from-slate-500/15 via-slate-500/5 to-transparent', iconBg: 'bg-slate-500/15 text-slate-400 border border-slate-500/30', subcardBg: 'bg-slate-950/20 hover:bg-slate-950/30 border-slate-500/20', textAccent: 'text-slate-400' },
-      fixed_in: { borderL: 'border-l-emerald-500', headerGrad: 'from-emerald-500/15 via-emerald-500/5 to-transparent', iconBg: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30', subcardBg: 'bg-emerald-950/20 hover:bg-emerald-950/30 border-emerald-500/20', textAccent: 'text-emerald-400' },
-      variable_in: { borderL: 'border-l-cyan-500', headerGrad: 'from-cyan-500/15 via-cyan-500/5 to-transparent', iconBg: 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30', subcardBg: 'bg-cyan-950/20 hover:bg-cyan-950/30 border-cyan-500/20', textAccent: 'text-cyan-400' }
+      housing: { borderL: 'border-l-blue-500/80', badge: 'bg-blue-500/10 text-blue-600 dark:text-blue-400', tag: 'bg-notion-tagBlue text-blue-600 dark:text-blue-400' },
+      subscriptions: { borderL: 'border-l-purple-500/80', badge: 'bg-purple-500/10 text-purple-600 dark:text-purple-400', tag: 'bg-notion-tagPurple text-purple-600 dark:text-purple-400' },
+      living: { borderL: 'border-l-amber-500/80', badge: 'bg-amber-500/10 text-amber-700 dark:text-amber-400', tag: 'bg-notion-tagAmber text-amber-700 dark:text-amber-400' },
+      professional: { borderL: 'border-l-teal-500/80', badge: 'bg-teal-500/10 text-teal-700 dark:text-teal-400', tag: 'bg-notion-tagGreen text-teal-700 dark:text-teal-400' },
+      leisure: { borderL: 'border-l-pink-500/80', badge: 'bg-pink-500/10 text-pink-600 dark:text-pink-400', tag: 'bg-pink-500/10 text-pink-600 dark:text-pink-400' },
+      other: { borderL: 'border-l-stone-400', badge: 'bg-stone-500/10 text-stone-600 dark:text-stone-400', tag: 'bg-notion-tagGray text-stone-600 dark:text-stone-300' },
+      fixed_in: { borderL: 'border-l-emerald-600', badge: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400', tag: 'bg-notion-tagGreen text-emerald-700 dark:text-emerald-400' },
+      variable_in: { borderL: 'border-l-cyan-600', badge: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400', tag: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400' }
     };
 
     const getPalette = (bracketId) => {
       return BRACKET_PALETTES[bracketId] || {
-        borderL: 'border-l-indigo-500',
-        headerGrad: 'from-indigo-500/15 via-indigo-500/5 to-transparent',
-        iconBg: 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30',
-        subcardBg: 'bg-surface hover:bg-surface-elevated border-subtle',
-        textAccent: 'text-indigo-400'
+        borderL: 'border-l-stone-400',
+        badge: 'bg-stone-500/10 text-stone-600 dark:text-stone-400',
+        tag: 'bg-notion-tagGray text-stone-600 dark:text-stone-300'
       };
     };
 
     const DEFAULT_BRACKETS = {
       expenses: [
-        { id: 'housing', name: 'Wohnen & Fixkosten', icon: 'fa-house', color: '#3b82f6' },
-        { id: 'subscriptions', name: 'Abos & Medien (Netflix, Prime...)', icon: 'fa-ticket', color: '#a855f7' },
-        { id: 'living', name: 'Alltag & Verpflegung', icon: 'fa-basket-shopping', color: '#f59e0b' },
-        { id: 'professional', name: 'Bildung, Prüfungen & Gesundheit', icon: 'fa-graduation-cap', color: '#14b8a6' },
-        { id: 'leisure', name: 'Freizeit & Kultur', icon: 'fa-champagne-glasses', color: '#ec4899' },
-        { id: 'other', name: 'Sonstiges & Bankgebühren', icon: 'fa-box-archive', color: '#64748b' }
+        { id: 'housing', name: 'Wohnen & Fixkosten', icon: 'fa-house', color: '#2383e2' },
+        { id: 'subscriptions', name: 'Abos & Medien', icon: 'fa-ticket', color: '#6940a5' },
+        { id: 'living', name: 'Alltag & Verpflegung', icon: 'fa-basket-shopping', color: '#dfab01' },
+        { id: 'professional', name: 'Bildung & Gesundheit', icon: 'fa-graduation-cap', color: '#0f7b6c' },
+        { id: 'leisure', name: 'Freizeit & Kultur', icon: 'fa-champagne-glasses', color: '#e03e3e' },
+        { id: 'other', name: 'Sonstiges & Verbindlichkeiten', icon: 'fa-box-archive', color: '#787774' }
       ],
       incomes: [
-        { id: 'fixed_in', name: 'Feste Einnahmen / Sperrkonto', icon: 'fa-building-columns', color: '#10b981' },
-        { id: 'variable_in', name: 'Variable Einnahmen & Nebeneinkünfte', icon: 'fa-coins', color: '#06b6d4' }
+        { id: 'fixed_in', name: 'Feste Einnahmen / Sperrkonto', icon: 'fa-building-columns', color: '#0f7b6c' },
+        { id: 'variable_in', name: 'Variable Einnahmen & Leihe', icon: 'fa-coins', color: '#2383e2' }
       ]
     };
 
     const INITIAL_CATEGORIES = {
-      incomes: ["mohammed sperrkonto installmant", "mai sperrkonto installmant", "side income", "savings", "Sonstiges"],
+      incomes: ["mohammed sperrkonto installmant", "mai sperrkonto installmant", "side income", "Darlehen Schwester", "savings", "Sonstiges"],
       expenses: [
         "Hause mieten", "Hause kaution", "Lebensmittel 🍞🍲", "Hausrat 🛋️", "strom ⚡", "Gas/ Heißung",
-        "Unterhaltung 🎊", "essen im freien 🍔", "Geschenke", "Gesundheit ❤️(beauty, medical items)",
+        "Unterhaltung 🎊", "essen im freien 🍔", "Geschenke", "Gesundheit ❤️",
         "Ausbildung B2 exam", "Versicherung Care concept", "kleidung", "radio", "internet/ Handy",
         "transport/ tickets", "bank", "Sparkasse card fee", "Swan Schule", "FSP exam registration",
-        "furniture from Vormieter", "Sonstiges"
+        "furniture from Vormieter", "Rückzahlung Schwester", "Sonstiges"
       ]
     };
 
     const autoClassifyCategory = (name) => {
       const p = name.toLowerCase();
-      if (["netflix", "spotify", "prime", "abo", "subscription", "youtube", "disney", "icloud", "apple", "amazon"].some(k => p.includes(k))) return { bracket: 'subscriptions', mode: 'fixed', isOneTime: false };
+      if (["netflix", "spotify", "prime", "abo", "subscription", "youtube", "disney", "apple", "amazon"].some(k => p.includes(k))) return { bracket: 'subscriptions', mode: 'fixed', isOneTime: false };
       if (["miete", "rent", "kaution", "deposit", "strom", "gas", "heizung", "radio", "internet", "wlan", "handy", "furniture"].some(k => p.includes(k))) return { bracket: 'housing', mode: 'fixed', isOneTime: p.includes("kaution") || p.includes("deposit") || p.includes("furniture") };
       if (["essen", "food", "lebensmittel", "restaurant", "cafe", "supermarkt", "bäcker", "rewe", "lidl", "aldi", "dm", "rossmann", "kleidung", "ticket", "transport"].some(k => p.includes(k))) return { bracket: 'living', mode: 'variable', isOneTime: false };
       if (["exam", "prüfung", "schule", "school", "b2", "fsp", "swan", "kurs", "versicherung", "insurance", "care concept", "arzt", "health"].some(k => p.includes(k))) return { bracket: 'professional', mode: 'variable', isOneTime: p.includes("exam") || p.includes("anmeldung") || p.includes("kaution") };
       if (["unterhaltung", "geschenke", "freizeit"].some(k => p.includes(k))) return { bracket: 'leisure', mode: 'variable', isOneTime: false };
-      return { bracket: 'other', mode: 'fixed', isOneTime: false };
+      return { bracket: 'other', mode: 'fixed', isOneTime: p.includes("rückzahlung") || p.includes("darlehen") };
     };
 
     const translations = {
       de: {
-        title: "Liquid Cashflow",
-        online: "Online", offline: "Offline", syncing: "Sync...", synced: "Synchronisiert",
-        startingCapital: "Startkapital (Depot / Bar)",
+        title: "Haushaltsbuch",
+        subtitle: "Persönlicher Cashflow & Budget",
+        online: "Verbunden", offline: "Lokal", syncing: "Synchronisiert...", synced: "Gespeichert",
+        startingCapital: "Startkapital (Konto & Bar)",
         kpiActualNet: "Ist-Saldo",
-        kpiProjectedNet: "Prognose Endsaldo",
-        kpiDailyRoom: "Tagesbudget",
-        kpiCumulative: "Kumulativ",
-        kpiCumulativeSub: "Per Monatsende",
+        kpiProjectedNet: "Prognose Saldo",
+        kpiDailyRoom: "Freies Tagesbudget",
+        kpiCumulative: "Endbestand",
+        kpiCumulativeSub: "Zum Monatsende",
         incomesHeader: "Einnahmen",
         expensesHeader: "Ausgaben",
-        analyticsTab: "Cockpit & Charts",
+        analyticsTab: "Übersicht & IOU",
         planLabel: "Plan", actualLabel: "Ist", asOfDayLabel: "Tag",
-        restBudgetLabel: "Rest", perDayLabel: "/ Tag",
-        statusOver: "Über Pace", statusTrack: "Im Plan", statusFrugal: "Sparsam",
+        restBudgetLabel: "Verbleibend", perDayLabel: "/ Tag",
+        statusOver: "Über Budget", statusTrack: "Im Rahmen", statusFrugal: "Sparsam",
         badgeOneTime: "Einmalig", badgeFixed: "Fix", badgeVariable: "Variabel",
-        options: "Optionen", selectYear: "Jahr", selectLanguage: "Sprache",
-        themeLabel: "Design", themeLight: "Hell", themeDark: "Dunkel", themeSystem: "System",
-        backupSection: "Sicherung", exportBackup: "Exportieren", importBackup: "Wiederherstellen",
-        importSuccess: "Erfolgreich importiert!", importError: "Fehlerhafte Backup-Datei.",
-        clearAll: "Zurücksetzen", confirmClear: "Alle Daten unwiderruflich löschen?",
-        showAllBtn: "Alle zeigen (0 € an)", hideZeroesBtn: "0 € ausgeblendet",
-        hiddenNotice: "{{count}} Posten mit 0 € ausgeblendet", showNow: "Einblenden",
-        annualOverview: "Runway & Analyse", savingsRate: "Sparsatz",
-        peakSpendingCategory: "Spitze", highestExpenseMonth: "Spitzenmonat", noData: "Keine Daten",
+        options: "Einstellungen", selectYear: "Jahr", selectLanguage: "Sprache",
+        themeLabel: "Erscheinungsbild", themeLight: "Hell", themeDark: "Dunkel", themeSystem: "System",
+        backupSection: "Daten & Sicherung", exportBackup: "JSON Export", importBackup: "JSON Wiederherstellen",
+        importSuccess: "Daten erfolgreich importiert!", importError: "Fehlerhafte Datei.",
+        clearAll: "Zurücksetzen", confirmClear: "Möchten Sie wirklich alle Daten löschen?",
+        showAllBtn: "Alle Posten zeigen", hideZeroesBtn: "0 € ausgeblendet",
+        hiddenNotice: "{{count}} inaktive Posten ausgeblendet", showNow: "Einblenden",
+        annualOverview: "Jahresübersicht", savingsRate: "Sparquote",
+        peakSpendingCategory: "Höchste Ausgabe", highestExpenseMonth: "Spitzenmonat", noData: "Keine Daten",
         chartTitle: "Cashflow Verlauf {{year}}",
-        iouTitle: "Offene Forderungen (IOU)", iouAddBtn: "Eintragen",
-        iouPersonPlaceholder: "Person / Zweck...", iouAmountPlaceholder: "Betrag",
-        iouMarkReturned: "Erledigt", iouEmpty: "Keine offenen Posten.", iouTotalPending: "Offen",
-        editorTitle: "Kategorie bearbeiten", posten: "Bezeichnung",
-        isOneTimeLabel: "Einmalige Ausgabe", bracketLabel: "Gruppe",
-        classificationLabel: "Abrechnung", paymentDayShort: "Zahltag",
-        paymentDayLabel: "Zahltag (1-31)", deleteCategoryBtn: "Löschen", saveClose: "Speichern",
-        addItemBtn: "+ Posten", addBracketBtn: "+ Gruppe",
-        editBracketTitle: "Gruppe bearbeiten", newBracketTitle: "Neue Gruppe anlegen",
-        bracketNameLabel: "Name der Gruppe", bracketIconLabel: "Symbol",
-        notesTitleMonth: "Notizen ({{month}} {{year}})", addNotePlaceholder: "Stichpunkt hinzufügen...",
-        noNotesYetMonth: "Keine Notizen für diesen Monat.",
-        quickAddModalTitle: "Neuen Posten anlegen", quickAddNamePlaceholder: "Z.B. Netflix, Strom...",
-        initialBudgetLabel: "Geplanter Betrag (€)", replicateTitle: "Kopieren (Wiederkehrend)",
-        replicateFieldLabel: "Welcher Wert?", replicateDurationLabel: "Dauer (Monate)?",
+        iouTitle: "Verbindlichkeiten & Forderungen (Darlehen / IOU)",
+        iouAddBtn: "Hinzufügen",
+        iouPersonPlaceholder: "Z. B. Schwester (900€ Leihe)...",
+        iouAmountPlaceholder: "Betrag",
+        iouTypeBorrowed: "Ich schulde (Leihe/Kredit)",
+        iouTypeLent: "Mir wird geschuldet",
+        iouTotalBorrowed: "Offene Verbindlichkeiten",
+        iouTotalLent: "Offene Forderungen",
+        iouScheduleInstallments: "In Raten aufteilen",
+        iouMarkReturned: "Erledigt",
+        iouEmpty: "Keine offenen Schulden oder Forderungen.",
+        editorTitle: "Eigenschaft bearbeiten", posten: "Bezeichnung",
+        isOneTimeLabel: "Gilt nur für diesen Monat (Einmalig)",
+        bracketLabel: "Kategorie", classificationLabel: "Abrechnungsart",
+        paymentDayShort: "Zahltag", paymentDayLabel: "Fälligkeitstag (1-31)",
+        deleteCategoryBtn: "Löschen", saveClose: "Schließen & Sichern",
+        addItemBtn: "+ Neuer Eintrag", addBracketBtn: "+ Gruppe",
+        editBracketTitle: "Gruppe anpassen", newBracketTitle: "Neue Gruppe",
+        bracketNameLabel: "Gruppenname", bracketIconLabel: "Symbol",
+        notesTitleMonth: "Notizen & Belege ({{month}} {{year}})",
+        addNotePlaceholder: "Notiz oder Rechnung hinzufügen...",
+        noNotesYetMonth: "Keine Notizen für diesen Monat hinterlegt.",
+        quickAddModalTitle: "Neuen Posten anlegen",
+        quickAddNamePlaceholder: "Z. B. Rückzahlung Schwester, Netflix...",
+        initialBudgetLabel: "Geplanter Betrag (€)",
+        isOneTimeCurrentOnly: "Nur für {{month}} {{year}} (in anderen Monaten 0 €)",
+        replicateTitle: "Wiederkehrend kopieren",
+        replicateFieldLabel: "Welcher Wert?", replicateDurationLabel: "Zeitraum",
         replicateActionBtn: "Kopieren",
+        splitModalTitle: "Darlehen in monatliche Raten umwandeln",
+        splitModalDesc: "Erstellt automatisch Ausgabenposten in den gewählten Monaten:",
+        splitConfirmBtn: "Raten im Haushaltsbuch eintragen",
         months: MONTH_NAMES.de
       },
       en: {
-        title: "Liquid Cashflow",
-        online: "Online", offline: "Offline", syncing: "Sync...", synced: "Synced",
-        startingCapital: "Starting Capital (Bank / Cash)",
+        title: "Household Budget",
+        subtitle: "Personal Cashflow & Ledger",
+        online: "Online", offline: "Offline", syncing: "Saving...", synced: "Saved",
+        startingCapital: "Starting Balance (Bank / Cash)",
         kpiActualNet: "Actual Net",
         kpiProjectedNet: "Projected Net",
-        kpiDailyRoom: "Daily Spend",
-        kpiCumulative: "Cumulative",
-        kpiCumulativeSub: "Month end cash",
+        kpiDailyRoom: "Daily Allowance",
+        kpiCumulative: "Net Reserve",
+        kpiCumulativeSub: "Month-end runway",
         incomesHeader: "Incomes",
         expensesHeader: "Expenses",
-        analyticsTab: "Cockpit & Charts",
+        analyticsTab: "Overview & Debts",
         planLabel: "Plan", actualLabel: "Actual", asOfDayLabel: "Day",
-        restBudgetLabel: "Left", perDayLabel: "/ day",
-        statusOver: "Over Pace", statusTrack: "On Track", statusFrugal: "Frugal",
+        restBudgetLabel: "Remaining", perDayLabel: "/ day",
+        statusOver: "Over Budget", statusTrack: "On Track", statusFrugal: "Under Budget",
         badgeOneTime: "One-Time", badgeFixed: "Fixed", badgeVariable: "Variable",
-        options: "Options", selectYear: "Year", selectLanguage: "Language",
-        themeLabel: "Theme", themeLight: "Light", themeDark: "Dark", themeSystem: "System",
-        backupSection: "Backup", exportBackup: "Export", importBackup: "Restore",
-        importSuccess: "Successfully restored!", importError: "Corrupted file.",
-        clearAll: "Reset", confirmClear: "Permanently delete all data?",
-        showAllBtn: "Show all (0 € on)", hideZeroesBtn: "0 € hidden",
+        options: "Settings", selectYear: "Year", selectLanguage: "Language",
+        themeLabel: "Appearance", themeLight: "Light", themeDark: "Dark", themeSystem: "System",
+        backupSection: "Data & Storage", exportBackup: "Export JSON", importBackup: "Restore JSON",
+        importSuccess: "Restored successfully!", importError: "Corrupt file format.",
+        clearAll: "Reset data", confirmClear: "Permanently delete all data?",
+        showAllBtn: "Show all items", hideZeroesBtn: "0 € hidden",
         hiddenNotice: "{{count}} zero items hidden", showNow: "Show",
-        annualOverview: "Runway & Annual", savingsRate: "Savings Rate",
-        peakSpendingCategory: "Peak", highestExpenseMonth: "Peak Month", noData: "No Data",
-        chartTitle: "Cashflow Trajectory {{year}}",
-        iouTitle: "Receivables (IOU)", iouAddBtn: "Add",
-        iouPersonPlaceholder: "Person / Reason...", iouAmountPlaceholder: "Amount",
-        iouMarkReturned: "Settled", iouEmpty: "No pending loans.", iouTotalPending: "Pending",
-        editorTitle: "Configure Category", posten: "Category Name",
-        isOneTimeLabel: "One-Time Payment", bracketLabel: "Group",
-        classificationLabel: "Billing Type", paymentDayShort: "Payday",
-        paymentDayLabel: "Payday (1-31)", deleteCategoryBtn: "Delete", saveClose: "Save",
-        addItemBtn: "+ Item", addBracketBtn: "+ Group",
-        editBracketTitle: "Edit Group", newBracketTitle: "Create Group",
-        bracketNameLabel: "Group Name", bracketIconLabel: "Icon",
-        notesTitleMonth: "Notes ({{month}} {{year}})", addNotePlaceholder: "Add bullet point...",
+        annualOverview: "Annual View", savingsRate: "Savings Rate",
+        peakSpendingCategory: "Peak Spend", highestExpenseMonth: "Peak Month", noData: "No Data",
+        chartTitle: "Trajectory {{year}}",
+        iouTitle: "Debts & Receivables (Loans / IOU)",
+        iouAddBtn: "Add Record",
+        iouPersonPlaceholder: "E.g. Sister (900€ loan)...",
+        iouAmountPlaceholder: "Amount",
+        iouTypeBorrowed: "I owe (Borrowed)",
+        iouTypeLent: "Owed to me (Lent)",
+        iouTotalBorrowed: "Payable Debts",
+        iouTotalLent: "Receivables",
+        iouScheduleInstallments: "Split into Installments",
+        iouMarkReturned: "Done",
+        iouEmpty: "No pending loans or receivables.",
+        editorTitle: "Edit Property", posten: "Item Name",
+        isOneTimeLabel: "Only for this month (One-Time)",
+        bracketLabel: "Group", classificationLabel: "Type",
+        paymentDayShort: "Payday", paymentDayLabel: "Due day (1-31)",
+        deleteCategoryBtn: "Delete", saveClose: "Save & Close",
+        addItemBtn: "+ New Item", addBracketBtn: "+ Group",
+        editBracketTitle: "Edit Group", newBracketTitle: "New Group",
+        bracketNameLabel: "Group Title", bracketIconLabel: "Icon",
+        notesTitleMonth: "Notes ({{month}} {{year}})",
+        addNotePlaceholder: "Add note or receipt item...",
         noNotesYetMonth: "No notes for this month.",
-        quickAddModalTitle: "Create Item", quickAddNamePlaceholder: "E.g. Netflix, Electricity...",
-        initialBudgetLabel: "Planned Budget (€)", replicateTitle: "Replicate (Recurring)",
-        replicateFieldLabel: "Which value?", replicateDurationLabel: "Duration (Months)?",
-        replicateActionBtn: "Replicate",
+        quickAddModalTitle: "Add Item",
+        quickAddNamePlaceholder: "E.g. Sister repayment, Grocery...",
+        initialBudgetLabel: "Planned amount (€)",
+        isOneTimeCurrentOnly: "One-time for {{month}} {{year}} only (0 € elsewhere)",
+        replicateTitle: "Replicate Recurring",
+        replicateFieldLabel: "Target field", replicateDurationLabel: "Duration",
+        replicateActionBtn: "Apply to upcoming months",
+        splitModalTitle: "Convert Loan into Repayments",
+        splitModalDesc: "Automatically creates scheduled expense records:",
+        splitConfirmBtn: "Schedule installments in budget",
         months: MONTH_NAMES.en
       }
     };
@@ -341,7 +392,7 @@
     const useTranslation = () => useContext(LanguageContext);
 
     const IDB = {
-      dbName: 'LiquidCashflow_v18',
+      dbName: 'LiquidCashflow_vNotion',
       open() {
         return new Promise((res, rej) => {
           const r = indexedDB.open(this.dbName, 1);
@@ -389,8 +440,19 @@
         categoryModes: { ...(raw?.categoryModes || {}) },
         categoryNotes: { ...(raw?.categoryNotes || {}) },
         fixedPaymentDays: { ...(raw?.fixedPaymentDays || {}) },
-        categoryOneTime: { ...(raw?.categoryOneTime || { "Hause kaution": true, "FSP exam registration": true, "furniture from Vormieter": true }) },
-        ious: raw?.ious || [],
+        categoryOneTime: { 
+          ...(raw?.categoryOneTime || { 
+            "Hause kaution": true, 
+            "FSP exam registration": true, 
+            "furniture from Vormieter": true,
+            "Rückzahlung Schwester": true,
+            "Darlehen Schwester": true
+          }) 
+        },
+        ious: (raw?.ious || []).map(i => ({
+          ...i,
+          type: i.type || 'borrowed'
+        })),
         values: {}
       };
 
@@ -409,7 +471,7 @@
       });
 
       state.categories.incomes.forEach(cat => {
-        if (!state.categoryModes[cat]) state.categoryModes[cat] = (cat.includes("side") || cat.includes("Sonstiges") || cat.includes("savings")) ? 'variable' : 'fixed';
+        if (!state.categoryModes[cat]) state.categoryModes[cat] = (cat.includes("side") || cat.includes("Sonstiges") || cat.includes("savings") || cat.includes("Darlehen")) ? 'variable' : 'fixed';
         if (!state.categoryOverrides[cat] || !validIncomeBrackets.includes(state.categoryOverrides[cat])) {
           state.categoryOverrides[cat] = state.categoryModes[cat] === 'fixed' ? 'fixed_in' : 'variable_in';
           if (!validIncomeBrackets.includes(state.categoryOverrides[cat])) {
@@ -431,16 +493,11 @@
               const monthDays = getDaysInMonth(yNum, m);
 
               if (typeof old === 'object' && old !== null) {
-                if (old.w1 !== undefined || old.w2 !== undefined || old.w3 !== undefined) {
-                  const sumWeekly = (parseFloat(old.w1)||0) + (parseFloat(old.w2)||0) + (parseFloat(old.w3)||0) + (parseFloat(old.w4)||0) + (parseFloat(old.w5)||0);
-                  state.values[y][type][cat][m] = { budget: sumWeekly, actual: sumWeekly, asOfDate: monthDays };
-                } else {
-                  state.values[y][type][cat][m] = {
-                    budget: typeof old.budget === 'number' ? old.budget : (parseFloat(old.total) || 0),
-                    actual: typeof old.actual === 'number' ? old.actual : (parseFloat(old.total) || 0),
-                    asOfDate: typeof old.asOfDate === 'number' ? old.asOfDate : monthDays
-                  };
-                }
+                state.values[y][type][cat][m] = {
+                  budget: typeof old.budget === 'number' ? old.budget : (parseFloat(old.total) || 0),
+                  actual: typeof old.actual === 'number' ? old.actual : (parseFloat(old.total) || 0),
+                  asOfDate: typeof old.asOfDate === 'number' ? old.asOfDate : monthDays
+                };
               } else if (typeof old === 'number') {
                 state.values[y][type][cat][m] = { budget: old, actual: old, asOfDate: monthDays };
               } else {
@@ -457,7 +514,6 @@
       const { t, lang, changeLanguage } = useTranslation();
       const [data, setData] = useState(() => normalizeState(null));
       
-      // 🌟 DYNAMISCHER START: Öffnet immer im aktuellen Monat/Jahr!
       const initialDate = useMemo(() => getCurrentInitialDate(), []);
       const [selectedYear, setSelectedYear] = useState(initialDate.year);
       const [selectedMonth, setSelectedMonth] = useState(initialDate.month);
@@ -465,14 +521,14 @@
       const [isOnline, setIsOnline] = useState(navigator.onLine);
       const [syncStatus, setSyncStatus] = useState("initialized");
       
-      const [hideZeroes, setHideZeroes] = useState(() => safeStorage.get('budget_hide_zeroes', 'false') === 'true');
+      const [hideZeroes, setHideZeroes] = useState(() => safeStorage.get('budget_hide_zeroes', 'true') === 'true');
       const [isBurgerOpen, setIsBurgerOpen] = useState(false);
       const [theme, setTheme] = useState(() => safeStorage.get('budget_app_theme', 'dark'));
 
       const [mobileTab, setMobileTab] = useState('expenses');
 
       const [openBrackets, setOpenBrackets] = useState({
-        housing: true, subscriptions: true, living: true, professional: true, leisure: false, other: false, fixed_in: true, variable_in: true
+        housing: true, subscriptions: true, living: true, professional: true, leisure: false, other: true, fixed_in: true, variable_in: true
       });
 
       const [openNoteRows, setOpenNoteRows] = useState({});
@@ -487,14 +543,28 @@
       const [recurringForm, setRecurringForm] = useState({ field: 'budget', amount: 0, duration: 6 });
 
       const [bracketModal, setBracketModal] = useState(null);
-      const [bracketForm, setBracketForm] = useState({ name: "", icon: "fa-house", color: "#6366f1" });
+      const [bracketForm, setBracketForm] = useState({ name: "", icon: "fa-house", color: "#2383e2" });
 
       const [quickAddModal, setQuickAddModal] = useState(null);
-      const [quickAddForm, setQuickAddForm] = useState({ name: "", bracket: "", budget: "", mode: "variable" });
+      const [quickAddForm, setQuickAddForm] = useState({ name: "", bracket: "", budget: "", mode: "variable", isOneTime: false });
 
       const [smartDeleteModal, setSmartDeleteModal] = useState(null);
+
+      // Loan Installment Split Modal
+      const [splitModal, setSplitModal] = useState(null);
+      const [splitForm, setSplitForm] = useState({
+        name: "Rückzahlung Schwester",
+        totalAmount: 900,
+        m1: "Okt",
+        a1: 450,
+        m2: "Nov",
+        a2: 450
+      });
+
+      // IOU State
       const [iouPerson, setIouPerson] = useState("");
       const [iouAmount, setIouAmount] = useState("");
+      const [iouType, setIouType] = useState("borrowed");
 
       const chartRef = useRef(null);
       const chartInstanceRef = useRef(null);
@@ -708,12 +778,13 @@
         return null;
       };
 
-      const handleCreateCategory = async (type, name, bracketId, mode, initialBudget = 0) => {
+      // Create Category with One-Time Scope
+      const handleCreateCategory = async (type, name, bracketId, mode, initialBudget = 0, isOneTime = false) => {
         const val = name.trim();
         if (!val) return;
         const dup = checkDuplicate(val);
         if (dup) {
-          alert(`Kategorie existiert bereits: "${dup.name}" (${dup.bracket})`);
+          alert(`Eintrag existiert bereits: "${dup.name}" (${dup.bracket})`);
           return;
         }
 
@@ -721,13 +792,14 @@
         copy.categories[type].push(val);
         copy.categoryOverrides[val] = bracketId;
         copy.categoryModes[val] = mode || 'variable';
-        copy.categoryOneTime[val] = false;
+        copy.categoryOneTime[val] = !!isOneTime;
 
         ["2026", "2027", "2028"].forEach(y => {
           if (!copy.values[y][type][val]) copy.values[y][type][val] = {};
           getMonthsForYear(parseInt(y)).forEach(m => {
+            const isSelectedMonth = (parseInt(y) === selectedYear && m === selectedMonth);
             copy.values[y][type][val][m] = {
-              budget: parseFloat(initialBudget) || 0,
+              budget: isOneTime ? (isSelectedMonth ? (parseFloat(initialBudget) || 0) : 0) : (parseFloat(initialBudget) || 0),
               actual: 0,
               asOfDate: getDaysInMonth(parseInt(y), m)
             };
@@ -750,7 +822,8 @@
           name: "",
           bracket: chosenBracket,
           budget: "",
-          mode: type === 'incomes' ? 'fixed' : 'variable'
+          mode: type === 'incomes' ? 'fixed' : 'variable',
+          isOneTime: false
         });
       };
 
@@ -921,9 +994,9 @@
       const handleOpenBracketModal = (mode, type, bracket = null) => {
         setBracketModal({ mode, type, bracket });
         if (mode === 'edit' && bracket) {
-          setBracketForm({ name: bracket.name, icon: bracket.icon, color: bracket.color || "#6366f1" });
+          setBracketForm({ name: bracket.name, icon: bracket.icon, color: bracket.color || "#2383e2" });
         } else {
-          setBracketForm({ name: "", icon: "fa-house", color: "#6366f1" });
+          setBracketForm({ name: "", icon: "fa-house", color: "#2383e2" });
         }
       };
 
@@ -949,7 +1022,7 @@
       };
 
       const handleDeleteBracket = async (type, bracketId) => {
-        if (!confirm("Hauptkategorie löschen? Alle enthaltenen Posten werden nach 'Sonstiges' verschoben.")) return;
+        if (!confirm("Kategorie entfernen? Enthaltene Posten werden nach 'Sonstiges' verschoben.")) return;
         const copy = JSON.parse(JSON.stringify(data));
         const fallbackBracket = type === 'incomes' ? 'variable_in' : 'other';
 
@@ -973,18 +1046,27 @@
         setOpenBrackets(nextState);
       };
 
+      // IOU / Debts logic
       const activeIous = useMemo(() => (data.ious || []).filter(i => !i.settled), [data.ious]);
-      const totalIou = useMemo(() => activeIous.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0), [activeIous]);
+      const totalBorrowed = useMemo(() => activeIous.filter(i => i.type === 'borrowed').reduce((s, i) => s + (parseFloat(i.amount) || 0), 0), [activeIous]);
+      const totalLent = useMemo(() => activeIous.filter(i => i.type !== 'borrowed').reduce((s, i) => s + (parseFloat(i.amount) || 0), 0), [activeIous]);
 
       const handleAddIou = async () => {
         if (!iouPerson.trim() || !iouAmount || isNaN(parseFloat(iouAmount))) return;
-        const copy = { ...data, ious: [...(data.ious || []), {
-          id: 'iou_' + Date.now(),
-          person: iouPerson.trim(),
-          amount: parseFloat(iouAmount),
-          date: new Date().toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US', { day: '2-digit', month: 'short' }),
-          settled: false
-        }]};
+        const copy = { 
+          ...data, 
+          ious: [
+            ...(data.ious || []), 
+            {
+              id: 'iou_' + Date.now(),
+              person: iouPerson.trim(),
+              amount: parseFloat(iouAmount),
+              type: iouType,
+              date: new Date().toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US', { day: '2-digit', month: 'short' }),
+              settled: false
+            }
+          ]
+        };
         setIouPerson("");
         setIouAmount("");
         await saveState(copy);
@@ -993,6 +1075,44 @@
       const handleSettleIou = async (id) => {
         const copy = { ...data, ious: data.ious.map(i => i.id === id ? { ...i, settled: true } : i) };
         await saveState(copy);
+      };
+
+      // Quick-Schedule Sister Loan Repayments (Okt & Nov)
+      const handleExecuteSplitLoan = async () => {
+        const copy = JSON.parse(JSON.stringify(data));
+        const catName = splitForm.name.trim() || "Rückzahlung Schwester";
+
+        // 1. Ensure expense category exists
+        if (!copy.categories.expenses.includes(catName)) {
+          copy.categories.expenses.push(catName);
+          copy.categoryOverrides[catName] = 'other';
+          copy.categoryModes[catName] = 'fixed';
+          copy.categoryOneTime[catName] = true; // Mark as One-Time so it auto-hides outside Okt/Nov!
+        }
+
+        // Initialize values for all months
+        ["2026", "2027", "2028"].forEach(y => {
+          if (!copy.values[y].expenses[catName]) copy.values[y].expenses[catName] = {};
+          getMonthsForYear(parseInt(y)).forEach(m => {
+            if (!copy.values[y].expenses[catName][m]) {
+              copy.values[y].expenses[catName][m] = { budget: 0, actual: 0, asOfDate: getDaysInMonth(parseInt(y), m) };
+            }
+          });
+        });
+
+        // Set Month 1 (e.g. Okt 2026)
+        if (copy.values[selectedYear]?.expenses?.[catName]?.[splitForm.m1]) {
+          copy.values[selectedYear].expenses[catName][splitForm.m1].budget = parseFloat(splitForm.a1) || 0;
+        }
+
+        // Set Month 2 (e.g. Nov 2026)
+        if (copy.values[selectedYear]?.expenses?.[catName]?.[splitForm.m2]) {
+          copy.values[selectedYear].expenses[catName][splitForm.m2].budget = parseFloat(splitForm.a2) || 0;
+        }
+
+        await saveState(copy);
+        setSplitModal(null);
+        alert(`Erfolgreich eingetragen: ${catName} mit je ${fmt(splitForm.a1)} in ${splitForm.m1} und ${fmt(splitForm.a2)} in ${splitForm.m2}!`);
       };
 
       useEffect(() => {
@@ -1010,8 +1130,8 @@
           {
             label: t('incomesHeader'),
             data: incomesData,
-            backgroundColor: '#10b981',
-            borderRadius: 6,
+            backgroundColor: '#0f7b6c',
+            borderRadius: 3,
             stack: 'Stack0'
           },
           ...data.brackets.expenses.map(b => ({
@@ -1021,14 +1141,14 @@
                 .filter(cat => (data.categoryOverrides[cat] || autoClassifyCategory(cat).bracket) === b.id)
                 .reduce((s, cat) => s + getNode('expenses', cat, selectedYear, m).actual, 0);
             }),
-            backgroundColor: b.color || '#64748b',
+            backgroundColor: b.color || '#787774',
             borderRadius: 2,
             stack: 'Stack1'
           }))
         ];
 
         const isDark = theme === 'dark';
-        const axisColor = isDark ? '#94a3b8' : '#64748b';
+        const axisColor = isDark ? '#9b9a97' : '#787774';
 
         chartInstanceRef.current = new Chart(ctx, {
           type: 'bar',
@@ -1036,11 +1156,11 @@
           options: {
             responsive: true, maintainAspectRatio: false,
             scales: {
-              x: { ticks: { color: axisColor, font: { family: 'inherit', size: 10, weight: '600' } }, grid: { display: false } },
-              y: { beginAtZero: true, ticks: { color: axisColor, font: { family: 'inherit', size: 9 }, callback: v => fmt(v) }, grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' } }
+              x: { ticks: { color: axisColor, font: { family: 'inherit', size: 10, weight: '500' } }, grid: { display: false } },
+              y: { beginAtZero: true, ticks: { color: axisColor, font: { family: 'inherit', size: 9 }, callback: v => fmt(v) }, grid: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' } }
             },
             plugins: {
-              legend: { position: 'top', labels: { color: axisColor, usePointStyle: true, boxWidth: 6, font: { family: 'inherit', size: 10, weight: '600' } } }
+              legend: { position: 'top', labels: { color: axisColor, usePointStyle: true, boxWidth: 6, font: { family: 'inherit', size: 10 } } }
             }
           }
         });
@@ -1049,262 +1169,343 @@
       }, [data, selectedYear, selectedMonth, lang, theme]);
 
       return (
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col min-h-screen font-sans">
 
-          {/* 1. COMPACT TOUCH HEADER */}
-          <header className="sticky top-0 z-50 bg-surface/95 backdrop-blur-md border-b border-subtle h-12 px-3 flex items-center justify-between">
+          {/* 1. NOTION TOP NAVBAR */}
+          <header className="sticky top-0 z-50 bg-surface border-b border-subtle h-12 px-3 sm:px-4 flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center text-white shadow-xs font-black text-xs">
-                <i className="fa-solid fa-layer-group"></i>
+              <span className="text-base">📋</span>
+              <div className="flex items-center gap-1.5 text-xs text-secondary font-mono">
+                <span className="font-semibold text-primary">{t('title')}</span>
+                <span>/</span>
+                <span className="text-tertiary">{selectedYear}</span>
               </div>
-              <h1 className="text-sm font-extrabold tracking-tight text-primary">
-                {t('title')}
-              </h1>
             </div>
 
             {/* Year Selector */}
-            <div className="flex items-center bg-surface-elevated p-0.5 rounded-lg border border-subtle">
+            <div className="flex items-center bg-subtle p-0.5 rounded border border-subtle">
               {[2026, 2027, 2028].map(yr => (
                 <button
                   key={yr}
                   onClick={() => setSelectedYear(yr)}
-                  className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold transition ${selectedYear === yr ? 'bg-indigo-600 text-white shadow-xs' : 'text-secondary hover:text-primary'}`}
+                  className={`px-2 py-0.5 rounded text-[11px] font-mono transition ${selectedYear === yr ? 'bg-surface text-primary shadow-xs font-semibold' : 'text-secondary hover:text-primary'}`}
                 >
                   {yr}
                 </button>
               ))}
             </div>
 
-            {/* Right Buttons */}
-            <div className="flex items-center space-x-1.5">
+            {/* Options & Language */}
+            <div className="flex items-center space-x-1">
               <button
                 onClick={() => changeLanguage(lang === 'de' ? 'en' : 'de')}
-                className="text-[11px] font-mono font-bold px-2 py-1 rounded-md bg-surface-elevated border border-subtle text-primary"
+                className="text-[11px] font-mono px-2 py-1 rounded hover:bg-subtle text-secondary hover:text-primary"
               >
                 {lang.toUpperCase()}
               </button>
               <button
                 onClick={() => setIsBurgerOpen(true)}
-                className="w-8 h-8 rounded-md bg-surface-elevated border border-subtle text-secondary hover:text-primary flex items-center justify-center"
+                className="w-7 h-7 rounded hover:bg-subtle text-secondary hover:text-primary flex items-center justify-center"
               >
                 <i className="fa-solid fa-sliders text-xs"></i>
               </button>
             </div>
           </header>
 
-          {/* 2. HORIZONTAL MONTH STRIP */}
-          <nav className="sticky top-12 z-40 bg-surface/90 backdrop-blur-md border-b border-subtle px-2 py-1.5 overflow-x-auto scrollbar-none flex items-center gap-1.5">
-            <div className="flex items-center space-x-1 overflow-x-auto scrollbar-none flex-grow">
+          {/* 2. NOTION HORIZONTAL MONTH TABS */}
+          <nav className="sticky top-12 z-40 bg-surface border-b border-subtle px-3 py-1 overflow-x-auto scrollbar-none flex items-center gap-1 text-xs">
+            <div className="flex items-center space-x-0.5 overflow-x-auto scrollbar-none flex-grow">
               {getMonthsForYear(selectedYear).map(m => (
                 <button
                   key={m}
                   onClick={() => setSelectedMonth(m)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition whitespace-nowrap min-w-[48px] text-center ${selectedMonth === m ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 font-bold shadow-xs' : 'text-secondary hover:text-primary'}`}
+                  className={`px-2.5 py-1 rounded text-xs transition whitespace-nowrap min-w-[42px] text-center ${
+                    selectedMonth === m 
+                      ? 'bg-subtle text-primary font-semibold border-b-2 border-primary' 
+                      : 'text-secondary hover:text-primary hover:bg-subtle/50'
+                  }`}
                 >
                   {formatMonth(m, lang)}
                 </button>
               ))}
             </div>
 
-            <div className="h-4 w-[1px] bg-subtle shrink-0"></div>
+            <div className="h-4 w-[1px] bg-subtle shrink-0 mx-1"></div>
 
             <button
               onClick={() => setSelectedMonth("AnnualOverview")}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold transition whitespace-nowrap flex items-center gap-1 shrink-0 ${selectedMonth === "AnnualOverview" ? 'bg-indigo-600 text-white shadow-xs' : 'text-secondary bg-surface-elevated border border-subtle'}`}
+              className={`px-2 py-1 rounded text-xs transition whitespace-nowrap flex items-center gap-1 shrink-0 ${
+                selectedMonth === "AnnualOverview" 
+                  ? 'bg-subtle text-primary font-semibold' 
+                  : 'text-secondary hover:text-primary'
+              }`}
             >
               <i className="fa-solid fa-compass text-[10px]"></i>
               <span className="hidden sm:inline">{t('annualOverview')}</span>
             </button>
           </nav>
 
-          {/* 3. MOBILE SECTION SEGMENT: Ausgaben ↔ Einnahmen ↔ Cockpit (ONLY ON MOBILE) */}
-          <div className="block lg:hidden sticky top-[89px] z-30 bg-surface px-3 py-1.5 border-b border-subtle shadow-xs">
-            <div className="grid grid-cols-3 gap-1 bg-surface-elevated p-1 rounded-xl border border-subtle font-mono text-[11px]">
+          {/* 3. MOBILE SECTION TOGGLE (Ausgaben / Einnahmen / Übersicht) */}
+          <div className="block lg:hidden sticky top-[89px] z-30 bg-surface px-3 py-1.5 border-b border-subtle">
+            <div className="grid grid-cols-3 gap-1 bg-subtle p-0.5 rounded border border-subtle text-[11px]">
               <button
                 onClick={() => setMobileTab('expenses')}
-                className={`py-1.5 rounded-lg font-bold flex flex-col items-center justify-center transition ${
-                  mobileTab === 'expenses'
-                    ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30 shadow-xs'
-                    : 'text-secondary'
+                className={`py-1 rounded font-medium transition ${
+                  mobileTab === 'expenses' ? 'bg-surface text-primary shadow-xs font-semibold' : 'text-secondary'
                 }`}
               >
                 <span>{t('expensesHeader')}</span>
-                <span className="text-[9px] opacity-80">{fmt(currentMetrics.actualEx)}</span>
+                <span className="block text-[9px] opacity-75">{fmt(currentMetrics.actualEx)}</span>
               </button>
 
               <button
                 onClick={() => setMobileTab('incomes')}
-                className={`py-1.5 rounded-lg font-bold flex flex-col items-center justify-center transition ${
-                  mobileTab === 'incomes'
-                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-xs'
-                    : 'text-secondary'
+                className={`py-1 rounded font-medium transition ${
+                  mobileTab === 'incomes' ? 'bg-surface text-primary shadow-xs font-semibold' : 'text-secondary'
                 }`}
               >
                 <span>{t('incomesHeader')}</span>
-                <span className="text-[9px] opacity-80">{fmt(currentMetrics.actualIn)}</span>
+                <span className="block text-[9px] opacity-75">{fmt(currentMetrics.actualIn)}</span>
               </button>
 
               <button
                 onClick={() => setMobileTab('cockpit')}
-                className={`py-1.5 rounded-lg font-bold flex flex-col items-center justify-center transition ${
-                  mobileTab === 'cockpit'
-                    ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 shadow-xs'
-                    : 'text-secondary'
+                className={`py-1 rounded font-medium transition ${
+                  mobileTab === 'cockpit' ? 'bg-surface text-primary shadow-xs font-semibold' : 'text-secondary'
                 }`}
               >
                 <span>{t('analyticsTab')}</span>
-                <span className="text-[9px] opacity-80">{fmt(currentMetrics.actualNet)}</span>
+                <span className="block text-[9px] opacity-75">{fmt(currentMetrics.actualNet)}</span>
               </button>
             </div>
           </div>
 
-          {/* MAIN CONTAINER */}
-          <main className="max-w-7xl mx-auto w-full px-3 sm:px-4 pt-3 pb-20 flex-grow space-y-4">
+          {/* MAIN NOTION CANVAS */}
+          <main className="max-w-6xl mx-auto w-full px-3 sm:px-6 pt-4 pb-20 flex-grow space-y-4">
 
-            {/* COCKPIT HERO: Shown ALWAYS on Desktop, or when mobileTab === 'cockpit' on Mobile */}
+            {/* NOTION PAGE HEADING & CALLOUT */}
+            <div className="space-y-1">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-primary flex items-center gap-2">
+                <span>🏠</span>
+                <span>{formatMonth(selectedMonth, lang)} {selectedYear}</span>
+              </h1>
+              <p className="text-xs text-secondary">{t('subtitle')}</p>
+            </div>
+
+            {/* COCKPIT HERO: ALWAYS ON DESKTOP, OR WHEN mobileTab === 'cockpit' */}
             <div className={`${mobileTab === 'cockpit' ? 'block' : 'hidden lg:block'} space-y-3`}>
               
-              {/* 2x2 Ultra-Compact Mobile Grid */}
+              {/* Notion Properties Grid */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                <div className="bg-surface border border-subtle rounded-xl p-3 flex flex-col justify-between shadow-xs">
-                  <span className="text-[9px] font-mono font-bold uppercase text-secondary">{t('kpiActualNet')}</span>
-                  <div className={`text-base sm:text-xl font-mono font-black mt-1 ${currentMetrics.actualNet >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <div className="p-3 rounded-lg border border-subtle bg-surface-elevated flex flex-col justify-between">
+                  <div className="flex items-center gap-1.5 text-secondary text-[11px]">
+                    <span>⚖️</span>
+                    <span>{t('kpiActualNet')}</span>
+                  </div>
+                  <div className={`text-lg font-mono font-bold mt-1 ${currentMetrics.actualNet >= 0 ? 'text-notion-green dark:text-emerald-400' : 'text-notion-red'}`}>
                     {fmt(currentMetrics.actualNet)}
                   </div>
-                  <span className="text-[9px] font-mono text-tertiary">In {fmt(currentMetrics.actualIn)} / Out {fmt(currentMetrics.actualEx)}</span>
+                  <span className="text-[10px] font-mono text-tertiary">In {fmt(currentMetrics.actualIn)} · Out {fmt(currentMetrics.actualEx)}</span>
                 </div>
 
-                <div className="bg-surface border border-indigo-500/30 rounded-xl p-3 bg-gradient-to-br from-indigo-500/5 to-transparent flex flex-col justify-between shadow-xs">
-                  <span className="text-[9px] font-mono font-bold uppercase text-indigo-400">{t('kpiProjectedNet')}</span>
-                  <div className={`text-base sm:text-xl font-mono font-black mt-1 ${currentMetrics.projectedNet >= 0 ? 'text-indigo-400' : 'text-rose-400'}`}>
+                <div className="p-3 rounded-lg border border-subtle bg-surface-elevated flex flex-col justify-between">
+                  <div className="flex items-center gap-1.5 text-secondary text-[11px]">
+                    <span>📈</span>
+                    <span>{t('kpiProjectedNet')}</span>
+                  </div>
+                  <div className={`text-lg font-mono font-bold mt-1 ${currentMetrics.projectedNet >= 0 ? 'text-notion-blue' : 'text-notion-red'}`}>
                     {fmt(currentMetrics.projectedNet)}
                   </div>
-                  <span className="text-[9px] font-mono text-tertiary">Prognose Out: {fmt(currentMetrics.projectedEx)}</span>
+                  <span className="text-[10px] font-mono text-tertiary">Prognose: {fmt(currentMetrics.projectedEx)}</span>
                 </div>
 
-                <div className="bg-surface border border-subtle rounded-xl p-3 flex flex-col justify-between shadow-xs">
-                  <span className="text-[9px] font-mono font-bold uppercase text-amber-500">{t('kpiDailyRoom')}</span>
-                  <div className="text-base sm:text-xl font-mono font-black text-amber-400 mt-1">
-                    {fmt(categoryAnalytics.reduce((s, c) => s + (c.mode === 'variable' ? c.safeDailySpend : 0), 0))}
-                    <span className="text-[9px] font-normal text-secondary"> {t('perDayLabel')}</span>
+                <div className="p-3 rounded-lg border border-subtle bg-surface-elevated flex flex-col justify-between">
+                  <div className="flex items-center gap-1.5 text-secondary text-[11px]">
+                    <span>☕</span>
+                    <span>{t('kpiDailyRoom')}</span>
                   </div>
-                  <span className="text-[9px] font-mono text-tertiary">Freies Tagesbudget</span>
+                  <div className="text-lg font-mono font-bold text-primary mt-1">
+                    {fmt(categoryAnalytics.reduce((s, c) => s + (c.mode === 'variable' ? c.safeDailySpend : 0), 0))}
+                    <span className="text-[10px] font-normal text-secondary"> {t('perDayLabel')}</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-tertiary">Freies Tagesbudget</span>
                 </div>
 
-                <div className="bg-surface border border-subtle rounded-xl p-3 flex flex-col justify-between shadow-xs">
-                  <span className="text-[9px] font-mono font-bold uppercase text-secondary">{t('kpiCumulative')}</span>
-                  <div className={`text-base sm:text-xl font-mono font-black mt-1 ${currentMetrics.endProjectedBalance >= 0 ? 'text-primary' : 'text-rose-400'}`}>
+                <div className="p-3 rounded-lg border border-subtle bg-surface-elevated flex flex-col justify-between">
+                  <div className="flex items-center gap-1.5 text-secondary text-[11px]">
+                    <span>🏦</span>
+                    <span>{t('kpiCumulative')}</span>
+                  </div>
+                  <div className={`text-lg font-mono font-bold mt-1 text-primary`}>
                     {fmt(currentMetrics.endProjectedBalance)}
                   </div>
-                  <span className="text-[9px] font-mono text-tertiary">{t('kpiCumulativeSub')}</span>
+                  <span className="text-[10px] font-mono text-tertiary">{t('kpiCumulativeSub')}</span>
                 </div>
               </div>
 
-              {/* IOU Card */}
-              <div className="bg-surface border border-subtle rounded-xl p-3 shadow-xs">
-                <div className="flex items-center justify-between border-b border-subtle pb-2 mb-2">
-                  <span className="text-xs font-mono font-bold text-primary uppercase flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                    <span>{t('iouTitle')}</span>
-                  </span>
-                  <span className="text-xs font-mono font-bold text-amber-400">{t('iouTotalPending')}: {fmt(totalIou)}</span>
+              {/* NOTION DEBT & IOU TRACKER (Sister Loan / Receivables) */}
+              <div className="rounded-lg border border-subtle bg-surface p-3.5 space-y-3">
+                <div className="flex items-center justify-between border-b border-subtle pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs">🤝</span>
+                    <span className="text-xs font-semibold text-primary uppercase tracking-wide">{t('iouTitle')}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs font-mono">
+                    {totalBorrowed > 0 && <span className="text-notion-red font-semibold">Schulden: {fmt(totalBorrowed)}</span>}
+                    {totalLent > 0 && <span className="text-notion-green font-semibold">Forderung: {fmt(totalLent)}</span>}
+                  </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-1.5 mb-2">
+
+                {/* Entry Inputs */}
+                <div className="flex flex-col sm:flex-row gap-1.5">
+                  <select
+                    value={iouType}
+                    onChange={(e) => setIouType(e.target.value)}
+                    className="bg-subtle border border-subtle text-primary text-xs rounded px-2 py-1.5 outline-none font-medium"
+                  >
+                    <option value="borrowed">Ich schulde (Leihe/Kredit)</option>
+                    <option value="lent">Mir wird geschuldet (Verliehen)</option>
+                  </select>
+
                   <input
                     type="text" placeholder={t('iouPersonPlaceholder')}
                     value={iouPerson} onChange={(e) => setIouPerson(e.target.value)}
-                    className="flex-1 bg-subtle border border-subtle text-primary text-xs font-mono rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500"
+                    className="flex-1 bg-subtle border border-subtle text-primary text-xs rounded px-2.5 py-1.5 outline-none focus:border-strong"
                   />
-                  <div className="flex items-center bg-subtle border border-subtle rounded-lg px-2.5 py-1 focus-within:border-indigo-500 w-full sm:w-36">
+
+                  <div className="flex items-center bg-subtle border border-subtle rounded px-2 py-1 w-full sm:w-28">
                     <input
                       type="number" inputMode="decimal" placeholder={t('iouAmountPlaceholder')}
                       value={iouAmount} onChange={(e) => setIouAmount(e.target.value)}
-                      className="w-full bg-transparent text-primary text-xs font-mono font-bold outline-none text-right"
+                      className="w-full bg-transparent text-primary text-xs font-mono font-medium outline-none text-right"
                     />
-                    <span className="text-xs font-mono text-tertiary ml-1.5 font-bold">€</span>
+                    <span className="text-xs font-mono text-tertiary ml-1">€</span>
                   </div>
-                  <button onClick={handleAddIou} className="bg-indigo-600 hover:bg-indigo-500 text-white font-mono font-bold px-3 py-1.5 rounded-lg text-xs">
+
+                  <button
+                    onClick={handleAddIou}
+                    className="bg-subtle hover:bg-subtle/80 text-primary border border-subtle font-medium px-3 py-1.5 rounded text-xs transition"
+                  >
                     + {t('iouAddBtn')}
                   </button>
                 </div>
+
+                {/* Direct Action for Sister Loan Situation */}
+                <div className="p-2.5 rounded bg-subtle/60 border border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="text-amber-500">💡</span>
+                    <span className="text-secondary leading-snug">
+                      Schwester leiht 900 €? Automatisch in 2 Raten à 450 € (Okt / Nov) aufteilen:
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSplitForm({
+                        name: "Rückzahlung Schwester",
+                        totalAmount: 900,
+                        m1: "Okt",
+                        a1: 450,
+                        m2: "Nov",
+                        a2: 450
+                      });
+                      setSplitModal(true);
+                    }}
+                    className="px-2.5 py-1 bg-surface border border-subtle text-primary rounded text-xs font-medium hover:bg-subtle transition whitespace-nowrap self-start sm:self-auto"
+                  >
+                    ⚡ Ratenplan in Budget eintragen
+                  </button>
+                </div>
+
+                {/* List of active IOUs */}
                 {activeIous.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1.5">
-                    {activeIous.map(item => (
-                      <div key={item.id} className="p-2 rounded-lg bg-surface-elevated border border-subtle flex items-center justify-between">
-                        <div>
-                          <div className="text-xs font-bold text-primary">{item.person}</div>
-                          <div className="text-[9px] font-mono text-tertiary">{item.date}</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1">
+                    {activeIous.map(item => {
+                      const isBorrowed = item.type === 'borrowed';
+                      return (
+                        <div key={item.id} className="p-2.5 rounded border border-subtle bg-surface-elevated flex items-center justify-between text-xs">
+                          <div>
+                            <div className="font-semibold text-primary">{item.person}</div>
+                            <div className="text-[10px] text-tertiary">
+                              {item.date} · <span className={isBorrowed ? 'text-notion-red' : 'text-notion-green'}>{isBorrowed ? 'Schulde ich' : 'Bekomme ich'}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`font-mono font-semibold ${isBorrowed ? 'text-notion-red' : 'text-notion-green'}`}>
+                              {fmt(item.amount)}
+                            </span>
+                            <button
+                              onClick={() => handleSettleIou(item.id)}
+                              className="px-2 py-0.5 rounded text-[10px] bg-subtle hover:bg-emerald-500/10 text-secondary hover:text-emerald-500 border border-subtle"
+                              title={t('iouMarkReturned')}
+                            >
+                              ✓
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono font-bold text-amber-400">{fmt(item.amount)}</span>
-                          <button onClick={() => handleSettleIou(item.id)} className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            ✓
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
 
-              {/* Bar Chart */}
-              <div className="bg-surface rounded-xl border border-subtle p-3 shadow-xs">
-                <div className="h-[200px] relative w-full">
+              {/* Chart Container */}
+              <div className="rounded-lg border border-subtle bg-surface p-3">
+                <div className="h-[180px] relative w-full">
                   <canvas ref={chartRef}></canvas>
                 </div>
               </div>
 
             </div>
 
-            {/* TOOLBAR (FILTER & VIEW TOGGLE) - Visible in Categories Views */}
-            <div className={`flex flex-wrap items-center justify-between gap-2 bg-surface border border-subtle rounded-xl p-2.5 shadow-xs ${mobileTab === 'cockpit' ? 'hidden lg:flex' : 'flex'}`}>
-              <button
-                onClick={() => setHideZeroes(prev => !prev)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition flex items-center gap-1.5 border ${
-                  hideZeroes
-                    ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-                    : 'bg-indigo-600 text-white border-indigo-500'
-                }`}
-              >
-                <i className={`fa-solid ${hideZeroes ? 'fa-eye-slash' : 'fa-eye'} text-[10px]`}></i>
-                <span>{hideZeroes ? t('hideZeroesBtn') : t('showAllBtn')}</span>
-              </button>
+            {/* NOTION DATABASE CONTROLS (Toggle 0€ items & Accordions) */}
+            <div className={`flex flex-wrap items-center justify-between gap-2 border-b border-subtle pb-2 text-xs ${mobileTab === 'cockpit' ? 'hidden lg:flex' : 'flex'}`}>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setHideZeroes(prev => !prev)}
+                  className={`px-2 py-1 rounded text-xs transition flex items-center gap-1.5 border ${
+                    hideZeroes
+                      ? 'bg-subtle text-primary border-subtle font-medium'
+                      : 'bg-surface text-secondary border-subtle'
+                  }`}
+                >
+                  <i className={`fa-solid ${hideZeroes ? 'fa-eye-slash' : 'fa-eye'} text-[10px]`}></i>
+                  <span>{hideZeroes ? t('hideZeroesBtn') : t('showAllBtn')}</span>
+                </button>
+
+                <span className="text-[11px] text-tertiary">
+                  (Einmalige 0 € Posten bleiben sauber ausgeblendet)
+                </span>
+              </div>
 
               <button
                 onClick={toggleAllBrackets}
-                className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-surface-elevated text-secondary hover:text-primary border border-subtle transition flex items-center gap-1"
+                className="px-2 py-1 rounded text-xs text-secondary hover:text-primary transition flex items-center gap-1"
               >
                 <i className="fa-solid fa-up-down text-[10px]"></i>
-                <span className="text-[11px]">{Object.values(openBrackets).some(v => !v) ? 'Aufklappen' : 'Einklappen'}</span>
+                <span>{Object.values(openBrackets).some(v => !v) ? 'Alle aufklappen' : 'Alle schließen'}</span>
               </button>
             </div>
 
-            {/* ================== HIERARCHICAL ACCORDIONS ================== */}
+            {/* ================== DATABASE ACCORDIONS (INCOMES & EXPENSES) ================== */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-start">
 
               {/* INCOMES COLUMN */}
               <div className={`space-y-3 ${mobileTab === 'incomes' ? 'block' : 'hidden lg:block'}`}>
                 <div className="flex items-center justify-between pb-1">
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
-                    <h2 className="text-xs font-mono font-bold text-primary uppercase">{t('incomesHeader')}</h2>
+                    <span className="text-xs">💰</span>
+                    <h2 className="text-xs font-semibold text-primary uppercase tracking-wide">{t('incomesHeader')}</h2>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-notion-tagGreen text-notion-green">
                       {fmt(currentMetrics.actualIn)}
                     </span>
                     <button
                       onClick={() => handleOpenQuickAdd('incomes')}
-                      className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition flex items-center gap-1 shadow-xs"
+                      className="text-xs font-medium px-2 py-1 rounded bg-subtle hover:bg-subtle/80 text-primary border border-subtle transition flex items-center gap-1"
                     >
                       <i className="fa-solid fa-plus text-[10px]"></i>
                       <span>{t('addItemBtn')}</span>
-                    </button>
-                    <button
-                      onClick={() => handleOpenBracketModal('add', 'incomes')}
-                      className="text-[11px] font-mono text-tertiary hover:text-primary font-bold px-2 py-1 rounded-lg bg-surface-elevated border border-subtle"
-                    >
-                      {t('addBracketBtn')}
                     </button>
                   </div>
                 </div>
@@ -1316,115 +1517,106 @@
                   const isOpen = !!openBrackets[b.id];
                   const palette = getPalette(b.id);
 
-                  const hiddenCount = items.filter(cat => {
+                  // Items that are completely zero this month
+                  const visibleItems = items.filter(cat => {
                     const node = getNode('incomes', cat, selectedYear, selectedMonth);
-                    return node.actual === 0 && node.budget === 0;
-                  }).length;
+                    const isOneTime = !!data.categoryOneTime[cat];
+                    // If One-Time and 0/0, hide it ALWAYS
+                    if (isOneTime && node.actual === 0 && node.budget === 0) return false;
+                    if (hideZeroes && node.actual === 0 && node.budget === 0) return false;
+                    return true;
+                  });
 
                   return (
-                    <div key={b.id} className="bg-surface rounded-xl sm:rounded-2xl border border-subtle overflow-hidden transition-all shadow-xs">
-                      <div className={`p-2.5 sm:p-3 bg-gradient-to-r ${palette.headerGrad} bg-surface-elevated hover:bg-subtle transition flex items-center justify-between select-none border-b border-subtle`}>
+                    <div key={b.id} className="rounded-lg border border-subtle bg-surface overflow-hidden">
+                      <div className="px-3 py-2 bg-surface hover:bg-subtle/50 transition flex items-center justify-between select-none border-b border-subtle">
                         <div onClick={() => toggleBracket(b.id)} className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
-                          <span className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] shrink-0 ${palette.iconBg}`}>
-                            <i className={`fa-solid ${b.icon}`}></i>
+                          <span className="text-secondary text-[11px] w-3">
+                            {isOpen ? '▾' : '▸'}
                           </span>
-                          <span className="font-mono font-bold text-xs text-primary truncate">{b.name}</span>
-                          <span className="text-[10px] font-mono text-tertiary shrink-0">({items.length})</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${palette.tag}`}>
+                            {b.name}
+                          </span>
+                          <span className="text-[10px] text-tertiary">({visibleItems.length})</span>
                         </div>
 
-                        <div className="flex items-center gap-1.5 shrink-0 ml-1">
-                          <div className="text-right text-xs font-mono mr-0.5">
-                            <span className="font-bold text-emerald-400">{fmt(bracketActual)}</span>
-                            {bracketBudget > 0 && <span className="text-tertiary text-[10px] ml-1">/ {fmt(bracketBudget)}</span>}
-                          </div>
+                        <div className="flex items-center gap-2 shrink-0 ml-1">
+                          <span className="font-mono text-xs font-semibold text-notion-green">{fmt(bracketActual)}</span>
                           <button
                             onClick={() => handleOpenQuickAdd('incomes', b.id)}
-                            className="w-7 h-7 rounded bg-emerald-500/10 text-emerald-400 text-xs flex items-center justify-center"
+                            className="text-tertiary hover:text-primary p-1 text-xs"
+                            title="Posten hinzufügen"
                           >
-                            <i className="fa-solid fa-plus text-[10px]"></i>
+                            <i className="fa-solid fa-plus"></i>
                           </button>
-                          <button onClick={() => handleOpenBracketModal('edit', 'incomes', b)} className="text-tertiary hover:text-primary p-1">
-                            <i className="fa-solid fa-pen-to-square text-[11px]"></i>
-                          </button>
-                          <i onClick={() => toggleBracket(b.id)} className={`fa-solid fa-chevron-down text-tertiary text-[10px] transition-transform p-1 cursor-pointer ${isOpen ? 'rotate-180' : ''}`}></i>
                         </div>
                       </div>
 
                       {isOpen && (
-                        <div className="p-2 sm:p-3 space-y-2 bg-surface">
-                          {hideZeroes && hiddenCount > 0 && (
-                            <div className="p-1.5 rounded-lg bg-surface-elevated border border-dashed border-subtle text-xs font-mono text-tertiary flex items-center justify-between px-2">
-                              <span>{t('hiddenNotice', { count: hiddenCount })}</span>
-                              <button onClick={() => setHideZeroes(false)} className="text-indigo-400 font-bold underline">{t('showNow')}</button>
-                            </div>
-                          )}
-
-                          {items.length === 0 ? (
-                            <p className="text-center py-2 text-xs font-mono text-tertiary italic">Keine Posten vorhanden.</p>
+                        <div className="p-2 space-y-1.5 bg-surface">
+                          {visibleItems.length === 0 ? (
+                            <p className="text-center py-2 text-xs text-tertiary italic">Keine aktiven Buchungen in diesem Monat.</p>
                           ) : (
-                            items.map(cat => {
+                            visibleItems.map(cat => {
                               const node = getNode('incomes', cat, selectedYear, selectedMonth);
                               const isFresh = highlightedCategory === cat;
-                              if (hideZeroes && !isFresh && node.actual === 0 && node.budget === 0) return null;
                               const pDay = data.fixedPaymentDays?.[cat];
                               const notes = getMonthScopedNotes(cat, selectedYear, selectedMonth);
                               const isNoteOpen = !!openNoteRows[cat];
+                              const isOneTime = !!data.categoryOneTime[cat];
 
                               return (
-                                <div key={cat} className={`space-y-1 rounded-xl transition ${isFresh ? 'animate-flash ring-2 ring-emerald-500' : ''}`}>
-                                  <div className={`p-2.5 rounded-xl border border-l-4 ${palette.borderL} ${palette.subcardBg} flex items-center justify-between gap-2`}>
+                                <div key={cat} className={`space-y-1 rounded transition ${isFresh ? 'animate-flash ring-1 ring-emerald-500' : ''}`}>
+                                  <div className="p-2 rounded border border-subtle hover:border-strong bg-surface-elevated flex items-center justify-between gap-2">
                                     <div className="truncate flex-1 min-w-0">
                                       <div className="flex items-center gap-1.5">
-                                        <span className="font-semibold text-xs text-primary block truncate">{cat}</span>
+                                        <span className="font-medium text-xs text-primary block truncate">{cat}</span>
+                                        {isOneTime && (
+                                          <span className="text-[9px] px-1 py-0.2 rounded bg-notion-tagAmber text-amber-700 dark:text-amber-400">
+                                            {t('badgeOneTime')}
+                                          </span>
+                                        )}
                                         {notes.length > 0 && (
                                           <button
                                             onClick={() => setOpenNoteRows(p => ({ ...p, [cat]: !p[cat] }))}
-                                            className="text-[9px] font-mono text-emerald-400 flex items-center gap-0.5 px-1 py-0.2 rounded bg-emerald-500/10 shrink-0"
-                                            title={`Notizen für ${formatMonth(selectedMonth, lang)}`}
+                                            className="text-[9px] text-notion-green flex items-center gap-0.5 px-1 py-0.2 rounded bg-subtle"
                                           >
                                             <i className="fa-solid fa-note-sticky text-[8px]"></i>
                                             <span>{notes.length}</span>
                                           </button>
                                         )}
                                       </div>
-                                      {pDay && <span className="text-[10px] font-mono text-tertiary">{t('paymentDayShort')} {pDay}</span>}
+                                      {pDay && <span className="text-[10px] text-tertiary">{t('paymentDayShort')} {pDay}</span>}
                                     </div>
 
-                                    <div className="flex items-center gap-2 shrink-0">
-                                      <div className="flex items-center bg-surface-elevated border border-subtle rounded-lg px-2 py-1 w-24 sm:w-28 focus-within:border-emerald-500">
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      <div className="flex items-center bg-subtle border border-subtle rounded px-2 py-0.5 w-24 focus-within:border-strong">
                                         <input
                                           type="number" inputMode="decimal" value={node.actual !== 0 ? node.actual : ""} placeholder="0"
                                           onChange={(e) => updateNode('incomes', cat, selectedYear, selectedMonth, 'actual', e.target.value)}
-                                          className="w-full bg-transparent text-right font-mono font-bold text-xs text-emerald-400 outline-none"
+                                          className="w-full bg-transparent text-right font-mono text-xs text-notion-green font-semibold outline-none"
                                         />
-                                        <span className="text-[10px] font-mono text-tertiary ml-1 font-bold">€</span>
+                                        <span className="text-[10px] font-mono text-tertiary ml-1">€</span>
                                       </div>
 
-                                      <button
-                                        onClick={() => handleOpenRecurring('incomes', cat)}
-                                        className="text-tertiary hover:text-indigo-400 p-1.5"
-                                        title={t('replicateTitle')}
-                                      >
+                                      <button onClick={() => handleOpenRecurring('incomes', cat)} className="text-tertiary hover:text-primary p-1">
                                         <i className="fa-solid fa-repeat text-xs"></i>
                                       </button>
-                                      <button onClick={() => handleOpenEditCategory('incomes', cat)} className="text-tertiary hover:text-primary p-1.5">
-                                        <i className="fa-solid fa-gear text-xs"></i>
+                                      <button onClick={() => handleOpenEditCategory('incomes', cat)} className="text-tertiary hover:text-primary p-1">
+                                        <i className="fa-solid fa-ellipsis text-xs"></i>
                                       </button>
-                                      <button onClick={() => setSmartDeleteModal({ type: 'incomes', cat })} className="text-tertiary hover:text-rose-400 p-1.5">
+                                      <button onClick={() => setSmartDeleteModal({ type: 'incomes', cat })} className="text-tertiary hover:text-notion-red p-1">
                                         <i className="fa-solid fa-trash-can text-xs"></i>
                                       </button>
                                     </div>
                                   </div>
 
                                   {isNoteOpen && notes.length > 0 && (
-                                    <div className="mx-1 p-2.5 rounded-lg bg-surface-elevated border border-subtle text-[11px] font-mono text-secondary space-y-1 shadow-inner">
-                                      <div className="text-[9px] uppercase font-bold text-tertiary tracking-wider mb-1">
-                                        Notizen ({formatMonth(selectedMonth, lang)} {selectedYear})
-                                      </div>
+                                    <div className="mx-1 p-2 rounded bg-subtle text-xs text-secondary space-y-1">
                                       {notes.map((bullet, bIdx) => (
                                         <div key={bIdx} className="flex items-start gap-1.5">
-                                          <span className="text-emerald-400 font-bold">•</span>
-                                          <span className="leading-tight text-primary">{bullet}</span>
+                                          <span className="text-notion-green">•</span>
+                                          <span>{bullet}</span>
                                         </div>
                                       ))}
                                     </div>
@@ -1444,25 +1636,19 @@
               <div className={`space-y-3 ${mobileTab === 'expenses' ? 'block' : 'hidden lg:block'}`}>
                 <div className="flex items-center justify-between pb-1">
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]"></span>
-                    <h2 className="text-xs font-mono font-bold text-primary uppercase">{t('expensesHeader')}</h2>
+                    <span className="text-xs">💳</span>
+                    <h2 className="text-xs font-semibold text-primary uppercase tracking-wide">{t('expensesHeader')}</h2>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                    <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-notion-tagRed text-notion-red">
                       {fmt(currentMetrics.actualEx)}
                     </span>
                     <button
                       onClick={() => handleOpenQuickAdd('expenses')}
-                      className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1 shadow-xs"
+                      className="text-xs font-medium px-2 py-1 rounded bg-subtle hover:bg-subtle/80 text-primary border border-subtle transition flex items-center gap-1"
                     >
                       <i className="fa-solid fa-plus text-[10px]"></i>
                       <span>{t('addItemBtn')}</span>
-                    </button>
-                    <button
-                      onClick={() => handleOpenBracketModal('add', 'expenses')}
-                      className="text-[11px] font-mono text-tertiary hover:text-primary font-bold px-2 py-1 rounded-lg bg-surface-elevated border border-subtle"
-                    >
-                      {t('addBracketBtn')}
                     </button>
                   </div>
                 </div>
@@ -1474,72 +1660,68 @@
                   const isOpen = !!openBrackets[b.id];
                   const palette = getPalette(b.id);
 
-                  const hiddenCount = items.filter(c => c.actual === 0 && c.budget === 0).length;
+                  // Filter out one-time categories that have 0 budget & 0 actual in this specific month
+                  const visibleItems = items.filter(c => {
+                    if (c.isOneTime && c.actual === 0 && c.budget === 0) return false;
+                    if (hideZeroes && c.actual === 0 && c.budget === 0) return false;
+                    return true;
+                  });
 
                   return (
-                    <div key={b.id} className="bg-surface rounded-xl sm:rounded-2xl border border-subtle overflow-hidden transition-all shadow-xs">
-                      <div className={`p-2.5 sm:p-3 bg-gradient-to-r ${palette.headerGrad} bg-surface-elevated hover:bg-subtle transition flex items-center justify-between select-none border-b border-subtle`}>
+                    <div key={b.id} className="rounded-lg border border-subtle bg-surface overflow-hidden">
+                      <div className="px-3 py-2 bg-surface hover:bg-subtle/50 transition flex items-center justify-between select-none border-b border-subtle">
                         <div onClick={() => toggleBracket(b.id)} className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
-                          <span className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] shrink-0 ${palette.iconBg}`}>
-                            <i className={`fa-solid ${b.icon}`}></i>
+                          <span className="text-secondary text-[11px] w-3">
+                            {isOpen ? '▾' : '▸'}
                           </span>
-                          <span className="font-mono font-bold text-xs text-primary truncate">{b.name}</span>
-                          <span className="text-[10px] font-mono text-tertiary shrink-0">({items.length})</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${palette.tag}`}>
+                            {b.name}
+                          </span>
+                          <span className="text-[10px] text-tertiary">({visibleItems.length})</span>
                         </div>
 
-                        <div className="flex items-center gap-1.5 shrink-0 ml-1">
-                          <div className="text-right text-xs font-mono mr-0.5">
-                            <span className="font-bold text-rose-400">{fmt(bracketActual)}</span>
-                            {bracketBudget > 0 && <span className="text-indigo-400 text-[10px] ml-1">/ {fmt(bracketBudget)}</span>}
+                        <div className="flex items-center gap-2 shrink-0 ml-1">
+                          <div className="text-right text-xs font-mono">
+                            <span className="font-semibold text-notion-red">{fmt(bracketActual)}</span>
+                            {bracketBudget > 0 && <span className="text-tertiary text-[10px] ml-1">/ {fmt(bracketBudget)}</span>}
                           </div>
                           <button
                             onClick={() => handleOpenQuickAdd('expenses', b.id)}
-                            className="w-7 h-7 rounded bg-indigo-500/10 text-indigo-400 text-xs flex items-center justify-center"
+                            className="text-tertiary hover:text-primary p-1 text-xs"
+                            title="Posten hinzufügen"
                           >
-                            <i className="fa-solid fa-plus text-[10px]"></i>
+                            <i className="fa-solid fa-plus"></i>
                           </button>
-                          <button onClick={() => handleOpenBracketModal('edit', 'expenses', b)} className="text-tertiary hover:text-primary p-1">
-                            <i className="fa-solid fa-pen-to-square text-[11px]"></i>
-                          </button>
-                          <i onClick={() => toggleBracket(b.id)} className={`fa-solid fa-chevron-down text-tertiary text-[10px] transition-transform p-1 cursor-pointer ${isOpen ? 'rotate-180' : ''}`}></i>
                         </div>
                       </div>
 
                       {isOpen && (
-                        <div className="p-2 sm:p-3 space-y-2.5 bg-surface">
-                          {hideZeroes && hiddenCount > 0 && (
-                            <div className="p-1.5 rounded-lg bg-surface-elevated border border-dashed border-subtle text-xs font-mono text-tertiary flex items-center justify-between px-2">
-                              <span>{t('hiddenNotice', { count: hiddenCount })}</span>
-                              <button onClick={() => setHideZeroes(false)} className="text-indigo-400 font-bold underline">{t('showNow')}</button>
-                            </div>
-                          )}
-
-                          {items.length === 0 ? (
-                            <p className="text-center py-2 text-xs font-mono text-tertiary italic">Keine Posten vorhanden.</p>
+                        <div className="p-2 space-y-2 bg-surface">
+                          {visibleItems.length === 0 ? (
+                            <p className="text-center py-2 text-xs text-tertiary italic">Keine Ausgaben in dieser Gruppe für diesen Monat.</p>
                           ) : (
-                            items.map(item => {
+                            visibleItems.map(item => {
                               const isFresh = highlightedCategory === item.category;
-                              if (hideZeroes && !isFresh && item.actual === 0 && item.budget === 0) return null;
                               const daysInMonth = currentMetrics.daysInMonth;
                               const isVar = item.mode === 'variable';
                               const notes = getMonthScopedNotes(item.category, selectedYear, selectedMonth);
                               const isNoteOpen = !!openNoteRows[item.category];
 
                               return (
-                                <div key={item.category} className={`space-y-1 rounded-xl transition ${isFresh ? 'animate-flash ring-2 ring-indigo-500' : ''}`}>
-                                  <div className={`p-3 rounded-xl border border-l-4 ${palette.borderL} ${palette.subcardBg} space-y-2 shadow-xs transition`}>
+                                <div key={item.category} className={`space-y-1 rounded transition ${isFresh ? 'animate-flash ring-1 ring-notion-blue' : ''}`}>
+                                  <div className="p-2.5 rounded border border-subtle hover:border-strong bg-surface-elevated space-y-2">
                                     <div className="flex items-center justify-between gap-1.5">
                                       <div className="flex items-center gap-1.5 truncate flex-1 min-w-0">
-                                        <span className="font-bold text-xs text-primary block truncate">{item.category}</span>
+                                        <span className="font-medium text-xs text-primary block truncate">{item.category}</span>
                                         {item.isOneTime && (
-                                          <span className="text-[9px] font-mono font-bold px-1 rounded bg-indigo-500/10 text-indigo-400 shrink-0">
+                                          <span className="text-[9px] px-1 py-0.2 rounded bg-notion-tagAmber text-amber-700 dark:text-amber-400 font-medium">
                                             {t('badgeOneTime')}
                                           </span>
                                         )}
                                         {isVar && (
-                                          <span className={`text-[9px] font-mono font-bold px-1 rounded shrink-0 ${
-                                            item.paceStatus === 'over' ? 'bg-rose-500/15 text-rose-400' :
-                                            item.paceStatus === 'frugal' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-surface-elevated text-secondary'
+                                          <span className={`text-[9px] px-1 py-0.2 rounded font-medium ${
+                                            item.paceStatus === 'over' ? 'bg-notion-tagRed text-notion-red' :
+                                            item.paceStatus === 'frugal' ? 'bg-notion-tagGreen text-notion-green' : 'bg-subtle text-secondary'
                                           }`}>
                                             {item.paceStatus === 'over' ? t('statusOver') : item.paceStatus === 'frugal' ? t('statusFrugal') : t('statusTrack')}
                                           </span>
@@ -1547,8 +1729,7 @@
                                         {notes.length > 0 && (
                                           <button
                                             onClick={() => setOpenNoteRows(p => ({ ...p, [item.category]: !p[item.category] }))}
-                                            className="text-[9px] font-mono text-indigo-400 flex items-center gap-0.5 px-1 rounded bg-indigo-500/10 shrink-0"
-                                            title={`Notizen für ${formatMonth(selectedMonth, lang)}`}
+                                            className="text-[9px] text-notion-blue flex items-center gap-0.5 px-1 py-0.2 rounded bg-subtle"
                                           >
                                             <i className="fa-solid fa-note-sticky text-[8px]"></i>
                                             <span>{notes.length}</span>
@@ -1557,38 +1738,34 @@
                                       </div>
 
                                       <div className="flex items-center gap-1 shrink-0">
-                                        <button
-                                          onClick={() => handleOpenRecurring('expenses', item.category)}
-                                          className="text-tertiary hover:text-indigo-400 p-1.5"
-                                          title={t('replicateTitle')}
-                                        >
+                                        <button onClick={() => handleOpenRecurring('expenses', item.category)} className="text-tertiary hover:text-primary p-1">
                                           <i className="fa-solid fa-repeat text-xs"></i>
                                         </button>
-                                        <button onClick={() => handleOpenEditCategory('expenses', item.category)} className="text-tertiary hover:text-primary p-1.5">
-                                          <i className="fa-solid fa-gear text-xs"></i>
+                                        <button onClick={() => handleOpenEditCategory('expenses', item.category)} className="text-tertiary hover:text-primary p-1">
+                                          <i className="fa-solid fa-ellipsis text-xs"></i>
                                         </button>
-                                        <button onClick={() => setSmartDeleteModal({ type: 'expenses', cat: item.category })} className="text-tertiary hover:text-rose-400 p-1.5">
+                                        <button onClick={() => setSmartDeleteModal({ type: 'expenses', cat: item.category })} className="text-tertiary hover:text-notion-red p-1">
                                           <i className="fa-solid fa-trash-can text-xs"></i>
                                         </button>
                                       </div>
                                     </div>
 
-                                    {/* Tactile Mobile Inputs: Plan vs Actual */}
-                                    <div className="grid grid-cols-2 gap-2">
+                                    {/* Tactile Plan vs Actual */}
+                                    <div className="grid grid-cols-2 gap-2 text-xs font-mono">
                                       <div>
-                                        <span className="text-[9px] font-mono font-bold text-indigo-400 block mb-0.5">{t('planLabel')}</span>
-                                        <div className="flex items-center bg-surface-elevated border border-indigo-500/20 rounded-lg px-2 py-1.5 focus-within:border-indigo-500">
+                                        <span className="text-[10px] text-secondary block mb-0.5">{t('planLabel')}</span>
+                                        <div className="flex items-center bg-subtle border border-subtle rounded px-2 py-1 focus-within:border-strong">
                                           <input
                                             type="number" inputMode="decimal" value={item.budget !== 0 ? item.budget : ""} placeholder="0"
                                             onChange={(e) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'budget', e.target.value)}
-                                            className="w-full bg-transparent text-right font-mono font-bold text-xs text-indigo-300 outline-none"
+                                            className="w-full bg-transparent text-right font-mono text-xs text-primary font-medium outline-none"
                                           />
-                                          <span className="text-[10px] font-mono text-tertiary ml-1 font-bold">€</span>
+                                          <span className="text-[10px] font-mono text-tertiary ml-1">€</span>
                                         </div>
                                       </div>
 
                                       <div>
-                                        <div className="flex justify-between items-center mb-0.5 text-[9px] font-mono font-bold text-rose-400">
+                                        <div className="flex justify-between items-center mb-0.5 text-[10px] text-secondary">
                                           <span>{t('actualLabel')}</span>
                                           {isVar && (
                                             <div className="flex items-center gap-1 text-tertiary text-[9px]">
@@ -1596,39 +1773,36 @@
                                               <input
                                                 type="number" inputMode="decimal" min="1" max={daysInMonth} value={item.asOfDate}
                                                 onChange={(e) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'asOfDate', Math.min(daysInMonth, Math.max(1, parseInt(e.target.value)||1)))}
-                                                className="w-5 text-center bg-surface rounded text-primary font-mono text-[10px]"
+                                                className="w-5 text-center bg-surface border border-subtle rounded text-primary text-[10px]"
                                               />
                                             </div>
                                           )}
                                         </div>
-                                        <div className="flex items-center bg-surface-elevated border border-rose-500/20 rounded-lg px-2 py-1.5 focus-within:border-rose-500">
+                                        <div className="flex items-center bg-subtle border border-subtle rounded px-2 py-1 focus-within:border-strong">
                                           <input
                                             type="number" inputMode="decimal" value={item.actual !== 0 ? item.actual : ""} placeholder="0"
                                             onChange={(e) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'actual', e.target.value)}
-                                            className="w-full bg-transparent text-right font-mono font-bold text-xs text-rose-400 outline-none"
+                                            className="w-full bg-transparent text-right font-mono text-xs text-notion-red font-semibold outline-none"
                                           />
-                                          <span className="text-[10px] font-mono text-tertiary ml-1 font-bold">€</span>
+                                          <span className="text-[10px] font-mono text-tertiary ml-1">€</span>
                                         </div>
                                       </div>
                                     </div>
 
                                     {isVar && (
-                                      <div className="flex justify-between items-center text-[9px] font-mono pt-0.5 text-tertiary">
-                                        <span>{t('restBudgetLabel')}: <b className={item.remainingBudget >= 0 ? 'text-primary' : 'text-rose-400'}>{fmt(item.remainingBudget)}</b></span>
-                                        <span className="text-amber-400 font-bold">{fmt(item.safeDailySpend)} {t('perDayLabel')}</span>
+                                      <div className="flex justify-between items-center text-[10px] font-mono pt-0.5 text-tertiary">
+                                        <span>{t('restBudgetLabel')}: <b className={item.remainingBudget >= 0 ? 'text-primary' : 'text-notion-red'}>{fmt(item.remainingBudget)}</b></span>
+                                        <span className="text-secondary font-medium">{fmt(item.safeDailySpend)} {t('perDayLabel')}</span>
                                       </div>
                                     )}
                                   </div>
 
                                   {isNoteOpen && notes.length > 0 && (
-                                    <div className="mx-1 p-2.5 rounded-lg bg-surface-elevated border border-subtle text-[11px] font-mono text-secondary space-y-1 shadow-inner">
-                                      <div className="text-[9px] uppercase font-bold text-tertiary tracking-wider mb-1">
-                                        Notizen ({formatMonth(selectedMonth, lang)} {selectedYear})
-                                      </div>
+                                    <div className="mx-1 p-2 rounded bg-subtle text-xs text-secondary space-y-1">
                                       {notes.map((bullet, bIdx) => (
                                         <div key={bIdx} className="flex items-start gap-1.5">
-                                          <span className="text-indigo-400 font-bold">•</span>
-                                          <span className="leading-tight text-primary">{bullet}</span>
+                                          <span className="text-notion-blue">•</span>
+                                          <span>{bullet}</span>
                                         </div>
                                       ))}
                                     </div>
@@ -1647,131 +1821,125 @@
             </div>
           </main>
 
-          {/* 📱 MOBILE FLOATING ACTION BUTTON (FAB): Schneller Zugriff */}
+          {/* FLOATING ACTION BUTTON (Mobile) */}
           <div className="block lg:hidden fixed bottom-4 right-4 z-40">
             <button
               onClick={() => handleOpenQuickAdd(mobileTab === 'incomes' ? 'incomes' : 'expenses')}
-              className="w-12 h-12 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-600/40 flex items-center justify-center text-lg active:scale-90 transition-transform"
-              title="Posten anlegen"
+              className="w-12 h-12 rounded-full bg-primary text-surface shadow-lg flex items-center justify-center text-lg active:scale-95 transition-transform"
             >
               <i className="fa-solid fa-plus"></i>
             </button>
           </div>
 
-          {/* 🔁 RECURRING PAYMENTS BOTTOM-SHEET */}
-          {recurringModal && (
-            <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-              <div className="bg-surface border border-subtle rounded-t-3xl sm:rounded-2xl max-w-sm w-full p-5 space-y-3 shadow-2xl font-mono text-xs animate-slideUp max-h-[85vh] overflow-y-auto">
-                <div className="w-10 h-1 bg-subtle rounded-full mx-auto sm:hidden mb-2"></div>
-                
-                <div className="flex justify-between items-center border-b border-subtle pb-2.5">
-                  <h3 className="font-bold text-xs text-primary uppercase flex items-center gap-1.5">
-                    <i className="fa-solid fa-repeat text-indigo-400"></i>
-                    <span>{t('replicateTitle')}</span>
+          {/* ⚡ MODAL: SPLIT LOAN INTO REPAYMENTS (E.g. Sister 900€ into 450€ in Oct & 450€ in Nov) */}
+          {splitModal && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+              <div className="bg-surface border border-subtle rounded-xl max-w-sm w-full p-4 space-y-3 shadow-xl text-xs">
+                <div className="flex justify-between items-center border-b border-subtle pb-2">
+                  <h3 className="font-semibold text-primary flex items-center gap-1.5">
+                    <span>⚡</span>
+                    <span>{t('splitModalTitle')}</span>
                   </h3>
-                  <button onClick={() => setRecurringModal(null)} className="text-secondary hover:text-primary p-1">
-                    <i className="fa-solid fa-xmark text-sm"></i>
+                  <button onClick={() => setSplitModal(null)} className="text-secondary hover:text-primary">
+                    <i className="fa-solid fa-xmark"></i>
                   </button>
                 </div>
 
-                <div className="p-2 rounded-lg bg-subtle border border-subtle">
-                  <span className="text-secondary text-[9px] uppercase block">Kategorie</span>
-                  <span className="font-bold text-xs text-primary">{recurringModal.cat}</span>
-                </div>
+                <p className="text-secondary text-[11px] leading-relaxed">
+                  {t('splitModalDesc')}
+                </p>
 
                 <div>
-                  <label className="text-[9px] font-bold text-secondary uppercase block mb-1">{t('replicateFieldLabel')}</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setRecurringForm(p => ({ ...p, field: 'budget' }))}
-                      className={`p-2 rounded-lg border font-bold text-xs ${recurringForm.field === 'budget' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-subtle text-secondary'}`}
-                    >
-                      Plan (Budget)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRecurringForm(p => ({ ...p, field: 'actual' }))}
-                      className={`p-2 rounded-lg border font-bold text-xs ${recurringForm.field === 'actual' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-subtle text-secondary'}`}
-                    >
-                      Ist (Ausgegeben)
-                    </button>
-                  </div>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">Bezeichnung des Postens</label>
+                  <input
+                    type="text"
+                    value={splitForm.name}
+                    onChange={(e) => setSplitForm(p => ({ ...p, name: e.target.value }))}
+                    className="w-full bg-subtle border border-subtle rounded px-2.5 py-1.5 text-primary outline-none focus:border-strong font-medium"
+                  />
                 </div>
 
-                <div>
-                  <label className="text-[9px] font-bold text-secondary uppercase block mb-1">Betrag (€)</label>
-                  <div className="flex items-center bg-subtle border border-subtle rounded-lg px-2.5 py-1.5 focus-within:border-indigo-500">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] text-secondary block mb-1">1. Rate Monat</label>
+                    <select
+                      value={splitForm.m1}
+                      onChange={(e) => setSplitForm(p => ({ ...p, m1: e.target.value }))}
+                      className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-primary outline-none"
+                    >
+                      {getMonthsForYear(selectedYear).map(m => <option key={m} value={m}>{formatMonth(m, lang)}</option>)}
+                    </select>
                     <input
-                      type="number" inputMode="decimal"
-                      value={recurringForm.amount}
-                      onChange={(e) => setRecurringForm(p => ({ ...p, amount: e.target.value }))}
-                      className="w-full bg-transparent text-right font-mono font-bold text-xs text-primary outline-none"
+                      type="number"
+                      value={splitForm.a1}
+                      onChange={(e) => setSplitForm(p => ({ ...p, a1: e.target.value }))}
+                      className="w-full mt-1 bg-subtle border border-subtle rounded px-2 py-1 text-primary text-right font-mono"
                     />
-                    <span className="text-xs font-mono text-tertiary ml-1 font-bold">€</span>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-secondary block mb-1">2. Rate Monat</label>
+                    <select
+                      value={splitForm.m2}
+                      onChange={(e) => setSplitForm(p => ({ ...p, m2: e.target.value }))}
+                      className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-primary outline-none"
+                    >
+                      {getMonthsForYear(selectedYear).map(m => <option key={m} value={m}>{formatMonth(m, lang)}</option>)}
+                    </select>
+                    <input
+                      type="number"
+                      value={splitForm.a2}
+                      onChange={(e) => setSplitForm(p => ({ ...p, a2: e.target.value }))}
+                      className="w-full mt-1 bg-subtle border border-subtle rounded px-2 py-1 text-primary text-right font-mono"
+                    />
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-[9px] font-bold text-secondary uppercase block mb-1">{t('replicateDurationLabel')}</label>
-                  <select
-                    value={recurringForm.duration}
-                    onChange={(e) => setRecurringForm(p => ({ ...p, duration: e.target.value }))}
-                    className="w-full bg-subtle border border-subtle rounded-lg px-2.5 py-2 text-xs font-bold text-primary outline-none"
-                  >
-                    <option value={3}>3 Monate ({formatMonth(selectedMonth, lang)} + 2)</option>
-                    <option value={6}>6 Monate ({formatMonth(selectedMonth, lang)} + 5)</option>
-                    <option value={12}>12 Monate (1 Jahr)</option>
-                    <option value="all">Bis Ende 2028</option>
-                  </select>
+                <div className="p-2 rounded bg-subtle/50 text-[10px] text-tertiary">
+                  Hinweis: Der Posten wird als <b>Einmalig</b> markiert und erscheint <i>nur</i> in den Monaten {splitForm.m1} und {splitForm.m2}.
                 </div>
 
                 <div className="flex gap-2 pt-2 border-t border-subtle">
-                  <button onClick={() => setRecurringModal(null)} className="flex-1 py-2.5 bg-surface-elevated text-secondary font-bold rounded-xl text-xs">
-                    {t('cancelBtn')}
+                  <button onClick={() => setSplitModal(null)} className="flex-1 py-1.5 bg-subtle text-secondary rounded hover:text-primary">
+                    Abbrechen
                   </button>
-                  <button onClick={handleExecuteRecurring} className="flex-1 py-2.5 bg-indigo-600 text-white font-bold rounded-xl text-xs">
-                    {t('replicateActionBtn')}
+                  <button onClick={handleExecuteSplitLoan} className="flex-1 py-1.5 bg-primary text-surface font-semibold rounded">
+                    {t('splitConfirmBtn')}
                   </button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* 📱 QUICK ADD ITEM BOTTOM-SHEET */}
+          {/* ⚡ QUICK ADD ITEM MODAL */}
           {quickAddModal && (
-            <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-              <div className="bg-surface border border-subtle rounded-t-3xl sm:rounded-2xl max-w-sm w-full p-5 space-y-3 shadow-2xl font-mono text-xs animate-slideUp max-h-[85vh] overflow-y-auto">
-                <div className="w-10 h-1 bg-subtle rounded-full mx-auto sm:hidden mb-2"></div>
-                
-                <div className="flex justify-between items-center border-b border-subtle pb-2.5">
-                  <h3 className="font-bold text-xs text-primary uppercase flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-                    <span>{t('quickAddModalTitle')}</span>
-                  </h3>
-                  <button onClick={() => setQuickAddModal(null)} className="text-secondary hover:text-primary p-1">
-                    <i className="fa-solid fa-xmark text-sm"></i>
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+              <div className="bg-surface border border-subtle rounded-xl max-w-sm w-full p-4 space-y-3 shadow-xl text-xs">
+                <div className="flex justify-between items-center border-b border-subtle pb-2">
+                  <h3 className="font-semibold text-primary">{t('quickAddModalTitle')}</h3>
+                  <button onClick={() => setQuickAddModal(null)} className="text-secondary hover:text-primary">
+                    <i className="fa-solid fa-xmark"></i>
                   </button>
                 </div>
 
                 <div>
-                  <label className="text-[9px] font-bold text-secondary uppercase block mb-1">{t('posten')}</label>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('posten')}</label>
                   <input
                     type="text"
                     value={quickAddForm.name}
                     onChange={(e) => setQuickAddForm(p => ({ ...p, name: e.target.value }))}
                     placeholder={t('quickAddNamePlaceholder')}
                     autoFocus
-                    className="w-full bg-subtle border border-subtle rounded-lg px-3 py-2 text-primary font-bold outline-none focus:border-indigo-500"
+                    className="w-full bg-subtle border border-subtle rounded px-2.5 py-1.5 text-primary outline-none focus:border-strong font-medium"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[9px] font-bold text-secondary uppercase block mb-1">{t('bracketLabel')}</label>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('bracketLabel')}</label>
                   <select
                     value={quickAddForm.bracket}
                     onChange={(e) => setQuickAddForm(p => ({ ...p, bracket: e.target.value }))}
-                    className="w-full bg-subtle border border-subtle rounded-lg px-2.5 py-2 text-primary font-bold outline-none"
+                    className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-primary outline-none"
                   >
                     {(quickAddModal.type === 'incomes' ? data.brackets.incomes : data.brackets.expenses).map(b => (
                       <option key={b.id} value={b.id}>{b.name}</option>
@@ -1780,49 +1948,50 @@
                 </div>
 
                 <div>
-                  <label className="text-[9px] font-bold text-secondary uppercase block mb-1">{t('initialBudgetLabel')}</label>
-                  <div className="flex items-center bg-subtle border border-subtle rounded-lg px-2.5 py-1 focus-within:border-indigo-500">
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('initialBudgetLabel')}</label>
+                  <div className="flex items-center bg-subtle border border-subtle rounded px-2.5 py-1 focus-within:border-strong">
                     <input
                       type="number" inputMode="decimal"
                       value={quickAddForm.budget}
                       onChange={(e) => setQuickAddForm(p => ({ ...p, budget: e.target.value }))}
                       placeholder="0"
-                      className="w-full bg-transparent text-right font-mono font-bold text-xs text-primary outline-none"
+                      className="w-full bg-transparent text-right font-mono text-xs text-primary outline-none font-medium"
                     />
-                    <span className="text-xs font-mono text-tertiary ml-1.5 font-bold">€</span>
+                    <span className="text-xs font-mono text-tertiary ml-1">€</span>
                   </div>
                 </div>
 
-                {quickAddModal.type === 'expenses' && (
+                {/* Scope to this month only (One-time) */}
+                <div className="flex items-center justify-between p-2 rounded bg-subtle/50 border border-subtle">
                   <div>
-                    <label className="text-[9px] font-bold text-secondary uppercase block mb-1">{t('classificationLabel')}</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setQuickAddForm(p => ({ ...p, mode: 'fixed' }))}
-                        className={`p-2 rounded-lg border font-bold text-xs ${quickAddForm.mode === 'fixed' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-subtle text-secondary'}`}
-                      >
-                        {t('badgeFixed')}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setQuickAddForm(p => ({ ...p, mode: 'variable' }))}
-                        className={`p-2 rounded-lg border font-bold text-xs ${quickAddForm.mode === 'variable' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-subtle text-secondary'}`}
-                      >
-                        {t('badgeVariable')}
-                      </button>
-                    </div>
+                    <span className="font-medium text-primary block text-[11px]">{t('badgeOneTime')}</span>
+                    <span className="text-[10px] text-tertiary">
+                      {t('isOneTimeCurrentOnly', { month: formatMonth(selectedMonth, lang), year: selectedYear })}
+                    </span>
                   </div>
-                )}
+                  <input
+                    type="checkbox"
+                    checked={quickAddForm.isOneTime}
+                    onChange={(e) => setQuickAddForm(p => ({ ...p, isOneTime: e.target.checked }))}
+                    className="w-4 h-4 rounded border-subtle"
+                  />
+                </div>
 
                 <div className="flex gap-2 pt-2 border-t border-subtle">
-                  <button onClick={() => setQuickAddModal(null)} className="flex-1 py-2.5 bg-surface-elevated text-secondary font-bold rounded-xl text-xs">
-                    {t('cancelBtn')}
+                  <button onClick={() => setQuickAddModal(null)} className="flex-1 py-1.5 bg-subtle text-secondary rounded hover:text-primary">
+                    Abbrechen
                   </button>
                   <button
                     disabled={!quickAddForm.name.trim()}
-                    onClick={() => handleCreateCategory(quickAddModal.type, quickAddForm.name, quickAddForm.bracket, quickAddForm.mode, quickAddForm.budget)}
-                    className={`flex-1 py-2.5 font-bold rounded-xl text-white text-xs ${!quickAddForm.name.trim() ? 'bg-indigo-900 opacity-40' : 'bg-indigo-600 hover:bg-indigo-500'}`}
+                    onClick={() => handleCreateCategory(
+                      quickAddModal.type,
+                      quickAddForm.name,
+                      quickAddForm.bracket,
+                      quickAddForm.mode,
+                      quickAddForm.budget,
+                      quickAddForm.isOneTime
+                    )}
+                    className="flex-1 py-1.5 bg-primary text-surface font-semibold rounded disabled:opacity-40"
                   >
                     + Erstellen
                   </button>
@@ -1831,35 +2000,33 @@
             </div>
           )}
 
-          {/* 📱 EDIT CATEGORY BOTTOM-SHEET */}
+          {/* EDIT PROPERTY MODAL */}
           {activeEditCat && (
-            <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-              <div className="bg-surface border border-subtle rounded-t-3xl sm:rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl font-mono text-xs animate-slideUp max-h-[85vh] overflow-y-auto">
-                <div className="w-10 h-1 bg-subtle rounded-full mx-auto sm:hidden mb-2"></div>
-                
-                <div className="flex justify-between items-center border-b border-subtle pb-2.5">
-                  <h3 className="font-bold text-xs text-primary uppercase">{t('editorTitle')}</h3>
-                  <button onClick={() => setActiveEditCat(null)} className="text-secondary hover:text-rose-400 p-1">
-                    <i className="fa-solid fa-xmark text-sm"></i>
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+              <div className="bg-surface border border-subtle rounded-xl max-w-sm w-full p-4 space-y-3 shadow-xl text-xs max-h-[85vh] overflow-y-auto">
+                <div className="flex justify-between items-center border-b border-subtle pb-2">
+                  <h3 className="font-semibold text-primary">{t('editorTitle')}</h3>
+                  <button onClick={() => setActiveEditCat(null)} className="text-secondary hover:text-primary">
+                    <i className="fa-solid fa-xmark"></i>
                   </button>
                 </div>
 
                 <div>
-                  <label className="text-[9px] font-bold text-secondary uppercase block mb-1">{t('posten')}</label>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('posten')}</label>
                   <input
                     type="text"
                     value={editCatForm.name}
                     onChange={(e) => setEditCatForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full bg-subtle border border-subtle rounded-lg px-3 py-2 text-primary font-bold outline-none focus:border-indigo-500"
+                    className="w-full bg-subtle border border-subtle rounded px-2.5 py-1.5 text-primary outline-none focus:border-strong font-medium"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[9px] font-bold text-secondary uppercase block mb-1">{t('bracketLabel')}</label>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('bracketLabel')}</label>
                   <select
                     value={editCatForm.bracket}
                     onChange={(e) => setEditCatForm(prev => ({ ...prev, bracket: e.target.value }))}
-                    className="w-full bg-subtle border border-subtle rounded-lg px-2.5 py-2 text-primary font-bold outline-none"
+                    className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-primary outline-none"
                   >
                     {(activeEditCat.type === 'incomes' ? data.brackets.incomes : data.brackets.expenses).map(b => (
                       <option key={b.id} value={b.id}>{b.name}</option>
@@ -1867,170 +2034,58 @@
                   </select>
                 </div>
 
-                <div>
-                  <label className="text-[9px] font-bold text-secondary uppercase block mb-1">{t('classificationLabel')}</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setEditCatForm(prev => ({ ...prev, mode: 'fixed' }))}
-                      className={`p-2 rounded-lg border font-bold text-xs ${editCatForm.mode === 'fixed' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-subtle text-secondary'}`}
-                    >
-                      {t('badgeFixed')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditCatForm(prev => ({ ...prev, mode: 'variable' }))}
-                      className={`p-2 rounded-lg border font-bold text-xs ${editCatForm.mode === 'variable' ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-subtle text-secondary'}`}
-                    >
-                      {t('badgeVariable')}
-                    </button>
+                <div className="flex items-center justify-between p-2 rounded bg-subtle border border-subtle">
+                  <div>
+                    <span className="font-medium text-primary block">{t('badgeOneTime')}</span>
+                    <span className="text-[10px] text-secondary">In Monaten ohne Buchung ausblenden</span>
                   </div>
+                  <input
+                    type="checkbox"
+                    checked={editCatForm.isOneTime}
+                    onChange={(e) => setEditCatForm(prev => ({ ...prev, isOneTime: e.target.checked }))}
+                    className="w-4 h-4 rounded"
+                  />
                 </div>
 
-                {activeEditCat.type === 'expenses' && (
-                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-surface-elevated border border-subtle">
-                    <div>
-                      <span className="font-bold text-primary block">{t('badgeOneTime')}</span>
-                      <span className="text-[9px] text-secondary">{t('isOneTimeLabel')}</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={editCatForm.isOneTime}
-                      onChange={(e) => setEditCatForm(prev => ({ ...prev, isOneTime: e.target.checked }))}
-                      className="w-4 h-4 text-indigo-600 rounded"
-                    />
-                  </div>
-                )}
-
-                {editCatForm.mode === 'fixed' && (
-                  <div>
-                    <label className="text-[9px] font-bold text-secondary uppercase block mb-1">{t('paymentDayLabel')}</label>
-                    <input
-                      type="number" inputMode="decimal" min="1" max="31"
-                      value={editCatForm.pDay}
-                      onChange={(e) => setEditCatForm(prev => ({ ...prev, pDay: e.target.value }))}
-                      placeholder="1 - 31"
-                      className="w-full bg-subtle border border-subtle rounded-lg px-2.5 py-1.5 text-primary font-bold text-right outline-none"
-                    />
-                  </div>
-                )}
-
-                {/* MONTH-SCOPED NOTES */}
-                <div className="space-y-2 pt-2 border-t border-subtle">
-                  <label className="text-[9px] font-bold text-secondary uppercase flex items-center justify-between">
-                    <span className="text-indigo-400">
-                      {t('notesTitleMonth', { month: formatMonth(selectedMonth, lang), year: selectedYear })}
-                    </span>
-                    <span className="text-tertiary">({editCatForm.notes.length})</span>
+                {/* Scoped Notes */}
+                <div className="space-y-1.5 pt-2 border-t border-subtle">
+                  <label className="text-[10px] text-secondary font-medium flex items-center justify-between">
+                    <span>{t('notesTitleMonth', { month: formatMonth(selectedMonth, lang), year: selectedYear })}</span>
+                    <span>({editCatForm.notes.length})</span>
                   </label>
 
-                  <div className="space-y-1 max-h-32 overflow-y-auto scrollbar-none">
-                    {editCatForm.notes.length === 0 ? (
-                      <p className="text-[10px] text-tertiary italic py-1">{t('noNotesYetMonth')}</p>
-                    ) : (
-                      editCatForm.notes.map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-1.5 rounded-md bg-surface-elevated border border-subtle gap-2">
-                          <div className="flex items-start gap-1 flex-1">
-                            <span className="text-indigo-400 font-bold">•</span>
-                            <span className="text-primary text-[11px] leading-tight">{item}</span>
-                          </div>
-                          <button onClick={() => handleRemoveBulletPoint(idx)} className="text-tertiary hover:text-rose-400 p-0.5">
-                            <i className="fa-solid fa-xmark text-xs"></i>
-                          </button>
-                        </div>
-                      ))
-                    )}
+                  <div className="space-y-1 max-h-24 overflow-y-auto">
+                    {editCatForm.notes.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-1.5 rounded bg-subtle text-xs gap-2">
+                        <span className="text-primary truncate">{item}</span>
+                        <button onClick={() => handleRemoveBulletPoint(idx)} className="text-tertiary hover:text-notion-red">
+                          <i className="fa-solid fa-xmark"></i>
+                        </button>
+                      </div>
+                    ))}
                   </div>
 
-                  <div className="flex gap-1.5 pt-1">
+                  <div className="flex gap-1.5">
                     <input
                       type="text"
                       placeholder={t('addNotePlaceholder')}
                       value={newBulletText}
                       onChange={(e) => setNewBulletText(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter') handleAddBulletPoint(); }}
-                      className="flex-1 bg-subtle border border-subtle rounded-lg px-2.5 py-1.5 text-xs text-primary outline-none focus:border-indigo-500"
+                      className="flex-1 bg-subtle border border-subtle rounded px-2 py-1 text-xs text-primary outline-none"
                     />
-                    <button onClick={handleAddBulletPoint} className="bg-surface-elevated hover:bg-subtle text-primary border border-subtle px-3 py-1.5 rounded-lg font-bold">
+                    <button onClick={handleAddBulletPoint} className="bg-subtle hover:bg-subtle/80 px-2.5 py-1 rounded text-primary font-medium">
                       +
                     </button>
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-subtle space-y-1.5">
+                <div className="pt-2 border-t border-subtle">
                   <button
                     onClick={handleSaveCategoryChanges}
-                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs transition"
+                    className="w-full bg-primary text-surface font-semibold py-1.5 rounded"
                   >
                     {t('saveClose')}
-                  </button>
-
-                  {saveFeedback && (
-                    <div className="text-center text-emerald-400 text-[10px] font-bold animate-pulse">
-                      ✓ Gespeichert!
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* MAIN CATEGORY MODAL */}
-          {bracketModal && (
-            <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-              <div className="bg-surface border border-subtle rounded-t-3xl sm:rounded-2xl max-w-sm w-full p-5 space-y-3 shadow-2xl font-mono text-xs animate-slideUp max-h-[85vh] overflow-y-auto">
-                <div className="w-10 h-1 bg-subtle rounded-full mx-auto sm:hidden mb-2"></div>
-
-                <div className="flex justify-between items-center border-b border-subtle pb-2.5">
-                  <h3 className="font-bold text-xs text-primary uppercase">
-                    {bracketModal.mode === 'add' ? t('newBracketTitle') : t('editBracketTitle')}
-                  </h3>
-                  <button onClick={() => setBracketModal(null)} className="text-secondary hover:text-primary p-1">
-                    <i className="fa-solid fa-xmark text-sm"></i>
-                  </button>
-                </div>
-
-                <div>
-                  <label className="text-[9px] font-bold text-secondary uppercase block mb-1">{t('bracketNameLabel')}</label>
-                  <input
-                    type="text"
-                    value={bracketForm.name}
-                    onChange={(e) => setBracketForm(p => ({ ...p, name: e.target.value }))}
-                    placeholder="Z.B. Auto, Haustiere, Abos..."
-                    className="w-full bg-subtle border border-subtle rounded-lg px-3 py-2 text-primary font-bold outline-none focus:border-indigo-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[9px] font-bold text-secondary uppercase block mb-1">{t('bracketIconLabel')}</label>
-                  <div className="grid grid-cols-4 gap-1.5 pt-1">
-                    {POPULAR_ICONS.map(ic => (
-                      <button
-                        key={ic}
-                        type="button"
-                        onClick={() => setBracketForm(p => ({ ...p, icon: ic }))}
-                        className={`p-2 rounded-lg border flex items-center justify-center text-sm transition ${bracketForm.icon === ic ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400' : 'border-subtle text-secondary'}`}
-                      >
-                        <i className={`fa-solid ${ic}`}></i>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex gap-2 pt-2 border-t border-subtle">
-                  {bracketModal.mode === 'edit' && bracketModal.bracket && (
-                    <button
-                      onClick={() => handleDeleteBracket(bracketModal.type, bracketModal.bracket.id)}
-                      className="px-3 py-2 bg-rose-500/10 text-rose-400 rounded-lg font-bold"
-                    >
-                      <i className="fa-solid fa-trash-can"></i>
-                    </button>
-                  )}
-                  <button onClick={() => setBracketModal(null)} className="flex-1 py-2.5 bg-surface-elevated text-secondary font-bold rounded-xl text-xs">
-                    {t('cancelBtn')}
-                  </button>
-                  <button onClick={handleSaveBracket} className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs">
-                    {t('applyBtn')}
                   </button>
                 </div>
               </div>
@@ -2039,100 +2094,94 @@
 
           {/* SMART DELETE MODAL */}
           {smartDeleteModal && (
-            <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-              <div className="bg-surface border border-subtle rounded-t-3xl sm:rounded-2xl max-w-md w-full p-5 space-y-3 shadow-2xl font-mono text-xs animate-slideUp">
-                <div className="w-10 h-1 bg-subtle rounded-full mx-auto sm:hidden mb-2"></div>
-
-                <div className="flex justify-between items-center border-b border-subtle pb-2.5">
-                  <h3 className="font-bold text-xs text-rose-400 uppercase">
-                    Kategorie "{smartDeleteModal.cat}" löschen
-                  </h3>
-                  <button onClick={() => setSmartDeleteModal(null)} className="text-secondary hover:text-primary p-1">
-                    <i className="fa-solid fa-xmark text-sm"></i>
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+              <div className="bg-surface border border-subtle rounded-xl max-w-sm w-full p-4 space-y-3 shadow-xl text-xs">
+                <div className="flex justify-between items-center border-b border-subtle pb-2">
+                  <h3 className="font-semibold text-notion-red">Eintrag löschen: {smartDeleteModal.cat}</h3>
+                  <button onClick={() => setSmartDeleteModal(null)} className="text-secondary hover:text-primary">
+                    <i className="fa-solid fa-xmark"></i>
                   </button>
                 </div>
 
-                <p className="text-[11px] text-secondary leading-relaxed">
-                  Wie soll mit den bisherigen und zukünftigen Buchungen verfahren werden?
-                </p>
-
-                <div className="space-y-2 pt-1">
+                <div className="space-y-1.5">
                   <button
                     onClick={() => executeSmartDelete(smartDeleteModal.type, smartDeleteModal.cat, 'future_only')}
-                    className="w-full text-left p-2.5 rounded-lg bg-surface-elevated border border-subtle"
+                    className="w-full text-left p-2 rounded bg-subtle hover:bg-subtle/80 border border-subtle"
                   >
-                    <div className="text-xs font-bold text-primary">Nur für zukünftige Monate löschen</div>
-                    <div className="text-[9px] text-tertiary mt-0.5">Vergangene Monate & aktueller Monat bleiben erhalten.</div>
+                    <div className="font-semibold text-primary">Nur zukünftige Monate leeren</div>
+                    <div className="text-[10px] text-tertiary">Historische Buchungen bleiben erhalten.</div>
                   </button>
 
                   <button
                     onClick={() => executeSmartDelete(smartDeleteModal.type, smartDeleteModal.cat, 'purge_and_merge')}
-                    className="w-full text-left p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20"
+                    className="w-full text-left p-2 rounded bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20"
                   >
-                    <div className="text-xs font-bold text-rose-400">Vollständig löschen & in 'Sonstiges' überführen</div>
-                    <div className="text-[9px] text-tertiary mt-0.5">Alle Beträge werden in 'Sonstiges' gebucht. Kein Bilanzverlust.</div>
+                    <div className="font-semibold text-notion-red">Vollständig löschen & nach 'Sonstiges' verschieben</div>
+                    <div className="text-[10px] text-tertiary">Kein Bilanzverlust.</div>
                   </button>
                 </div>
 
-                <div className="pt-1">
-                  <button onClick={() => setSmartDeleteModal(null)} className="w-full py-2 bg-surface-elevated text-secondary font-bold rounded-xl text-xs">
-                    {t('cancelBtn')}
-                  </button>
-                </div>
+                <button onClick={() => setSmartDeleteModal(null)} className="w-full py-1.5 bg-subtle rounded text-secondary hover:text-primary">
+                  Abbrechen
+                </button>
               </div>
             </div>
           )}
 
           {/* SETTINGS DRAWER */}
           {isBurgerOpen && (
-            <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex justify-end">
-              <div className="bg-surface border-l border-subtle w-72 sm:w-80 h-full shadow-2xl p-5 overflow-y-auto flex flex-col justify-between animate-slideIn font-mono text-xs">
-                <div className="space-y-5">
-                  <div className="flex justify-between items-center pb-2.5 border-b border-subtle">
-                    <h3 className="font-bold text-sm text-primary uppercase">{t('options')}</h3>
-                    <button onClick={() => setIsBurgerOpen(false)} className="text-secondary hover:text-rose-400 p-1">
-                      <i className="fa-solid fa-xmark text-sm"></i>
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex justify-end">
+              <div className="bg-surface border-l border-subtle w-72 sm:w-80 h-full p-4 overflow-y-auto flex flex-col justify-between text-xs">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center pb-2 border-b border-subtle">
+                    <h3 className="font-semibold text-primary uppercase tracking-wide">{t('options')}</h3>
+                    <button onClick={() => setIsBurgerOpen(false)} className="text-secondary hover:text-primary">
+                      <i className="fa-solid fa-xmark"></i>
                     </button>
                   </div>
 
                   <div>
-                    <p className="text-[9px] font-bold text-tertiary uppercase">{t('startingCapital')}</p>
-                    <div className="flex items-center bg-subtle border border-subtle rounded-lg px-2.5 py-1.5 focus-within:border-indigo-500 mt-1">
+                    <label className="text-[10px] text-secondary block mb-1">{t('startingCapital')}</label>
+                    <div className="flex items-center bg-subtle border border-subtle rounded px-2.5 py-1.5 focus-within:border-strong">
                       <input
                         type="number" inputMode="decimal" value={data.startingCapital || ""} placeholder="0"
                         onChange={(e) => saveState({ ...data, startingCapital: parseFloat(e.target.value) || 0 })}
-                        className="w-full bg-transparent text-right font-mono font-bold text-xs text-primary outline-none"
+                        className="w-full bg-transparent text-right font-mono text-xs text-primary outline-none font-semibold"
                       />
-                      <span className="text-xs font-mono text-tertiary ml-1 font-bold">€</span>
+                      <span className="text-xs font-mono text-tertiary ml-1">€</span>
                     </div>
                   </div>
 
-                  <div className="space-y-1 pt-2 border-t border-subtle">
-                    <p className="text-[9px] font-bold text-tertiary uppercase">{t('themeLabel')}</p>
-                    <div className="grid grid-cols-3 gap-1 bg-surface-elevated border border-subtle rounded-lg p-1">
+                  <div>
+                    <label className="text-[10px] text-secondary block mb-1">{t('themeLabel')}</label>
+                    <div className="grid grid-cols-3 gap-1 bg-subtle p-0.5 rounded border border-subtle">
                       {['light', 'dark', 'system'].map(m => (
-                        <button key={m} onClick={() => setTheme(m)} className={`py-1 rounded text-[10px] font-bold ${theme === m ? 'bg-surface text-indigo-400 shadow-xs' : 'text-secondary'}`}>
+                        <button key={m} onClick={() => setTheme(m)} className={`py-1 rounded text-[10px] font-medium ${theme === m ? 'bg-surface text-primary shadow-xs font-semibold' : 'text-secondary'}`}>
                           {t(`theme${m.charAt(0).toUpperCase() + m.slice(1)}`)}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  <div className="space-y-2 pt-2 border-t border-subtle">
-                    <p className="text-[9px] font-bold text-tertiary uppercase">{t('backupSection')}</p>
+                  <div className="space-y-1.5 pt-2 border-t border-subtle">
+                    <label className="text-[10px] text-secondary block mb-1">{t('backupSection')}</label>
                     <button
                       onClick={() => {
                         const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
                         const a = document.createElement('a');
                         a.href = URL.createObjectURL(blob);
-                        a.download = `cashflow_backup_${Date.now()}.json`;
+                        a.download = `budget_backup_${Date.now()}.json`;
                         a.click();
                       }}
-                      className="w-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold py-2 rounded-lg text-xs flex items-center justify-center gap-1.5"
+                      className="w-full bg-subtle hover:bg-subtle/80 border border-subtle font-medium py-1.5 rounded flex items-center justify-center gap-1.5 text-primary"
                     >
                       <i className="fa-solid fa-download"></i> {t('exportBackup')}
                     </button>
-                    <button onClick={() => fileInputRef.current?.click()} className="w-full bg-surface-elevated border border-subtle text-primary font-bold py-2 rounded-lg text-xs flex items-center justify-center gap-1.5">
+
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full bg-subtle hover:bg-subtle/80 border border-subtle font-medium py-1.5 rounded flex items-center justify-center gap-1.5 text-primary"
+                    >
                       <i className="fa-solid fa-upload"></i> {t('importBackup')}
                     </button>
                     <input
@@ -2165,7 +2214,7 @@
                         setIsBurgerOpen(false);
                       }
                     }}
-                    className="text-xs text-rose-400 underline font-bold"
+                    className="text-xs text-notion-red underline"
                   >
                     {t('clearAll')}
                   </button>
