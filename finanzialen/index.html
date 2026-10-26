@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="de" class="dark">
 <head>
@@ -178,190 +180,291 @@
       return new Date(year, mIdx + 1, 0).getDate();
     };
 
-    const POPULAR_ICONS = [
-      'fa-house', 'fa-ticket', 'fa-basket-shopping', 'fa-graduation-cap', 
-      'fa-champagne-glasses', 'fa-box-archive', 'fa-building-columns', 
-      'fa-coins', 'fa-car', 'fa-heart-pulse', 'fa-tv', 'fa-dumbbell', 
-      'fa-briefcase', 'fa-plane', 'fa-wifi', 'fa-shield-halved', 'fa-handshake'
-    ];
-
-    // Notion Style Color Palettes
     const BRACKET_PALETTES = {
-      housing: { borderL: 'border-l-blue-500/80', badge: 'bg-blue-500/10 text-blue-600 dark:text-blue-400', tag: 'bg-notion-tagBlue text-blue-600 dark:text-blue-400' },
-      subscriptions: { borderL: 'border-l-purple-500/80', badge: 'bg-purple-500/10 text-purple-600 dark:text-purple-400', tag: 'bg-notion-tagPurple text-purple-600 dark:text-purple-400' },
-      living: { borderL: 'border-l-amber-500/80', badge: 'bg-amber-500/10 text-amber-700 dark:text-amber-400', tag: 'bg-notion-tagAmber text-amber-700 dark:text-amber-400' },
-      professional: { borderL: 'border-l-teal-500/80', badge: 'bg-teal-500/10 text-teal-700 dark:text-teal-400', tag: 'bg-notion-tagGreen text-teal-700 dark:text-teal-400' },
-      leisure: { borderL: 'border-l-pink-500/80', badge: 'bg-pink-500/10 text-pink-600 dark:text-pink-400', tag: 'bg-pink-500/10 text-pink-600 dark:text-pink-400' },
-      other: { borderL: 'border-l-stone-400', badge: 'bg-stone-500/10 text-stone-600 dark:text-stone-400', tag: 'bg-notion-tagGray text-stone-600 dark:text-stone-300' },
-      fixed_in: { borderL: 'border-l-emerald-600', badge: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400', tag: 'bg-notion-tagGreen text-emerald-700 dark:text-emerald-400' },
-      variable_in: { borderL: 'border-l-cyan-600', badge: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400', tag: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400' }
+      housing: { borderL: 'border-l-blue-500/80', tag: 'bg-notion-tagBlue text-blue-600 dark:text-blue-400' },
+      subscriptions: { borderL: 'border-l-purple-500/80', tag: 'bg-notion-tagPurple text-purple-600 dark:text-purple-400' },
+      living: { borderL: 'border-l-amber-500/80', tag: 'bg-notion-tagAmber text-amber-700 dark:text-amber-400' },
+      professional: { borderL: 'border-l-teal-500/80', tag: 'bg-notion-tagGreen text-teal-700 dark:text-teal-400' },
+      leisure: { borderL: 'border-l-pink-500/80', tag: 'bg-pink-500/10 text-pink-600 dark:text-pink-400' },
+      other: { borderL: 'border-l-stone-400', tag: 'bg-notion-tagGray text-stone-600 dark:text-stone-300' },
+      fixed_in: { borderL: 'border-l-emerald-600', tag: 'bg-notion-tagGreen text-emerald-700 dark:text-emerald-400' },
+      variable_in: { borderL: 'border-l-cyan-600', tag: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400' }
     };
 
     const getPalette = (bracketId) => {
       return BRACKET_PALETTES[bracketId] || {
         borderL: 'border-l-stone-400',
-        badge: 'bg-stone-500/10 text-stone-600 dark:text-stone-400',
         tag: 'bg-notion-tagGray text-stone-600 dark:text-stone-300'
       };
     };
 
     const DEFAULT_BRACKETS = {
       expenses: [
-        { id: 'housing', name: 'Wohnen & Fixkosten', icon: 'fa-house', color: '#2383e2' },
-        { id: 'subscriptions', name: 'Abos & Medien', icon: 'fa-ticket', color: '#6940a5' },
-        { id: 'living', name: 'Alltag & Verpflegung', icon: 'fa-basket-shopping', color: '#dfab01' },
-        { id: 'professional', name: 'Bildung & Gesundheit', icon: 'fa-graduation-cap', color: '#0f7b6c' },
-        { id: 'leisure', name: 'Freizeit & Kultur', icon: 'fa-champagne-glasses', color: '#e03e3e' },
-        { id: 'other', name: 'Sonstiges & Verbindlichkeiten', icon: 'fa-box-archive', color: '#787774' }
+        { id: 'housing', color: '#2383e2', icon: 'fa-house' },
+        { id: 'subscriptions', color: '#6940a5', icon: 'fa-ticket' },
+        { id: 'living', color: '#dfab01', icon: 'fa-basket-shopping' },
+        { id: 'professional', color: '#0f7b6c', icon: 'fa-graduation-cap' },
+        { id: 'leisure', color: '#e03e3e', icon: 'fa-champagne-glasses' },
+        { id: 'other', color: '#787774', icon: 'fa-box-archive' }
       ],
       incomes: [
-        { id: 'fixed_in', name: 'Feste Einnahmen / Sperrkonto', icon: 'fa-building-columns', color: '#0f7b6c' },
-        { id: 'variable_in', name: 'Variable Einnahmen & Leihe', icon: 'fa-coins', color: '#2383e2' }
+        { id: 'fixed_in', color: '#0f7b6c', icon: 'fa-building-columns' },
+        { id: 'variable_in', color: '#2383e2', icon: 'fa-coins' }
       ]
     };
 
     const INITIAL_CATEGORIES = {
-      incomes: ["mohammed sperrkonto installmant", "mai sperrkonto installmant", "side income", "Darlehen Schwester", "savings", "Sonstiges"],
+      incomes: ["Mohammed Sperrkonto", "Mai Sperrkonto", "Side Income", "Darlehen Schwester", "Savings", "Sonstiges"],
       expenses: [
-        "Hause mieten", "Hause kaution", "Lebensmittel 🍞🍲", "Hausrat 🛋️", "strom ⚡", "Gas/ Heißung",
-        "Unterhaltung 🎊", "essen im freien 🍔", "Geschenke", "Gesundheit ❤️",
-        "Ausbildung B2 exam", "Versicherung Care concept", "kleidung", "radio", "internet/ Handy",
-        "transport/ tickets", "bank", "Sparkasse card fee", "Swan Schule", "FSP exam registration",
-        "furniture from Vormieter", "Rückzahlung Schwester", "Sonstiges"
+        "Miete", "Kaution", "Lebensmittel 🍞", "Hausrat 🛋️", "Strom ⚡", "Gas & Heizung",
+        "Unterhaltung 🎊", "Restaurant & Cafe 🍔", "Geschenke", "Gesundheit ❤️",
+        "B2 Prüfung", "Versicherung Care Concept", "Kleidung", "Rundfunkbeitrag", "Internet & Handy",
+        "Transport & Tickets", "Bankgebühren", "Swan Schule", "FSP Prüfung",
+        "Möbel Vormieter", "Rückzahlung Schwester", "Sonstiges"
       ]
     };
 
     const autoClassifyCategory = (name) => {
       const p = name.toLowerCase();
       if (["netflix", "spotify", "prime", "abo", "subscription", "youtube", "disney", "apple", "amazon"].some(k => p.includes(k))) return { bracket: 'subscriptions', mode: 'fixed', isOneTime: false };
-      if (["miete", "rent", "kaution", "deposit", "strom", "gas", "heizung", "radio", "internet", "wlan", "handy", "furniture"].some(k => p.includes(k))) return { bracket: 'housing', mode: 'fixed', isOneTime: p.includes("kaution") || p.includes("deposit") || p.includes("furniture") };
+      if (["miete", "rent", "kaution", "deposit", "strom", "gas", "heizung", "radio", "rundfunk", "internet", "wlan", "handy", "furniture", "möbel"].some(k => p.includes(k))) return { bracket: 'housing', mode: 'fixed', isOneTime: p.includes("kaution") || p.includes("deposit") || p.includes("furniture") || p.includes("möbel") };
       if (["essen", "food", "lebensmittel", "restaurant", "cafe", "supermarkt", "bäcker", "rewe", "lidl", "aldi", "dm", "rossmann", "kleidung", "ticket", "transport"].some(k => p.includes(k))) return { bracket: 'living', mode: 'variable', isOneTime: false };
-      if (["exam", "prüfung", "schule", "school", "b2", "fsp", "swan", "kurs", "versicherung", "insurance", "care concept", "arzt", "health"].some(k => p.includes(k))) return { bracket: 'professional', mode: 'variable', isOneTime: p.includes("exam") || p.includes("anmeldung") || p.includes("kaution") };
-      if (["unterhaltung", "geschenke", "freizeit"].some(k => p.includes(k))) return { bracket: 'leisure', mode: 'variable', isOneTime: false };
-      return { bracket: 'other', mode: 'fixed', isOneTime: p.includes("rückzahlung") || p.includes("darlehen") };
+      if (["exam", "prüfung", "schule", "school", "b2", "fsp", "swan", "kurs", "versicherung", "insurance", "care concept", "arzt", "health", "gesundheit"].some(k => p.includes(k))) return { bracket: 'professional', mode: 'variable', isOneTime: p.includes("exam") || p.includes("prüfung") || p.includes("anmeldung") || p.includes("kaution") };
+      if (["unterhaltung", "geschenke", "freizeit", "leisure"].some(k => p.includes(k))) return { bracket: 'leisure', mode: 'variable', isOneTime: false };
+      return { bracket: 'other', mode: 'fixed', isOneTime: p.includes("rückzahlung") || p.includes("darlehen") || p.includes("repayment") || p.includes("loan") };
     };
 
     const translations = {
       de: {
         title: "Haushaltsbuch",
         subtitle: "Persönlicher Cashflow & Budget",
-        online: "Verbunden", offline: "Lokal", syncing: "Synchronisiert...", synced: "Gespeichert",
         startingCapital: "Startkapital (Konto & Bar)",
         kpiActualNet: "Ist-Saldo",
         kpiProjectedNet: "Prognose Saldo",
         kpiDailyRoom: "Freies Tagesbudget",
         kpiCumulative: "Endbestand",
         kpiCumulativeSub: "Zum Monatsende",
+        kpiDailyRoomSub: "Verfügbares Tagesbudget",
+        kpiIn: "Ein",
+        kpiOut: "Aus",
+        kpiProjPrefix: "Prognose:",
         incomesHeader: "Einnahmen",
         expensesHeader: "Ausgaben",
         analyticsTab: "Übersicht & IOU",
-        planLabel: "Plan", actualLabel: "Ist", asOfDayLabel: "Tag",
-        restBudgetLabel: "Verbleibend", perDayLabel: "/ Tag",
-        statusOver: "Über Budget", statusTrack: "Im Rahmen", statusFrugal: "Sparsam",
-        badgeOneTime: "Einmalig", badgeFixed: "Fix", badgeVariable: "Variabel",
-        options: "Einstellungen", selectYear: "Jahr", selectLanguage: "Sprache",
-        themeLabel: "Erscheinungsbild", themeLight: "Hell", themeDark: "Dunkel", themeSystem: "System",
-        backupSection: "Daten & Sicherung", exportBackup: "JSON Export", importBackup: "JSON Wiederherstellen",
-        importSuccess: "Daten erfolgreich importiert!", importError: "Fehlerhafte Datei.",
-        clearAll: "Zurücksetzen", confirmClear: "Möchten Sie wirklich alle Daten löschen?",
-        showAllBtn: "Alle Posten zeigen", hideZeroesBtn: "0 € ausgeblendet",
-        hiddenNotice: "{{count}} inaktive Posten ausgeblendet", showNow: "Einblenden",
-        annualOverview: "Jahresübersicht", savingsRate: "Sparquote",
-        peakSpendingCategory: "Höchste Ausgabe", highestExpenseMonth: "Spitzenmonat", noData: "Keine Daten",
-        chartTitle: "Cashflow Verlauf {{year}}",
+        planLabel: "Plan",
+        actualLabel: "Ist",
+        asOfDayLabel: "Tag",
+        restBudgetLabel: "Verbleibend",
+        perDayLabel: "/ Tag",
+        statusOver: "Über Budget",
+        statusTrack: "Im Rahmen",
+        statusFrugal: "Sparsam",
+        badgeOneTime: "Einmalig",
+        badgeFixed: "Fix",
+        badgeVariable: "Variabel",
+        options: "Einstellungen",
+        themeLabel: "Erscheinungsbild",
+        themeLight: "Hell",
+        themeDark: "Dunkel",
+        themeSystem: "System",
+        backupSection: "Daten & Sicherung",
+        exportBackup: "JSON Exportieren",
+        importBackup: "JSON Wiederherstellen",
+        importSuccess: "Daten erfolgreich importiert!",
+        importError: "Fehlerhafte Datei.",
+        clearAll: "Alle Daten löschen",
+        confirmClear: "Möchten Sie wirklich alle Daten unwiderruflich löschen?",
+        showAllBtn: "Alle Posten zeigen",
+        hideZeroesBtn: "0 € ausgeblendet",
+        hideZeroesHint: "(Einmalige 0 € Posten bleiben sauber ausgeblendet)",
+        expandAll: "Alle aufklappen",
+        collapseAll: "Alle schließen",
+        annualOverview: "Jahresübersicht",
         iouTitle: "Verbindlichkeiten & Forderungen (Darlehen / IOU)",
         iouAddBtn: "Hinzufügen",
         iouPersonPlaceholder: "Z. B. Schwester (900€ Leihe)...",
         iouAmountPlaceholder: "Betrag",
-        iouTypeBorrowed: "Ich schulde (Leihe/Kredit)",
-        iouTypeLent: "Mir wird geschuldet",
-        iouTotalBorrowed: "Offene Verbindlichkeiten",
-        iouTotalLent: "Offene Forderungen",
-        iouScheduleInstallments: "In Raten aufteilen",
-        iouMarkReturned: "Erledigt",
-        iouEmpty: "Keine offenen Schulden oder Forderungen.",
-        editorTitle: "Eigenschaft bearbeiten", posten: "Bezeichnung",
-        isOneTimeLabel: "Gilt nur für diesen Monat (Einmalig)",
-        bracketLabel: "Kategorie", classificationLabel: "Abrechnungsart",
-        paymentDayShort: "Zahltag", paymentDayLabel: "Fälligkeitstag (1-31)",
-        deleteCategoryBtn: "Löschen", saveClose: "Schließen & Sichern",
-        addItemBtn: "+ Neuer Eintrag", addBracketBtn: "+ Gruppe",
-        editBracketTitle: "Gruppe anpassen", newBracketTitle: "Neue Gruppe",
-        bracketNameLabel: "Gruppenname", bracketIconLabel: "Symbol",
+        iouOptBorrowed: "Ich schulde (Leihe/Kredit)",
+        iouOptLent: "Mir wird geschuldet (Verliehen)",
+        iouDebts: "Schulden:",
+        iouReceivables: "Forderung:",
+        iouSisterTip: "Schwester leiht 900 €? Automatisch in 2 Raten à 450 € (Okt / Nov) aufteilen:",
+        iouSisterBtn: "⚡ Ratenplan in Budget eintragen",
+        iouIOweBadge: "Schulde ich",
+        iouOwedToMeBadge: "Bekomme ich",
+        iouMarkReturned: "Als erledigt markieren",
+        emptyGroupIncomes: "Keine aktiven Buchungen in diesem Monat.",
+        emptyGroupExpenses: "Keine Ausgaben in dieser Gruppe für diesen Monat.",
+        editorTitle: "Eigenschaft bearbeiten",
+        posten: "Bezeichnung",
+        bracketLabel: "Kategorie",
+        paymentDayShort: "Zahltag",
+        deleteCategoryBtn: "Löschen",
+        saveClose: "Schließen & Sichern",
+        addItemBtn: "+ Neuer Eintrag",
         notesTitleMonth: "Notizen & Belege ({{month}} {{year}})",
-        addNotePlaceholder: "Notiz oder Rechnung hinzufügen...",
-        noNotesYetMonth: "Keine Notizen für diesen Monat hinterlegt.",
+        addNotePlaceholder: "Notiz oder Beleg hinzufügen...",
         quickAddModalTitle: "Neuen Posten anlegen",
         quickAddNamePlaceholder: "Z. B. Rückzahlung Schwester, Netflix...",
         initialBudgetLabel: "Geplanter Betrag (€)",
         isOneTimeCurrentOnly: "Nur für {{month}} {{year}} (in anderen Monaten 0 €)",
         replicateTitle: "Wiederkehrend kopieren",
-        replicateFieldLabel: "Welcher Wert?", replicateDurationLabel: "Zeitraum",
+        replicateCatLabel: "Kategorie",
+        replicateFieldLabel: "Welcher Wert?",
+        replicateBudgetOption: "Plan (Budget)",
+        replicateActualOption: "Ist (Ausgegeben)",
+        replicateAmountLabel: "Betrag (€)",
+        replicateDurationLabel: "Zeitraum",
+        duration3: "3 Monate ({{month}} + 2)",
+        duration6: "6 Monate ({{month}} + 5)",
+        duration12: "12 Monate (1 Jahr)",
+        durationAll: "Bis Ende 2028",
         replicateActionBtn: "Kopieren",
         splitModalTitle: "Darlehen in monatliche Raten umwandeln",
         splitModalDesc: "Erstellt automatisch Ausgabenposten in den gewählten Monaten:",
+        splitItemLabel: "Bezeichnung des Postens",
+        splitDefaultName: "Rückzahlung Schwester",
+        splitInst1Month: "1. Rate Monat",
+        splitInst2Month: "2. Rate Monat",
+        splitNote: "Hinweis: Der Posten wird als Einmalig markiert und erscheint nur in {{m1}} und {{m2}}.",
         splitConfirmBtn: "Raten im Haushaltsbuch eintragen",
+        deleteItemTitle: "Eintrag löschen: {{name}}",
+        deleteFutureOnly: "Nur zukünftige Monate leeren",
+        deleteFutureOnlyDesc: "Historische Buchungen bleiben erhalten.",
+        deletePurgeMerge: "Vollständig löschen & nach 'Sonstiges' verschieben",
+        deletePurgeMergeDesc: "Kein Bilanzverlust. Alle Summen bleiben erhalten.",
+        cancelBtn: "Abbrechen",
+        duplicateAlert: "Kategorie existiert bereits: \"{{name}}\" ({{bracket}})",
+        deleteBracketConfirm: "Kategorie entfernen? Enthaltene Posten werden nach 'Sonstiges' verschoben.",
+        splitSuccessAlert: "Erfolgreich eingetragen: {{name}} mit je {{amount1}} in {{m1}} und {{amount2}} in {{m2}}!",
+        hideWhenZeroHint: "In Monaten ohne Buchung ausblenden",
+        fallbackCategory: "Sonstiges",
+        brackets: {
+          housing: "Wohnen & Fixkosten",
+          subscriptions: "Abos & Medien",
+          living: "Alltag & Verpflegung",
+          professional: "Bildung & Gesundheit",
+          leisure: "Freizeit & Kultur",
+          other: "Sonstiges & Verbindlichkeiten",
+          fixed_in: "Feste Einnahmen / Sperrkonto",
+          variable_in: "Variable Einnahmen & Leihe"
+        },
         months: MONTH_NAMES.de
       },
       en: {
         title: "Household Budget",
         subtitle: "Personal Cashflow & Ledger",
-        online: "Online", offline: "Offline", syncing: "Saving...", synced: "Saved",
-        startingCapital: "Starting Balance (Bank / Cash)",
+        startingCapital: "Starting Balance (Bank & Cash)",
         kpiActualNet: "Actual Net",
         kpiProjectedNet: "Projected Net",
         kpiDailyRoom: "Daily Allowance",
         kpiCumulative: "Net Reserve",
         kpiCumulativeSub: "Month-end runway",
+        kpiDailyRoomSub: "Available daily budget",
+        kpiIn: "In",
+        kpiOut: "Out",
+        kpiProjPrefix: "Projected:",
         incomesHeader: "Incomes",
         expensesHeader: "Expenses",
         analyticsTab: "Overview & Debts",
-        planLabel: "Plan", actualLabel: "Actual", asOfDayLabel: "Day",
-        restBudgetLabel: "Remaining", perDayLabel: "/ day",
-        statusOver: "Over Budget", statusTrack: "On Track", statusFrugal: "Under Budget",
-        badgeOneTime: "One-Time", badgeFixed: "Fixed", badgeVariable: "Variable",
-        options: "Settings", selectYear: "Year", selectLanguage: "Language",
-        themeLabel: "Appearance", themeLight: "Light", themeDark: "Dark", themeSystem: "System",
-        backupSection: "Data & Storage", exportBackup: "Export JSON", importBackup: "Restore JSON",
-        importSuccess: "Restored successfully!", importError: "Corrupt file format.",
-        clearAll: "Reset data", confirmClear: "Permanently delete all data?",
-        showAllBtn: "Show all items", hideZeroesBtn: "0 € hidden",
-        hiddenNotice: "{{count}} zero items hidden", showNow: "Show",
-        annualOverview: "Annual View", savingsRate: "Savings Rate",
-        peakSpendingCategory: "Peak Spend", highestExpenseMonth: "Peak Month", noData: "No Data",
-        chartTitle: "Trajectory {{year}}",
+        planLabel: "Plan",
+        actualLabel: "Actual",
+        asOfDayLabel: "Day",
+        restBudgetLabel: "Remaining",
+        perDayLabel: "/ day",
+        statusOver: "Over Budget",
+        statusTrack: "On Track",
+        statusFrugal: "Under Budget",
+        badgeOneTime: "One-Time",
+        badgeFixed: "Fixed",
+        badgeVariable: "Variable",
+        options: "Settings",
+        themeLabel: "Appearance",
+        themeLight: "Light",
+        themeDark: "Dark",
+        themeSystem: "System",
+        backupSection: "Data & Storage",
+        exportBackup: "Export JSON",
+        importBackup: "Restore JSON",
+        importSuccess: "Data restored successfully!",
+        importError: "Corrupted file format.",
+        clearAll: "Reset all data",
+        confirmClear: "Do you really want to permanently delete all data?",
+        showAllBtn: "Show all items",
+        hideZeroesBtn: "0 € hidden",
+        hideZeroesHint: "(One-time 0 € items remain neatly hidden)",
+        expandAll: "Expand all",
+        collapseAll: "Collapse all",
+        annualOverview: "Annual View",
         iouTitle: "Debts & Receivables (Loans / IOU)",
         iouAddBtn: "Add Record",
         iouPersonPlaceholder: "E.g. Sister (900€ loan)...",
         iouAmountPlaceholder: "Amount",
-        iouTypeBorrowed: "I owe (Borrowed)",
-        iouTypeLent: "Owed to me (Lent)",
-        iouTotalBorrowed: "Payable Debts",
-        iouTotalLent: "Receivables",
-        iouScheduleInstallments: "Split into Installments",
-        iouMarkReturned: "Done",
-        iouEmpty: "No pending loans or receivables.",
-        editorTitle: "Edit Property", posten: "Item Name",
-        isOneTimeLabel: "Only for this month (One-Time)",
-        bracketLabel: "Group", classificationLabel: "Type",
-        paymentDayShort: "Payday", paymentDayLabel: "Due day (1-31)",
-        deleteCategoryBtn: "Delete", saveClose: "Save & Close",
-        addItemBtn: "+ New Item", addBracketBtn: "+ Group",
-        editBracketTitle: "Edit Group", newBracketTitle: "New Group",
-        bracketNameLabel: "Group Title", bracketIconLabel: "Icon",
-        notesTitleMonth: "Notes ({{month}} {{year}})",
+        iouOptBorrowed: "I owe (Loan/Debt)",
+        iouOptLent: "Owed to me (Lent)",
+        iouDebts: "Debts:",
+        iouReceivables: "Receivables:",
+        iouSisterTip: "Sister lent 900 €? Split automatically into 2 installments (Oct / Nov):",
+        iouSisterBtn: "⚡ Schedule installments in budget",
+        iouIOweBadge: "I owe",
+        iouOwedToMeBadge: "Owed to me",
+        iouMarkReturned: "Mark as settled",
+        emptyGroupIncomes: "No active income records in this month.",
+        emptyGroupExpenses: "No expenses in this group for this month.",
+        editorTitle: "Edit Property",
+        posten: "Item Name",
+        bracketLabel: "Category",
+        paymentDayShort: "Due",
+        deleteCategoryBtn: "Delete",
+        saveClose: "Save & Close",
+        addItemBtn: "+ New Item",
+        notesTitleMonth: "Notes & Receipts ({{month}} {{year}})",
         addNotePlaceholder: "Add note or receipt item...",
-        noNotesYetMonth: "No notes for this month.",
-        quickAddModalTitle: "Add Item",
-        quickAddNamePlaceholder: "E.g. Sister repayment, Grocery...",
-        initialBudgetLabel: "Planned amount (€)",
+        quickAddModalTitle: "Add New Item",
+        quickAddNamePlaceholder: "E.g. Sister Repayment, Netflix...",
+        initialBudgetLabel: "Planned Amount (€)",
         isOneTimeCurrentOnly: "One-time for {{month}} {{year}} only (0 € elsewhere)",
-        replicateTitle: "Replicate Recurring",
-        replicateFieldLabel: "Target field", replicateDurationLabel: "Duration",
+        replicateTitle: "Replicate Recurring Value",
+        replicateCatLabel: "Category",
+        replicateFieldLabel: "Which value?",
+        replicateBudgetOption: "Plan (Budget)",
+        replicateActualOption: "Actual (Spent)",
+        replicateAmountLabel: "Amount (€)",
+        replicateDurationLabel: "Duration",
+        duration3: "3 Months ({{month}} + 2)",
+        duration6: "6 Months ({{month}} + 5)",
+        duration12: "12 Months (1 Year)",
+        durationAll: "Until end of 2028",
         replicateActionBtn: "Apply to upcoming months",
-        splitModalTitle: "Convert Loan into Repayments",
-        splitModalDesc: "Automatically creates scheduled expense records:",
+        splitModalTitle: "Convert Loan into Monthly Installments",
+        splitModalDesc: "Automatically creates scheduled expense records in the selected months:",
+        splitItemLabel: "Item Name",
+        splitDefaultName: "Sister Repayment",
+        splitInst1Month: "1st Installment Month",
+        splitInst2Month: "2nd Installment Month",
+        splitNote: "Note: The item is marked as One-Time and will only appear in {{m1}} and {{m2}}.",
         splitConfirmBtn: "Schedule installments in budget",
+        deleteItemTitle: "Delete Entry: {{name}}",
+        deleteFutureOnly: "Clear future months only",
+        deleteFutureOnlyDesc: "Past and current month records remain intact.",
+        deletePurgeMerge: "Delete completely & move to 'Other'",
+        deletePurgeMergeDesc: "No loss of balance. All amounts are preserved.",
+        cancelBtn: "Cancel",
+        duplicateAlert: "Category already exists: \"{{name}}\" ({{bracket}})",
+        deleteBracketConfirm: "Remove category group? Contained items will be moved to 'Other'.",
+        splitSuccessAlert: "Successfully scheduled: {{name}} with {{amount1}} in {{m1}} and {{amount2}} in {{m2}}!",
+        hideWhenZeroHint: "Hide in months without activity",
+        fallbackCategory: "Other",
+        brackets: {
+          housing: "Housing & Fixed Costs",
+          subscriptions: "Subscriptions & Media",
+          living: "Daily Living & Groceries",
+          professional: "Education & Health",
+          leisure: "Leisure & Culture",
+          other: "Other & Loans",
+          fixed_in: "Fixed Income / Blocked Account",
+          variable_in: "Variable Income & Loans"
+        },
         months: MONTH_NAMES.en
       }
     };
@@ -392,7 +495,7 @@
     const useTranslation = () => useContext(LanguageContext);
 
     const IDB = {
-      dbName: 'LiquidCashflow_vNotion',
+      dbName: 'LiquidCashflow_vStrictLocale',
       open() {
         return new Promise((res, rej) => {
           const r = indexedDB.open(this.dbName, 1);
@@ -442,9 +545,9 @@
         fixedPaymentDays: { ...(raw?.fixedPaymentDays || {}) },
         categoryOneTime: { 
           ...(raw?.categoryOneTime || { 
-            "Hause kaution": true, 
-            "FSP exam registration": true, 
-            "furniture from Vormieter": true,
+            "Kaution": true, 
+            "FSP Prüfung": true, 
+            "Möbel Vormieter": true,
             "Rückzahlung Schwester": true,
             "Darlehen Schwester": true
           }) 
@@ -518,9 +621,6 @@
       const [selectedYear, setSelectedYear] = useState(initialDate.year);
       const [selectedMonth, setSelectedMonth] = useState(initialDate.month);
 
-      const [isOnline, setIsOnline] = useState(navigator.onLine);
-      const [syncStatus, setSyncStatus] = useState("initialized");
-      
       const [hideZeroes, setHideZeroes] = useState(() => safeStorage.get('budget_hide_zeroes', 'true') === 'true');
       const [isBurgerOpen, setIsBurgerOpen] = useState(false);
       const [theme, setTheme] = useState(() => safeStorage.get('budget_app_theme', 'dark'));
@@ -537,13 +637,9 @@
       const [activeEditCat, setActiveEditCat] = useState(null);
       const [editCatForm, setEditCatForm] = useState({ name: "", bracket: "", mode: "fixed", isOneTime: false, pDay: "", notes: [] });
       const [newBulletText, setNewBulletText] = useState("");
-      const [saveFeedback, setSaveFeedback] = useState(false);
 
       const [recurringModal, setRecurringModal] = useState(null);
       const [recurringForm, setRecurringForm] = useState({ field: 'budget', amount: 0, duration: 6 });
-
-      const [bracketModal, setBracketModal] = useState(null);
-      const [bracketForm, setBracketForm] = useState({ name: "", icon: "fa-house", color: "#2383e2" });
 
       const [quickAddModal, setQuickAddModal] = useState(null);
       const [quickAddForm, setQuickAddForm] = useState({ name: "", bracket: "", budget: "", mode: "variable", isOneTime: false });
@@ -553,8 +649,7 @@
       // Loan Installment Split Modal
       const [splitModal, setSplitModal] = useState(null);
       const [splitForm, setSplitForm] = useState({
-        name: "Rückzahlung Schwester",
-        totalAmount: 900,
+        name: "",
         m1: "Okt",
         a1: 450,
         m2: "Nov",
@@ -584,14 +679,6 @@
       }, [hideZeroes]);
 
       useEffect(() => {
-        const on = () => setIsOnline(true);
-        const off = () => setIsOnline(false);
-        window.addEventListener('online', on);
-        window.addEventListener('offline', off);
-        return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
-      }, []);
-
-      useEffect(() => {
         (async () => {
           const cached = await IDB.get('app_state');
           if (cached) setData(normalizeState(cached));
@@ -605,9 +692,8 @@
               const merged = normalizeState(remote.payload);
               setData(merged);
               await IDB.set('app_state', merged);
-              setSyncStatus("synced");
             }
-          }, () => setSyncStatus("offline"));
+          });
         }
         return () => unsub();
       }, []);
@@ -616,13 +702,9 @@
         setData(updated);
         await IDB.set('app_state', updated);
         if (navigator.onLine && db) {
-          setSyncStatus("syncing");
           try {
             await db.collection('monthly_logs').doc('house_finanzen_state').set({ payload: updated, updatedAt: Date.now() });
-            setSyncStatus("synced");
-          } catch(e) { setSyncStatus("offline"); }
-        } else {
-          setSyncStatus("offline");
+          } catch(e) {}
         }
       };
 
@@ -763,28 +845,25 @@
           if (excludeCat && cat.toLowerCase() === excludeCat.toLowerCase()) continue;
           if (cat.toLowerCase() === test) {
             const b = data.categoryOverrides[cat] || autoClassifyCategory(cat).bracket;
-            const bObj = data.brackets.expenses.find(x => x.id === b);
-            return { exists: true, type: 'expenses', bracket: bObj?.name || b, name: cat };
+            return { exists: true, type: 'expenses', bracket: t('brackets.' + b) || b, name: cat };
           }
         }
         for (const cat of data.categories.incomes) {
           if (excludeCat && cat.toLowerCase() === excludeCat.toLowerCase()) continue;
           if (cat.toLowerCase() === test) {
             const b = data.categoryOverrides[cat] || 'incomes';
-            const bObj = data.brackets.incomes.find(x => x.id === b);
-            return { exists: true, type: 'incomes', bracket: bObj?.name || b, name: cat };
+            return { exists: true, type: 'incomes', bracket: t('brackets.' + b) || b, name: cat };
           }
         }
         return null;
       };
 
-      // Create Category with One-Time Scope
       const handleCreateCategory = async (type, name, bracketId, mode, initialBudget = 0, isOneTime = false) => {
         const val = name.trim();
         if (!val) return;
         const dup = checkDuplicate(val);
         if (dup) {
-          alert(`Eintrag existiert bereits: "${dup.name}" (${dup.bracket})`);
+          alert(t('duplicateAlert', { name: dup.name, bracket: dup.bracket }));
           return;
         }
 
@@ -881,7 +960,6 @@
           notes: [...getMonthScopedNotes(cat, selectedYear, selectedMonth)]
         });
         setNewBulletText("");
-        setSaveFeedback(false);
       };
 
       const handleSaveCategoryChanges = async () => {
@@ -893,7 +971,7 @@
         if (newName !== oldName) {
           const dup = checkDuplicate(newName, oldName);
           if (dup) {
-            alert(`Kategorie existiert bereits: "${dup.name}"`);
+            alert(t('duplicateAlert', { name: dup.name, bracket: dup.bracket }));
             return;
           }
         }
@@ -929,9 +1007,7 @@
         }
 
         await saveState(copy);
-        setActiveEditCat({ type, cat: newName });
-        setSaveFeedback(true);
-        setTimeout(() => setSaveFeedback(false), 2000);
+        setActiveEditCat(null);
       };
 
       const handleAddBulletPoint = () => {
@@ -960,7 +1036,7 @@
             }
           }
         } else if (deleteScope === 'purge_and_merge') {
-          const fallback = "Sonstiges";
+          const fallback = t('fallbackCategory');
           if (!copy.categories[type].includes(fallback)) {
             copy.categories[type].push(fallback);
             copy.categoryModes[fallback] = copy.categoryModes[cat] || 'fixed';
@@ -989,50 +1065,6 @@
 
         await saveState(copy);
         setSmartDeleteModal(null);
-      };
-
-      const handleOpenBracketModal = (mode, type, bracket = null) => {
-        setBracketModal({ mode, type, bracket });
-        if (mode === 'edit' && bracket) {
-          setBracketForm({ name: bracket.name, icon: bracket.icon, color: bracket.color || "#2383e2" });
-        } else {
-          setBracketForm({ name: "", icon: "fa-house", color: "#2383e2" });
-        }
-      };
-
-      const handleSaveBracket = async () => {
-        if (!bracketForm.name.trim() || !bracketModal) return;
-        const copy = JSON.parse(JSON.stringify(data));
-        const { mode, type, bracket } = bracketModal;
-
-        if (mode === 'add') {
-          const id = 'bracket_' + Date.now();
-          copy.brackets[type].push({
-            id, name: bracketForm.name.trim(), icon: bracketForm.icon, color: bracketForm.color
-          });
-          setOpenBrackets(prev => ({ ...prev, [id]: true }));
-        } else if (mode === 'edit' && bracket) {
-          copy.brackets[type] = copy.brackets[type].map(b => b.id === bracket.id ? {
-            ...b, name: bracketForm.name.trim(), icon: bracketForm.icon, color: bracketForm.color
-          } : b);
-        }
-
-        await saveState(copy);
-        setBracketModal(null);
-      };
-
-      const handleDeleteBracket = async (type, bracketId) => {
-        if (!confirm("Kategorie entfernen? Enthaltene Posten werden nach 'Sonstiges' verschoben.")) return;
-        const copy = JSON.parse(JSON.stringify(data));
-        const fallbackBracket = type === 'incomes' ? 'variable_in' : 'other';
-
-        copy.categories[type].forEach(cat => {
-          if (copy.categoryOverrides[cat] === bracketId) copy.categoryOverrides[cat] = fallbackBracket;
-        });
-
-        copy.brackets[type] = copy.brackets[type].filter(b => b.id !== bracketId);
-        await saveState(copy);
-        setBracketModal(null);
       };
 
       const toggleBracket = (id) => setOpenBrackets(prev => ({ ...prev, [id]: !prev[id] }));
@@ -1077,20 +1109,17 @@
         await saveState(copy);
       };
 
-      // Quick-Schedule Sister Loan Repayments (Okt & Nov)
       const handleExecuteSplitLoan = async () => {
         const copy = JSON.parse(JSON.stringify(data));
-        const catName = splitForm.name.trim() || "Rückzahlung Schwester";
+        const catName = splitForm.name.trim() || t('splitDefaultName');
 
-        // 1. Ensure expense category exists
         if (!copy.categories.expenses.includes(catName)) {
           copy.categories.expenses.push(catName);
           copy.categoryOverrides[catName] = 'other';
           copy.categoryModes[catName] = 'fixed';
-          copy.categoryOneTime[catName] = true; // Mark as One-Time so it auto-hides outside Okt/Nov!
+          copy.categoryOneTime[catName] = true;
         }
 
-        // Initialize values for all months
         ["2026", "2027", "2028"].forEach(y => {
           if (!copy.values[y].expenses[catName]) copy.values[y].expenses[catName] = {};
           getMonthsForYear(parseInt(y)).forEach(m => {
@@ -1100,19 +1129,23 @@
           });
         });
 
-        // Set Month 1 (e.g. Okt 2026)
         if (copy.values[selectedYear]?.expenses?.[catName]?.[splitForm.m1]) {
           copy.values[selectedYear].expenses[catName][splitForm.m1].budget = parseFloat(splitForm.a1) || 0;
         }
 
-        // Set Month 2 (e.g. Nov 2026)
         if (copy.values[selectedYear]?.expenses?.[catName]?.[splitForm.m2]) {
           copy.values[selectedYear].expenses[catName][splitForm.m2].budget = parseFloat(splitForm.a2) || 0;
         }
 
         await saveState(copy);
         setSplitModal(null);
-        alert(`Erfolgreich eingetragen: ${catName} mit je ${fmt(splitForm.a1)} in ${splitForm.m1} und ${fmt(splitForm.a2)} in ${splitForm.m2}!`);
+        alert(t('splitSuccessAlert', {
+          name: catName,
+          amount1: fmt(splitForm.a1),
+          m1: formatMonth(splitForm.m1, lang),
+          amount2: fmt(splitForm.a2),
+          m2: formatMonth(splitForm.m2, lang)
+        }));
       };
 
       useEffect(() => {
@@ -1135,7 +1168,7 @@
             stack: 'Stack0'
           },
           ...data.brackets.expenses.map(b => ({
-            label: b.name,
+            label: t('brackets.' + b.id) || b.id,
             data: monthsForYear.map(m => {
               return data.categories.expenses
                 .filter(cat => (data.categoryOverrides[cat] || autoClassifyCategory(cat).bracket) === b.id)
@@ -1171,7 +1204,7 @@
       return (
         <div className="flex flex-col min-h-screen font-sans">
 
-          {/* 1. NOTION TOP NAVBAR */}
+          {/* 1. TOP NAVBAR */}
           <header className="sticky top-0 z-50 bg-surface border-b border-subtle h-12 px-3 sm:px-4 flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="text-base">📋</span>
@@ -1195,7 +1228,7 @@
               ))}
             </div>
 
-            {/* Options & Language */}
+            {/* Language & Settings */}
             <div className="flex items-center space-x-1">
               <button
                 onClick={() => changeLanguage(lang === 'de' ? 'en' : 'de')}
@@ -1212,7 +1245,7 @@
             </div>
           </header>
 
-          {/* 2. NOTION HORIZONTAL MONTH TABS */}
+          {/* 2. MONTH TABS */}
           <nav className="sticky top-12 z-40 bg-surface border-b border-subtle px-3 py-1 overflow-x-auto scrollbar-none flex items-center gap-1 text-xs">
             <div className="flex items-center space-x-0.5 overflow-x-auto scrollbar-none flex-grow">
               {getMonthsForYear(selectedYear).map(m => (
@@ -1245,7 +1278,7 @@
             </button>
           </nav>
 
-          {/* 3. MOBILE SECTION TOGGLE (Ausgaben / Einnahmen / Übersicht) */}
+          {/* 3. MOBILE SECTION TOGGLE */}
           <div className="block lg:hidden sticky top-[89px] z-30 bg-surface px-3 py-1.5 border-b border-subtle">
             <div className="grid grid-cols-3 gap-1 bg-subtle p-0.5 rounded border border-subtle text-[11px]">
               <button
@@ -1280,10 +1313,10 @@
             </div>
           </div>
 
-          {/* MAIN NOTION CANVAS */}
+          {/* MAIN CANVAS */}
           <main className="max-w-6xl mx-auto w-full px-3 sm:px-6 pt-4 pb-20 flex-grow space-y-4">
 
-            {/* NOTION PAGE HEADING & CALLOUT */}
+            {/* PAGE HEADING */}
             <div className="space-y-1">
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-primary flex items-center gap-2">
                 <span>🏠</span>
@@ -1292,10 +1325,10 @@
               <p className="text-xs text-secondary">{t('subtitle')}</p>
             </div>
 
-            {/* COCKPIT HERO: ALWAYS ON DESKTOP, OR WHEN mobileTab === 'cockpit' */}
+            {/* COCKPIT HERO */}
             <div className={`${mobileTab === 'cockpit' ? 'block' : 'hidden lg:block'} space-y-3`}>
               
-              {/* Notion Properties Grid */}
+              {/* Properties Grid */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                 <div className="p-3 rounded-lg border border-subtle bg-surface-elevated flex flex-col justify-between">
                   <div className="flex items-center gap-1.5 text-secondary text-[11px]">
@@ -1305,7 +1338,7 @@
                   <div className={`text-lg font-mono font-bold mt-1 ${currentMetrics.actualNet >= 0 ? 'text-notion-green dark:text-emerald-400' : 'text-notion-red'}`}>
                     {fmt(currentMetrics.actualNet)}
                   </div>
-                  <span className="text-[10px] font-mono text-tertiary">In {fmt(currentMetrics.actualIn)} · Out {fmt(currentMetrics.actualEx)}</span>
+                  <span className="text-[10px] font-mono text-tertiary">{t('kpiIn')} {fmt(currentMetrics.actualIn)} · {t('kpiOut')} {fmt(currentMetrics.actualEx)}</span>
                 </div>
 
                 <div className="p-3 rounded-lg border border-subtle bg-surface-elevated flex flex-col justify-between">
@@ -1316,7 +1349,7 @@
                   <div className={`text-lg font-mono font-bold mt-1 ${currentMetrics.projectedNet >= 0 ? 'text-notion-blue' : 'text-notion-red'}`}>
                     {fmt(currentMetrics.projectedNet)}
                   </div>
-                  <span className="text-[10px] font-mono text-tertiary">Prognose: {fmt(currentMetrics.projectedEx)}</span>
+                  <span className="text-[10px] font-mono text-tertiary">{t('kpiProjPrefix')} {fmt(currentMetrics.projectedEx)}</span>
                 </div>
 
                 <div className="p-3 rounded-lg border border-subtle bg-surface-elevated flex flex-col justify-between">
@@ -1328,7 +1361,7 @@
                     {fmt(categoryAnalytics.reduce((s, c) => s + (c.mode === 'variable' ? c.safeDailySpend : 0), 0))}
                     <span className="text-[10px] font-normal text-secondary"> {t('perDayLabel')}</span>
                   </div>
-                  <span className="text-[10px] font-mono text-tertiary">Freies Tagesbudget</span>
+                  <span className="text-[10px] font-mono text-tertiary">{t('kpiDailyRoomSub')}</span>
                 </div>
 
                 <div className="p-3 rounded-lg border border-subtle bg-surface-elevated flex flex-col justify-between">
@@ -1343,7 +1376,7 @@
                 </div>
               </div>
 
-              {/* NOTION DEBT & IOU TRACKER (Sister Loan / Receivables) */}
+              {/* IOU & DEBT TRACKER */}
               <div className="rounded-lg border border-subtle bg-surface p-3.5 space-y-3">
                 <div className="flex items-center justify-between border-b border-subtle pb-2">
                   <div className="flex items-center gap-2">
@@ -1351,8 +1384,8 @@
                     <span className="text-xs font-semibold text-primary uppercase tracking-wide">{t('iouTitle')}</span>
                   </div>
                   <div className="flex items-center gap-3 text-xs font-mono">
-                    {totalBorrowed > 0 && <span className="text-notion-red font-semibold">Schulden: {fmt(totalBorrowed)}</span>}
-                    {totalLent > 0 && <span className="text-notion-green font-semibold">Forderung: {fmt(totalLent)}</span>}
+                    {totalBorrowed > 0 && <span className="text-notion-red font-semibold">{t('iouDebts')} {fmt(totalBorrowed)}</span>}
+                    {totalLent > 0 && <span className="text-notion-green font-semibold">{t('iouReceivables')} {fmt(totalLent)}</span>}
                   </div>
                 </div>
 
@@ -1363,8 +1396,8 @@
                     onChange={(e) => setIouType(e.target.value)}
                     className="bg-subtle border border-subtle text-primary text-xs rounded px-2 py-1.5 outline-none font-medium"
                   >
-                    <option value="borrowed">Ich schulde (Leihe/Kredit)</option>
-                    <option value="lent">Mir wird geschuldet (Verliehen)</option>
+                    <option value="borrowed">{t('iouOptBorrowed')}</option>
+                    <option value="lent">{t('iouOptLent')}</option>
                   </select>
 
                   <input
@@ -1390,19 +1423,18 @@
                   </button>
                 </div>
 
-                {/* Direct Action for Sister Loan Situation */}
+                {/* Direct Action for Sister Loan */}
                 <div className="p-2.5 rounded bg-subtle/60 border border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                   <div className="flex items-center gap-2">
                     <span className="text-amber-500">💡</span>
                     <span className="text-secondary leading-snug">
-                      Schwester leiht 900 €? Automatisch in 2 Raten à 450 € (Okt / Nov) aufteilen:
+                      {t('iouSisterTip')}
                     </span>
                   </div>
                   <button
                     onClick={() => {
                       setSplitForm({
-                        name: "Rückzahlung Schwester",
-                        totalAmount: 900,
+                        name: t('splitDefaultName'),
                         m1: "Okt",
                         a1: 450,
                         m2: "Nov",
@@ -1412,7 +1444,7 @@
                     }}
                     className="px-2.5 py-1 bg-surface border border-subtle text-primary rounded text-xs font-medium hover:bg-subtle transition whitespace-nowrap self-start sm:self-auto"
                   >
-                    ⚡ Ratenplan in Budget eintragen
+                    {t('iouSisterBtn')}
                   </button>
                 </div>
 
@@ -1426,7 +1458,7 @@
                           <div>
                             <div className="font-semibold text-primary">{item.person}</div>
                             <div className="text-[10px] text-tertiary">
-                              {item.date} · <span className={isBorrowed ? 'text-notion-red' : 'text-notion-green'}>{isBorrowed ? 'Schulde ich' : 'Bekomme ich'}</span>
+                              {item.date} · <span className={isBorrowed ? 'text-notion-red' : 'text-notion-green'}>{isBorrowed ? t('iouIOweBadge') : t('iouOwedToMeBadge')}</span>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -1457,7 +1489,7 @@
 
             </div>
 
-            {/* NOTION DATABASE CONTROLS (Toggle 0€ items & Accordions) */}
+            {/* CONTROLS */}
             <div className={`flex flex-wrap items-center justify-between gap-2 border-b border-subtle pb-2 text-xs ${mobileTab === 'cockpit' ? 'hidden lg:flex' : 'flex'}`}>
               <div className="flex items-center gap-2">
                 <button
@@ -1473,7 +1505,7 @@
                 </button>
 
                 <span className="text-[11px] text-tertiary">
-                  (Einmalige 0 € Posten bleiben sauber ausgeblendet)
+                  {t('hideZeroesHint')}
                 </span>
               </div>
 
@@ -1482,11 +1514,11 @@
                 className="px-2 py-1 rounded text-xs text-secondary hover:text-primary transition flex items-center gap-1"
               >
                 <i className="fa-solid fa-up-down text-[10px]"></i>
-                <span>{Object.values(openBrackets).some(v => !v) ? 'Alle aufklappen' : 'Alle schließen'}</span>
+                <span>{Object.values(openBrackets).some(v => !v) ? t('expandAll') : t('collapseAll')}</span>
               </button>
             </div>
 
-            {/* ================== DATABASE ACCORDIONS (INCOMES & EXPENSES) ================== */}
+            {/* ACCORDIONS */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-start">
 
               {/* INCOMES COLUMN */}
@@ -1513,15 +1545,12 @@
                 {data.brackets.incomes.map(b => {
                   const items = data.categories.incomes.filter(c => (data.categoryOverrides[c] || 'fixed_in') === b.id);
                   const bracketActual = items.reduce((s, c) => s + getNode('incomes', c, selectedYear, selectedMonth).actual, 0);
-                  const bracketBudget = items.reduce((s, c) => s + getNode('incomes', c, selectedYear, selectedMonth).budget, 0);
                   const isOpen = !!openBrackets[b.id];
                   const palette = getPalette(b.id);
 
-                  // Items that are completely zero this month
                   const visibleItems = items.filter(cat => {
                     const node = getNode('incomes', cat, selectedYear, selectedMonth);
                     const isOneTime = !!data.categoryOneTime[cat];
-                    // If One-Time and 0/0, hide it ALWAYS
                     if (isOneTime && node.actual === 0 && node.budget === 0) return false;
                     if (hideZeroes && node.actual === 0 && node.budget === 0) return false;
                     return true;
@@ -1535,7 +1564,7 @@
                             {isOpen ? '▾' : '▸'}
                           </span>
                           <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${palette.tag}`}>
-                            {b.name}
+                            {t('brackets.' + b.id) || b.id}
                           </span>
                           <span className="text-[10px] text-tertiary">({visibleItems.length})</span>
                         </div>
@@ -1545,7 +1574,6 @@
                           <button
                             onClick={() => handleOpenQuickAdd('incomes', b.id)}
                             className="text-tertiary hover:text-primary p-1 text-xs"
-                            title="Posten hinzufügen"
                           >
                             <i className="fa-solid fa-plus"></i>
                           </button>
@@ -1555,7 +1583,7 @@
                       {isOpen && (
                         <div className="p-2 space-y-1.5 bg-surface">
                           {visibleItems.length === 0 ? (
-                            <p className="text-center py-2 text-xs text-tertiary italic">Keine aktiven Buchungen in diesem Monat.</p>
+                            <p className="text-center py-2 text-xs text-tertiary italic">{t('emptyGroupIncomes')}</p>
                           ) : (
                             visibleItems.map(cat => {
                               const node = getNode('incomes', cat, selectedYear, selectedMonth);
@@ -1660,7 +1688,6 @@
                   const isOpen = !!openBrackets[b.id];
                   const palette = getPalette(b.id);
 
-                  // Filter out one-time categories that have 0 budget & 0 actual in this specific month
                   const visibleItems = items.filter(c => {
                     if (c.isOneTime && c.actual === 0 && c.budget === 0) return false;
                     if (hideZeroes && c.actual === 0 && c.budget === 0) return false;
@@ -1675,7 +1702,7 @@
                             {isOpen ? '▾' : '▸'}
                           </span>
                           <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${palette.tag}`}>
-                            {b.name}
+                            {t('brackets.' + b.id) || b.id}
                           </span>
                           <span className="text-[10px] text-tertiary">({visibleItems.length})</span>
                         </div>
@@ -1688,7 +1715,6 @@
                           <button
                             onClick={() => handleOpenQuickAdd('expenses', b.id)}
                             className="text-tertiary hover:text-primary p-1 text-xs"
-                            title="Posten hinzufügen"
                           >
                             <i className="fa-solid fa-plus"></i>
                           </button>
@@ -1698,7 +1724,7 @@
                       {isOpen && (
                         <div className="p-2 space-y-2 bg-surface">
                           {visibleItems.length === 0 ? (
-                            <p className="text-center py-2 text-xs text-tertiary italic">Keine Ausgaben in dieser Gruppe für diesen Monat.</p>
+                            <p className="text-center py-2 text-xs text-tertiary italic">{t('emptyGroupExpenses')}</p>
                           ) : (
                             visibleItems.map(item => {
                               const isFresh = highlightedCategory === item.category;
@@ -1821,7 +1847,7 @@
             </div>
           </main>
 
-          {/* FLOATING ACTION BUTTON (Mobile) */}
+          {/* FLOATING ACTION BUTTON */}
           <div className="block lg:hidden fixed bottom-4 right-4 z-40">
             <button
               onClick={() => handleOpenQuickAdd(mobileTab === 'incomes' ? 'incomes' : 'expenses')}
@@ -1831,7 +1857,7 @@
             </button>
           </div>
 
-          {/* ⚡ MODAL: SPLIT LOAN INTO REPAYMENTS (E.g. Sister 900€ into 450€ in Oct & 450€ in Nov) */}
+          {/* SPLIT LOAN MODAL */}
           {splitModal && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
               <div className="bg-surface border border-subtle rounded-xl max-w-sm w-full p-4 space-y-3 shadow-xl text-xs">
@@ -1850,10 +1876,11 @@
                 </p>
 
                 <div>
-                  <label className="text-[10px] text-secondary font-medium block mb-1">Bezeichnung des Postens</label>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('splitItemLabel')}</label>
                   <input
                     type="text"
                     value={splitForm.name}
+                    placeholder={t('splitDefaultName')}
                     onChange={(e) => setSplitForm(p => ({ ...p, name: e.target.value }))}
                     className="w-full bg-subtle border border-subtle rounded px-2.5 py-1.5 text-primary outline-none focus:border-strong font-medium"
                   />
@@ -1861,7 +1888,7 @@
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[10px] text-secondary block mb-1">1. Rate Monat</label>
+                    <label className="text-[10px] text-secondary block mb-1">{t('splitInst1Month')}</label>
                     <select
                       value={splitForm.m1}
                       onChange={(e) => setSplitForm(p => ({ ...p, m1: e.target.value }))}
@@ -1878,7 +1905,7 @@
                   </div>
 
                   <div>
-                    <label className="text-[10px] text-secondary block mb-1">2. Rate Monat</label>
+                    <label className="text-[10px] text-secondary block mb-1">{t('splitInst2Month')}</label>
                     <select
                       value={splitForm.m2}
                       onChange={(e) => setSplitForm(p => ({ ...p, m2: e.target.value }))}
@@ -1896,12 +1923,12 @@
                 </div>
 
                 <div className="p-2 rounded bg-subtle/50 text-[10px] text-tertiary">
-                  Hinweis: Der Posten wird als <b>Einmalig</b> markiert und erscheint <i>nur</i> in den Monaten {splitForm.m1} und {splitForm.m2}.
+                  {t('splitNote', { m1: formatMonth(splitForm.m1, lang), m2: formatMonth(splitForm.m2, lang) })}
                 </div>
 
                 <div className="flex gap-2 pt-2 border-t border-subtle">
                   <button onClick={() => setSplitModal(null)} className="flex-1 py-1.5 bg-subtle text-secondary rounded hover:text-primary">
-                    Abbrechen
+                    {t('cancelBtn')}
                   </button>
                   <button onClick={handleExecuteSplitLoan} className="flex-1 py-1.5 bg-primary text-surface font-semibold rounded">
                     {t('splitConfirmBtn')}
@@ -1911,7 +1938,85 @@
             </div>
           )}
 
-          {/* ⚡ QUICK ADD ITEM MODAL */}
+          {/* REPLICATE RECURRING MODAL */}
+          {recurringModal && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+              <div className="bg-surface border border-subtle rounded-xl max-w-sm w-full p-4 space-y-3 shadow-xl text-xs">
+                <div className="flex justify-between items-center border-b border-subtle pb-2">
+                  <h3 className="font-semibold text-primary flex items-center gap-1.5">
+                    <i className="fa-solid fa-repeat"></i>
+                    <span>{t('replicateTitle')}</span>
+                  </h3>
+                  <button onClick={() => setRecurringModal(null)} className="text-secondary hover:text-primary">
+                    <i className="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+
+                <div className="p-2 rounded bg-subtle">
+                  <span className="text-secondary text-[10px] block">{t('replicateCatLabel')}</span>
+                  <span className="font-semibold text-primary">{recurringModal.cat}</span>
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('replicateFieldLabel')}</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setRecurringForm(p => ({ ...p, field: 'budget' }))}
+                      className={`p-1.5 rounded border text-xs ${recurringForm.field === 'budget' ? 'border-primary bg-subtle font-semibold text-primary' : 'border-subtle text-secondary'}`}
+                    >
+                      {t('replicateBudgetOption')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRecurringForm(p => ({ ...p, field: 'actual' }))}
+                      className={`p-1.5 rounded border text-xs ${recurringForm.field === 'actual' ? 'border-primary bg-subtle font-semibold text-primary' : 'border-subtle text-secondary'}`}
+                    >
+                      {t('replicateActualOption')}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('replicateAmountLabel')}</label>
+                  <div className="flex items-center bg-subtle border border-subtle rounded px-2.5 py-1 focus-within:border-strong">
+                    <input
+                      type="number" inputMode="decimal"
+                      value={recurringForm.amount}
+                      onChange={(e) => setRecurringForm(p => ({ ...p, amount: e.target.value }))}
+                      className="w-full bg-transparent text-right font-mono text-xs text-primary outline-none font-semibold"
+                    />
+                    <span className="text-xs font-mono text-tertiary ml-1">€</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('replicateDurationLabel')}</label>
+                  <select
+                    value={recurringForm.duration}
+                    onChange={(e) => setRecurringForm(p => ({ ...p, duration: e.target.value }))}
+                    className="w-full bg-subtle border border-subtle rounded px-2.5 py-1.5 text-xs text-primary outline-none"
+                  >
+                    <option value={3}>{t('duration3', { month: formatMonth(selectedMonth, lang) })}</option>
+                    <option value={6}>{t('duration6', { month: formatMonth(selectedMonth, lang) })}</option>
+                    <option value={12}>{t('duration12')}</option>
+                    <option value="all">{t('durationAll')}</option>
+                  </select>
+                </div>
+
+                <div className="flex gap-2 pt-2 border-t border-subtle">
+                  <button onClick={() => setRecurringModal(null)} className="flex-1 py-1.5 bg-subtle text-secondary rounded hover:text-primary">
+                    {t('cancelBtn')}
+                  </button>
+                  <button onClick={handleExecuteRecurring} className="flex-1 py-1.5 bg-primary text-surface font-semibold rounded">
+                    {t('replicateActionBtn')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* QUICK ADD ITEM MODAL */}
           {quickAddModal && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
               <div className="bg-surface border border-subtle rounded-xl max-w-sm w-full p-4 space-y-3 shadow-xl text-xs">
@@ -1942,7 +2047,7 @@
                     className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-primary outline-none"
                   >
                     {(quickAddModal.type === 'incomes' ? data.brackets.incomes : data.brackets.expenses).map(b => (
-                      <option key={b.id} value={b.id}>{b.name}</option>
+                      <option key={b.id} value={b.id}>{t('brackets.' + b.id) || b.id}</option>
                     ))}
                   </select>
                 </div>
@@ -1979,7 +2084,7 @@
 
                 <div className="flex gap-2 pt-2 border-t border-subtle">
                   <button onClick={() => setQuickAddModal(null)} className="flex-1 py-1.5 bg-subtle text-secondary rounded hover:text-primary">
-                    Abbrechen
+                    {t('cancelBtn')}
                   </button>
                   <button
                     disabled={!quickAddForm.name.trim()}
@@ -1993,7 +2098,7 @@
                     )}
                     className="flex-1 py-1.5 bg-primary text-surface font-semibold rounded disabled:opacity-40"
                   >
-                    + Erstellen
+                    + {t('addItemBtn')}
                   </button>
                 </div>
               </div>
@@ -2029,7 +2134,7 @@
                     className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-primary outline-none"
                   >
                     {(activeEditCat.type === 'incomes' ? data.brackets.incomes : data.brackets.expenses).map(b => (
-                      <option key={b.id} value={b.id}>{b.name}</option>
+                      <option key={b.id} value={b.id}>{t('brackets.' + b.id) || b.id}</option>
                     ))}
                   </select>
                 </div>
@@ -2037,7 +2142,7 @@
                 <div className="flex items-center justify-between p-2 rounded bg-subtle border border-subtle">
                   <div>
                     <span className="font-medium text-primary block">{t('badgeOneTime')}</span>
-                    <span className="text-[10px] text-secondary">In Monaten ohne Buchung ausblenden</span>
+                    <span className="text-[10px] text-secondary">{t('hideWhenZeroHint')}</span>
                   </div>
                   <input
                     type="checkbox"
@@ -2097,7 +2202,7 @@
             <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
               <div className="bg-surface border border-subtle rounded-xl max-w-sm w-full p-4 space-y-3 shadow-xl text-xs">
                 <div className="flex justify-between items-center border-b border-subtle pb-2">
-                  <h3 className="font-semibold text-notion-red">Eintrag löschen: {smartDeleteModal.cat}</h3>
+                  <h3 className="font-semibold text-notion-red">{t('deleteItemTitle', { name: smartDeleteModal.cat })}</h3>
                   <button onClick={() => setSmartDeleteModal(null)} className="text-secondary hover:text-primary">
                     <i className="fa-solid fa-xmark"></i>
                   </button>
@@ -2108,21 +2213,21 @@
                     onClick={() => executeSmartDelete(smartDeleteModal.type, smartDeleteModal.cat, 'future_only')}
                     className="w-full text-left p-2 rounded bg-subtle hover:bg-subtle/80 border border-subtle"
                   >
-                    <div className="font-semibold text-primary">Nur zukünftige Monate leeren</div>
-                    <div className="text-[10px] text-tertiary">Historische Buchungen bleiben erhalten.</div>
+                    <div className="font-semibold text-primary">{t('deleteFutureOnly')}</div>
+                    <div className="text-[10px] text-tertiary">{t('deleteFutureOnlyDesc')}</div>
                   </button>
 
                   <button
                     onClick={() => executeSmartDelete(smartDeleteModal.type, smartDeleteModal.cat, 'purge_and_merge')}
                     className="w-full text-left p-2 rounded bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20"
                   >
-                    <div className="font-semibold text-notion-red">Vollständig löschen & nach 'Sonstiges' verschieben</div>
-                    <div className="text-[10px] text-tertiary">Kein Bilanzverlust.</div>
+                    <div className="font-semibold text-notion-red">{t('deletePurgeMerge')}</div>
+                    <div className="text-[10px] text-tertiary">{t('deletePurgeMergeDesc')}</div>
                   </button>
                 </div>
 
                 <button onClick={() => setSmartDeleteModal(null)} className="w-full py-1.5 bg-subtle rounded text-secondary hover:text-primary">
-                  Abbrechen
+                  {t('cancelBtn')}
                 </button>
               </div>
             </div>
