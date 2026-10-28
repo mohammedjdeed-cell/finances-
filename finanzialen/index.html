@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de" class="dark">
 <head>
@@ -111,6 +112,12 @@
       100% { background-color: transparent; }
     }
     .animate-flash { animation: flashHighlight 1.5s ease-out; }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .animate-slideUp { animation: slideUp 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
   </style>
 </head>
 <body class="min-h-screen">
@@ -183,11 +190,9 @@
       variable_in: { borderL: 'border-l-cyan-600', tag: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400' }
     };
 
-    const getPalette = (bracketId) => {
-      return BRACKET_PALETTES[bracketId] || {
-        borderL: 'border-l-stone-400',
-        tag: 'bg-notion-tagGray text-stone-600 dark:text-stone-300'
-      };
+    const getPalette = (bracketId) => BRACKET_PALETTES[bracketId] || {
+      borderL: 'border-l-stone-400',
+      tag: 'bg-notion-tagGray text-stone-600 dark:text-stone-300'
     };
 
     const DEFAULT_BRACKETS = {
@@ -231,7 +236,8 @@
         title: "Haushaltsbuch",
         subtitle: "Persönlicher Cashflow & Budget",
         startingCapital: "Startkapital (Konto & Bar)",
-        kpiActualNet: "Ist-Saldo",
+        kpiActualNet: "Ist-Saldo (Monatsgewinn)",
+        kpiActualNetDesc: "Tippen für genaue Aufstellung",
         kpiProjectedNet: "Prognose Saldo",
         kpiDailyRoom: "Freies Tagesbudget",
         kpiCumulative: "Endbestand",
@@ -273,6 +279,8 @@
         expandAll: "Alle aufklappen",
         collapseAll: "Alle schließen",
         annualOverview: "Jahresübersicht",
+        annualRunway: "Runway & Jahresverlauf",
+        annualSavingsRate: "Sparquote Jahresdurchschnitt",
         iouTitle: "Verbindlichkeiten & Forderungen (Darlehen / IOU)",
         iouAddBtn: "Eintragen",
         iouPersonPlaceholder: "Z. B. Schwester (900€ Leihe)...",
@@ -323,6 +331,12 @@
         loanInst2Month: "2. Rate Monat (Ausgabe)",
         loanConfirmBtn: "In Einnahmen & Ausgaben buchen",
         loanSuccessAlert: "Darlehen gebucht! {{inAmount}} als Einnahme in {{inMonth}} verbucht, und je {{a1}} in {{m1}} sowie {{a2}} in {{m2}} als Rückzahlung geplant.",
+        breakdownTitle: "Aufstellung: Woher kommen die Zahlen für {{month}} {{year}}?",
+        breakdownIncomes: "Alle Einnahmen diesen Monat (Summe: {{total}}):",
+        breakdownExpenses: "Alle Ausgaben diesen Monat (Summe: {{total}}):",
+        breakdownNetResult: "Ergebnis (Ist-Saldo = Einnahmen minus Ausgaben):",
+        noItemsInBreakdown: "Keine Beträge eingetragen.",
+        closeBtn: "Schließen",
         deleteItemTitle: "Eintrag löschen: {{name}}",
         deleteFutureOnly: "Nur zukünftige Monate leeren",
         deleteFutureOnlyDesc: "Historische Buchungen bleiben erhalten.",
@@ -348,7 +362,8 @@
         title: "Household Budget",
         subtitle: "Personal Cashflow & Ledger",
         startingCapital: "Starting Balance (Bank & Cash)",
-        kpiActualNet: "Actual Net",
+        kpiActualNet: "Actual Net (Monthly Surplus)",
+        kpiActualNetDesc: "Tap to see full receipt",
         kpiProjectedNet: "Projected Net",
         kpiDailyRoom: "Daily Allowance",
         kpiCumulative: "Net Reserve",
@@ -390,6 +405,8 @@
         expandAll: "Expand all",
         collapseAll: "Collapse all",
         annualOverview: "Annual View",
+        annualRunway: "Runway & Annual Flow",
+        annualSavingsRate: "Annual Savings Rate Average",
         iouTitle: "Debts & Receivables (Loans / IOU)",
         iouAddBtn: "Add Record",
         iouPersonPlaceholder: "E.g. Sister (900€ loan)...",
@@ -440,6 +457,12 @@
         loanInst2Month: "2nd Repayment Month (Expense)",
         loanConfirmBtn: "Book to Incomes & Expenses",
         loanSuccessAlert: "Loan booked! {{inAmount}} recorded as income in {{inMonth}}, and repayments of {{a1}} in {{m1}} and {{a2}} in {{m2}} scheduled.",
+        breakdownTitle: "Receipt Breakdown for {{month}} {{year}}",
+        breakdownIncomes: "All Incomes This Month (Total: {{total}}):",
+        breakdownExpenses: "All Expenses This Month (Total: {{total}}):",
+        breakdownNetResult: "Result (Actual Net = Incomes minus Expenses):",
+        noItemsInBreakdown: "No transactions recorded.",
+        closeBtn: "Close",
         deleteItemTitle: "Delete Entry: {{name}}",
         deleteFutureOnly: "Clear future months only",
         deleteFutureOnlyDesc: "Past and current month records remain intact.",
@@ -489,7 +512,7 @@
     const useTranslation = () => useContext(LanguageContext);
 
     const IDB = {
-      dbName: 'LiquidCashflow_vCleanLoan',
+      dbName: 'LiquidCashflow_vStrictNotionComplete',
       open() {
         return new Promise((res, rej) => {
           const r = indexedDB.open(this.dbName, 1);
@@ -522,6 +545,7 @@
       }
     };
 
+    // Auto-deduplicates categories to avoid doubling numbers
     const normalizeState = (raw) => {
       const state = {
         startingCapital: typeof raw?.startingCapital === 'number' ? raw.startingCapital : 0,
@@ -530,8 +554,8 @@
           incomes: raw?.brackets?.incomes || [...DEFAULT_BRACKETS.incomes]
         },
         categories: {
-          incomes: [...(raw?.categories?.incomes || INITIAL_CATEGORIES.incomes)],
-          expenses: [...(raw?.categories?.expenses || INITIAL_CATEGORIES.expenses)]
+          incomes: [],
+          expenses: []
         },
         categoryOverrides: { ...(raw?.categoryOverrides || {}) },
         categoryModes: { ...(raw?.categoryModes || {}) },
@@ -546,12 +570,30 @@
             "Darlehen Schwester (Eingang)": true
           }) 
         },
-        ious: (raw?.ious || []).map(i => ({
-          ...i,
-          type: i.type || 'borrowed'
-        })),
+        ious: (raw?.ious || []).map(i => ({ ...i, type: i.type || 'borrowed' })),
         values: {}
       };
+
+      // Case-insensitive deduplication
+      const rawIncomes = raw?.categories?.incomes || INITIAL_CATEGORIES.incomes;
+      const seenIn = new Set();
+      rawIncomes.forEach(c => {
+        const lower = c.trim().toLowerCase();
+        if (!seenIn.has(lower)) {
+          seenIn.add(lower);
+          state.categories.incomes.push(c.trim());
+        }
+      });
+
+      const rawExpenses = raw?.categories?.expenses || INITIAL_CATEGORIES.expenses;
+      const seenEx = new Set();
+      rawExpenses.forEach(c => {
+        const lower = c.trim().toLowerCase();
+        if (!seenEx.has(lower)) {
+          seenEx.add(lower);
+          state.categories.expenses.push(c.trim());
+        }
+      });
 
       const validExpenseBrackets = state.brackets.expenses.map(b => b.id);
       const validIncomeBrackets = state.brackets.incomes.map(b => b.id);
@@ -615,7 +657,6 @@
       const [selectedYear, setSelectedYear] = useState(initialDate.year);
       const [selectedMonth, setSelectedMonth] = useState(initialDate.month);
 
-      // Hide / Show 0€ categories toggle
       const [hideZeroes, setHideZeroes] = useState(() => safeStorage.get('budget_hide_zeroes', 'true') === 'true');
       const [isBurgerOpen, setIsBurgerOpen] = useState(false);
       const [theme, setTheme] = useState(() => safeStorage.get('budget_app_theme', 'dark'));
@@ -629,6 +670,7 @@
       const [openNoteRows, setOpenNoteRows] = useState({});
       const [highlightedCategory, setHighlightedCategory] = useState(null);
 
+      const [breakdownModal, setBreakdownModal] = useState(false);
       const [activeEditCat, setActiveEditCat] = useState(null);
       const [editCatForm, setEditCatForm] = useState({ name: "", bracket: "", mode: "fixed", isOneTime: false, pDay: "", notes: [] });
       const [newBulletText, setNewBulletText] = useState("");
@@ -641,7 +683,7 @@
 
       const [smartDeleteModal, setSmartDeleteModal] = useState(null);
 
-      // Complete Borrowed Loan Workflow Modal (Income now, Repayments later)
+      // Loan Modal (Sister Loan / Borrowed Money)
       const [loanModal, setLoanModal] = useState(null);
       const [loanForm, setLoanForm] = useState({
         lender: "Schwester",
@@ -835,6 +877,21 @@
           };
         });
       }, [data, selectedYear, selectedMonth, currentMetrics]);
+
+      // Detailed receipt breakdown for the clicked month
+      const monthlyReceipt = useMemo(() => {
+        const incomeItems = data.categories.incomes
+          .map(cat => ({ cat, ...getNode('incomes', cat, selectedYear, selectedMonth) }))
+          .filter(i => i.actual > 0 || i.budget > 0)
+          .sort((a, b) => b.actual - a.actual);
+
+        const expenseItems = data.categories.expenses
+          .map(cat => ({ cat, ...getNode('expenses', cat, selectedYear, selectedMonth) }))
+          .filter(i => i.actual > 0 || i.budget > 0)
+          .sort((a, b) => b.actual - a.actual);
+
+        return { incomeItems, expenseItems };
+      }, [data, selectedYear, selectedMonth]);
 
       const checkDuplicate = (name, excludeCat = null) => {
         if (!name.trim()) return null;
@@ -1076,7 +1133,7 @@
         setOpenBrackets(nextState);
       };
 
-      // IOU / Debts logic
+      // IOU / Debts
       const activeIous = useMemo(() => (data.ious || []).filter(i => !i.settled), [data.ious]);
       const totalBorrowed = useMemo(() => activeIous.filter(i => i.type === 'borrowed').reduce((s, i) => s + (parseFloat(i.amount) || 0), 0), [activeIous]);
       const totalLent = useMemo(() => activeIous.filter(i => i.type !== 'borrowed').reduce((s, i) => s + (parseFloat(i.amount) || 0), 0), [activeIous]);
@@ -1107,7 +1164,7 @@
         await saveState(copy);
       };
 
-      // 🌟 FULL WORKFLOW: BORROWED LOAN (Income Now + Repayments Later + IOU Ledger)
+      // Full Sister Loan Booking (+900 Income Now, -450 Repayments in Oct & Nov)
       const handleExecuteLoanBooking = async () => {
         const copy = JSON.parse(JSON.stringify(data));
         const incName = loanForm.incomeName.trim() || "Darlehen Schwester (Eingang)";
@@ -1116,7 +1173,7 @@
         const rep1 = parseFloat(loanForm.a1) || 0;
         const rep2 = parseFloat(loanForm.a2) || 0;
 
-        // 1. Register the Income Category (+900 €) into CURRENT Month so bank balance jumps
+        // 1. Income Category
         if (!copy.categories.incomes.includes(incName)) {
           copy.categories.incomes.push(incName);
           copy.categoryOverrides[incName] = 'variable_in';
@@ -1124,7 +1181,6 @@
           copy.categoryOneTime[incName] = true;
         }
 
-        // Initialize months for income
         ["2026", "2027", "2028"].forEach(y => {
           if (!copy.values[y].incomes[incName]) copy.values[y].incomes[incName] = {};
           getMonthsForYear(parseInt(y)).forEach(m => {
@@ -1134,13 +1190,12 @@
           });
         });
 
-        // Set income in currently viewed month as ACTUAL and BUDGET received!
         if (copy.values[selectedYear]?.incomes?.[incName]?.[selectedMonth]) {
           copy.values[selectedYear].incomes[incName][selectedMonth].actual = incAmt;
           copy.values[selectedYear].incomes[incName][selectedMonth].budget = incAmt;
         }
 
-        // 2. Register the Repayment Expense Category
+        // 2. Expense Category
         if (!copy.categories.expenses.includes(expName)) {
           copy.categories.expenses.push(expName);
           copy.categoryOverrides[expName] = 'other';
@@ -1148,7 +1203,6 @@
           copy.categoryOneTime[expName] = true;
         }
 
-        // Initialize months for expense
         ["2026", "2027", "2028"].forEach(y => {
           if (!copy.values[y].expenses[expName]) copy.values[y].expenses[expName] = {};
           getMonthsForYear(parseInt(y)).forEach(m => {
@@ -1158,17 +1212,14 @@
           });
         });
 
-        // Set Installment 1 in m1
         if (copy.values[selectedYear]?.expenses?.[expName]?.[loanForm.m1]) {
           copy.values[selectedYear].expenses[expName][loanForm.m1].budget = rep1;
         }
-
-        // Set Installment 2 in m2
         if (copy.values[selectedYear]?.expenses?.[expName]?.[loanForm.m2]) {
           copy.values[selectedYear].expenses[expName][loanForm.m2].budget = rep2;
         }
 
-        // 3. Add to IOU ledger automatically
+        // 3. IOU entry
         if (!copy.ious) copy.ious = [];
         copy.ious.push({
           id: 'iou_' + Date.now(),
@@ -1191,6 +1242,7 @@
         }));
       };
 
+      // Chart Effect
       useEffect(() => {
         if (selectedMonth === "AnnualOverview" || !chartRef.current) return;
         const ctx = chartRef.current.getContext('2d');
@@ -1258,7 +1310,6 @@
               </div>
             </div>
 
-            {/* Year Selector */}
             <div className="flex items-center bg-subtle p-0.5 rounded border border-subtle">
               {[2026, 2027, 2028].map(yr => (
                 <button
@@ -1271,7 +1322,6 @@
               ))}
             </div>
 
-            {/* Language & Settings */}
             <div className="flex items-center space-x-1">
               <button
                 onClick={() => changeLanguage(lang === 'de' ? 'en' : 'de')}
@@ -1369,7 +1419,7 @@
                 <p className="text-xs text-secondary">{t('subtitle')}</p>
               </div>
 
-              {/* 🎯 PROMINENT 0€ CATEGORY TOGGLE (VISIBLE EVERYWHERE) */}
+              {/* 🎯 ZERO CATEGORY TOGGLE (VISIBLE EVERYWHERE) */}
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setHideZeroes(prev => !prev)}
@@ -1397,12 +1447,21 @@
             {/* COCKPIT HERO */}
             <div className={`${mobileTab === 'cockpit' ? 'block' : 'hidden lg:block'} space-y-3`}>
               
-              {/* Properties Grid */}
+              {/* Properties Grid with Clickable Actual Net Receipt */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                <div className="p-3 rounded-lg border border-subtle bg-surface-elevated flex flex-col justify-between">
-                  <div className="flex items-center gap-1.5 text-secondary text-[11px]">
-                    <span>⚖️</span>
-                    <span>{t('kpiActualNet')}</span>
+                
+                {/* 🔍 CLICKABLE ACTUAL NET */}
+                <div
+                  onClick={() => setBreakdownModal(true)}
+                  className="p-3 rounded-lg border border-subtle hover:border-strong bg-surface-elevated flex flex-col justify-between cursor-pointer transition group"
+                  title="Tippen für detaillierte Aufstellung"
+                >
+                  <div className="flex items-center justify-between text-secondary text-[11px]">
+                    <div className="flex items-center gap-1.5">
+                      <span>⚖️</span>
+                      <span className="font-medium text-primary">{t('kpiActualNet')}</span>
+                    </div>
+                    <span className="text-[10px] text-notion-blue opacity-80 group-hover:underline">🔍</span>
                   </div>
                   <div className={`text-lg font-mono font-bold mt-1 ${currentMetrics.actualNet >= 0 ? 'text-notion-green dark:text-emerald-400' : 'text-notion-red'}`}>
                     {fmt(currentMetrics.actualNet)}
@@ -1465,7 +1524,9 @@
                     <div>
                       <div className="font-semibold text-primary">{t('iouSisterTip')}</div>
                       <div className="text-[11px] text-secondary">
-                        Bucht +900 € als Einnahme in {formatMonth(selectedMonth, lang)} und plant zwei Rückzahlungen à 450 € in Okt & Nov.
+                        {lang === 'de' 
+                          ? `Bucht +900 € als Einnahme in ${formatMonth(selectedMonth, lang)} und plant zwei Rückzahlungen à 450 € in Okt & Nov.` 
+                          : `Adds +900 € as income in ${formatMonth(selectedMonth, lang)} and schedules two 450 € repayments in Oct & Nov.`}
                       </div>
                     </div>
                   </div>
@@ -1594,11 +1655,9 @@
                   const isOpen = !!openBrackets[b.id];
                   const palette = getPalette(b.id);
 
-                  // Items filtered by 0€ setting
                   const visibleItems = allItems.filter(cat => {
                     const node = getNode('incomes', cat, selectedYear, selectedMonth);
                     const isZero = (node.actual === 0 && node.budget === 0);
-                    // If hideZeroes is false, show ALL items unconditionally!
                     if (!hideZeroes) return true;
                     return !isZero;
                   });
@@ -1746,10 +1805,8 @@
                   const isOpen = !!openBrackets[b.id];
                   const palette = getPalette(b.id);
 
-                  // Items filtered by 0€ setting
                   const visibleItems = allItems.filter(c => {
                     const isZero = (c.actual === 0 && c.budget === 0);
-                    // If hideZeroes is false, show ALL items unconditionally!
                     if (!hideZeroes) return true;
                     return !isZero;
                   });
@@ -1928,7 +1985,89 @@
             </button>
           </div>
 
-          {/* 🌟 FULL LOAN WORKFLOW MODAL (INCOME NOW + EXPENSES LATER) */}
+          {/* 🔍 DETAILED AUDIT / BREAKDOWN RECEIPT MODAL */}
+          {breakdownModal && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+              <div className="bg-surface border border-subtle rounded-xl max-w-lg w-full p-5 space-y-4 shadow-xl text-xs max-h-[85vh] overflow-y-auto">
+                <div className="flex justify-between items-center border-b border-subtle pb-2.5">
+                  <h3 className="font-semibold text-primary text-sm flex items-center gap-1.5">
+                    <span>🧾</span>
+                    <span>{t('breakdownTitle', { month: formatMonth(selectedMonth, lang), year: selectedYear })}</span>
+                  </h3>
+                  <button onClick={() => setBreakdownModal(false)} className="text-secondary hover:text-primary p-1">
+                    <i className="fa-solid fa-xmark text-sm"></i>
+                  </button>
+                </div>
+
+                {/* Incomes Section */}
+                <div className="space-y-1.5">
+                  <div className="font-semibold text-notion-green flex justify-between border-b border-subtle pb-1">
+                    <span>{t('breakdownIncomes', { total: fmt(currentMetrics.actualIn) })}</span>
+                  </div>
+                  {monthlyReceipt.incomeItems.length === 0 ? (
+                    <p className="text-tertiary italic text-[11px]">{t('noItemsInBreakdown')}</p>
+                  ) : (
+                    monthlyReceipt.incomeItems.map(item => (
+                      <div key={item.cat} className="flex items-center justify-between p-1.5 rounded bg-subtle">
+                        <span className="font-medium text-primary">{item.cat}</span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="number"
+                            value={item.actual}
+                            onChange={(e) => updateNode('incomes', item.cat, selectedYear, selectedMonth, 'actual', e.target.value)}
+                            className="w-24 bg-surface border border-subtle rounded px-1.5 py-0.5 font-mono text-right text-notion-green font-semibold"
+                          />
+                          <span className="text-tertiary">€</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Expenses Section */}
+                <div className="space-y-1.5 pt-2">
+                  <div className="font-semibold text-notion-red flex justify-between border-b border-subtle pb-1">
+                    <span>{t('breakdownExpenses', { total: fmt(currentMetrics.actualEx) })}</span>
+                  </div>
+                  {monthlyReceipt.expenseItems.length === 0 ? (
+                    <p className="text-tertiary italic text-[11px]">{t('noItemsInBreakdown')}</p>
+                  ) : (
+                    monthlyReceipt.expenseItems.map(item => (
+                      <div key={item.cat} className="flex items-center justify-between p-1.5 rounded bg-subtle">
+                        <span className="font-medium text-primary">{item.cat}</span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="number"
+                            value={item.actual}
+                            onChange={(e) => updateNode('expenses', item.cat, selectedYear, selectedMonth, 'actual', e.target.value)}
+                            className="w-24 bg-surface border border-subtle rounded px-1.5 py-0.5 font-mono text-right text-notion-red font-semibold"
+                          />
+                          <span className="text-tertiary">€</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Net Total Summary */}
+                <div className="p-3 rounded-lg bg-surface-elevated border border-subtle flex items-center justify-between font-mono font-bold text-sm">
+                  <span>{t('breakdownNetResult')}</span>
+                  <span className={currentMetrics.actualNet >= 0 ? 'text-notion-green' : 'text-notion-red'}>
+                    {fmt(currentMetrics.actualNet)}
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => setBreakdownModal(false)}
+                  className="w-full py-2 bg-primary text-surface font-semibold rounded text-xs"
+                >
+                  {t('closeBtn')}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* LOAN MODAL (Sister Loan) */}
           {loanModal && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
               <div className="bg-surface border border-subtle rounded-xl max-w-md w-full p-4 space-y-3 shadow-xl text-xs max-h-[90vh] overflow-y-auto">
@@ -2054,6 +2193,185 @@
             </div>
           )}
 
+          {/* QUICK ADD MODAL */}
+          {quickAddModal && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+              <div className="bg-surface border border-subtle rounded-xl max-w-sm w-full p-4 space-y-3 shadow-xl text-xs">
+                <div className="flex justify-between items-center border-b border-subtle pb-2">
+                  <h3 className="font-semibold text-primary">{t('quickAddModalTitle')}</h3>
+                  <button onClick={() => setQuickAddModal(null)} className="text-secondary hover:text-primary">
+                    <i className="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('posten')}</label>
+                  <input
+                    type="text"
+                    value={quickAddForm.name}
+                    onChange={(e) => setQuickAddForm(p => ({ ...p, name: e.target.value }))}
+                    placeholder={t('quickAddNamePlaceholder')}
+                    autoFocus
+                    className="w-full bg-subtle border border-subtle rounded px-2.5 py-1.5 text-primary outline-none focus:border-strong font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('bracketLabel')}</label>
+                  <select
+                    value={quickAddForm.bracket}
+                    onChange={(e) => setQuickAddForm(p => ({ ...p, bracket: e.target.value }))}
+                    className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-primary outline-none"
+                  >
+                    {(quickAddModal.type === 'incomes' ? data.brackets.incomes : data.brackets.expenses).map(b => (
+                      <option key={b.id} value={b.id}>{t('brackets.' + b.id) || b.id}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('initialBudgetLabel')}</label>
+                  <div className="flex items-center bg-subtle border border-subtle rounded px-2.5 py-1 focus-within:border-strong">
+                    <input
+                      type="number" inputMode="decimal"
+                      value={quickAddForm.budget}
+                      onChange={(e) => setQuickAddForm(p => ({ ...p, budget: e.target.value }))}
+                      placeholder="0"
+                      className="w-full bg-transparent text-right font-mono text-xs text-primary outline-none font-medium"
+                    />
+                    <span className="text-xs font-mono text-tertiary ml-1">€</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-2 rounded bg-subtle/50 border border-subtle">
+                  <div>
+                    <span className="font-medium text-primary block text-[11px]">{t('badgeOneTime')}</span>
+                    <span className="text-[10px] text-tertiary">
+                      {t('isOneTimeCurrentOnly', { month: formatMonth(selectedMonth, lang), year: selectedYear })}
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={quickAddForm.isOneTime}
+                    onChange={(e) => setQuickAddForm(p => ({ ...p, isOneTime: e.target.checked }))}
+                    className="w-4 h-4 rounded border-subtle"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2 border-t border-subtle">
+                  <button onClick={() => setQuickAddModal(null)} className="flex-1 py-1.5 bg-subtle text-secondary rounded hover:text-primary">
+                    {t('cancelBtn')}
+                  </button>
+                  <button
+                    disabled={!quickAddForm.name.trim()}
+                    onClick={() => handleCreateCategory(
+                      quickAddModal.type,
+                      quickAddForm.name,
+                      quickAddForm.bracket,
+                      quickAddForm.mode,
+                      quickAddForm.budget,
+                      quickAddForm.isOneTime
+                    )}
+                    className="flex-1 py-1.5 bg-primary text-surface font-semibold rounded disabled:opacity-40"
+                  >
+                    + {t('addItemBtn')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* EDIT MODAL */}
+          {activeEditCat && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+              <div className="bg-surface border border-subtle rounded-xl max-w-sm w-full p-4 space-y-3 shadow-xl text-xs max-h-[85vh] overflow-y-auto">
+                <div className="flex justify-between items-center border-b border-subtle pb-2">
+                  <h3 className="font-semibold text-primary">{t('editorTitle')}</h3>
+                  <button onClick={() => setActiveEditCat(null)} className="text-secondary hover:text-primary">
+                    <i className="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('posten')}</label>
+                  <input
+                    type="text"
+                    value={editCatForm.name}
+                    onChange={(e) => setEditCatForm(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full bg-subtle border border-subtle rounded px-2.5 py-1.5 text-primary outline-none focus:border-strong font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('bracketLabel')}</label>
+                  <select
+                    value={editCatForm.bracket}
+                    onChange={(e) => setEditCatForm(prev => ({ ...prev, bracket: e.target.value }))}
+                    className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-primary outline-none"
+                  >
+                    {(activeEditCat.type === 'incomes' ? data.brackets.incomes : data.brackets.expenses).map(b => (
+                      <option key={b.id} value={b.id}>{t('brackets.' + b.id) || b.id}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between p-2 rounded bg-subtle border border-subtle">
+                  <div>
+                    <span className="font-medium text-primary block">{t('badgeOneTime')}</span>
+                    <span className="text-[10px] text-secondary">{t('hideWhenZeroHint')}</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={editCatForm.isOneTime}
+                    onChange={(e) => setEditCatForm(prev => ({ ...prev, isOneTime: e.target.checked }))}
+                    className="w-4 h-4 rounded"
+                  />
+                </div>
+
+                <div className="space-y-1.5 pt-2 border-t border-subtle">
+                  <label className="text-[10px] text-secondary font-medium flex items-center justify-between">
+                    <span>{t('notesTitleMonth', { month: formatMonth(selectedMonth, lang), year: selectedYear })}</span>
+                    <span>({editCatForm.notes.length})</span>
+                  </label>
+
+                  <div className="space-y-1 max-h-24 overflow-y-auto">
+                    {editCatForm.notes.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-1.5 rounded bg-subtle text-xs gap-2">
+                        <span className="text-primary truncate">{item}</span>
+                        <button onClick={() => handleRemoveBulletPoint(idx)} className="text-tertiary hover:text-notion-red">
+                          <i className="fa-solid fa-xmark"></i>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      placeholder={t('addNotePlaceholder')}
+                      value={newBulletText}
+                      onChange={(e) => setNewBulletText(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleAddBulletPoint(); }}
+                      className="flex-1 bg-subtle border border-subtle rounded px-2 py-1 text-xs text-primary outline-none"
+                    />
+                    <button onClick={handleAddBulletPoint} className="bg-subtle hover:bg-subtle/80 px-2.5 py-1 rounded text-primary font-medium">
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-subtle">
+                  <button
+                    onClick={handleSaveCategoryChanges}
+                    className="w-full bg-primary text-surface font-semibold py-1.5 rounded"
+                  >
+                    {t('saveClose')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* REPLICATE RECURRING MODAL */}
           {recurringModal && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
@@ -2126,187 +2444,6 @@
                   </button>
                   <button onClick={handleExecuteRecurring} className="flex-1 py-1.5 bg-primary text-surface font-semibold rounded">
                     {t('replicateActionBtn')}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* QUICK ADD ITEM MODAL */}
-          {quickAddModal && (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-              <div className="bg-surface border border-subtle rounded-xl max-w-sm w-full p-4 space-y-3 shadow-xl text-xs">
-                <div className="flex justify-between items-center border-b border-subtle pb-2">
-                  <h3 className="font-semibold text-primary">{t('quickAddModalTitle')}</h3>
-                  <button onClick={() => setQuickAddModal(null)} className="text-secondary hover:text-primary">
-                    <i className="fa-solid fa-xmark"></i>
-                  </button>
-                </div>
-
-                <div>
-                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('posten')}</label>
-                  <input
-                    type="text"
-                    value={quickAddForm.name}
-                    onChange={(e) => setQuickAddForm(p => ({ ...p, name: e.target.value }))}
-                    placeholder={t('quickAddNamePlaceholder')}
-                    autoFocus
-                    className="w-full bg-subtle border border-subtle rounded px-2.5 py-1.5 text-primary outline-none focus:border-strong font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('bracketLabel')}</label>
-                  <select
-                    value={quickAddForm.bracket}
-                    onChange={(e) => setQuickAddForm(p => ({ ...p, bracket: e.target.value }))}
-                    className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-primary outline-none"
-                  >
-                    {(quickAddModal.type === 'incomes' ? data.brackets.incomes : data.brackets.expenses).map(b => (
-                      <option key={b.id} value={b.id}>{t('brackets.' + b.id) || b.id}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('initialBudgetLabel')}</label>
-                  <div className="flex items-center bg-subtle border border-subtle rounded px-2.5 py-1 focus-within:border-strong">
-                    <input
-                      type="number" inputMode="decimal"
-                      value={quickAddForm.budget}
-                      onChange={(e) => setQuickAddForm(p => ({ ...p, budget: e.target.value }))}
-                      placeholder="0"
-                      className="w-full bg-transparent text-right font-mono text-xs text-primary outline-none font-medium"
-                    />
-                    <span className="text-xs font-mono text-tertiary ml-1">€</span>
-                  </div>
-                </div>
-
-                {/* Scope to this month only (One-time) */}
-                <div className="flex items-center justify-between p-2 rounded bg-subtle/50 border border-subtle">
-                  <div>
-                    <span className="font-medium text-primary block text-[11px]">{t('badgeOneTime')}</span>
-                    <span className="text-[10px] text-tertiary">
-                      {t('isOneTimeCurrentOnly', { month: formatMonth(selectedMonth, lang), year: selectedYear })}
-                    </span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={quickAddForm.isOneTime}
-                    onChange={(e) => setQuickAddForm(p => ({ ...p, isOneTime: e.target.checked }))}
-                    className="w-4 h-4 rounded border-subtle"
-                  />
-                </div>
-
-                <div className="flex gap-2 pt-2 border-t border-subtle">
-                  <button onClick={() => setQuickAddModal(null)} className="flex-1 py-1.5 bg-subtle text-secondary rounded hover:text-primary">
-                    {t('cancelBtn')}
-                  </button>
-                  <button
-                    disabled={!quickAddForm.name.trim()}
-                    onClick={() => handleCreateCategory(
-                      quickAddModal.type,
-                      quickAddForm.name,
-                      quickAddForm.bracket,
-                      quickAddForm.mode,
-                      quickAddForm.budget,
-                      quickAddForm.isOneTime
-                    )}
-                    className="flex-1 py-1.5 bg-primary text-surface font-semibold rounded disabled:opacity-40"
-                  >
-                    + {t('addItemBtn')}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* EDIT PROPERTY MODAL */}
-          {activeEditCat && (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-              <div className="bg-surface border border-subtle rounded-xl max-w-sm w-full p-4 space-y-3 shadow-xl text-xs max-h-[85vh] overflow-y-auto">
-                <div className="flex justify-between items-center border-b border-subtle pb-2">
-                  <h3 className="font-semibold text-primary">{t('editorTitle')}</h3>
-                  <button onClick={() => setActiveEditCat(null)} className="text-secondary hover:text-primary">
-                    <i className="fa-solid fa-xmark"></i>
-                  </button>
-                </div>
-
-                <div>
-                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('posten')}</label>
-                  <input
-                    type="text"
-                    value={editCatForm.name}
-                    onChange={(e) => setEditCatForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full bg-subtle border border-subtle rounded px-2.5 py-1.5 text-primary outline-none focus:border-strong font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('bracketLabel')}</label>
-                  <select
-                    value={editCatForm.bracket}
-                    onChange={(e) => setEditCatForm(prev => ({ ...prev, bracket: e.target.value }))}
-                    className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-primary outline-none"
-                  >
-                    {(activeEditCat.type === 'incomes' ? data.brackets.incomes : data.brackets.expenses).map(b => (
-                      <option key={b.id} value={b.id}>{t('brackets.' + b.id) || b.id}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex items-center justify-between p-2 rounded bg-subtle border border-subtle">
-                  <div>
-                    <span className="font-medium text-primary block">{t('badgeOneTime')}</span>
-                    <span className="text-[10px] text-secondary">{t('hideWhenZeroHint')}</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={editCatForm.isOneTime}
-                    onChange={(e) => setEditCatForm(prev => ({ ...prev, isOneTime: e.target.checked }))}
-                    className="w-4 h-4 rounded"
-                  />
-                </div>
-
-                {/* Scoped Notes */}
-                <div className="space-y-1.5 pt-2 border-t border-subtle">
-                  <label className="text-[10px] text-secondary font-medium flex items-center justify-between">
-                    <span>{t('notesTitleMonth', { month: formatMonth(selectedMonth, lang), year: selectedYear })}</span>
-                    <span>({editCatForm.notes.length})</span>
-                  </label>
-
-                  <div className="space-y-1 max-h-24 overflow-y-auto">
-                    {editCatForm.notes.map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-1.5 rounded bg-subtle text-xs gap-2">
-                        <span className="text-primary truncate">{item}</span>
-                        <button onClick={() => handleRemoveBulletPoint(idx)} className="text-tertiary hover:text-notion-red">
-                          <i className="fa-solid fa-xmark"></i>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-1.5">
-                    <input
-                      type="text"
-                      placeholder={t('addNotePlaceholder')}
-                      value={newBulletText}
-                      onChange={(e) => setNewBulletText(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') handleAddBulletPoint(); }}
-                      className="flex-1 bg-subtle border border-subtle rounded px-2 py-1 text-xs text-primary outline-none"
-                    />
-                    <button onClick={handleAddBulletPoint} className="bg-subtle hover:bg-subtle/80 px-2.5 py-1 rounded text-primary font-medium">
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-subtle">
-                  <button
-                    onClick={handleSaveCategoryChanges}
-                    className="w-full bg-primary text-surface font-semibold py-1.5 rounded"
-                  >
-                    {t('saveClose')}
                   </button>
                 </div>
               </div>
@@ -2435,7 +2572,7 @@
                         setIsBurgerOpen(false);
                       }
                     }}
-                    className="text-xs text-notion-red underline"
+                    className="text-xs text-notion-red underline text-center"
                   >
                     {t('clearAll')}
                   </button>
