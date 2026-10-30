@@ -2844,4 +2844,224 @@
               <div>
                 <label className="text-[10px] text-secondary font-medium block mb-1">{t('replicateAmountLabel')}</label>
                 <MoneyInput
-                  value={recurringForm.am
+                  value={recurringForm.amount}
+                  hideZero={false}
+                  onChange={(val) => setRecurringForm(p => ({ ...p, amount: val }))}
+                  inputClass="text-primary font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-secondary font-medium block mb-1">{t('replicateDurationLabel')}</label>
+                <select
+                  value={recurringForm.duration}
+                  onChange={(e) => setRecurringForm(p => ({ ...p, duration: e.target.value }))}
+                  className="w-full bg-subtle border border-subtle rounded px-2.5 py-1.5 text-xs text-primary outline-none"
+                >
+                  <option value={3}>{t('duration3', { month: formatMonth(selectedMonth, lang) })}</option>
+                  <option value={6}>{t('duration6', { month: formatMonth(selectedMonth, lang) })}</option>
+                  <option value={12}>{t('duration12')}</option>
+                  <option value="all">{t('durationAll')}</option>
+                </select>
+              </div>
+
+              <div className="flex gap-2 pt-2 border-t border-subtle">
+                <button onClick={() => setRecurringModal(null)} className="flex-1 py-1.5 bg-subtle text-secondary rounded hover:text-primary">
+                  {t('cancelBtn')}
+                </button>
+                <button onClick={handleExecuteRecurring} className="flex-1 py-1.5 bg-primary text-surface font-semibold rounded">
+                  {t('replicateActionBtn')}
+                </button>
+              </div>
+            </Modal>
+          )}
+
+          {/* SMART DELETE MODAL */}
+          {smartDeleteModal && (() => {
+            const { type, cat } = smartDeleteModal;
+            const fallback = findFallback(type);
+            const isFallback = fallback === cat;
+            return (
+              <Modal onClose={() => setSmartDeleteModal(null)} titleClass="text-notion-red" title={t('deleteItemTitle', { name: cat })}>
+                <div className="space-y-1.5">
+                  <button
+                    onClick={() => executeSmartDelete(type, cat, 'future_only')}
+                    className="w-full text-left p-2 rounded bg-subtle hover:bg-subtle/80 border border-subtle"
+                  >
+                    <div className="font-semibold text-primary">{t('deleteFutureOnly')}</div>
+                    <div className="text-[10px] text-tertiary">{t('deleteFutureOnlyDesc')}</div>
+                  </button>
+
+                  {isFallback ? (
+                    <p className="p-2 rounded border border-subtle text-[11px] text-secondary">
+                      {t('deleteFallbackBlocked', { name: cat })}
+                    </p>
+                  ) : (
+                    <button
+                      onClick={() => executeSmartDelete(type, cat, 'purge_and_merge')}
+                      className="w-full text-left p-2 rounded bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20"
+                    >
+                      <div className="font-semibold text-notion-red">{t('deletePurgeMerge', { fallback })}</div>
+                      <div className="text-[10px] text-tertiary">{t('deletePurgeMergeDesc')}</div>
+                    </button>
+                  )}
+                </div>
+
+                <button onClick={() => setSmartDeleteModal(null)} className="w-full py-1.5 bg-subtle rounded text-secondary hover:text-primary">
+                  {t('cancelBtn')}
+                </button>
+              </Modal>
+            );
+          })()}
+
+          {/* SETTINGS DRAWER */}
+          {isBurgerOpen && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end" onClick={(e) => { if (e.target === e.currentTarget) setIsBurgerOpen(false); }}>
+              <div className="bg-surface border-l border-subtle w-72 sm:w-80 h-full p-4 overflow-y-auto flex flex-col justify-between text-xs">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center pb-2 border-b border-subtle">
+                    <h3 className="font-semibold text-primary uppercase tracking-wide">{t('options')}</h3>
+                    <button onClick={() => setIsBurgerOpen(false)} aria-label={t('closeBtn')} className="text-secondary hover:text-primary">
+                      <i className="fa-solid fa-xmark"></i>
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] text-secondary block">{t('cloudSync')}</label>
+                    {user ? (
+                      <div className="p-2 rounded border border-subtle bg-subtle/50 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <i className={`fa-solid ${syncIcon} ${syncStatus === 'error' ? 'text-notion-red' : 'text-notion-green'}`}></i>
+                          <div className="min-w-0">
+                            <div className="text-primary font-medium truncate">{t('signedInAs', { email: user.email || user.uid })}</div>
+                            <div className="text-[10px] text-tertiary">{t('syncStatus_' + syncStatus)}</div>
+                          </div>
+                        </div>
+                        <button onClick={handleSignOut} className="w-full py-1 rounded border border-subtle text-secondary hover:text-primary">
+                          {t('signOut')}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <p className="text-[10px] text-tertiary">{t('syncLocalOnly')}</p>
+                        <button
+                          onClick={handleSignIn}
+                          className="w-full bg-primary text-surface font-semibold py-1.5 rounded flex items-center justify-center gap-1.5"
+                        >
+                          <i className="fa-brands fa-google"></i> {t('signIn')}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] text-secondary block">{t('startingCapital')}</label>
+                    <MoneyInput
+                      value={data.startingCapital || 0}
+                      onChange={(val) => mutate(d => { d.startingCapital = parseFloat(val) || 0; })}
+                      className="py-1.5"
+                      inputClass="text-primary font-semibold"
+                    />
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-secondary shrink-0">{t('startingMonthLabel')}</span>
+                      <select
+                        value={data.startingMonth}
+                        onChange={(e) => mutate(d => { d.startingMonth = e.target.value; })}
+                        className="flex-1 min-w-0 bg-subtle border border-subtle rounded px-2 py-1 text-primary outline-none"
+                      >
+                        {TIMELINE.map(({ yr, m }) => (
+                          <option key={timelineKey(yr, m)} value={timelineKey(yr, m)}>{formatMonth(m, lang)} {yr}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <p className="text-[10px] text-tertiary leading-snug">{t('startingHint')}</p>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-secondary block mb-1">{t('themeLabel')}</label>
+                    <div className="grid grid-cols-3 gap-1 bg-subtle p-0.5 rounded border border-subtle">
+                      {['light', 'dark', 'system'].map(m => (
+                        <button key={m} onClick={() => setTheme(m)} className={`py-1 rounded text-[10px] font-medium ${theme === m ? 'bg-surface text-primary shadow-sm font-semibold' : 'text-secondary'}`}>
+                          {t(`theme${m.charAt(0).toUpperCase() + m.slice(1)}`)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5 pt-2 border-t border-subtle">
+                    <label className="text-[10px] text-secondary block mb-1">{t('backupSection')}</label>
+                    <button
+                      onClick={() => {
+                        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `budget_backup_${new Date().toISOString().slice(0, 10)}.json`;
+                        a.click();
+                        setTimeout(() => URL.revokeObjectURL(url), 1000);
+                      }}
+                      className="w-full bg-subtle hover:bg-subtle/80 border border-subtle font-medium py-1.5 rounded flex items-center justify-center gap-1.5 text-primary"
+                    >
+                      <i className="fa-solid fa-download"></i> {t('exportBackup')}
+                    </button>
+
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full bg-subtle hover:bg-subtle/80 border border-subtle font-medium py-1.5 rounded flex items-center justify-center gap-1.5 text-primary"
+                    >
+                      <i className="fa-solid fa-upload"></i> {t('importBackup')}
+                    </button>
+                    <input
+                      ref={fileInputRef} type="file" accept=".json,application/json"
+                      onChange={(e) => {
+                        const f = e.target.files[0];
+                        e.target.value = "";
+                        if (!f) return;
+                        const r = new FileReader();
+                        r.onload = (ev) => {
+                          try {
+                            replaceState(normalizeState(JSON.parse(ev.target.result)));
+                            alert(t('importSuccess'));
+                            setIsBurgerOpen(false);
+                          } catch(err) { alert(t('importError')); }
+                        };
+                        r.readAsText(f);
+                      }}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-subtle">
+                  <button
+                    onClick={() => {
+                      if (confirm(t('confirmClear'))) {
+                        replaceState(normalizeState(null));
+                        setIsBurgerOpen(false);
+                      }
+                    }}
+                    className="text-xs text-notion-red underline text-center"
+                  >
+                    {t('clearAll')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<LanguageProvider><MainApp /></LanguageProvider>);
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(e => console.warn('Service worker not registered:', e));
+      });
+    }
+  </script>
+</body>
+</html>
