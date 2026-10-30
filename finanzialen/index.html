@@ -193,28 +193,19 @@
       return a < b ? 'past' : a === b ? 'current' : 'future';
     };
 
-    // Days already elapsed in a month: all of them for past months, today's date
-    // for the current month, none for future months.
-    const autoAsOf = (yr, m) => {
-      const s = monthStatus(yr, m);
-      return s === 'past' ? getDaysInMonth(yr, m) : s === 'current' ? new Date().getDate() : 0;
-    };
+    // Fixed costs are bills you know in advance; everything else (variable or one-time)
+    // is spending that comes and goes.
+    const isFixedCost = (mode, oneTime) => mode === 'fixed' && !oneTime;
 
-    // Shared projection used by the timeline and the per-category cards.
-    const projectNode = (node, mode, oneTime, yr, m) => {
-      const dim = getDaysInMonth(yr, m);
-      const isAuto = node.asOfDate == null;
-      const asOf = Math.min(dim, isAuto ? autoAsOf(yr, m) : node.asOfDate);
-      const daysLeft = dim - asOf;
-      let projected = node.budget;
-      if (mode === 'fixed' || oneTime) {
-        projected = node.actual > 0 ? node.actual : node.budget;
-      } else if (node.actual > 0) {
-        projected = asOf > 0 ? node.actual + (node.actual / asOf) * daysLeft : Math.max(node.actual, node.budget);
-      }
-      // Days you can still spend on, counting today in the current month.
-      const spendDays = Math.max(0, daysLeft + (isAuto && monthStatus(yr, m) === 'current' ? 1 : 0));
-      return { dim, asOf, isAuto, daysLeft, spendDays, projected };
+    // The three rules behind every expected number in the app:
+    //   income            → the received amount if entered, otherwise the plan
+    //   fixed / one-time  → the paid amount if entered, otherwise the plan
+    //   variable          → the target, or what you spent if that's already more;
+    //                       once the month is over, only what you actually spent
+    const expectedIncome = (node) => node.actual > 0 ? node.actual : node.budget;
+    const expectedExpense = (node, mode, oneTime, yr, m) => {
+      if (mode === 'fixed' || oneTime) return node.actual > 0 ? node.actual : node.budget;
+      return monthStatus(yr, m) === 'past' ? node.actual : Math.max(node.actual, node.budget);
     };
 
     const BRACKET_PALETTES = {
@@ -225,7 +216,9 @@
       leisure: { tag: 'bg-pink-500/10 text-pink-600 dark:text-pink-400' },
       other: { tag: 'bg-notion-tagGray text-stone-600 dark:text-stone-300' },
       fixed_in: { tag: 'bg-notion-tagGreen text-emerald-700 dark:text-emerald-400' },
-      variable_in: { tag: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400' }
+      variable_in: { tag: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400' },
+      g_fixed: { tag: 'bg-notion-tagBlue text-blue-600 dark:text-blue-400' },
+      g_flex: { tag: 'bg-notion-tagAmber text-amber-700 dark:text-amber-400' }
     };
 
     const getPalette = (bracketId) => BRACKET_PALETTES[bracketId] || BRACKET_PALETTES.other;
@@ -292,10 +285,41 @@
         kpiCumulative: "Endbestand",
         kpiCumulativeSub: "Zum Monatsende",
         kpiDailyRoomSub: "Verfügbares Tagesbudget",
-        dailyFreeSub: "{{amount}} frei für {{days}} Tage",
-        dailyShortSub: "Fehlbetrag {{amount}} in diesem Monat",
-        dailyClosedSub: "Monat vorbei · {{amount}} übrig",
-        dailyHint: "Einnahmen (Ist, sonst Plan) − Fixkosten & Einmaliges (bezahlt oder geplant) − variable Ausgaben bisher, geteilt durch die verbleibenden Tage inkl. heute.",
+        endOfMonthTitle: "Erwarteter Stand Ende {{month}}",
+        endOfMonthTitlePast: "Stand Ende {{month}}",
+        carriedOver: "Übertrag aus {{month}}",
+        carriedStart: "Startguthaben",
+        lineIncome: "Einnahmen",
+        lineFixed: "Fixkosten",
+        lineFlex: "Variabel & einmalig",
+        receivedOf: "{{done}} von {{total}} erhalten",
+        paidOf: "{{done}} von {{total}} bezahlt",
+        paidCount: "{{n}} von {{m}} Posten bezahlt",
+        spentOf: "{{done}} ausgegeben · Ziel {{total}}",
+        targetLeft: "Noch {{amount}} bis zum Ziel",
+        targetOver: "{{amount}} über dem Ziel",
+        stillOpen: "Noch offen: {{amount}}",
+        stillExpected: "Noch erwartet: {{amount}}",
+        expectedRules: "So wird gerechnet: Einnahmen = erhalten, sonst geplant · Fixkosten & Einmaliges = bezahlt, sonst geplant · Variabel = Ziel, oder mehr wenn schon überschritten (abgelaufene Monate: nur tatsächlich Ausgegebenes).",
+        fixBalanceBtn: "Mit echtem Kontostand korrigieren",
+        fixBalanceTitle: "Echten Kontostand eintragen",
+        fixBalanceTodayLabel: "Kontostand heute (Konto + Bar)",
+        fixBalanceStartLabel: "Kontostand zu Beginn von {{month}} (Konto + Bar)",
+        fixBalanceTodayDesc: "Aus diesem Betrag und den in {{month}} schon eingetragenen Beträgen (erhalten {{in}}, ausgegeben {{out}}) wird der Übertrag berechnet. Trag also zuerst alles ein, was diesen Monat schon passiert ist. Ältere Monate zählen danach nicht mehr mit.",
+        fixBalanceStartDesc: "Ab {{month}} wird mit diesem Betrag gerechnet. Ältere Monate zählen danach nicht mehr mit.",
+        fixBalancePreview: "Übertrag wird: {{amount}}",
+        fixBalanceSave: "Übernehmen",
+        groupByType: "Nach Art",
+        groupByCategory: "Nach Kategorie",
+        groupFixed: "Fixkosten · Miete, Rechnungen, Abos",
+        groupFlex: "Variabel & einmalig",
+        targetLabel: "Ziel",
+        spentLabel: "Ausgegeben",
+        paidLabel: "Bezahlt",
+        markPaid: "Bezahlt",
+        markReceived: "Erhalten",
+        markPaidHint: "Geplanten Betrag als bezahlt eintragen",
+        markReceivedHint: "Geplanten Betrag als erhalten eintragen",
         kpiIn: "Ein",
         kpiOut: "Aus",
         kpiProjPrefix: "Prognose:",
@@ -445,13 +469,44 @@
         kpiActualNetDesc: "Tap to see full receipt",
         kpiProjectedNet: "Projected Net",
         kpiDailyRoom: "Daily Allowance",
-        kpiCumulative: "Net Reserve",
+        kpiCumulative: "End balance",
         kpiCumulativeSub: "Month-end runway",
         kpiDailyRoomSub: "Available daily budget",
-        dailyFreeSub: "{{amount}} free for {{days}} days",
-        dailyShortSub: "Short by {{amount}} this month",
-        dailyClosedSub: "Month over · {{amount}} left",
-        dailyHint: "Income (actual, else plan) − fixed & one-time costs (paid or planned) − variable spending so far, divided by the days left including today.",
+        endOfMonthTitle: "Expected balance end of {{month}}",
+        endOfMonthTitlePast: "Balance end of {{month}}",
+        carriedOver: "Carried over from {{month}}",
+        carriedStart: "Starting balance",
+        lineIncome: "Income",
+        lineFixed: "Fixed costs",
+        lineFlex: "Variable & one-time",
+        receivedOf: "{{done}} of {{total}} received",
+        paidOf: "{{done}} of {{total}} paid",
+        paidCount: "{{n}} of {{m}} items paid",
+        spentOf: "{{done}} spent · target {{total}}",
+        targetLeft: "{{amount}} left of target",
+        targetOver: "{{amount}} over target",
+        stillOpen: "Still to pay: {{amount}}",
+        stillExpected: "Still expected: {{amount}}",
+        expectedRules: "How it's calculated: income = received, else planned · fixed & one-time = paid, else planned · variable = target, or more if already exceeded (finished months: only what was actually spent).",
+        fixBalanceBtn: "Correct with real balance",
+        fixBalanceTitle: "Enter your real balance",
+        fixBalanceTodayLabel: "Balance today (bank + cash)",
+        fixBalanceStartLabel: "Balance at the start of {{month}} (bank + cash)",
+        fixBalanceTodayDesc: "The carried-over amount is worked out from this and what's already entered for {{month}} (received {{in}}, spent {{out}}), so enter everything that already happened this month first. Older months stop counting after this.",
+        fixBalanceStartDesc: "Calculations start from this amount in {{month}}. Older months stop counting after this.",
+        fixBalancePreview: "Carried over becomes: {{amount}}",
+        fixBalanceSave: "Apply",
+        groupByType: "By type",
+        groupByCategory: "By category",
+        groupFixed: "Fixed costs · rent, bills, subscriptions",
+        groupFlex: "Variable & one-time",
+        targetLabel: "Target",
+        spentLabel: "Spent",
+        paidLabel: "Paid",
+        markPaid: "Paid",
+        markReceived: "Received",
+        markPaidHint: "Record the planned amount as paid",
+        markReceivedHint: "Record the planned amount as received",
         kpiIn: "In",
         kpiOut: "Out",
         kpiProjPrefix: "Projected:",
@@ -826,6 +881,15 @@
       );
     }
 
+    function ProgressBar({ value, total, className }) {
+      const pct = total > 0 ? Math.min(100, Math.max(0, (value / total) * 100)) : 0;
+      return (
+        <div className="h-1.5 rounded-full bg-subtle overflow-hidden mt-2">
+          <div className={`h-full rounded-full ${className}`} style={{ width: `${pct}%` }}></div>
+        </div>
+      );
+    }
+
     function MainApp() {
       const { t, lang, changeLanguage } = useTranslation();
       const [data, setData] = useState(() => normalizeState(null));
@@ -846,8 +910,16 @@
       const [mobileTab, setMobileTab] = useState('expenses');
 
       const [openBrackets, setOpenBrackets] = useState({
-        housing: true, subscriptions: true, living: true, professional: true, leisure: false, other: true, fixed_in: true, variable_in: true
+        housing: true, subscriptions: true, living: true, professional: true, leisure: false, other: true, fixed_in: true, variable_in: true,
+        g_fixed: true, g_flex: true
       });
+
+      // Expenses grouped by type (fixed vs. variable & one-time) or by category bracket.
+      const [groupBy, setGroupBy] = useState(() => safeStorage.get('budget_group_by', 'type'));
+      useEffect(() => { safeStorage.set('budget_group_by', groupBy); }, [groupBy]);
+
+      const [balanceModal, setBalanceModal] = useState(false);
+      const [balanceInput, setBalanceInput] = useState("");
 
       const [openNoteRows, setOpenNoteRows] = useState({});
       const [highlightedCategory, setHighlightedCategory] = useState(null);
@@ -1058,21 +1130,36 @@
         return TIMELINE.map(({ yr, m }, idx) => {
           let budgetIn = 0, actualIn = 0, projectedIn = 0;
           let budgetEx = 0, actualEx = 0, projectedEx = 0;
+          const fixed = { plan: 0, paid: 0, expected: 0, items: 0, paidItems: 0 };
+          const flex = { plan: 0, spent: 0, expected: 0 };
 
           data.categories.incomes.forEach(cat => {
             const node = getNode('incomes', cat, yr, m);
             budgetIn += node.budget;
             actualIn += node.actual;
-            // Per category: an entered actual replaces that item's plan, others keep their plan.
-            projectedIn += node.actual > 0 ? node.actual : node.budget;
+            projectedIn += expectedIncome(node);
           });
 
           data.categories.expenses.forEach(cat => {
             const node = getNode('expenses', cat, yr, m);
             const meta = getMeta('expenses', cat);
+            const expected = expectedExpense(node, meta.mode, meta.oneTime, yr, m);
             budgetEx += node.budget;
             actualEx += node.actual;
-            projectedEx += projectNode(node, meta.mode, meta.oneTime, yr, m).projected;
+            projectedEx += expected;
+            if (isFixedCost(meta.mode, meta.oneTime)) {
+              fixed.plan += node.budget;
+              fixed.paid += node.actual;
+              fixed.expected += expected;
+              if (node.budget > 0 || node.actual > 0) {
+                fixed.items += 1;
+                if (node.actual > 0) fixed.paidItems += 1;
+              }
+            } else {
+              flex.plan += node.budget;
+              flex.spent += node.actual;
+              flex.expected += expected;
+            }
           });
 
           const actualNet = actualIn - actualEx;
@@ -1083,8 +1170,9 @@
 
           return {
             year: yr, month: m, key: `${m} ${yr}`, daysInMonth: getDaysInMonth(yr, m),
-            budgetIn, actualIn, projectedIn, budgetEx, actualEx, projectedEx,
-            actualNet, projectedNet, startBal, endProjectedBalance: counted ? runningBalance : null
+            budgetIn, actualIn, projectedIn, budgetEx, actualEx, projectedEx, fixed, flex,
+            actualNet, projectedNet, isAnchor: idx === anchorIdx,
+            startBal, endProjectedBalance: counted ? runningBalance : null
           };
         });
       }, [data]);
@@ -1108,41 +1196,23 @@
         return data.categories.expenses.map(cat => {
           const node = getNode('expenses', cat, selectedYear, selectedMonth);
           const meta = getMeta('expenses', cat);
-          const p = projectNode(node, meta.mode, meta.oneTime, selectedYear, selectedMonth);
-          const remainingBudget = node.budget - node.actual;
-          const safeDailySpend = p.spendDays > 0 ? Math.max(0, remainingBudget / p.spendDays) : 0;
-
-          let paceStatus = "ontrack";
-          if (meta.mode === 'variable' && node.budget > 0) {
-            const expectedPace = (node.budget / p.dim) * p.asOf;
-            if (node.actual > node.budget || (p.asOf > 0 && node.actual > expectedPace * 1.08)) paceStatus = "over";
-            else if (p.asOf > 0 && node.actual < expectedPace * 0.85) paceStatus = "frugal";
-          }
-
           return {
             category: cat, budget: node.budget, actual: node.actual,
-            asOf: p.asOf, asOfIsAuto: p.isAuto, daysInMonth: p.dim,
-            remainingBudget, safeDailySpend, projectedTotal: p.projected, paceStatus,
+            remainingBudget: node.budget - node.actual,
+            projectedTotal: expectedExpense(node, meta.mode, meta.oneTime, selectedYear, selectedMonth),
+            isOver: meta.mode === 'variable' && !meta.oneTime && node.budget > 0 && node.actual > node.budget,
+            isFixed: isFixedCost(meta.mode, meta.oneTime),
             bracket: meta.bracket, mode: meta.mode, isOneTime: meta.oneTime
           };
         });
       }, [data, selectedYear, selectedMonth, isAnnual]);
 
-      // Money free per remaining day: this month's income minus every fixed/one-time cost
-      // (paid or still planned) minus variable spending so far. Variable plans aren't
-      // reserved on top, because this allowance is what variable spending comes out of.
-      const allowance = useMemo(() => {
-        if (isAnnual) return null;
-        const status = monthStatus(selectedYear, selectedMonth);
-        const dim = getDaysInMonth(selectedYear, selectedMonth);
-        const days = status === 'past' ? 0 : status === 'current' ? dim - new Date().getDate() + 1 : dim;
-        const committed = categoryAnalytics.reduce((s, c) =>
-          s + ((c.mode === 'fixed' || c.isOneTime) ? c.projectedTotal : c.actual), 0);
-        const free = (currentMetrics.projectedIn || 0) - committed;
-        return { free, days, perDay: days > 0 ? Math.max(0, free) / days : 0 };
-      }, [categoryAnalytics, currentMetrics, isAnnual, selectedYear, selectedMonth]);
-
       const fmtBalance = (v) => v == null ? '–' : fmt(v);
+
+      const prevMonthOf = (yr, m) => {
+        const idx = timelineIndex(yr, m);
+        return idx > 0 ? TIMELINE[idx - 1] : null;
+      };
 
       const monthlyReceipt = useMemo(() => {
         const build = (type) => data.categories[type]
@@ -1192,14 +1262,14 @@
         setQuickAddModal(null);
       };
 
-      const handleOpenQuickAdd = (type, defaultBracket = null) => {
+      const handleOpenQuickAdd = (type, defaultBracket = null, defaultMode = null) => {
         const bracketsList = data.brackets[type];
         setQuickAddModal({ type });
         setQuickAddForm({
           name: "",
           bracket: defaultBracket || bracketsList[0]?.id || 'other',
           budget: "",
-          mode: type === 'incomes' ? 'fixed' : 'variable',
+          mode: defaultMode || (type === 'incomes' ? 'fixed' : 'variable'),
           isOneTime: false
         });
       };
@@ -1366,8 +1436,47 @@
       const toggleAllBrackets = () => {
         const anyClosed = Object.values(openBrackets).some(v => !v);
         const nextState = {};
-        [...data.brackets.expenses, ...data.brackets.incomes].forEach(b => { nextState[b.id] = anyClosed; });
+        [...data.brackets.expenses, ...data.brackets.incomes, { id: 'g_fixed' }, { id: 'g_flex' }]
+          .forEach(b => { nextState[b.id] = anyClosed; });
         setOpenBrackets(nextState);
+      };
+
+      const expenseGroups = groupBy === 'type'
+        ? [
+            { id: 'g_fixed', label: t('groupFixed'), match: (c) => c.isFixed },
+            { id: 'g_flex', label: t('groupFlex'), match: (c) => !c.isFixed }
+          ]
+        : data.brackets.expenses.map(b => ({ id: b.id, label: t('brackets.' + b.id), match: (c) => c.bracket === b.id }));
+
+      // One tap: the planned amount was paid / received exactly as planned.
+      const markAsPlanned = (type, cat) => {
+        const node = getNode(type, cat, selectedYear, selectedMonth);
+        if (node.budget > 0) updateNode(type, cat, selectedYear, selectedMonth, 'actual', node.budget);
+      };
+
+      // Re-anchor the running balance on a real bank + cash figure.
+      // For the current month the user enters today's balance and we work back to the
+      // start of the month using what's already recorded; for other months, the start balance.
+      const balanceIsToday = !isAnnual && monthStatus(selectedYear, selectedMonth) === 'current';
+      const balanceStartFromInput = () => {
+        const v = parseFloat(balanceInput);
+        if (isNaN(v)) return null;
+        return balanceIsToday ? v - currentMetrics.actualIn + currentMetrics.actualEx : v;
+      };
+
+      const openBalanceModal = () => {
+        setBalanceInput("");
+        setBalanceModal(true);
+      };
+
+      const applyBalance = () => {
+        const start = balanceStartFromInput();
+        if (start === null) return;
+        mutate(d => {
+          d.startingCapital = Math.round(start * 100) / 100;
+          d.startingMonth = timelineKey(selectedYear, selectedMonth);
+        });
+        setBalanceModal(false);
       };
 
       // ---- IOU / Debts ----
@@ -1640,7 +1749,7 @@
                 {[
                   ['expenses', t('expensesHeader'), currentMetrics.actualEx],
                   ['incomes', t('incomesHeader'), currentMetrics.actualIn],
-                  ['cockpit', t('analyticsTab'), currentMetrics.actualNet]
+                  ['cockpit', t('analyticsTab'), currentMetrics.endProjectedBalance]
                 ].map(([id, label, value]) => (
                   <button
                     key={id}
@@ -1648,7 +1757,7 @@
                     className={`py-1 rounded font-medium transition ${mobileTab === id ? 'bg-surface text-primary shadow-sm font-semibold' : 'text-secondary'}`}
                   >
                     <span>{label}</span>
-                    <span className="block text-[9px] opacity-75">{fmt(value)}</span>
+                    <span className="block text-[9px] opacity-75">{fmtBalance(value)}</span>
                   </button>
                 ))}
               </div>
@@ -1766,67 +1875,98 @@
               <>
                 {/* COCKPIT HERO */}
                 <div className={`${mobileTab === 'cockpit' ? 'block' : 'hidden lg:block'} space-y-3`}>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                    <button
-                      onClick={() => setBreakdownModal(true)}
-                      className="text-left p-3 rounded-lg border border-subtle hover:border-strong bg-surface-elevated flex flex-col justify-between cursor-pointer transition group"
-                      title={t('kpiActualNetDesc')}
-                    >
-                      <div className="w-full flex items-center justify-between text-secondary text-[11px]">
-                        <div className="flex items-center gap-1.5">
-                          <span>⚖️</span>
-                          <span className="font-medium text-primary">{t('kpiActualNet')}</span>
+                  {(() => {
+                    const cm = currentMetrics;
+                    const prev = prevMonthOf(selectedYear, selectedMonth);
+                    const isPast = monthStatus(selectedYear, selectedMonth) === 'past';
+                    const beforeStart = cm.endProjectedBalance == null;
+                    const carriedLabel = cm.isAnchor || !prev ? t('carriedStart') : t('carriedOver', { month: monthLabel(prev.yr, prev.m) });
+                    const flexLeft = cm.flex.plan - cm.flex.spent;
+                    const lines = [
+                      { label: carriedLabel, text: fmtBalance(cm.startBal), cls: 'text-primary' },
+                      { label: t('lineIncome'), text: `+ ${fmt(cm.projectedIn)}`, cls: 'text-notion-green' },
+                      { label: t('lineFixed'), text: `− ${fmt(cm.fixed.expected)}`, cls: 'text-notion-red' },
+                      { label: t('lineFlex'), text: `− ${fmt(cm.flex.expected)}`, cls: 'text-notion-red' }
+                    ];
+                    return (
+                      <>
+                        {/* End-of-month balance, built up line by line */}
+                        <div className="rounded-lg border border-subtle bg-surface-elevated p-4 flex flex-col md:flex-row gap-4">
+                          <div className="md:w-2/5 flex flex-col justify-between gap-3">
+                            <div>
+                              <div className="text-[11px] text-secondary flex items-center gap-1.5">
+                                <span>🏦</span>
+                                <span>{t(isPast ? 'endOfMonthTitlePast' : 'endOfMonthTitle', { month: monthLabel(selectedYear, selectedMonth) })}</span>
+                              </div>
+                              <div className={`text-3xl font-mono font-bold mt-1 ${beforeStart ? 'text-tertiary' : cm.endProjectedBalance >= 0 ? 'text-primary' : 'text-notion-red'}`}>
+                                {fmtBalance(cm.endProjectedBalance)}
+                              </div>
+                              {beforeStart && <div className="text-[11px] text-tertiary mt-1">{t('beforeStart')}</div>}
+                            </div>
+                            <button onClick={openBalanceModal} className="self-start text-[11px] text-notion-blue hover:underline">
+                              ✎ {t('fixBalanceBtn')}
+                            </button>
+                          </div>
+
+                          {!beforeStart && (
+                            <div className="flex-1 md:border-l md:border-subtle md:pl-4 text-xs font-mono space-y-1">
+                              {lines.map(l => (
+                                <div key={l.label} className="flex items-center justify-between gap-3">
+                                  <span className="font-sans text-secondary">{l.label}</span>
+                                  <span className={l.cls}>{l.text}</span>
+                                </div>
+                              ))}
+                              <div className="flex items-center justify-between gap-3 border-t border-strong pt-1 font-bold">
+                                <span className="font-sans text-primary">= {t('kpiCumulative')}</span>
+                                <span className={cm.endProjectedBalance >= 0 ? 'text-primary' : 'text-notion-red'}>{fmtBalance(cm.endProjectedBalance)}</span>
+                              </div>
+                              <p className="font-sans text-[10px] text-tertiary pt-1 leading-snug">{t('expectedRules')}</p>
+                            </div>
+                          )}
                         </div>
-                        <span className="text-[10px] opacity-80">🔍</span>
-                      </div>
-                      <div className={`text-lg font-mono font-bold mt-1 ${currentMetrics.actualNet >= 0 ? 'text-notion-green dark:text-emerald-400' : 'text-notion-red'}`}>
-                        {fmt(currentMetrics.actualNet)}
-                      </div>
-                      <span className="text-[10px] font-mono text-tertiary">{t('kpiIn')} {fmt(currentMetrics.actualIn)} · {t('kpiOut')} {fmt(currentMetrics.actualEx)}</span>
-                    </button>
 
-                    <div className="p-3 rounded-lg border border-subtle bg-surface-elevated flex flex-col justify-between">
-                      <div className="flex items-center gap-1.5 text-secondary text-[11px]">
-                        <span>📈</span>
-                        <span>{t('kpiProjectedNet')}</span>
-                      </div>
-                      <div className={`text-lg font-mono font-bold mt-1 ${currentMetrics.projectedNet >= 0 ? 'text-notion-blue' : 'text-notion-red'}`}>
-                        {fmt(currentMetrics.projectedNet)}
-                      </div>
-                      <span className="text-[10px] font-mono text-tertiary">{t('kpiProjPrefix')} {fmt(currentMetrics.projectedEx)}</span>
-                    </div>
+                        {/* Income, fixed costs, variable & one-time */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          <button
+                            onClick={() => setBreakdownModal(true)}
+                            title={t('kpiActualNetDesc')}
+                            className="text-left p-3 rounded-lg border border-subtle hover:border-strong bg-surface-elevated transition"
+                          >
+                            <div className="flex items-center justify-between text-[11px] text-secondary">
+                              <span>💰 {t('lineIncome')}</span>
+                              <span className="text-[10px] opacity-80">🔍</span>
+                            </div>
+                            <div className="text-lg font-mono font-bold mt-1 text-notion-green dark:text-emerald-400">{fmt(cm.projectedIn)}</div>
+                            <ProgressBar value={cm.actualIn} total={cm.projectedIn} className="bg-emerald-500" />
+                            <div className="text-[10px] font-mono text-tertiary mt-1.5">{t('receivedOf', { done: fmt(cm.actualIn), total: fmt(cm.projectedIn) })}</div>
+                            {cm.projectedIn - cm.actualIn > 0 && (
+                              <div className="text-[10px] font-mono text-secondary">{t('stillExpected', { amount: fmt(cm.projectedIn - cm.actualIn) })}</div>
+                            )}
+                          </button>
 
-                    <div className="p-3 rounded-lg border border-subtle bg-surface-elevated flex flex-col justify-between" title={t('dailyHint')}>
-                      <div className="flex items-center gap-1.5 text-secondary text-[11px]">
-                        <span>☕</span>
-                        <span>{t('kpiDailyRoom')}</span>
-                      </div>
-                      <div className={`text-lg font-mono font-bold mt-1 ${allowance.free < 0 ? 'text-notion-red' : 'text-primary'}`}>
-                        {allowance.days > 0 ? fmt(allowance.perDay) : fmt(allowance.free)}
-                        {allowance.days > 0 && <span className="text-[10px] font-normal text-secondary"> {t('perDayLabel')}</span>}
-                      </div>
-                      <span className="text-[10px] font-mono text-tertiary">
-                        {allowance.free < 0
-                          ? t('dailyShortSub', { amount: fmt(-allowance.free) })
-                          : allowance.days > 0
-                            ? t('dailyFreeSub', { amount: fmt(allowance.free), days: allowance.days })
-                            : t('dailyClosedSub', { amount: fmt(allowance.free) })}
-                      </span>
-                    </div>
+                          <div className="p-3 rounded-lg border border-subtle bg-surface-elevated">
+                            <div className="text-[11px] text-secondary">📌 {t('lineFixed')}</div>
+                            <div className="text-lg font-mono font-bold mt-1 text-primary">{fmt(cm.fixed.expected)}</div>
+                            <ProgressBar value={cm.fixed.paid} total={cm.fixed.expected} className="bg-notion-blue" />
+                            <div className="text-[10px] font-mono text-tertiary mt-1.5">{t('paidCount', { n: cm.fixed.paidItems, m: cm.fixed.items })}</div>
+                            {cm.fixed.expected - cm.fixed.paid > 0 && (
+                              <div className="text-[10px] font-mono text-secondary">{t('stillOpen', { amount: fmt(cm.fixed.expected - cm.fixed.paid) })}</div>
+                            )}
+                          </div>
 
-                    <div className="p-3 rounded-lg border border-subtle bg-surface-elevated flex flex-col justify-between">
-                      <div className="flex items-center gap-1.5 text-secondary text-[11px]">
-                        <span>🏦</span>
-                        <span>{t('kpiCumulative')}</span>
-                      </div>
-                      <div className={`text-lg font-mono font-bold mt-1 ${currentMetrics.endProjectedBalance == null || currentMetrics.endProjectedBalance >= 0 ? 'text-primary' : 'text-notion-red'}`}>
-                        {fmtBalance(currentMetrics.endProjectedBalance)}
-                      </div>
-                      <span className="text-[10px] font-mono text-tertiary">
-                        {currentMetrics.endProjectedBalance == null ? t('beforeStart') : t('kpiCumulativeSub')}
-                      </span>
-                    </div>
-                  </div>
+                          <div className="p-3 rounded-lg border border-subtle bg-surface-elevated">
+                            <div className="text-[11px] text-secondary">🛒 {t('lineFlex')}</div>
+                            <div className="text-lg font-mono font-bold mt-1 text-primary">{fmt(cm.flex.expected)}</div>
+                            <ProgressBar value={cm.flex.spent} total={cm.flex.plan} className={flexLeft < 0 ? 'bg-notion-red' : 'bg-amber-500'} />
+                            <div className="text-[10px] font-mono text-tertiary mt-1.5">{t('spentOf', { done: fmt(cm.flex.spent), total: fmt(cm.flex.plan) })}</div>
+                            <div className={`text-[10px] font-mono ${flexLeft < 0 ? 'text-notion-red' : 'text-secondary'}`}>
+                              {flexLeft < 0 ? t('targetOver', { amount: fmt(-flexLeft) }) : t('targetLeft', { amount: fmt(flexLeft) })}
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
 
                   {/* IOU & DEBT TRACKER */}
                   <div className="rounded-lg border border-subtle bg-surface p-3.5 space-y-3">
@@ -2043,6 +2183,15 @@
                                         </div>
 
                                         <div className="flex items-center gap-1.5 shrink-0">
+                                          {node.actual === 0 && node.budget > 0 && (
+                                            <button
+                                              onClick={() => markAsPlanned('incomes', cat)}
+                                              title={t('markReceivedHint')}
+                                              className="text-[10px] px-1.5 py-0.5 rounded bg-notion-tagGreen text-notion-green font-semibold hover:opacity-80"
+                                            >
+                                              ✓ {t('markReceived')}
+                                            </button>
+                                          )}
                                           <MoneyInput
                                             value={node.actual}
                                             onChange={(val) => updateNode('incomes', cat, selectedYear, selectedMonth, 'actual', val)}
@@ -2103,8 +2252,20 @@
                       </div>
                     </div>
 
-                    {data.brackets.expenses.map(b => {
-                      const allItems = categoryAnalytics.filter(c => c.bracket === b.id);
+                    <div className="grid grid-cols-2 gap-1 bg-subtle p-0.5 rounded border border-subtle text-[11px]">
+                      {[['type', t('groupByType')], ['category', t('groupByCategory')]].map(([id, label]) => (
+                        <button
+                          key={id}
+                          onClick={() => setGroupBy(id)}
+                          className={`py-1 rounded ${groupBy === id ? 'bg-surface text-primary font-semibold shadow-sm' : 'text-secondary'}`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {expenseGroups.map(b => {
+                      const allItems = categoryAnalytics.filter(b.match);
                       const bracketActual = allItems.reduce((s, c) => s + c.actual, 0);
                       const bracketBudget = allItems.reduce((s, c) => s + c.budget, 0);
                       const isOpen = !!openBrackets[b.id];
@@ -2118,8 +2279,8 @@
                           <div className="px-3 py-2 bg-surface hover:bg-subtle/50 transition flex items-center justify-between select-none border-b border-subtle">
                             <button onClick={() => toggleBracket(b.id)} aria-expanded={isOpen} className="flex items-center gap-2 cursor-pointer flex-1 min-w-0 text-left">
                               <span className="text-secondary text-[11px] w-3">{isOpen ? '▾' : '▸'}</span>
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${palette.tag}`}>
-                                {t('brackets.' + b.id)}
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium truncate ${palette.tag}`}>
+                                {b.label}
                               </span>
                               <span className="text-[10px] text-tertiary">({visibleItems.length})</span>
                             </button>
@@ -2130,7 +2291,9 @@
                                 {bracketBudget > 0 && <span className="text-tertiary text-[10px] ml-1">/ {fmt(bracketBudget)}</span>}
                               </div>
                               <button
-                                onClick={() => handleOpenQuickAdd('expenses', b.id)}
+                                onClick={() => groupBy === 'type'
+                                  ? handleOpenQuickAdd('expenses', b.id === 'g_fixed' ? 'housing' : 'living', b.id === 'g_fixed' ? 'fixed' : 'variable')
+                                  : handleOpenQuickAdd('expenses', b.id)}
                                 aria-label={t('quickAddModalTitle')}
                                 className="text-tertiary hover:text-primary p-1 text-xs"
                               >
@@ -2155,7 +2318,8 @@
                               ) : (
                                 visibleItems.map(item => {
                                   const isFresh = highlightedCategory === item.category;
-                                  const isVar = item.mode === 'variable';
+                                  // Spending that comes and goes; fixed bills and one-time payments have a known amount.
+                                  const isVar = item.mode === 'variable' && !item.isOneTime;
                                   const notes = getNotes('expenses', item.category);
                                   const noteKey = `expenses:${item.category}`;
                                   const isNoteOpen = !!openNoteRows[noteKey];
@@ -2171,12 +2335,14 @@
                                                 {t('badgeOneTime')}
                                               </span>
                                             )}
-                                            {isVar && (
-                                              <span className={`text-[9px] px-1 py-px rounded font-medium ${
-                                                item.paceStatus === 'over' ? 'bg-notion-tagRed text-notion-red' :
-                                                item.paceStatus === 'frugal' ? 'bg-notion-tagGreen text-notion-green' : 'bg-subtle text-secondary'
-                                              }`}>
-                                                {item.paceStatus === 'over' ? t('statusOver') : item.paceStatus === 'frugal' ? t('statusFrugal') : t('statusTrack')}
+                                            {item.isOver && (
+                                              <span className="text-[9px] px-1 py-px rounded font-medium bg-notion-tagRed text-notion-red">
+                                                {t('targetOver', { amount: fmt(item.actual - item.budget) })}
+                                              </span>
+                                            )}
+                                            {!isVar && item.actual > 0 && (
+                                              <span className="text-[9px] px-1 py-px rounded font-medium bg-notion-tagGreen text-notion-green">
+                                                ✓ {t('paidLabel')}
                                               </span>
                                             )}
                                             {notes.length > 0 && (
@@ -2205,43 +2371,39 @@
 
                                         <div className="grid grid-cols-2 gap-2 text-xs font-mono">
                                           <div>
-                                            <span className="text-[10px] text-secondary block mb-0.5">{t('planLabel')}</span>
+                                            <span className="text-[10px] text-secondary block mb-0.5">{isVar ? t('targetLabel') : t('planLabel')}</span>
                                             <MoneyInput
                                               value={item.budget}
                                               onChange={(val) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'budget', val)}
-                                              aria-label={`${item.category} ${t('planLabel')}`}
+                                              aria-label={`${item.category} ${isVar ? t('targetLabel') : t('planLabel')}`}
                                             />
                                           </div>
 
                                           <div>
                                             <div className="flex justify-between items-center mb-0.5 text-[10px] text-secondary">
-                                              <span>{t('actualLabel')}</span>
-                                              {isVar && (
-                                                <label className="flex items-center gap-1 text-tertiary text-[9px]" title={t('asOfDayHint')}>
-                                                  <span>{t('asOfDayLabel')}</span>
-                                                  <input
-                                                    type="number" inputMode="numeric" min="1" max={item.daysInMonth}
-                                                    value={item.asOfIsAuto ? "" : item.asOf}
-                                                    placeholder={String(item.asOf)}
-                                                    onChange={(e) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'asOfDate', e.target.value)}
-                                                    className="w-6 text-center bg-surface border border-subtle rounded text-primary text-[10px] placeholder:text-tertiary"
-                                                  />
-                                                </label>
+                                              <span>{isVar ? t('spentLabel') : t('paidLabel')}</span>
+                                              {!isVar && item.actual === 0 && item.budget > 0 && (
+                                                <button
+                                                  onClick={() => markAsPlanned('expenses', item.category)}
+                                                  title={t('markPaidHint')}
+                                                  className="text-[9px] px-1.5 rounded bg-notion-tagBlue text-notion-blue font-sans font-semibold hover:opacity-80"
+                                                >
+                                                  ✓ {t('markPaid')}
+                                                </button>
                                               )}
                                             </div>
                                             <MoneyInput
                                               value={item.actual}
                                               onChange={(val) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'actual', val)}
                                               inputClass="text-notion-red font-semibold"
-                                              aria-label={`${item.category} ${t('actualLabel')}`}
+                                              aria-label={`${item.category} ${isVar ? t('spentLabel') : t('paidLabel')}`}
                                             />
                                           </div>
                                         </div>
 
-                                        {isVar && (
-                                          <div className="flex justify-between items-center text-[10px] font-mono pt-0.5 text-tertiary">
-                                            <span>{t('restBudgetLabel')}: <b className={item.remainingBudget >= 0 ? 'text-primary' : 'text-notion-red'}>{fmt(item.remainingBudget)}</b></span>
-                                            <span className="text-secondary font-medium">{fmt(item.safeDailySpend)} {t('perDayLabel')}</span>
+                                        {isVar && item.budget > 0 && (
+                                          <div className="text-[10px] font-mono pt-0.5 text-tertiary">
+                                            {t('restBudgetLabel')}: <b className={item.remainingBudget >= 0 ? 'text-primary' : 'text-notion-red'}>{fmt(item.remainingBudget)}</b>
                                           </div>
                                         )}
                                       </div>
@@ -2329,6 +2491,48 @@
               </button>
             </Modal>
           )}
+
+          {/* REAL BALANCE MODAL */}
+          {balanceModal && (() => {
+            const monthName = monthLabel(selectedYear, selectedMonth);
+            const start = balanceStartFromInput();
+            return (
+              <Modal onClose={() => setBalanceModal(false)} title={<><span>🏦</span><span>{t('fixBalanceTitle')}</span></>}>
+                <div>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">
+                    {balanceIsToday ? t('fixBalanceTodayLabel') : t('fixBalanceStartLabel', { month: monthName })}
+                  </label>
+                  <MoneyInput
+                    value={balanceInput}
+                    onChange={setBalanceInput}
+                    autoFocus
+                    className="py-1.5"
+                    inputClass="text-primary font-semibold text-sm"
+                  />
+                </div>
+                <p className="text-[11px] text-secondary leading-relaxed">
+                  {balanceIsToday
+                    ? t('fixBalanceTodayDesc', { month: monthName, in: fmt(currentMetrics.actualIn), out: fmt(currentMetrics.actualEx) })
+                    : t('fixBalanceStartDesc', { month: monthName })}
+                </p>
+                {start !== null && balanceIsToday && (
+                  <div className="p-2 rounded bg-subtle font-mono text-primary">{t('fixBalancePreview', { amount: fmt(start) })}</div>
+                )}
+                <div className="flex gap-2 pt-2 border-t border-subtle">
+                  <button onClick={() => setBalanceModal(false)} className="flex-1 py-1.5 bg-subtle text-secondary rounded hover:text-primary">
+                    {t('cancelBtn')}
+                  </button>
+                  <button
+                    disabled={start === null}
+                    onClick={applyBalance}
+                    className="flex-1 py-1.5 bg-primary text-surface font-semibold rounded disabled:opacity-40"
+                  >
+                    {t('fixBalanceSave')}
+                  </button>
+                </div>
+              </Modal>
+            );
+          })()}
 
           {/* LOAN MODAL */}
           {loanModal && loanForm && (
@@ -2640,224 +2844,4 @@
               <div>
                 <label className="text-[10px] text-secondary font-medium block mb-1">{t('replicateAmountLabel')}</label>
                 <MoneyInput
-                  value={recurringForm.amount}
-                  hideZero={false}
-                  onChange={(val) => setRecurringForm(p => ({ ...p, amount: val }))}
-                  inputClass="text-primary font-semibold"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] text-secondary font-medium block mb-1">{t('replicateDurationLabel')}</label>
-                <select
-                  value={recurringForm.duration}
-                  onChange={(e) => setRecurringForm(p => ({ ...p, duration: e.target.value }))}
-                  className="w-full bg-subtle border border-subtle rounded px-2.5 py-1.5 text-xs text-primary outline-none"
-                >
-                  <option value={3}>{t('duration3', { month: formatMonth(selectedMonth, lang) })}</option>
-                  <option value={6}>{t('duration6', { month: formatMonth(selectedMonth, lang) })}</option>
-                  <option value={12}>{t('duration12')}</option>
-                  <option value="all">{t('durationAll')}</option>
-                </select>
-              </div>
-
-              <div className="flex gap-2 pt-2 border-t border-subtle">
-                <button onClick={() => setRecurringModal(null)} className="flex-1 py-1.5 bg-subtle text-secondary rounded hover:text-primary">
-                  {t('cancelBtn')}
-                </button>
-                <button onClick={handleExecuteRecurring} className="flex-1 py-1.5 bg-primary text-surface font-semibold rounded">
-                  {t('replicateActionBtn')}
-                </button>
-              </div>
-            </Modal>
-          )}
-
-          {/* SMART DELETE MODAL */}
-          {smartDeleteModal && (() => {
-            const { type, cat } = smartDeleteModal;
-            const fallback = findFallback(type);
-            const isFallback = fallback === cat;
-            return (
-              <Modal onClose={() => setSmartDeleteModal(null)} titleClass="text-notion-red" title={t('deleteItemTitle', { name: cat })}>
-                <div className="space-y-1.5">
-                  <button
-                    onClick={() => executeSmartDelete(type, cat, 'future_only')}
-                    className="w-full text-left p-2 rounded bg-subtle hover:bg-subtle/80 border border-subtle"
-                  >
-                    <div className="font-semibold text-primary">{t('deleteFutureOnly')}</div>
-                    <div className="text-[10px] text-tertiary">{t('deleteFutureOnlyDesc')}</div>
-                  </button>
-
-                  {isFallback ? (
-                    <p className="p-2 rounded border border-subtle text-[11px] text-secondary">
-                      {t('deleteFallbackBlocked', { name: cat })}
-                    </p>
-                  ) : (
-                    <button
-                      onClick={() => executeSmartDelete(type, cat, 'purge_and_merge')}
-                      className="w-full text-left p-2 rounded bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20"
-                    >
-                      <div className="font-semibold text-notion-red">{t('deletePurgeMerge', { fallback })}</div>
-                      <div className="text-[10px] text-tertiary">{t('deletePurgeMergeDesc')}</div>
-                    </button>
-                  )}
-                </div>
-
-                <button onClick={() => setSmartDeleteModal(null)} className="w-full py-1.5 bg-subtle rounded text-secondary hover:text-primary">
-                  {t('cancelBtn')}
-                </button>
-              </Modal>
-            );
-          })()}
-
-          {/* SETTINGS DRAWER */}
-          {isBurgerOpen && (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end" onClick={(e) => { if (e.target === e.currentTarget) setIsBurgerOpen(false); }}>
-              <div className="bg-surface border-l border-subtle w-72 sm:w-80 h-full p-4 overflow-y-auto flex flex-col justify-between text-xs">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center pb-2 border-b border-subtle">
-                    <h3 className="font-semibold text-primary uppercase tracking-wide">{t('options')}</h3>
-                    <button onClick={() => setIsBurgerOpen(false)} aria-label={t('closeBtn')} className="text-secondary hover:text-primary">
-                      <i className="fa-solid fa-xmark"></i>
-                    </button>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] text-secondary block">{t('cloudSync')}</label>
-                    {user ? (
-                      <div className="p-2 rounded border border-subtle bg-subtle/50 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <i className={`fa-solid ${syncIcon} ${syncStatus === 'error' ? 'text-notion-red' : 'text-notion-green'}`}></i>
-                          <div className="min-w-0">
-                            <div className="text-primary font-medium truncate">{t('signedInAs', { email: user.email || user.uid })}</div>
-                            <div className="text-[10px] text-tertiary">{t('syncStatus_' + syncStatus)}</div>
-                          </div>
-                        </div>
-                        <button onClick={handleSignOut} className="w-full py-1 rounded border border-subtle text-secondary hover:text-primary">
-                          {t('signOut')}
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-1.5">
-                        <p className="text-[10px] text-tertiary">{t('syncLocalOnly')}</p>
-                        <button
-                          onClick={handleSignIn}
-                          className="w-full bg-primary text-surface font-semibold py-1.5 rounded flex items-center justify-center gap-1.5"
-                        >
-                          <i className="fa-brands fa-google"></i> {t('signIn')}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] text-secondary block">{t('startingCapital')}</label>
-                    <MoneyInput
-                      value={data.startingCapital || 0}
-                      onChange={(val) => mutate(d => { d.startingCapital = parseFloat(val) || 0; })}
-                      className="py-1.5"
-                      inputClass="text-primary font-semibold"
-                    />
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-secondary shrink-0">{t('startingMonthLabel')}</span>
-                      <select
-                        value={data.startingMonth}
-                        onChange={(e) => mutate(d => { d.startingMonth = e.target.value; })}
-                        className="flex-1 min-w-0 bg-subtle border border-subtle rounded px-2 py-1 text-primary outline-none"
-                      >
-                        {TIMELINE.map(({ yr, m }) => (
-                          <option key={timelineKey(yr, m)} value={timelineKey(yr, m)}>{formatMonth(m, lang)} {yr}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <p className="text-[10px] text-tertiary leading-snug">{t('startingHint')}</p>
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] text-secondary block mb-1">{t('themeLabel')}</label>
-                    <div className="grid grid-cols-3 gap-1 bg-subtle p-0.5 rounded border border-subtle">
-                      {['light', 'dark', 'system'].map(m => (
-                        <button key={m} onClick={() => setTheme(m)} className={`py-1 rounded text-[10px] font-medium ${theme === m ? 'bg-surface text-primary shadow-sm font-semibold' : 'text-secondary'}`}>
-                          {t(`theme${m.charAt(0).toUpperCase() + m.slice(1)}`)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5 pt-2 border-t border-subtle">
-                    <label className="text-[10px] text-secondary block mb-1">{t('backupSection')}</label>
-                    <button
-                      onClick={() => {
-                        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `budget_backup_${new Date().toISOString().slice(0, 10)}.json`;
-                        a.click();
-                        setTimeout(() => URL.revokeObjectURL(url), 1000);
-                      }}
-                      className="w-full bg-subtle hover:bg-subtle/80 border border-subtle font-medium py-1.5 rounded flex items-center justify-center gap-1.5 text-primary"
-                    >
-                      <i className="fa-solid fa-download"></i> {t('exportBackup')}
-                    </button>
-
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full bg-subtle hover:bg-subtle/80 border border-subtle font-medium py-1.5 rounded flex items-center justify-center gap-1.5 text-primary"
-                    >
-                      <i className="fa-solid fa-upload"></i> {t('importBackup')}
-                    </button>
-                    <input
-                      ref={fileInputRef} type="file" accept=".json,application/json"
-                      onChange={(e) => {
-                        const f = e.target.files[0];
-                        e.target.value = "";
-                        if (!f) return;
-                        const r = new FileReader();
-                        r.onload = (ev) => {
-                          try {
-                            replaceState(normalizeState(JSON.parse(ev.target.result)));
-                            alert(t('importSuccess'));
-                            setIsBurgerOpen(false);
-                          } catch(err) { alert(t('importError')); }
-                        };
-                        r.readAsText(f);
-                      }}
-                      className="hidden"
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-subtle">
-                  <button
-                    onClick={() => {
-                      if (confirm(t('confirmClear'))) {
-                        replaceState(normalizeState(null));
-                        setIsBurgerOpen(false);
-                      }
-                    }}
-                    className="text-xs text-notion-red underline text-center"
-                  >
-                    {t('clearAll')}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-        </div>
-      );
-    }
-
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<LanguageProvider><MainApp /></LanguageProvider>);
-  </script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(e => console.warn('Service worker not registered:', e));
-      });
-    }
-  </script>
-</body>
-</html>
+                  value={recurringForm.am
