@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html lang="de" class="dark" data-theme="dark">
+<html lang="de" class="dark notranslate" data-theme="dark" translate="no">
 <head>
   <meta charset="UTF-8">
+  <!-- The app has its own DE/EN switch; browser translation rewrites React's text nodes and shows stale numbers. -->
+  <meta name="google" content="notranslate">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Haushaltsbuch</title>
   <link rel="manifest" href="manifest.json">
@@ -161,6 +163,7 @@
     const getMonthsForYear = (yr) => yr === 2026 ? ["Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"] : ALL_MONTHS;
     const TIMELINE = YEARS.flatMap(yr => getMonthsForYear(yr).map(m => ({ yr, m })));
     const timelineIndex = (yr, m) => TIMELINE.findIndex(x => x.yr === yr && x.m === m);
+    const timelineKey = (yr, m) => `${yr}|${m}`;
 
     const MONTH_NAMES = {
       de: { Jan: "Jan", Feb: "Feb", Mrz: "Mär", Apr: "Apr", Mai: "Mai", Jun: "Jun", Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Okt", Nov: "Nov", Dez: "Dez" },
@@ -278,7 +281,10 @@
       de: {
         title: "Haushaltsbuch",
         subtitle: "Persönlicher Cashflow & Budget",
-        startingCapital: "Startkapital (Konto & Bar)",
+        startingCapital: "Startguthaben (Konto & Bar)",
+        startingMonthLabel: "Stand zu Beginn von",
+        startingHint: "Echter Bestand zu Beginn des ersten Monats, ab dem alle Einnahmen und Ausgaben erfasst sind. Monate davor zählen nicht zum Endbestand.",
+        beforeStart: "Vor dem Startmonat",
         kpiActualNet: "Ist-Saldo (Monatsgewinn)",
         kpiActualNetDesc: "Tippen für genaue Aufstellung",
         kpiProjectedNet: "Prognose Saldo",
@@ -286,6 +292,10 @@
         kpiCumulative: "Endbestand",
         kpiCumulativeSub: "Zum Monatsende",
         kpiDailyRoomSub: "Verfügbares Tagesbudget",
+        dailyFreeSub: "{{amount}} frei für {{days}} Tage",
+        dailyShortSub: "Fehlbetrag {{amount}} in diesem Monat",
+        dailyClosedSub: "Monat vorbei · {{amount}} übrig",
+        dailyHint: "Einnahmen (Ist, sonst Plan) − Fixkosten & Einmaliges (bezahlt oder geplant) − variable Ausgaben bisher, geteilt durch die verbleibenden Tage inkl. heute.",
         kpiIn: "Ein",
         kpiOut: "Aus",
         kpiProjPrefix: "Prognose:",
@@ -428,6 +438,9 @@
         title: "Household Budget",
         subtitle: "Personal Cashflow & Ledger",
         startingCapital: "Starting Balance (Bank & Cash)",
+        startingMonthLabel: "Balance at the start of",
+        startingHint: "Your real balance at the start of the first month from which every income and expense is recorded. Earlier months don't count toward the reserve.",
+        beforeStart: "Before the starting month",
         kpiActualNet: "Actual Net (Monthly Surplus)",
         kpiActualNetDesc: "Tap to see full receipt",
         kpiProjectedNet: "Projected Net",
@@ -435,6 +448,10 @@
         kpiCumulative: "Net Reserve",
         kpiCumulativeSub: "Month-end runway",
         kpiDailyRoomSub: "Available daily budget",
+        dailyFreeSub: "{{amount}} free for {{days}} days",
+        dailyShortSub: "Short by {{amount}} this month",
+        dailyClosedSub: "Month over · {{amount}} left",
+        dailyHint: "Income (actual, else plan) − fixed & one-time costs (paid or planned) − variable spending so far, divided by the days left including today.",
         kpiIn: "In",
         kpiOut: "Out",
         kpiProjPrefix: "Projected:",
@@ -667,6 +684,10 @@
       const state = {
         version: 2,
         startingCapital: typeof raw?.startingCapital === 'number' ? raw.startingCapital : 0,
+        // The month whose start the starting capital describes; earlier months don't feed the balance.
+        startingMonth: TIMELINE.some(x => timelineKey(x.yr, x.m) === raw?.startingMonth)
+          ? raw.startingMonth
+          : timelineKey(TIMELINE[0].yr, TIMELINE[0].m),
         brackets: {
           expenses: raw?.brackets?.expenses || [...DEFAULT_BRACKETS.expenses],
           incomes: raw?.brackets?.incomes || [...DEFAULT_BRACKETS.incomes]
@@ -1033,7 +1054,8 @@
       // ---- Derived numbers ----
       const forwardTimeline = useMemo(() => {
         let runningBalance = data.startingCapital || 0;
-        return TIMELINE.map(({ yr, m }) => {
+        const anchorIdx = Math.max(0, TIMELINE.findIndex(x => timelineKey(x.yr, x.m) === data.startingMonth));
+        return TIMELINE.map(({ yr, m }, idx) => {
           let budgetIn = 0, actualIn = 0, projectedIn = 0;
           let budgetEx = 0, actualEx = 0, projectedEx = 0;
 
@@ -1055,13 +1077,14 @@
 
           const actualNet = actualIn - actualEx;
           const projectedNet = projectedIn - projectedEx;
-          const startBal = runningBalance;
-          runningBalance += projectedNet;
+          const counted = idx >= anchorIdx;
+          const startBal = counted ? runningBalance : null;
+          if (counted) runningBalance += projectedNet;
 
           return {
             year: yr, month: m, key: `${m} ${yr}`, daysInMonth: getDaysInMonth(yr, m),
             budgetIn, actualIn, projectedIn, budgetEx, actualEx, projectedEx,
-            actualNet, projectedNet, startBal, endProjectedBalance: runningBalance
+            actualNet, projectedNet, startBal, endProjectedBalance: counted ? runningBalance : null
           };
         });
       }, [data]);
@@ -1076,7 +1099,7 @@
         return {
           actualIn: sum('actualIn'), actualEx: sum('actualEx'), actualNet: sum('actualNet'),
           projectedIn: sum('projectedIn'), projectedEx: sum('projectedEx'), projectedNet: sum('projectedNet'),
-          endProjectedBalance: yearRows[yearRows.length - 1]?.endProjectedBalance || 0
+          endProjectedBalance: yearRows[yearRows.length - 1]?.endProjectedBalance ?? null
         };
       }, [forwardTimeline, yearRows, selectedYear, selectedMonth, isAnnual]);
 
@@ -1105,7 +1128,21 @@
         });
       }, [data, selectedYear, selectedMonth, isAnnual]);
 
-      const dailyAllowance = categoryAnalytics.reduce((s, c) => s + (c.mode === 'variable' ? c.safeDailySpend : 0), 0);
+      // Money free per remaining day: this month's income minus every fixed/one-time cost
+      // (paid or still planned) minus variable spending so far. Variable plans aren't
+      // reserved on top, because this allowance is what variable spending comes out of.
+      const allowance = useMemo(() => {
+        if (isAnnual) return null;
+        const status = monthStatus(selectedYear, selectedMonth);
+        const dim = getDaysInMonth(selectedYear, selectedMonth);
+        const days = status === 'past' ? 0 : status === 'current' ? dim - new Date().getDate() + 1 : dim;
+        const committed = categoryAnalytics.reduce((s, c) =>
+          s + ((c.mode === 'fixed' || c.isOneTime) ? c.projectedTotal : c.actual), 0);
+        const free = (currentMetrics.projectedIn || 0) - committed;
+        return { free, days, perDay: days > 0 ? Math.max(0, free) / days : 0 };
+      }, [categoryAnalytics, currentMetrics, isAnnual, selectedYear, selectedMonth]);
+
+      const fmtBalance = (v) => v == null ? '–' : fmt(v);
 
       const monthlyReceipt = useMemo(() => {
         const build = (type) => data.categories[type]
@@ -1675,7 +1712,7 @@
                   </div>
                   <div className="p-3 rounded-lg border border-subtle bg-surface-elevated">
                     <div className="text-secondary text-[11px]">🏦 {t('kpiCumulative')}</div>
-                    <div className="text-lg font-mono font-bold mt-1 text-primary">{fmt(currentMetrics.endProjectedBalance)}</div>
+                    <div className="text-lg font-mono font-bold mt-1 text-primary">{fmtBalance(currentMetrics.endProjectedBalance)}</div>
                   </div>
                 </div>
 
@@ -1707,7 +1744,7 @@
                             <td className="text-right px-2 py-1.5 text-notion-red">{fmt(r.actualEx)}</td>
                             <td className={`text-right px-2 py-1.5 ${r.actualNet >= 0 ? 'text-primary' : 'text-notion-red'}`}>{fmt(r.actualNet)}</td>
                             <td className={`text-right px-2 py-1.5 ${r.projectedNet >= 0 ? 'text-notion-blue' : 'text-notion-red'}`}>{fmt(r.projectedNet)}</td>
-                            <td className={`text-right px-3 py-1.5 font-semibold ${r.endProjectedBalance >= 0 ? 'text-primary' : 'text-notion-red'}`}>{fmt(r.endProjectedBalance)}</td>
+                            <td className={`text-right px-3 py-1.5 font-semibold ${r.endProjectedBalance == null ? 'text-tertiary' : r.endProjectedBalance >= 0 ? 'text-primary' : 'text-notion-red'}`}>{fmtBalance(r.endProjectedBalance)}</td>
                           </tr>
                         );
                       })}
@@ -1717,7 +1754,7 @@
                         <td className="text-right px-2 py-2 text-notion-red">{fmt(currentMetrics.actualEx)}</td>
                         <td className="text-right px-2 py-2 text-primary">{fmt(currentMetrics.actualNet)}</td>
                         <td className="text-right px-2 py-2 text-notion-blue">{fmt(currentMetrics.projectedNet)}</td>
-                        <td className="text-right px-3 py-2 text-primary">{fmt(currentMetrics.endProjectedBalance)}</td>
+                        <td className="text-right px-3 py-2 text-primary">{fmtBalance(currentMetrics.endProjectedBalance)}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -1759,16 +1796,22 @@
                       <span className="text-[10px] font-mono text-tertiary">{t('kpiProjPrefix')} {fmt(currentMetrics.projectedEx)}</span>
                     </div>
 
-                    <div className="p-3 rounded-lg border border-subtle bg-surface-elevated flex flex-col justify-between">
+                    <div className="p-3 rounded-lg border border-subtle bg-surface-elevated flex flex-col justify-between" title={t('dailyHint')}>
                       <div className="flex items-center gap-1.5 text-secondary text-[11px]">
                         <span>☕</span>
                         <span>{t('kpiDailyRoom')}</span>
                       </div>
-                      <div className="text-lg font-mono font-bold text-primary mt-1">
-                        {fmt(dailyAllowance)}
-                        <span className="text-[10px] font-normal text-secondary"> {t('perDayLabel')}</span>
+                      <div className={`text-lg font-mono font-bold mt-1 ${allowance.free < 0 ? 'text-notion-red' : 'text-primary'}`}>
+                        {allowance.days > 0 ? fmt(allowance.perDay) : fmt(allowance.free)}
+                        {allowance.days > 0 && <span className="text-[10px] font-normal text-secondary"> {t('perDayLabel')}</span>}
                       </div>
-                      <span className="text-[10px] font-mono text-tertiary">{t('kpiDailyRoomSub')}</span>
+                      <span className="text-[10px] font-mono text-tertiary">
+                        {allowance.free < 0
+                          ? t('dailyShortSub', { amount: fmt(-allowance.free) })
+                          : allowance.days > 0
+                            ? t('dailyFreeSub', { amount: fmt(allowance.free), days: allowance.days })
+                            : t('dailyClosedSub', { amount: fmt(allowance.free) })}
+                      </span>
                     </div>
 
                     <div className="p-3 rounded-lg border border-subtle bg-surface-elevated flex flex-col justify-between">
@@ -1776,10 +1819,12 @@
                         <span>🏦</span>
                         <span>{t('kpiCumulative')}</span>
                       </div>
-                      <div className={`text-lg font-mono font-bold mt-1 ${currentMetrics.endProjectedBalance >= 0 ? 'text-primary' : 'text-notion-red'}`}>
-                        {fmt(currentMetrics.endProjectedBalance)}
+                      <div className={`text-lg font-mono font-bold mt-1 ${currentMetrics.endProjectedBalance == null || currentMetrics.endProjectedBalance >= 0 ? 'text-primary' : 'text-notion-red'}`}>
+                        {fmtBalance(currentMetrics.endProjectedBalance)}
                       </div>
-                      <span className="text-[10px] font-mono text-tertiary">{t('kpiCumulativeSub')}</span>
+                      <span className="text-[10px] font-mono text-tertiary">
+                        {currentMetrics.endProjectedBalance == null ? t('beforeStart') : t('kpiCumulativeSub')}
+                      </span>
                     </div>
                   </div>
 
@@ -2705,14 +2750,27 @@
                     )}
                   </div>
 
-                  <div>
-                    <label className="text-[10px] text-secondary block mb-1">{t('startingCapital')}</label>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] text-secondary block">{t('startingCapital')}</label>
                     <MoneyInput
                       value={data.startingCapital || 0}
                       onChange={(val) => mutate(d => { d.startingCapital = parseFloat(val) || 0; })}
                       className="py-1.5"
                       inputClass="text-primary font-semibold"
                     />
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-secondary shrink-0">{t('startingMonthLabel')}</span>
+                      <select
+                        value={data.startingMonth}
+                        onChange={(e) => mutate(d => { d.startingMonth = e.target.value; })}
+                        className="flex-1 min-w-0 bg-subtle border border-subtle rounded px-2 py-1 text-primary outline-none"
+                      >
+                        {TIMELINE.map(({ yr, m }) => (
+                          <option key={timelineKey(yr, m)} value={timelineKey(yr, m)}>{formatMonth(m, lang)} {yr}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <p className="text-[10px] text-tertiary leading-snug">{t('startingHint')}</p>
                   </div>
 
                   <div>
