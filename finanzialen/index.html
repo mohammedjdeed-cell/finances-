@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Haushaltsbuch</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#191919">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Budget">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     // Theme tokens live in CSS variables (RGB triplets) so Tailwind classes like
@@ -2786,6 +2793,13 @@
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<LanguageProvider><MainApp /></LanguageProvider>);
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(e => console.warn('Service worker not registered:', e));
+      });
+    }
   </script>
 </body>
 </html>
