@@ -405,8 +405,14 @@
         quickAddModalTitle: "Neuen Posten anlegen",
         quickAddNamePlaceholder: "Z. B. Rückzahlung Schwester, Netflix...",
         initialBudgetLabel: "Geplanter Betrag (€)",
-        isOneTimeCurrentOnly: "Nur für {{month}} {{year}} (in anderen Monaten 0 €)",
-        replicateTitle: "Wiederkehrend kopieren",
+        isOneTimeCurrentOnly: "Nur im Monat „Von“ (in allen anderen Monaten 0 €)",
+        rangeFrom: "Von",
+        rangeUntil: "Bis",
+        rangeSummary: "{{n}} Monate: {{from}} – {{until}}",
+        rangeSummaryOne: "1 Monat: {{from}}",
+        clearOutside: "Plan außerhalb dieses Zeitraums auf 0 setzen",
+        clearOutsideHint: "Entfernt den Plan aus allen anderen Monaten. Tatsächliche Beträge bleiben unverändert.",
+        replicateTitle: "Betrag für Zeitraum setzen",
         replicateCatLabel: "Kategorie",
         replicateFieldLabel: "Welcher Wert?",
         replicateBudgetOption: "Plan (Budget)",
@@ -417,7 +423,7 @@
         duration6: "6 Monate ({{month}} + 5)",
         duration12: "12 Monate (1 Jahr)",
         durationAll: "Bis Ende 2028",
-        replicateActionBtn: "Kopieren",
+        replicateActionBtn: "Übernehmen",
         loanModalTitle: "Darlehen eintragen",
         loanModalDesc: "Trägt das erhaltene Geld sofort als Einnahme ein und plant die Rückzahlungen als Ausgaben in den gewählten Monaten:",
         loanStep1: "1. Geld erhalten (Einnahme für {{month}} {{year}})",
@@ -592,8 +598,14 @@
         quickAddModalTitle: "Add New Item",
         quickAddNamePlaceholder: "E.g. Sister Repayment, Netflix...",
         initialBudgetLabel: "Planned Amount (€)",
-        isOneTimeCurrentOnly: "One-time for {{month}} {{year}} only (0 € elsewhere)",
-        replicateTitle: "Replicate Recurring Value",
+        isOneTimeCurrentOnly: "Only in the \"From\" month (0 € in every other month)",
+        rangeFrom: "From",
+        rangeUntil: "Until",
+        rangeSummary: "{{n}} months: {{from}} – {{until}}",
+        rangeSummaryOne: "1 month: {{from}}",
+        clearOutside: "Set the plan to 0 outside this period",
+        clearOutsideHint: "Removes the plan from every other month. Actual amounts stay unchanged.",
+        replicateTitle: "Set amount for a period",
         replicateCatLabel: "Category",
         replicateFieldLabel: "Which value?",
         replicateBudgetOption: "Plan (Budget)",
@@ -604,7 +616,7 @@
         duration6: "6 Months ({{month}} + 5)",
         duration12: "12 Months (1 Year)",
         durationAll: "Until end of 2028",
-        replicateActionBtn: "Apply to upcoming months",
+        replicateActionBtn: "Apply",
         loanModalTitle: "Record Loan",
         loanModalDesc: "Adds the received cash as income and schedules the repayments as expenses in the chosen months:",
         loanStep1: "1. Money received (income for {{month}} {{year}})",
@@ -930,10 +942,10 @@
       const [newBulletText, setNewBulletText] = useState("");
 
       const [recurringModal, setRecurringModal] = useState(null);
-      const [recurringForm, setRecurringForm] = useState({ field: 'budget', amount: 0, duration: 6 });
+      const [recurringForm, setRecurringForm] = useState({ field: 'budget', amount: 0, from: '', until: '', clearOutside: false });
 
       const [quickAddModal, setQuickAddModal] = useState(null);
-      const [quickAddForm, setQuickAddForm] = useState({ name: "", bracket: "", budget: "", mode: "variable", isOneTime: false });
+      const [quickAddForm, setQuickAddForm] = useState({ name: "", bracket: "", budget: "", mode: "variable", isOneTime: false, from: "", until: "" });
 
       const [smartDeleteModal, setSmartDeleteModal] = useState(null);
 
@@ -1235,7 +1247,19 @@
         setTimeout(() => setHighlightedCategory(null), 2500);
       };
 
-      const handleCreateCategory = (type, name, bracketId, mode, initialBudget = 0, isOneTime = false) => {
+      const LAST_KEY = timelineKey(TIMELINE[TIMELINE.length - 1].yr, TIMELINE[TIMELINE.length - 1].m);
+      const keyIndex = (key) => TIMELINE.findIndex(x => timelineKey(x.yr, x.m) === key);
+      const keyLabel = (key) => {
+        const [yr, m] = key.split('|');
+        return `${formatMonth(m, lang)} ${yr}`;
+      };
+      // Inclusive [from, until] as timeline indexes, tolerating a reversed pick.
+      const rangeIndexes = (fromKey, untilKey) => {
+        const a = keyIndex(fromKey), b = keyIndex(untilKey);
+        return a <= b ? [a, b] : [b, a];
+      };
+
+      const handleCreateCategory = (type, name, bracketId, mode, initialBudget = 0, isOneTime = false, fromKey, untilKey = LAST_KEY) => {
         const val = name.trim();
         if (!val) return;
         const dup = checkDuplicate(type, val);
@@ -1244,15 +1268,17 @@
           return;
         }
         const amount = parseFloat(initialBudget) || 0;
-        const startIdx = timelineIndex(selectedYear, selectedMonth);
+        const [fromIdx, untilIdx] = isOneTime
+          ? [keyIndex(fromKey), keyIndex(fromKey)]
+          : rangeIndexes(fromKey, untilKey);
 
         mutate(d => {
           d.categories[type].push(val);
           d.meta[type][val] = { bracket: bracketId, mode: mode || 'variable', oneTime: !!isOneTime, payDay: null };
           TIMELINE.forEach(({ yr, m }, idx) => {
             if (!d.values[yr][type][val]) d.values[yr][type][val] = {};
-            // Plan the amount from the selected month onward, never into the past.
-            const planned = isOneTime ? idx === startIdx : idx >= startIdx;
+            // Plan the amount only inside the chosen period.
+            const planned = idx >= fromIdx && idx <= untilIdx;
             d.values[yr][type][val][m] = { budget: planned ? amount : 0, actual: 0, asOfDate: null };
           });
         });
@@ -1270,7 +1296,9 @@
           bracket: defaultBracket || bracketsList[0]?.id || 'other',
           budget: "",
           mode: defaultMode || (type === 'incomes' ? 'fixed' : 'variable'),
-          isOneTime: false
+          isOneTime: false,
+          from: timelineKey(selectedYear, selectedMonth),
+          until: LAST_KEY
         });
       };
 
@@ -1281,23 +1309,28 @@
         setRecurringForm({
           field: preferPlan ? 'budget' : 'actual',
           amount: preferPlan ? node.budget : node.actual,
-          duration: 6
+          from: timelineKey(selectedYear, selectedMonth),
+          until: LAST_KEY,
+          clearOutside: false
         });
       };
 
       const handleExecuteRecurring = () => {
         if (!recurringModal) return;
         const { type, cat } = recurringModal;
-        const { field, amount, duration } = recurringForm;
-        const startIdx = timelineIndex(selectedYear, selectedMonth);
-        if (startIdx === -1) return;
-        const limit = duration === 'all' ? TIMELINE.length - startIdx : parseInt(duration);
+        const { field, amount, from, until, clearOutside } = recurringForm;
+        const [fromIdx, untilIdx] = rangeIndexes(from, until);
+        if (fromIdx === -1) return;
+        const value = parseFloat(amount) || 0;
 
         mutate(d => {
-          TIMELINE.slice(startIdx, startIdx + limit).forEach(({ yr, m }) => {
+          TIMELINE.forEach(({ yr, m }, idx) => {
+            const inside = idx >= fromIdx && idx <= untilIdx;
+            // Outside the period only the plan is cleared; recorded actuals are history.
+            if (!inside && !(clearOutside && field === 'budget')) return;
             const byCat = d.values[yr][type][cat] || (d.values[yr][type][cat] = {});
             const node = byCat[m] || (byCat[m] = emptyNode());
-            node[field] = parseFloat(amount) || 0;
+            node[field] = inside ? value : 0;
           });
         });
         setRecurringModal(null);
@@ -1640,6 +1673,41 @@
       }, [data, selectedYear, isAnnual, lang, resolvedTheme]);
 
       useEffect(() => () => chartInstanceRef.current?.destroy(), []);
+
+      const renderPeriod = (from, until, onChange, single = false) => {
+        const [a, b] = rangeIndexes(from, until);
+        return (
+          <div className="space-y-1">
+            <div className={`grid ${single ? 'grid-cols-1' : 'grid-cols-2'} gap-2`}>
+              {[['from', from, 'rangeFrom'], ...(single ? [] : [['until', until, 'rangeUntil']])].map(([key, value, label]) => (
+                <div key={key}>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t(label)}</label>
+                  <select
+                    value={value}
+                    onChange={(e) => onChange(key, e.target.value)}
+                    className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-xs text-primary outline-none"
+                  >
+                    {TIMELINE.map(({ yr, m }) => (
+                      <option key={timelineKey(yr, m)} value={timelineKey(yr, m)}>{formatMonth(m, lang)} {yr}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+            {!single && (
+              <div className="text-[10px] text-tertiary">
+                {a === b
+                  ? t('rangeSummaryOne', { from: keyLabel(TIMELINE[a] ? timelineKey(TIMELINE[a].yr, TIMELINE[a].m) : from) })
+                  : t('rangeSummary', {
+                      n: b - a + 1,
+                      from: keyLabel(timelineKey(TIMELINE[a].yr, TIMELINE[a].m)),
+                      until: keyLabel(timelineKey(TIMELINE[b].yr, TIMELINE[b].m))
+                    })}
+              </div>
+            )}
+          </div>
+        );
+      };
 
       const chartBox = (
         <div className="rounded-lg border border-subtle bg-surface p-3">
@@ -2674,11 +2742,18 @@
                 />
               </div>
 
+              {renderPeriod(
+                quickAddForm.from,
+                quickAddForm.until,
+                (key, value) => setQuickAddForm(p => ({ ...p, [key]: value })),
+                quickAddForm.isOneTime
+              )}
+
               <label className="flex items-center justify-between gap-2 p-2 rounded bg-subtle/50 border border-subtle cursor-pointer">
                 <div>
                   <span className="font-medium text-primary block text-[11px]">{t('badgeOneTime')}</span>
                   <span className="text-[10px] text-tertiary">
-                    {t('isOneTimeCurrentOnly', { month: formatMonth(selectedMonth, lang), year: selectedYear })}
+                    {t('isOneTimeCurrentOnly')}
                   </span>
                 </div>
                 <input
@@ -2701,7 +2776,9 @@
                     quickAddForm.bracket,
                     quickAddForm.mode,
                     quickAddForm.budget,
-                    quickAddForm.isOneTime
+                    quickAddForm.isOneTime,
+                    quickAddForm.from,
+                    quickAddForm.until
                   )}
                   className="flex-1 py-1.5 bg-primary text-surface font-semibold rounded disabled:opacity-40"
                 >
@@ -2851,19 +2928,26 @@
                 />
               </div>
 
-              <div>
-                <label className="text-[10px] text-secondary font-medium block mb-1">{t('replicateDurationLabel')}</label>
-                <select
-                  value={recurringForm.duration}
-                  onChange={(e) => setRecurringForm(p => ({ ...p, duration: e.target.value }))}
-                  className="w-full bg-subtle border border-subtle rounded px-2.5 py-1.5 text-xs text-primary outline-none"
-                >
-                  <option value={3}>{t('duration3', { month: formatMonth(selectedMonth, lang) })}</option>
-                  <option value={6}>{t('duration6', { month: formatMonth(selectedMonth, lang) })}</option>
-                  <option value={12}>{t('duration12')}</option>
-                  <option value="all">{t('durationAll')}</option>
-                </select>
-              </div>
+              {renderPeriod(
+                recurringForm.from,
+                recurringForm.until,
+                (key, value) => setRecurringForm(p => ({ ...p, [key]: value }))
+              )}
+
+              {recurringForm.field === 'budget' && (
+                <label className="flex items-start justify-between gap-2 p-2 rounded bg-subtle/50 border border-subtle cursor-pointer">
+                  <div>
+                    <span className="font-medium text-primary block text-[11px]">{t('clearOutside')}</span>
+                    <span className="text-[10px] text-tertiary">{t('clearOutsideHint')}</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={recurringForm.clearOutside}
+                    onChange={(e) => setRecurringForm(p => ({ ...p, clearOutside: e.target.checked }))}
+                    className="w-4 h-4 rounded mt-0.5 shrink-0"
+                  />
+                </label>
+              )}
 
               <div className="flex gap-2 pt-2 border-t border-subtle">
                 <button onClick={() => setRecurringModal(null)} className="flex-1 py-1.5 bg-subtle text-secondary rounded hover:text-primary">
