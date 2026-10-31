@@ -193,19 +193,68 @@
       return a < b ? 'past' : a === b ? 'current' : 'future';
     };
 
-    // Fixed costs are bills you know in advance; everything else (variable or one-time)
-    // is spending that comes and goes.
-    const isFixedCost = (mode, oneTime) => mode === 'fixed' && !oneTime;
-
     // The three rules behind every expected number in the app:
     //   income            → the received amount if entered, otherwise the plan
     //   fixed / one-time  → the paid amount if entered, otherwise the plan
-    //   variable          → the target, or what you spent if that's already more;
-    //                       once the month is over, only what you actually spent
+    //   variable group    → the group's target, or what was spent if that's already more;
+    //                       once the month is over, only what was actually spent
     const expectedIncome = (node) => node.actual > 0 ? node.actual : node.budget;
-    const expectedExpense = (node, mode, oneTime, yr, m) => {
-      if (mode === 'fixed' || oneTime) return node.actual > 0 ? node.actual : node.budget;
-      return monthStatus(yr, m) === 'past' ? node.actual : Math.max(node.actual, node.budget);
+    const knownAmount = (node) => node.actual > 0 ? node.actual : node.budget;
+    const variableExpected = (spent, target, yr, m) =>
+      monthStatus(yr, m) === 'past' ? spent : Math.max(spent, target);
+
+    // Expense groups. Every expense item belongs to one group and behaves like it:
+    // fixed and one-time items have a planned amount you tick off as paid; variable
+    // items collect receipts, and their group carries one monthly target.
+    const GROUP_KINDS = ['fixed', 'variable', 'oneoff'];
+    const GROUP_HEX = {
+      blue: '#2383e2', teal: '#0f7b6c', purple: '#8a5cb5', brown: '#9f6b53',
+      amber: '#cb912f', orange: '#d9730d', pink: '#c14c8a', gray: '#787774'
+    };
+    const GROUP_COLORS = Object.keys(GROUP_HEX);
+    const DEFAULT_GROUPS = [
+      { id: 'housing', kind: 'fixed', color: 'blue', name: null },
+      { id: 'bills', kind: 'fixed', color: 'teal', name: null },
+      { id: 'subs', kind: 'fixed', color: 'purple', name: null },
+      { id: 'insurance', kind: 'fixed', color: 'brown', name: null },
+      { id: 'groceries', kind: 'variable', color: 'amber', name: null },
+      { id: 'household', kind: 'variable', color: 'orange', name: null },
+      { id: 'leisure', kind: 'variable', color: 'pink', name: null },
+      { id: 'oneoff', kind: 'oneoff', color: 'gray', name: null }
+    ];
+    // An item's mode/oneTime flags always follow its group's kind.
+    const metaForGroup = (groups, groupId, payDay = null) => {
+      const g = groups.find(x => x.id === groupId) || groups[0];
+      return {
+        bracket: g.id,
+        mode: g.kind === 'variable' ? 'variable' : 'fixed',
+        oneTime: g.kind === 'oneoff',
+        payDay
+      };
+    };
+
+    // Where an item from before groups existed belongs, judged by its name and old settings.
+    const legacyGroupFor = (cat, meta) => {
+      const p = cat.toLowerCase();
+      const has = (...keys) => keys.some(k => p.includes(k));
+      if (meta.oneTime) return 'oneoff';
+      if (has('netflix', 'spotify', 'prime', 'abo', 'subscription', 'youtube', 'disney', 'apple', 'amazon', 'google', 'claude', 'icloud', 'chatgpt')) return 'subs';
+      if (meta.mode === 'fixed') {
+        if (has('miete', 'rent', 'wohn', 'nebenkosten')) return 'housing';
+        if (has('versicherung', 'insurance', 'care concept', 'schule', 'school', 'kurs')) return 'insurance';
+        if (has('strom', 'gas', 'heiz', 'wasser', 'internet', 'wlan', 'handy', 'o2', 'vodafone', 'telekom', 'rundfunk', 'mobil', 'telefon', 'ticket', 'transport', 'bank')) return 'bills';
+        if (meta.bracket === 'housing') return 'housing';
+        if (meta.bracket === 'professional') return 'insurance';
+        return 'bills';
+      }
+      if (has('versicherung', 'insurance', 'care concept', 'schule', 'school')) return 'insurance';
+      if (has('restaurant', 'cafe', 'café', 'unterhaltung', 'freizeit', 'leisure', 'geschenk', 'gift', 'kino')) return 'leisure';
+      if (has('hausrat', 'haushalt', 'household', 'möbel', 'kleidung', 'clothes', 'ikea', 'transport', 'ticket', 'tank')) return 'household';
+      if (has('lebensmittel', 'food', 'grocer', 'supermarkt', 'netto', 'edeka', 'rewe', 'lidl', 'aldi', 'dm', 'rossmann', 'bäcker', 'gesundheit', 'health', 'apotheke', 'arzt', 'drogerie')) return 'groceries';
+      if (has('prüfung', 'exam', 'b2', 'fsp')) return 'oneoff';
+      if (meta.bracket === 'leisure') return 'leisure';
+      if (meta.bracket === 'living') return 'groceries';
+      return 'household';
     };
 
     const BRACKET_PALETTES = {
@@ -300,7 +349,9 @@
         targetOver: "{{amount}} über dem Ziel",
         stillOpen: "Noch offen: {{amount}}",
         stillExpected: "Noch erwartet: {{amount}}",
-        expectedRules: "So wird gerechnet: Einnahmen = erhalten, sonst geplant · Fixkosten & Einmaliges = bezahlt, sonst geplant · Variabel = Ziel, oder mehr wenn schon überschritten (abgelaufene Monate: nur tatsächlich Ausgegebenes).",
+        expectedRules: "So wird gerechnet: Einnahmen = erhalten, sonst geplant · Fixkosten & Einmaliges = bezahlt, sonst geplant · Variable Gruppen = Monatsziel, oder mehr wenn schon überschritten (abgelaufene Monate: nur tatsächlich Ausgegebenes).",
+        thisMonth: "Dieser Monat",
+        breakdownBtn: "Alle Beträge",
         fixBalanceBtn: "Mit echtem Kontostand korrigieren",
         fixBalanceTitle: "Echten Kontostand eintragen",
         fixBalanceTodayLabel: "Kontostand heute (Konto + Bar)",
@@ -309,8 +360,66 @@
         fixBalanceStartDesc: "Ab {{month}} wird mit diesem Betrag gerechnet. Ältere Monate zählen danach nicht mehr mit.",
         fixBalancePreview: "Übertrag wird: {{amount}}",
         fixBalanceSave: "Übernehmen",
-        groupByType: "Nach Art",
-        groupByCategory: "Nach Kategorie",
+        groups: {
+          housing: "Wohnen",
+          bills: "Rechnungen & Kommunikation",
+          subs: "Abos",
+          insurance: "Versicherung & Schule",
+          groceries: "Lebensmittel & Drogerie",
+          household: "Haushalt",
+          leisure: "Freizeit & Essen gehen",
+          oneoff: "Einmalig"
+        },
+        filterAll: "Alle",
+        filterFixed: "Fix",
+        filterVariable: "Variabel & einmalig",
+        moreTab: "Übersicht",
+        groupLabel: "Gruppe",
+        groupPaidSub: "{{n}} von {{m}} bezahlt · {{amount}} offen",
+        groupAllPaid: "Alles bezahlt",
+        groupNothingPlanned: "Nichts geplant",
+        groupTargetSub: "von {{target}} · noch {{left}}",
+        groupOverSub: "{{amount}} über dem Ziel von {{target}}",
+        groupNoTarget: "Noch kein Monatsziel",
+        monthlyTarget: "Monatsziel",
+        monthlyTargetHint: "Gilt ab {{month}} für alle folgenden Monate",
+        itemsCount: "{{n}} Posten",
+        dueOn: "Fällig am {{day}}.",
+        notPaidYet: "Noch nicht bezahlt",
+        receivedLabel: "Erhalten",
+        expectedLabel: "Erwartet",
+        receiptsCount: "{{n}} Belege",
+        receiptsOne: "1 Beleg",
+        nothingYet: "Noch nichts",
+        addReceipt: "Beleg",
+        addReceiptTo: "Beleg zu {{name}} hinzufügen",
+        addBtn: "Hinzufügen",
+        receiptAdded: "{{amount}} zu {{name}} hinzugefügt · {{group}}: {{spent}} von {{target}}",
+        receiptSheetTitle: "Beleg hinzufügen",
+        receiptWhere: "Wo hast du es ausgegeben?",
+        receiptNeedAmount: "Gib zuerst einen Betrag ein und wähle dann den Laden.",
+        receiptNoItems: "Lege zuerst in einer variablen Gruppe einen Posten an, z. B. Netto.",
+        spentTotalLabel: "Ausgegeben im {{month}} (gesamt)",
+        tapCircleHint: "Kreis antippen, wenn bezahlt",
+        tapPlusHint: "+ antippen für einen Beleg",
+        addItemShort: "+ Posten",
+        newGroup: "+ Neue Gruppe",
+        groupDialogNew: "Neue Gruppe",
+        groupDialogEdit: "Gruppe bearbeiten",
+        groupNameLabel: "Name",
+        groupNamePlaceholder: "z. B. Auto, Haustier, Sparen",
+        groupKindLabel: "Art",
+        groupColorLabel: "Farbe",
+        groupKindHelp_fixed: "Bekannte Beträge, die du als bezahlt abhakst: Miete, Abos, Rechnungen.",
+        groupKindHelp_variable: "Belege sammeln, ein Monatsziel für die ganze Gruppe: Lebensmittel, Drogerie.",
+        groupKindHelp_oneoff: "Einzelne Zahlungen in einem bestimmten Monat: Prüfung, Kaution.",
+        groupDelete: "Gruppe löschen",
+        groupDeleteMove: "Ihre {{n}} Posten verschieben nach:",
+        groupSave: "Speichern",
+        actPeriod: "Zeitraum",
+        actEdit: "Bearbeiten",
+        markReceivedAria: "{{name}} als erhalten markieren",
+        markPaidAria: "{{name}} als bezahlt markieren",
         groupFixed: "Fixkosten · Miete, Rechnungen, Abos",
         groupFlex: "Variabel & einmalig",
         targetLabel: "Ziel",
@@ -493,7 +602,9 @@
         targetOver: "{{amount}} over target",
         stillOpen: "Still to pay: {{amount}}",
         stillExpected: "Still expected: {{amount}}",
-        expectedRules: "How it's calculated: income = received, else planned · fixed & one-time = paid, else planned · variable = target, or more if already exceeded (finished months: only what was actually spent).",
+        expectedRules: "How it's calculated: income = received, else planned · fixed & one-time = paid, else planned · variable groups = monthly target, or more if already exceeded (finished months: only what was actually spent).",
+        thisMonth: "This month",
+        breakdownBtn: "All amounts",
         fixBalanceBtn: "Correct with real balance",
         fixBalanceTitle: "Enter your real balance",
         fixBalanceTodayLabel: "Balance today (bank + cash)",
@@ -502,8 +613,66 @@
         fixBalanceStartDesc: "Calculations start from this amount in {{month}}. Older months stop counting after this.",
         fixBalancePreview: "Carried over becomes: {{amount}}",
         fixBalanceSave: "Apply",
-        groupByType: "By type",
-        groupByCategory: "By category",
+        groups: {
+          housing: "Housing",
+          bills: "Bills & communication",
+          subs: "Subscriptions",
+          insurance: "Insurance & school",
+          groceries: "Groceries & drugstore",
+          household: "Household",
+          leisure: "Leisure & eating out",
+          oneoff: "One-time"
+        },
+        filterAll: "All",
+        filterFixed: "Fixed",
+        filterVariable: "Variable & one-time",
+        moreTab: "Overview",
+        groupLabel: "Group",
+        groupPaidSub: "{{n}} of {{m}} paid · {{amount}} open",
+        groupAllPaid: "All paid",
+        groupNothingPlanned: "Nothing planned",
+        groupTargetSub: "of {{target}} · {{left}} left",
+        groupOverSub: "{{amount}} over the {{target}} target",
+        groupNoTarget: "No monthly target yet",
+        monthlyTarget: "Monthly target",
+        monthlyTargetHint: "Applies from {{month}} onward",
+        itemsCount: "{{n}} items",
+        dueOn: "Due on the {{day}}.",
+        notPaidYet: "Not paid yet",
+        receivedLabel: "Received",
+        expectedLabel: "Expected",
+        receiptsCount: "{{n}} receipts",
+        receiptsOne: "1 receipt",
+        nothingYet: "Nothing yet",
+        addReceipt: "Receipt",
+        addReceiptTo: "Add receipt to {{name}}",
+        addBtn: "Add",
+        receiptAdded: "Added {{amount}} to {{name}} · {{group}}: {{spent}} of {{target}}",
+        receiptSheetTitle: "Add a receipt",
+        receiptWhere: "Where did you spend it?",
+        receiptNeedAmount: "Enter an amount first, then pick where you spent it.",
+        receiptNoItems: "First add an item to a variable group, e.g. Netto.",
+        spentTotalLabel: "Spent in {{month}} (total)",
+        tapCircleHint: "Tap the circle when paid",
+        tapPlusHint: "Tap + to add a receipt",
+        addItemShort: "+ Add item",
+        newGroup: "+ New group",
+        groupDialogNew: "New group",
+        groupDialogEdit: "Edit group",
+        groupNameLabel: "Name",
+        groupNamePlaceholder: "e.g. Car, Pet, Savings",
+        groupKindLabel: "Type",
+        groupColorLabel: "Color",
+        groupKindHelp_fixed: "Known amounts you tick off as paid: rent, subscriptions, bills.",
+        groupKindHelp_variable: "Collect receipts against one monthly target for the whole group: groceries, drugstore.",
+        groupKindHelp_oneoff: "Single payments in a specific month: exam fee, deposit.",
+        groupDelete: "Delete group",
+        groupDeleteMove: "Move its {{n}} items to:",
+        groupSave: "Save",
+        actPeriod: "Period",
+        actEdit: "Edit",
+        markReceivedAria: "Mark {{name}} as received",
+        markPaidAria: "Mark {{name}} as paid",
         groupFixed: "Fixed costs · rent, bills, subscriptions",
         groupFlex: "Variable & one-time",
         targetLabel: "Target",
@@ -739,26 +908,43 @@
     const cleanNotes = (list) => Array.isArray(list) ? list.filter(n => typeof n === 'string') : [];
 
     /*
-      State shape (version 2):
-        meta[type][cat]  = { bracket, mode, oneTime, payDay }
+      State shape (version 3):
+        groups           = [{ id, kind: fixed|variable|oneoff, color, name|null }]  (expense groups)
+        targets[groupId][year][month] = monthly target of a variable group
+        meta.expenses[cat] = { bracket: groupId, mode, oneTime, payDay }  (mode/oneTime follow the group)
+        meta.incomes[cat]  = { bracket, mode, oneTime, payDay }
         notes[type][cat] = { "2026_Okt": ["..."] }
-        values[year][type][cat][month] = { budget, actual, asOfDate|null }
+        values[year][type][cat][month] = { budget, actual, asOfDate|null, receipts? }
+      Version 2 had no groups: items are sorted into groups by name, and the plans of
+      variable items become their group's target.
       Version 1 kept metadata in flat name-keyed maps shared by incomes and expenses,
       so a name used on both sides ("Sonstiges") overwrote itself. It is migrated here.
     */
     const normalizeState = (raw) => {
       const isLegacy = !!raw && !raw.meta;
+      const needsGroups = !Array.isArray(raw?.groups) || raw.groups.length === 0;
+      const groups = needsGroups
+        ? DEFAULT_GROUPS.map(g => ({ ...g }))
+        : raw.groups
+            .filter(g => g && typeof g.id === 'string')
+            .map(g => ({
+              id: g.id,
+              kind: GROUP_KINDS.includes(g.kind) ? g.kind : 'fixed',
+              color: GROUP_COLORS.includes(g.color) ? g.color : 'gray',
+              name: typeof g.name === 'string' && g.name.trim() ? g.name.trim() : null
+            }));
       const state = {
-        version: 2,
+        version: 3,
         startingCapital: typeof raw?.startingCapital === 'number' ? raw.startingCapital : 0,
         // The month whose start the starting capital describes; earlier months don't feed the balance.
         startingMonth: TIMELINE.some(x => timelineKey(x.yr, x.m) === raw?.startingMonth)
           ? raw.startingMonth
           : timelineKey(TIMELINE[0].yr, TIMELINE[0].m),
         brackets: {
-          expenses: raw?.brackets?.expenses || [...DEFAULT_BRACKETS.expenses],
           incomes: raw?.brackets?.incomes || [...DEFAULT_BRACKETS.incomes]
         },
+        groups,
+        targets: {},
         categories: {
           incomes: dedupe(raw?.categories?.incomes || INITIAL_CATEGORIES.incomes),
           expenses: dedupe(raw?.categories?.expenses || INITIAL_CATEGORIES.expenses)
@@ -782,8 +968,11 @@
         return raw.meta?.[type]?.[cat] || {};
       };
 
+      const legacyExpenseBrackets = DEFAULT_BRACKETS.expenses.map(b => b.id);
+      const groupIds = groups.map(g => g.id);
+
       TYPES.forEach(type => {
-        const valid = state.brackets[type].map(b => b.id);
+        const valid = type === 'expenses' ? legacyExpenseBrackets : state.brackets[type].map(b => b.id);
         state.categories[type].forEach(cat => {
           const src = sourceMeta(type, cat);
           const auto = autoClassifyCategory(cat);
@@ -803,6 +992,16 @@
 
           const oneTime = typeof src.oneTime === 'boolean' ? src.oneTime : (type === 'expenses' ? auto.isOneTime : false);
           const payDay = Number.isInteger(src.payDay) && src.payDay >= 1 && src.payDay <= 31 ? src.payDay : null;
+
+          if (type === 'expenses') {
+            let groupId = !needsGroups && groupIds.includes(src.bracket) ? src.bracket : null;
+            if (!groupId) {
+              const guess = legacyGroupFor(cat, { mode, oneTime, bracket: valid.includes(src.bracket) ? src.bracket : bracket });
+              groupId = groupIds.includes(guess) ? guess : groupIds[0];
+            }
+            state.meta.expenses[cat] = metaForGroup(groups, groupId, payDay);
+            return;
+          }
           state.meta[type][cat] = { bracket, mode, oneTime, payDay };
         });
       });
@@ -848,11 +1047,37 @@
               if (typeof old.asOfDate === 'number' && old.asOfDate >= 1 && old.asOfDate < getDaysInMonth(yr, m)) {
                 node.asOfDate = Math.round(old.asOfDate);
               }
+              if (typeof old.receipts === 'number' && old.receipts > 0) node.receipts = Math.round(old.receipts);
             }
             state.values[y][type][cat][m] = node;
           });
         }));
       });
+
+      groups.filter(g => g.kind === 'variable').forEach(g => {
+        state.targets[g.id] = {};
+        YEARS.forEach(yr => {
+          const y = String(yr);
+          state.targets[g.id][y] = {};
+          getMonthsForYear(yr).forEach(m => {
+            const old = raw?.targets?.[g.id]?.[y]?.[m];
+            state.targets[g.id][y][m] = !needsGroups && typeof old === 'number' && old > 0 ? old : 0;
+          });
+        });
+      });
+
+      // Moving to groups: the plans of variable items add up to their group's target.
+      if (needsGroups) {
+        state.categories.expenses.forEach(cat => {
+          const gid = state.meta.expenses[cat].bracket;
+          if (!state.targets[gid]) return;
+          YEARS.forEach(yr => getMonthsForYear(yr).forEach(m => {
+            const node = state.values[String(yr)].expenses[cat][m];
+            state.targets[gid][String(yr)][m] += node.budget;
+            node.budget = 0;
+          }));
+        });
+      }
       return state;
     };
 
@@ -926,9 +1151,19 @@
         g_fixed: true, g_flex: true
       });
 
-      // Expenses grouped by type (fixed vs. variable & one-time) or by category bracket.
-      const [groupBy, setGroupBy] = useState(() => safeStorage.get('budget_group_by', 'type'));
-      useEffect(() => { safeStorage.set('budget_group_by', groupBy); }, [groupBy]);
+      // Expense groups: which kinds to show, which row is expanded, receipt entry, group dialog.
+      const [expFilter, setExpFilter] = useState(() => safeStorage.get('budget_exp_filter', 'all'));
+      useEffect(() => { safeStorage.set('budget_exp_filter', expFilter); }, [expFilter]);
+      const [openItem, setOpenItem] = useState(null);
+      const [addingTo, setAddingTo] = useState(null);
+      const [addAmount, setAddAmount] = useState("");
+      const [receiptSheet, setReceiptSheet] = useState(false);
+      const [receiptAmount, setReceiptAmount] = useState("");
+      const [receiptHint, setReceiptHint] = useState(false);
+      const [groupModal, setGroupModal] = useState(null);
+      const [groupForm, setGroupForm] = useState({ name: "", kind: "fixed", color: "blue", moveTo: "" });
+      const [toastMsg, setToastMsg] = useState(null);
+      const toastTimerRef = useRef(null);
 
       const [balanceModal, setBalanceModal] = useState(false);
       const [balanceInput, setBalanceInput] = useState("");
@@ -1099,6 +1334,10 @@
       };
 
       // ---- Helpers ----
+      const fmtCents = (v) => new Intl.NumberFormat(lang === 'de' ? 'de-DE' : 'en-US', {
+        style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2
+      }).format(v || 0);
+
       const fmt = (v) => new Intl.NumberFormat(lang === 'de' ? 'de-DE' : 'en-US', {
         style: 'currency', currency: 'EUR', maximumFractionDigits: 0
       }).format(v || 0);
@@ -1110,6 +1349,9 @@
       const getMeta = (type, cat) => data.meta[type]?.[cat] || {
         bracket: type === 'incomes' ? 'fixed_in' : 'other', mode: 'variable', oneTime: false, payDay: null
       };
+
+      const getTarget = (gid, yr, m) => data.targets?.[gid]?.[yr]?.[m] || 0;
+      const groupName = (g) => g.name || t('groups.' + g.id);
 
       const getNotes = (type, cat) => data.notes[type]?.[cat]?.[monthKey] || [];
 
@@ -1137,6 +1379,7 @@
 
       // ---- Derived numbers ----
       const forwardTimeline = useMemo(() => {
+        const groupById = Object.fromEntries(data.groups.map(g => [g.id, g]));
         let runningBalance = data.startingCapital || 0;
         const anchorIdx = Math.max(0, TIMELINE.findIndex(x => timelineKey(x.yr, x.m) === data.startingMonth));
         return TIMELINE.map(({ yr, m }, idx) => {
@@ -1152,14 +1395,19 @@
             projectedIn += expectedIncome(node);
           });
 
+          const spentByGroup = {};
           data.categories.expenses.forEach(cat => {
             const node = getNode('expenses', cat, yr, m);
-            const meta = getMeta('expenses', cat);
-            const expected = expectedExpense(node, meta.mode, meta.oneTime, yr, m);
-            budgetEx += node.budget;
+            const g = groupById[getMeta('expenses', cat).bracket];
             actualEx += node.actual;
+            if (g && g.kind === 'variable') {
+              spentByGroup[g.id] = (spentByGroup[g.id] || 0) + node.actual;
+              return;
+            }
+            const expected = knownAmount(node);
+            budgetEx += node.budget;
             projectedEx += expected;
-            if (isFixedCost(meta.mode, meta.oneTime)) {
+            if (g && g.kind === 'fixed') {
               fixed.plan += node.budget;
               fixed.paid += node.actual;
               fixed.expected += expected;
@@ -1172,6 +1420,16 @@
               flex.spent += node.actual;
               flex.expected += expected;
             }
+          });
+          data.groups.filter(g => g.kind === 'variable').forEach(g => {
+            const spent = spentByGroup[g.id] || 0;
+            const target = getTarget(g.id, yr, m);
+            const expected = variableExpected(spent, target, yr, m);
+            budgetEx += target;
+            projectedEx += expected;
+            flex.plan += target;
+            flex.spent += spent;
+            flex.expected += expected;
           });
 
           const actualNet = actualIn - actualEx;
@@ -1203,18 +1461,23 @@
         };
       }, [forwardTimeline, yearRows, selectedYear, selectedMonth, isAnnual]);
 
-      const categoryAnalytics = useMemo(() => {
+      const groupView = useMemo(() => {
         if (isAnnual) return [];
-        return data.categories.expenses.map(cat => {
-          const node = getNode('expenses', cat, selectedYear, selectedMonth);
-          const meta = getMeta('expenses', cat);
+        return data.groups.map(g => {
+          const items = data.categories.expenses
+            .filter(cat => getMeta('expenses', cat).bracket === g.id)
+            .map(cat => ({ cat, node: getNode('expenses', cat, selectedYear, selectedMonth) }));
+          if (g.kind === 'variable') {
+            const spent = items.reduce((s, i) => s + i.node.actual, 0);
+            const target = getTarget(g.id, selectedYear, selectedMonth);
+            return { g, items, spent, target, expected: variableExpected(spent, target, selectedYear, selectedMonth) };
+          }
+          const total = items.reduce((s, i) => s + knownAmount(i.node), 0);
+          const paid = items.reduce((s, i) => s + i.node.actual, 0);
+          const active = items.filter(i => i.node.budget > 0 || i.node.actual > 0);
           return {
-            category: cat, budget: node.budget, actual: node.actual,
-            remainingBudget: node.budget - node.actual,
-            projectedTotal: expectedExpense(node, meta.mode, meta.oneTime, selectedYear, selectedMonth),
-            isOver: meta.mode === 'variable' && !meta.oneTime && node.budget > 0 && node.actual > node.budget,
-            isFixed: isFixedCost(meta.mode, meta.oneTime),
-            bracket: meta.bracket, mode: meta.mode, isOneTime: meta.oneTime
+            g, items, total, paid, open: Math.max(0, total - paid), expected: total,
+            n: active.length, nPaid: active.filter(i => i.node.actual > 0).length
           };
         });
       }, [data, selectedYear, selectedMonth, isAnnual]);
@@ -1239,7 +1502,11 @@
         const test = name.trim().toLowerCase();
         if (!test) return null;
         const hit = data.categories[type].find(c => c.toLowerCase() === test && c !== excludeCat);
-        return hit ? { name: hit, bracket: t('brackets.' + getMeta(type, hit).bracket) } : null;
+        if (!hit) return null;
+        const where = type === 'expenses'
+          ? groupName(data.groups.find(g => g.id === getMeta(type, hit).bracket) || data.groups[0])
+          : t('brackets.' + getMeta(type, hit).bracket);
+        return { name: hit, bracket: where };
       };
 
       const flashCategory = (name) => {
@@ -1267,14 +1534,20 @@
           alert(t('duplicateAlert', { name: dup.name, bracket: dup.bracket }));
           return;
         }
-        const amount = parseFloat(initialBudget) || 0;
-        const [fromIdx, untilIdx] = isOneTime
+        const isExpense = type === 'expenses';
+        const group = isExpense ? (data.groups.find(g => g.id === bracketId) || data.groups[0]) : null;
+        const oneTime = isExpense ? group.kind === 'oneoff' : !!isOneTime;
+        // Variable items only collect receipts; their group holds the target.
+        const amount = isExpense && group.kind === 'variable' ? 0 : (parseFloat(initialBudget) || 0);
+        const [fromIdx, untilIdx] = oneTime
           ? [keyIndex(fromKey), keyIndex(fromKey)]
           : rangeIndexes(fromKey, untilKey);
 
         mutate(d => {
           d.categories[type].push(val);
-          d.meta[type][val] = { bracket: bracketId, mode: mode || 'variable', oneTime: !!isOneTime, payDay: null };
+          d.meta[type][val] = isExpense
+            ? metaForGroup(d.groups, group.id)
+            : { bracket: bracketId, mode: mode || 'variable', oneTime, payDay: null };
           TIMELINE.forEach(({ yr, m }, idx) => {
             if (!d.values[yr][type][val]) d.values[yr][type][val] = {};
             // Plan the amount only inside the chosen period.
@@ -1283,13 +1556,13 @@
           });
         });
 
-        setOpenBrackets(prev => ({ ...prev, [bracketId]: true }));
+        setOpenBrackets(prev => ({ ...prev, [isExpense ? group.id : bracketId]: true }));
         flashCategory(val);
         setQuickAddModal(null);
       };
 
       const handleOpenQuickAdd = (type, defaultBracket = null, defaultMode = null) => {
-        const bracketsList = data.brackets[type];
+        const bracketsList = type === 'incomes' ? data.brackets.incomes : data.groups;
         setQuickAddModal({ type });
         setQuickAddForm({
           name: "",
@@ -1386,12 +1659,10 @@
           }
 
           const day = parseInt(editCatForm.pDay);
-          d.meta[type][newName] = {
-            bracket: editCatForm.bracket,
-            mode: editCatForm.mode,
-            oneTime: editCatForm.isOneTime,
-            payDay: day >= 1 && day <= 31 ? day : null
-          };
+          const payDay = day >= 1 && day <= 31 ? day : null;
+          d.meta[type][newName] = type === 'expenses'
+            ? metaForGroup(d.groups, editCatForm.bracket, payDay)
+            : { bracket: editCatForm.bracket, mode: editCatForm.mode, oneTime: editCatForm.isOneTime, payDay };
 
           const byMonth = d.notes[type][newName] || (d.notes[type][newName] = {});
           if (notes.length) byMonth[monthKey] = notes;
@@ -1430,12 +1701,17 @@
 
           mutate(d => {
             if (!d.categories[type].includes(fallback)) {
-              const preferred = type === 'incomes' ? 'variable_in' : 'other';
               d.categories[type].push(fallback);
-              d.meta[type][fallback] = {
-                bracket: d.brackets[type].some(b => b.id === preferred) ? preferred : d.brackets[type][0].id,
-                mode: 'variable', oneTime: false, payDay: null
-              };
+              if (type === 'incomes') {
+                const preferred = 'variable_in';
+                d.meta.incomes[fallback] = {
+                  bracket: d.brackets.incomes.some(b => b.id === preferred) ? preferred : d.brackets.incomes[0].id,
+                  mode: 'variable', oneTime: false, payDay: null
+                };
+              } else {
+                // Keep the merged item in the same group as the one being deleted.
+                d.meta.expenses[fallback] = metaForGroup(d.groups, d.meta.expenses[cat]?.bracket);
+              }
             }
 
             TIMELINE.forEach(({ yr, m }) => {
@@ -1464,22 +1740,165 @@
         setSmartDeleteModal(null);
       };
 
-      const toggleBracket = (id) => setOpenBrackets(prev => ({ ...prev, [id]: !prev[id] }));
+      // Groups start open; openBrackets only remembers the ones you closed or reopened.
+      const isGroupOpen = (id) => openBrackets[id] !== false;
+      const toggleBracket = (id) => setOpenBrackets(prev => ({ ...prev, [id]: !isGroupOpen(id) }));
+      const anyGroupClosed = data.groups.some(g => !isGroupOpen(g.id));
 
       const toggleAllBrackets = () => {
-        const anyClosed = Object.values(openBrackets).some(v => !v);
         const nextState = {};
-        [...data.brackets.expenses, ...data.brackets.incomes, { id: 'g_fixed' }, { id: 'g_flex' }]
-          .forEach(b => { nextState[b.id] = anyClosed; });
-        setOpenBrackets(nextState);
+        data.groups.forEach(g => { nextState[g.id] = anyGroupClosed; });
+        setOpenBrackets(prev => ({ ...prev, ...nextState }));
       };
 
-      const expenseGroups = groupBy === 'type'
-        ? [
-            { id: 'g_fixed', label: t('groupFixed'), match: (c) => c.isFixed },
-            { id: 'g_flex', label: t('groupFlex'), match: (c) => !c.isFixed }
-          ]
-        : data.brackets.expenses.map(b => ({ id: b.id, label: t('brackets.' + b.id), match: (c) => c.bracket === b.id }));
+      const showToast = (msg) => {
+        setToastMsg(msg);
+        clearTimeout(toastTimerRef.current);
+        toastTimerRef.current = setTimeout(() => setToastMsg(null), 2800);
+      };
+
+      // "23,40", "23.40" and "1.234,50" all mean what a German receipt says.
+      const parseAmount = (v) => {
+        let str = String(v ?? '').trim().replace(/\s|€/g, '');
+        if (str.includes(',')) str = str.replace(/\./g, '').replace(',', '.');
+        const n = parseFloat(str);
+        return isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null;
+      };
+
+      // A receipt adds to what the item already has this month.
+      const addReceipt = (cat, amount) => {
+        mutate(d => {
+          const byCat = d.values[selectedYear].expenses[cat] || (d.values[selectedYear].expenses[cat] = {});
+          const node = byCat[selectedMonth] || (byCat[selectedMonth] = emptyNode());
+          node.actual = Math.round((node.actual + amount) * 100) / 100;
+          node.receipts = (node.receipts || 0) + 1;
+        });
+        const gv = groupView.find(x => x.g.id === getMeta('expenses', cat).bracket);
+        showToast(t('receiptAdded', {
+          amount: fmtCents(amount),
+          name: cat,
+          group: gv ? groupName(gv.g) : '',
+          spent: fmtCents((gv?.spent || 0) + amount),
+          target: fmtCents(gv?.target || 0)
+        }));
+      };
+
+      const submitInlineReceipt = (cat) => {
+        const amount = parseAmount(addAmount);
+        if (amount === null) return;
+        addReceipt(cat, amount);
+        setAddingTo(null);
+        setAddAmount("");
+      };
+
+      const openReceiptSheet = () => {
+        setReceiptAmount("");
+        setReceiptHint(false);
+        setReceiptSheet(true);
+      };
+
+      const submitSheetReceipt = (cat) => {
+        const amount = parseAmount(receiptAmount);
+        if (amount === null) { setReceiptHint(true); return; }
+        addReceipt(cat, amount);
+        setReceiptSheet(false);
+      };
+
+      // Paid / received toggle: ticking copies the plan, unticking clears the amount.
+      const toggleDone = (type, cat) => {
+        const node = getNode(type, cat, selectedYear, selectedMonth);
+        if (node.actual > 0) updateNode(type, cat, selectedYear, selectedMonth, 'actual', 0);
+        else if (node.budget > 0) updateNode(type, cat, selectedYear, selectedMonth, 'actual', node.budget);
+        else setOpenItem(`${type}:${cat}`);
+      };
+
+      // A variable group's target applies from the selected month onward.
+      const setGroupTarget = (gid, value) => {
+        const amount = parseFloat(value);
+        const startIdx = timelineIndex(selectedYear, selectedMonth);
+        mutate(d => {
+          if (!d.targets[gid]) d.targets[gid] = {};
+          TIMELINE.forEach(({ yr, m }, idx) => {
+            if (idx < startIdx) return;
+            if (!d.targets[gid][yr]) d.targets[gid][yr] = {};
+            d.targets[gid][yr][m] = isNaN(amount) ? 0 : amount;
+          });
+        });
+      };
+
+      const itemsInGroup = (gid) => data.categories.expenses.filter(c => getMeta('expenses', c).bracket === gid);
+
+      const openGroupModal = (g = null) => {
+        if (g) {
+          const others = data.groups.filter(x => x.id !== g.id);
+          setGroupForm({ name: groupName(g), kind: g.kind, color: g.color, moveTo: others[0]?.id || "" });
+          setGroupModal({ id: g.id });
+        } else {
+          const used = new Set(data.groups.map(x => x.color));
+          setGroupForm({ name: "", kind: "variable", color: GROUP_COLORS.find(c => !used.has(c)) || 'gray', moveTo: "" });
+          setGroupModal({ id: null });
+        }
+      };
+
+      // Switching a group's kind keeps the numbers: plans become the target and back.
+      const convertGroupKind = (d, gid, fromKind, toKind) => {
+        const cats = d.categories.expenses.filter(c => d.meta.expenses[c]?.bracket === gid);
+        if (toKind === 'variable' && fromKind !== 'variable') {
+          d.targets[gid] = {};
+          YEARS.forEach(yr => {
+            d.targets[gid][yr] = {};
+            getMonthsForYear(yr).forEach(m => {
+              d.targets[gid][yr][m] = cats.reduce((sum, c) => sum + (d.values[yr].expenses[c]?.[m]?.budget || 0), 0);
+              cats.forEach(c => { if (d.values[yr].expenses[c]?.[m]) d.values[yr].expenses[c][m].budget = 0; });
+            });
+          });
+        }
+        if (fromKind === 'variable' && toKind !== 'variable') delete d.targets[gid];
+      };
+
+      const saveGroup = () => {
+        const name = groupForm.name.trim();
+        if (!name) return;
+        if (!groupModal.id) {
+          const id = 'g' + Date.now().toString(36);
+          mutate(d => {
+            d.groups.push({ id, kind: groupForm.kind, color: groupForm.color, name });
+            if (groupForm.kind === 'variable') convertGroupKind(d, id, 'fixed', 'variable');
+          });
+          setOpenBrackets(prev => ({ ...prev, [id]: true }));
+        } else {
+          const gid = groupModal.id;
+          mutate(d => {
+            const g = d.groups.find(x => x.id === gid);
+            if (!g) return;
+            // Keep the built-in name translatable unless it was actually changed.
+            g.name = !g.name && name === t('groups.' + gid) ? null : name;
+            g.color = groupForm.color;
+            if (g.kind !== groupForm.kind) {
+              convertGroupKind(d, gid, g.kind, groupForm.kind);
+              g.kind = groupForm.kind;
+              d.categories.expenses
+                .filter(c => d.meta.expenses[c]?.bracket === gid)
+                .forEach(c => { d.meta.expenses[c] = metaForGroup(d.groups, gid, d.meta.expenses[c].payDay); });
+            }
+          });
+        }
+        setGroupModal(null);
+      };
+
+      const deleteGroup = () => {
+        const gid = groupModal?.id;
+        if (!gid || data.groups.length < 2) return;
+        const moveTo = groupForm.moveTo || data.groups.find(x => x.id !== gid).id;
+        mutate(d => {
+          d.groups = d.groups.filter(x => x.id !== gid);
+          d.categories.expenses
+            .filter(c => d.meta.expenses[c]?.bracket === gid)
+            .forEach(c => { d.meta.expenses[c] = metaForGroup(d.groups, moveTo, d.meta.expenses[c].payDay); });
+          delete d.targets[gid];
+        });
+        setGroupModal(null);
+      };
 
       // One tap: the planned amount was paid / received exactly as planned.
       const markAsPlanned = (type, cat) => {
@@ -1591,7 +2010,8 @@
           inNode.actual = incAmt;
           inNode.budget = incAmt;
 
-          ensure('expenses', expName, { bracket: 'other', mode: 'fixed', oneTime: true, payDay: null });
+          const oneoffGroup = d.groups.find(g => g.kind === 'oneoff') || d.groups.find(g => g.kind === 'fixed') || d.groups[0];
+          ensure('expenses', expName, metaForGroup(d.groups, oneoffGroup.id));
           Object.entries(plan).forEach(([key, amt]) => {
             const [yr, m] = key.split('|');
             d.values[yr].expenses[expName][m].budget = amt;
@@ -1636,12 +2056,12 @@
               borderRadius: 3,
               stack: 'in'
             },
-            ...data.brackets.expenses.map(b => ({
-              label: t('brackets.' + b.id),
+            ...data.groups.map(g => ({
+              label: groupName(g),
               data: months.map(m => data.categories.expenses
-                .filter(c => getMeta('expenses', c).bracket === b.id)
-                .reduce((s, c) => s + getNode('expenses', c, selectedYear, m).actual, 0)),
-              backgroundColor: b.color || '#787774',
+                .filter(c => getMeta('expenses', c).bracket === g.id)
+                .reduce((sum, c) => sum + getNode('expenses', c, selectedYear, m).actual, 0)),
+              backgroundColor: GROUP_HEX[g.color] || '#787774',
               borderRadius: 2,
               stack: 'out'
             }))
@@ -1706,6 +2126,234 @@
               </div>
             )}
           </div>
+        );
+      };
+
+      // One compact row for an income or expense item; tapping it opens its amounts and actions.
+      const renderItemRow = (type, cat, kind) => {
+        const key = `${type}:${cat}`;
+        const node = getNode(type, cat, selectedYear, selectedMonth);
+        const meta = getMeta(type, cat);
+        const notes = getNotes(type, cat);
+        const isVar = kind === 'variable';
+        const done = !isVar && node.actual > 0;
+        const isOpen = openItem === key;
+        const isFresh = highlightedCategory === cat;
+        const shown = isVar ? node.actual : knownAmount(node);
+        let sub;
+        if (isVar) {
+          sub = node.receipts > 1 ? t('receiptsCount', { n: node.receipts })
+            : node.receipts === 1 ? t('receiptsOne')
+            : node.actual > 0 ? '' : t('nothingYet');
+        } else if (done) {
+          sub = (type === 'incomes' ? t('receivedLabel') : t('paidLabel')) +
+            (node.budget > 0 && node.actual !== node.budget ? ` · ${t('planLabel')} ${fmtCents(node.budget)}` : '');
+        } else if (node.budget > 0) {
+          sub = type === 'incomes' ? t('expectedLabel') : meta.payDay ? t('dueOn', { day: meta.payDay }) : t('notPaidYet');
+        } else {
+          sub = t('groupNothingPlanned');
+        }
+        const toggleOpen = () => setOpenItem(isOpen ? null : key);
+
+        return (
+          <div key={key} className={`rounded-md ${isFresh ? 'animate-flash ring-1 ring-notion-blue' : ''}`}>
+            <div className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-subtle/60">
+              {isVar ? (
+                <button
+                  onClick={() => { setAddingTo(addingTo === key ? null : key); setAddAmount(""); }}
+                  aria-label={t('addReceiptTo', { name: cat })}
+                  className="w-7 h-7 rounded-md border border-subtle bg-surface-elevated text-secondary hover:text-primary hover:border-strong text-base leading-none"
+                >
+                  +
+                </button>
+              ) : (
+                <button
+                  onClick={() => toggleDone(type, cat)}
+                  aria-pressed={done}
+                  aria-label={t(type === 'incomes' ? 'markReceivedAria' : 'markPaidAria', { name: cat })}
+                  className={`w-[22px] h-[22px] rounded-full border-[1.5px] flex items-center justify-center text-[11px] leading-none transition ${
+                    done ? 'bg-notion-green border-notion-green text-white' : 'border-strong text-transparent hover:border-notion-green'
+                  }`}
+                >
+                  ✓
+                </button>
+              )}
+              <button onClick={toggleOpen} aria-expanded={isOpen} className="text-left min-w-0">
+                <span className={`block truncate text-xs font-medium ${done ? 'text-secondary' : 'text-primary'}`}>{cat}</span>
+                <span className="block truncate text-[10px] text-tertiary">
+                  {sub}{notes.length > 0 ? `${sub ? ' · ' : ''}✎ ${notes.length}` : ''}
+                </span>
+              </button>
+              <button
+                onClick={toggleOpen}
+                className={`font-mono text-xs text-right ${done ? 'text-tertiary' : type === 'incomes' ? 'text-notion-green' : 'text-primary'}`}
+              >
+                {fmtCents(shown)}
+              </button>
+            </div>
+
+            {isVar && addingTo === key && (
+              <form onSubmit={(e) => { e.preventDefault(); submitInlineReceipt(cat); }} className="flex gap-1.5 pl-11 pr-2 pb-2">
+                <input
+                  autoFocus
+                  inputMode="decimal"
+                  value={addAmount}
+                  onChange={(e) => setAddAmount(e.target.value)}
+                  placeholder="0,00 €"
+                  aria-label={t('addReceiptTo', { name: cat })}
+                  className="flex-1 min-w-0 bg-subtle border border-strong rounded px-2 py-1 font-mono text-sm text-right text-primary outline-none"
+                />
+                <button type="submit" className="px-3 py-1 rounded bg-primary text-surface font-semibold text-xs">{t('addBtn')}</button>
+                <button type="button" onClick={() => setAddingTo(null)} className="px-2 py-1 rounded bg-subtle text-secondary text-xs">{t('cancelBtn')}</button>
+              </form>
+            )}
+
+            {isOpen && (
+              <div className="mx-2 mb-2 p-2 rounded-md bg-subtle/60 space-y-2">
+                <div className={`grid ${isVar ? 'grid-cols-1' : 'grid-cols-2'} gap-2`}>
+                  {!isVar && (
+                    <label className="block">
+                      <span className="text-[10px] text-secondary block mb-0.5">{t('planLabel')}</span>
+                      <MoneyInput
+                        value={node.budget}
+                        onChange={(v) => updateNode(type, cat, selectedYear, selectedMonth, 'budget', v)}
+                        className="bg-surface"
+                      />
+                    </label>
+                  )}
+                  <label className="block">
+                    <span className="text-[10px] text-secondary block mb-0.5">
+                      {isVar ? t('spentTotalLabel', { month: formatMonth(selectedMonth, lang) }) : type === 'incomes' ? t('receivedLabel') : t('paidLabel')}
+                    </span>
+                    <MoneyInput
+                      value={node.actual}
+                      onChange={(v) => updateNode(type, cat, selectedYear, selectedMonth, 'actual', v)}
+                      className="bg-surface"
+                      inputClass={type === 'incomes' ? 'text-notion-green font-semibold' : 'text-primary font-semibold'}
+                    />
+                  </label>
+                </div>
+                {notes.length > 0 && (
+                  <ul className="text-[11px] text-secondary space-y-0.5 pl-1">
+                    {notes.map((n, i) => <li key={i}>• {n}</li>)}
+                  </ul>
+                )}
+                <div className="flex flex-wrap gap-1.5 text-[11px]">
+                  {!isVar && (
+                    <button onClick={() => handleOpenRecurring(type, cat)} className="px-2 py-1 rounded border border-subtle bg-surface text-secondary hover:text-primary">
+                      🔁 {t('actPeriod')}
+                    </button>
+                  )}
+                  <button onClick={() => handleOpenEditCategory(type, cat)} className="px-2 py-1 rounded border border-subtle bg-surface text-secondary hover:text-primary">
+                    ✎ {t('actEdit')}
+                  </button>
+                  <button onClick={() => setSmartDeleteModal({ type, cat })} className="px-2 py-1 rounded border border-subtle bg-surface text-secondary hover:text-notion-red">
+                    🗑 {t('deleteCategoryBtn')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      };
+
+      const KIND_PILL = {
+        fixed: 'bg-notion-tagBlue text-notion-blue',
+        variable: 'bg-notion-tagAmber text-amber-700 dark:text-amber-400',
+        oneoff: 'bg-notion-tagPurple text-purple-700 dark:text-purple-400'
+      };
+      const kindLabel = (kind) => kind === 'fixed' ? t('badgeFixed') : kind === 'variable' ? t('badgeVariable') : t('badgeOneTime');
+
+      const renderGroup = (gv) => {
+        const { g } = gv;
+        const hex = GROUP_HEX[g.color] || GROUP_HEX.gray;
+        const open = isGroupOpen(g.id);
+        const isVar = g.kind === 'variable';
+        const visible = isVar ? gv.items : gv.items.filter(i => !hideZeroes || i.node.budget > 0 || i.node.actual > 0);
+        const hidden = gv.items.length - visible.length;
+        let amount, sub, fill, over = false;
+        if (isVar) {
+          amount = fmtCents(gv.spent);
+          over = gv.target > 0 && gv.spent > gv.target;
+          sub = gv.target <= 0 ? t('groupNoTarget')
+            : over ? t('groupOverSub', { amount: fmtCents(gv.spent - gv.target), target: fmt(gv.target) })
+            : t('groupTargetSub', { target: fmt(gv.target), left: fmtCents(gv.target - gv.spent) });
+          fill = gv.target > 0 ? Math.min(100, (gv.spent / gv.target) * 100) : 0;
+        } else {
+          amount = fmtCents(gv.total);
+          sub = gv.n === 0 ? t('groupNothingPlanned')
+            : gv.open > 0 ? t('groupPaidSub', { n: gv.nPaid, m: gv.n, amount: fmtCents(gv.open) })
+            : t('groupAllPaid');
+          fill = gv.total > 0 ? Math.min(100, (gv.paid / gv.total) * 100) : 0;
+        }
+
+        return (
+          <section key={g.id} className="rounded-lg border border-subtle bg-surface overflow-hidden">
+            <div className="flex items-start gap-1 pr-2">
+              <button
+                onClick={() => toggleBracket(g.id)}
+                aria-expanded={open}
+                className="flex-1 min-w-0 grid grid-cols-[10px_minmax(0,1fr)_auto] gap-3 items-center text-left pl-3.5 pt-3 pb-2"
+              >
+                <span className="w-2.5 h-2.5 rounded-[3px]" style={{ background: hex }}></span>
+                <span className="flex items-center gap-1.5 flex-wrap min-w-0">
+                  <span className="text-sm font-semibold text-primary break-words min-w-0">{groupName(g)}</span>
+                  <span className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${KIND_PILL[g.kind]}`}>{kindLabel(g.kind)}</span>
+                  <span className="text-[10px] text-tertiary">{t('itemsCount', { n: gv.items.length })}</span>
+                  <span className={`text-[10px] text-tertiary inline-block transition-transform ${open ? 'rotate-90' : ''}`}>▸</span>
+                </span>
+                <span className="text-right">
+                  <span className="block font-mono text-sm font-semibold text-primary">{amount}</span>
+                  <span className={`block text-[10px] ${over ? 'text-notion-red' : 'text-secondary'}`}>{sub}</span>
+                </span>
+              </button>
+              <button
+                onClick={() => openGroupModal(g)}
+                aria-label={t('groupDialogEdit')}
+                title={t('groupDialogEdit')}
+                className="mt-3 w-7 h-7 rounded text-tertiary hover:text-primary hover:bg-subtle shrink-0 leading-none"
+              >
+                ⋯
+              </button>
+            </div>
+            <div className="pr-3.5 pb-3 pl-9">
+              <div className="h-1.5 rounded-full bg-subtle overflow-hidden">
+                <div className="h-full rounded-full transition-all" style={{ width: `${fill}%`, background: over ? '#e03e3e' : hex }}></div>
+              </div>
+            </div>
+
+            {open && (
+              <div className="border-t border-subtle p-1.5 space-y-0.5">
+                {isVar && (
+                  <div className="flex items-center justify-between gap-2 px-2 py-1.5">
+                    <div className="min-w-0">
+                      <span className="text-[11px] font-medium text-primary block">{t('monthlyTarget')}</span>
+                      <span className="text-[10px] text-tertiary">{t('monthlyTargetHint', { month: monthLabel(selectedYear, selectedMonth) })}</span>
+                    </div>
+                    <MoneyInput
+                      value={gv.target}
+                      onChange={(v) => setGroupTarget(g.id, v)}
+                      className="w-28 shrink-0"
+                      aria-label={`${groupName(g)} ${t('monthlyTarget')}`}
+                    />
+                  </div>
+                )}
+                {hidden > 0 && hideZeroes && (
+                  <div className="mx-2 p-1.5 rounded bg-subtle/50 text-[11px] text-tertiary flex items-center justify-between px-2">
+                    <span>{t('hiddenNoticeBracket', { count: hidden })}</span>
+                    <button onClick={() => setHideZeroes(false)} className="text-notion-blue font-semibold hover:underline">{t('showNow')}</button>
+                  </div>
+                )}
+                {visible.map(i => renderItemRow('expenses', i.cat, g.kind))}
+                <div className="flex items-center justify-between px-2 pt-1 pb-1 text-[10px] text-tertiary">
+                  <span>{isVar ? t('tapPlusHint') : t('tapCircleHint')}</span>
+                  <button onClick={() => handleOpenQuickAdd('expenses', g.id)} className="text-notion-blue text-[11px] font-medium hover:underline">
+                    {t('addItemShort')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
         );
       };
 
@@ -1815,9 +2463,9 @@
             <div className="block lg:hidden sticky top-[89px] z-30 bg-surface px-3 py-1.5 border-b border-subtle">
               <div className="grid grid-cols-3 gap-1 bg-subtle p-0.5 rounded border border-subtle text-[11px]">
                 {[
-                  ['expenses', t('expensesHeader'), currentMetrics.actualEx],
-                  ['incomes', t('incomesHeader'), currentMetrics.actualIn],
-                  ['cockpit', t('analyticsTab'), currentMetrics.endProjectedBalance]
+                  ['expenses', t('expensesHeader'), currentMetrics.projectedEx],
+                  ['incomes', t('incomesHeader'), currentMetrics.projectedIn],
+                  ['cockpit', t('moreTab'), currentMetrics.endProjectedBalance]
                 ].map(([id, label, value]) => (
                   <button
                     key={id}
@@ -1864,7 +2512,7 @@
                     className="px-2.5 py-1.5 rounded-md text-xs text-secondary hover:text-primary transition border border-subtle bg-surface"
                   >
                     <i className="fa-solid fa-up-down text-[10px] mr-1"></i>
-                    <span>{Object.values(openBrackets).some(v => !v) ? t('expandAll') : t('collapseAll')}</span>
+                    <span>{anyGroupClosed ? t('expandAll') : t('collapseAll')}</span>
                   </button>
                 </div>
               )}
@@ -1941,43 +2589,64 @@
               </div>
             ) : (
               <>
-                {/* COCKPIT HERO */}
-                <div className={`${mobileTab === 'cockpit' ? 'block' : 'hidden lg:block'} space-y-3`}>
-                  {(() => {
-                    const cm = currentMetrics;
-                    const prev = prevMonthOf(selectedYear, selectedMonth);
-                    const isPast = monthStatus(selectedYear, selectedMonth) === 'past';
-                    const beforeStart = cm.endProjectedBalance == null;
-                    const carriedLabel = cm.isAnchor || !prev ? t('carriedStart') : t('carriedOver', { month: monthLabel(prev.yr, prev.m) });
-                    const flexLeft = cm.flex.plan - cm.flex.spent;
-                    const lines = [
-                      { label: carriedLabel, text: fmtBalance(cm.startBal), cls: 'text-primary' },
-                      { label: t('lineIncome'), text: `+ ${fmt(cm.projectedIn)}`, cls: 'text-notion-green' },
-                      { label: t('lineFixed'), text: `− ${fmt(cm.fixed.expected)}`, cls: 'text-notion-red' },
-                      { label: t('lineFlex'), text: `− ${fmt(cm.flex.expected)}`, cls: 'text-notion-red' }
-                    ];
-                    return (
-                      <>
-                        {/* End-of-month balance, built up line by line */}
-                        <div className="rounded-lg border border-subtle bg-surface-elevated p-4 flex flex-col md:flex-row gap-4">
-                          <div className="md:w-2/5 flex flex-col justify-between gap-3">
-                            <div>
-                              <div className="text-[11px] text-secondary flex items-center gap-1.5">
-                                <span>🏦</span>
-                                <span>{t(isPast ? 'endOfMonthTitlePast' : 'endOfMonthTitle', { month: monthLabel(selectedYear, selectedMonth) })}</span>
-                              </div>
-                              <div className={`text-3xl font-mono font-bold mt-1 ${beforeStart ? 'text-tertiary' : cm.endProjectedBalance >= 0 ? 'text-primary' : 'text-notion-red'}`}>
-                                {fmtBalance(cm.endProjectedBalance)}
-                              </div>
-                              {beforeStart && <div className="text-[11px] text-tertiary mt-1">{t('beforeStart')}</div>}
-                            </div>
-                            <button onClick={openBalanceModal} className="self-start text-[11px] text-notion-blue hover:underline">
-                              ✎ {t('fixBalanceBtn')}
-                            </button>
-                          </div>
+                {(() => {
+                  const cm = currentMetrics;
+                  const prev = prevMonthOf(selectedYear, selectedMonth);
+                  const isPast = monthStatus(selectedYear, selectedMonth) === 'past';
+                  const beforeStart = cm.endProjectedBalance == null;
+                  const carriedLabel = cm.isAnchor || !prev ? t('carriedStart') : t('carriedOver', { month: monthLabel(prev.yr, prev.m) });
+                  const flexLeft = cm.flex.plan - cm.flex.spent;
+                  const lines = [
+                    { label: carriedLabel, text: fmtBalance(cm.startBal), cls: cm.startBal < 0 ? 'text-notion-red' : 'text-primary' },
+                    { label: t('lineIncome'), text: `+ ${fmt(cm.projectedIn)}`, cls: 'text-notion-green' },
+                    { label: t('lineFixed'), text: `− ${fmt(cm.fixed.expected)}`, cls: 'text-notion-red' },
+                    { label: t('lineFlex'), text: `− ${fmt(cm.flex.expected)}`, cls: 'text-notion-red' }
+                  ];
+                  const visibleIncomes = data.categories.incomes.filter(cat => {
+                    const node = getNode('incomes', cat, selectedYear, selectedMonth);
+                    return !hideZeroes || node.budget > 0 || node.actual > 0;
+                  });
+                  const hiddenIncomes = data.categories.incomes.length - visibleIncomes.length;
+                  const shownGroups = groupView.filter(gv =>
+                    expFilter === 'all' || (expFilter === 'fixed' ? gv.g.kind === 'fixed' : gv.g.kind !== 'fixed'));
+                  const meters = [
+                    {
+                      label: t('lineIncome'), done: cm.actualIn, total: cm.projectedIn, color: '#0f7b6c',
+                      sub: cm.projectedIn > cm.actualIn
+                        ? t('stillExpected', { amount: fmt(cm.projectedIn - cm.actualIn) })
+                        : t('receivedOf', { done: fmt(cm.actualIn), total: fmt(cm.projectedIn) })
+                    },
+                    {
+                      label: t('lineFixed'), done: cm.fixed.paid, total: cm.fixed.expected, color: '#2383e2',
+                      sub: t('paidCount', { n: cm.fixed.paidItems, m: cm.fixed.items }) +
+                        (cm.fixed.expected > cm.fixed.paid ? ` · ${t('stillOpen', { amount: fmt(cm.fixed.expected - cm.fixed.paid) })}` : '')
+                    },
+                    {
+                      label: t('lineFlex'), done: cm.flex.spent, total: cm.flex.plan, color: flexLeft < 0 ? '#e03e3e' : '#cb912f',
+                      over: flexLeft < 0,
+                      sub: flexLeft < 0 ? t('targetOver', { amount: fmt(-flexLeft) }) : t('targetLeft', { amount: fmt(flexLeft) })
+                    }
+                  ];
 
+                  return (
+                    <div className="grid grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] gap-4 lg:gap-6 items-start">
+
+                      {/* SUMMARY COLUMN */}
+                      <aside className="space-y-3 min-w-0">
+                        {/* End-of-month balance, built up line by line */}
+                        <div className="rounded-lg border border-subtle bg-surface-elevated p-4 space-y-3">
+                          <div>
+                            <div className="text-[11px] text-secondary flex items-center gap-1.5">
+                              <span>🏦</span>
+                              <span>{t(isPast ? 'endOfMonthTitlePast' : 'endOfMonthTitle', { month: monthLabel(selectedYear, selectedMonth) })}</span>
+                            </div>
+                            <div className={`text-3xl font-mono font-bold mt-1 ${beforeStart ? 'text-tertiary' : cm.endProjectedBalance >= 0 ? 'text-primary' : 'text-notion-red'}`}>
+                              {fmtBalance(cm.endProjectedBalance)}
+                            </div>
+                            {beforeStart && <div className="text-[11px] text-tertiary mt-1">{t('beforeStart')}</div>}
+                          </div>
                           {!beforeStart && (
-                            <div className="flex-1 md:border-l md:border-subtle md:pl-4 text-xs font-mono space-y-1">
+                            <div className="text-xs font-mono space-y-1">
                               {lines.map(l => (
                                 <div key={l.label} className="flex items-center justify-between gap-3">
                                   <span className="font-sans text-secondary">{l.label}</span>
@@ -1988,54 +2657,54 @@
                                 <span className="font-sans text-primary">= {t('kpiCumulative')}</span>
                                 <span className={cm.endProjectedBalance >= 0 ? 'text-primary' : 'text-notion-red'}>{fmtBalance(cm.endProjectedBalance)}</span>
                               </div>
-                              <p className="font-sans text-[10px] text-tertiary pt-1 leading-snug">{t('expectedRules')}</p>
                             </div>
                           )}
-                        </div>
-
-                        {/* Income, fixed costs, variable & one-time */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                          <button
-                            onClick={() => setBreakdownModal(true)}
-                            title={t('kpiActualNetDesc')}
-                            className="text-left p-3 rounded-lg border border-subtle hover:border-strong bg-surface-elevated transition"
-                          >
-                            <div className="flex items-center justify-between text-[11px] text-secondary">
-                              <span>💰 {t('lineIncome')}</span>
-                              <span className="text-[10px] opacity-80">🔍</span>
-                            </div>
-                            <div className="text-lg font-mono font-bold mt-1 text-notion-green dark:text-emerald-400">{fmt(cm.projectedIn)}</div>
-                            <ProgressBar value={cm.actualIn} total={cm.projectedIn} className="bg-emerald-500" />
-                            <div className="text-[10px] font-mono text-tertiary mt-1.5">{t('receivedOf', { done: fmt(cm.actualIn), total: fmt(cm.projectedIn) })}</div>
-                            {cm.projectedIn - cm.actualIn > 0 && (
-                              <div className="text-[10px] font-mono text-secondary">{t('stillExpected', { amount: fmt(cm.projectedIn - cm.actualIn) })}</div>
-                            )}
+                          <p className="text-[10px] text-tertiary leading-snug">{t('expectedRules')}</p>
+                          <button onClick={openBalanceModal} className="text-[11px] text-notion-blue hover:underline">
+                            ✎ {t('fixBalanceBtn')}
                           </button>
+                        </div>
 
-                          <div className="p-3 rounded-lg border border-subtle bg-surface-elevated">
-                            <div className="text-[11px] text-secondary">📌 {t('lineFixed')}</div>
-                            <div className="text-lg font-mono font-bold mt-1 text-primary">{fmt(cm.fixed.expected)}</div>
-                            <ProgressBar value={cm.fixed.paid} total={cm.fixed.expected} className="bg-notion-blue" />
-                            <div className="text-[10px] font-mono text-tertiary mt-1.5">{t('paidCount', { n: cm.fixed.paidItems, m: cm.fixed.items })}</div>
-                            {cm.fixed.expected - cm.fixed.paid > 0 && (
-                              <div className="text-[10px] font-mono text-secondary">{t('stillOpen', { amount: fmt(cm.fixed.expected - cm.fixed.paid) })}</div>
-                            )}
+                        {/* This month: received, paid, spent */}
+                        <div className={`${mobileTab === 'cockpit' ? 'block' : 'hidden lg:block'} rounded-lg border border-subtle bg-surface p-4 space-y-3`}>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] uppercase tracking-wide font-semibold text-secondary">{t('thisMonth')}</span>
+                            <button onClick={() => setBreakdownModal(true)} className="text-[11px] text-notion-blue hover:underline">🧾 {t('breakdownBtn')}</button>
                           </div>
-
-                          <div className="p-3 rounded-lg border border-subtle bg-surface-elevated">
-                            <div className="text-[11px] text-secondary">🛒 {t('lineFlex')}</div>
-                            <div className="text-lg font-mono font-bold mt-1 text-primary">{fmt(cm.flex.expected)}</div>
-                            <ProgressBar value={cm.flex.spent} total={cm.flex.plan} className={flexLeft < 0 ? 'bg-notion-red' : 'bg-amber-500'} />
-                            <div className="text-[10px] font-mono text-tertiary mt-1.5">{t('spentOf', { done: fmt(cm.flex.spent), total: fmt(cm.flex.plan) })}</div>
-                            <div className={`text-[10px] font-mono ${flexLeft < 0 ? 'text-notion-red' : 'text-secondary'}`}>
-                              {flexLeft < 0 ? t('targetOver', { amount: fmt(-flexLeft) }) : t('targetLeft', { amount: fmt(flexLeft) })}
+                          {meters.map(mt => (
+                            <div key={mt.label} className="space-y-1">
+                              <div className="flex items-baseline justify-between gap-2 text-xs">
+                                <span className="font-medium text-primary">{mt.label}</span>
+                                <span className="font-mono text-primary">{fmt(mt.done)} <span className="text-tertiary">/ {fmt(mt.total)}</span></span>
+                              </div>
+                              <div className="h-1.5 rounded-full bg-subtle overflow-hidden">
+                                <div className="h-full rounded-full transition-all" style={{ width: `${mt.total > 0 ? Math.min(100, (mt.done / mt.total) * 100) : 0}%`, background: mt.color }}></div>
+                              </div>
+                              <div className={`text-[10px] font-mono ${mt.over ? 'text-notion-red' : 'text-tertiary'}`}>{mt.sub}</div>
                             </div>
+                          ))}
+                        </div>
+
+                        {/* Income */}
+                        <div className={`${mobileTab === 'incomes' ? 'block' : 'hidden lg:block'} rounded-lg border border-subtle bg-surface p-1.5`}>
+                          <div className="flex items-center justify-between px-2 pt-1.5 pb-1">
+                            <h2 className="text-xs font-semibold text-primary uppercase tracking-wide">{t('incomesHeader')}</h2>
+                            <span className="text-xs font-mono font-semibold text-notion-green">{fmt(cm.projectedIn)}</span>
+                          </div>
+                          {hiddenIncomes > 0 && hideZeroes && (
+                            <div className="mx-2 my-1 p-1.5 rounded bg-subtle/50 text-[11px] text-tertiary flex items-center justify-between px-2">
+                              <span>{t('hiddenNoticeBracket', { count: hiddenIncomes })}</span>
+                              <button onClick={() => setHideZeroes(false)} className="text-notion-blue font-semibold hover:underline">{t('showNow')}</button>
+                            </div>
+                          )}
+                          {visibleIncomes.map(cat => renderItemRow('incomes', cat, 'income'))}
+                          <div className="flex items-center justify-between px-2 pt-1 pb-1 text-[10px] text-tertiary">
+                            <span>{t('tapCircleHint')}</span>
+                            <button onClick={() => handleOpenQuickAdd('incomes')} className="text-notion-blue text-[11px] font-medium hover:underline">{t('addItemShort')}</button>
                           </div>
                         </div>
-                      </>
-                    );
-                  })()}
 
+                        <div className={`${mobileTab === 'cockpit' ? 'block' : 'hidden lg:block'} space-y-3`}>
                   {/* IOU & DEBT TRACKER */}
                   <div className="rounded-lg border border-subtle bg-surface p-3.5 space-y-3">
                     <div className="flex items-center justify-between gap-2 border-b border-subtle pb-2">
@@ -2049,7 +2718,7 @@
                       </div>
                     </div>
 
-                    <div className="p-3 rounded-lg bg-subtle/70 border border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+                    <div className="p-3 rounded-lg bg-subtle/70 border border-subtle flex flex-col gap-2.5 text-xs">
                       <div className="flex items-start gap-2">
                         <span className="text-amber-500 text-sm mt-0.5">💡</span>
                         <div>
@@ -2067,13 +2736,13 @@
                       </div>
                       <button
                         onClick={openLoanModal}
-                        className="px-3 py-1.5 bg-primary text-surface rounded-md text-xs font-semibold hover:opacity-90 transition whitespace-nowrap self-start sm:self-auto shadow-sm"
+                        className="px-3 py-1.5 bg-primary text-surface rounded-md text-xs font-semibold hover:opacity-90 transition self-start shadow-sm text-left"
                       >
                         {t('iouSisterBtn')}
                       </button>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-1.5 pt-1">
+                    <div className="flex flex-col gap-1.5 pt-1">
                       <select
                         value={iouType}
                         onChange={(e) => setIouType(e.target.value)}
@@ -2093,7 +2762,7 @@
                         value={iouAmount}
                         onChange={setIouAmount}
                         placeholder={t('iouAmountPlaceholder')}
-                        className="w-full sm:w-28"
+                        className="w-full"
                       />
 
                       <button
@@ -2105,7 +2774,7 @@
                     </div>
 
                     {activeIous.length > 0 && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-1">
+                      <div className="grid grid-cols-1 gap-2 pt-1">
                         {activeIous.map(item => {
                           const isBorrowed = item.type === 'borrowed';
                           return (
@@ -2136,382 +2805,64 @@
                     )}
                   </div>
 
-                  {chartBox}
-                </div>
-
-                {/* ACCORDIONS */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-start">
-
-                  {/* INCOMES COLUMN */}
-                  <div className={`space-y-3 ${mobileTab === 'incomes' ? 'block' : 'hidden lg:block'}`}>
-                    <div className="flex items-center justify-between pb-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs">💰</span>
-                        <h2 className="text-xs font-semibold text-primary uppercase tracking-wide">{t('incomesHeader')}</h2>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-notion-tagGreen text-notion-green">
-                          {fmt(currentMetrics.actualIn)}
-                        </span>
-                        <button
-                          onClick={() => handleOpenQuickAdd('incomes')}
-                          className="text-xs font-medium px-2 py-1 rounded bg-subtle hover:bg-subtle/80 text-primary border border-subtle transition flex items-center gap-1"
-                        >
-                          <span>{t('addItemBtn')}</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {data.brackets.incomes.map(b => {
-                      const allItems = data.categories.incomes.filter(c => getMeta('incomes', c).bracket === b.id);
-                      const bracketActual = allItems.reduce((s, c) => s + getNode('incomes', c, selectedYear, selectedMonth).actual, 0);
-                      const isOpen = !!openBrackets[b.id];
-                      const palette = getPalette(b.id);
-
-                      const visibleItems = allItems.filter(cat => {
-                        if (!hideZeroes) return true;
-                        const node = getNode('incomes', cat, selectedYear, selectedMonth);
-                        return !(node.actual === 0 && node.budget === 0);
-                      });
-                      const hiddenCount = allItems.length - visibleItems.length;
-
-                      return (
-                        <div key={b.id} className="rounded-lg border border-subtle bg-surface overflow-hidden">
-                          <div className="px-3 py-2 bg-surface hover:bg-subtle/50 transition flex items-center justify-between select-none border-b border-subtle">
-                            <button onClick={() => toggleBracket(b.id)} aria-expanded={isOpen} className="flex items-center gap-2 cursor-pointer flex-1 min-w-0 text-left">
-                              <span className="text-secondary text-[11px] w-3">{isOpen ? '▾' : '▸'}</span>
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${palette.tag}`}>
-                                {t('brackets.' + b.id)}
-                              </span>
-                              <span className="text-[10px] text-tertiary">({visibleItems.length})</span>
-                            </button>
-
-                            <div className="flex items-center gap-2 shrink-0 ml-1">
-                              <span className="font-mono text-xs font-semibold text-notion-green">{fmt(bracketActual)}</span>
-                              <button
-                                onClick={() => handleOpenQuickAdd('incomes', b.id)}
-                                aria-label={t('quickAddModalTitle')}
-                                className="text-tertiary hover:text-primary p-1 text-xs"
-                              >
-                                <i className="fa-solid fa-plus"></i>
-                              </button>
-                            </div>
-                          </div>
-
-                          {isOpen && (
-                            <div className="p-2 space-y-1.5 bg-surface">
-                              {hiddenCount > 0 && hideZeroes && (
-                                <div className="p-1.5 rounded bg-subtle/50 text-[11px] text-tertiary flex items-center justify-between px-2">
-                                  <span>{t('hiddenNoticeBracket', { count: hiddenCount })}</span>
-                                  <button onClick={() => setHideZeroes(false)} className="text-notion-blue font-semibold hover:underline">
-                                    {t('showNow')}
-                                  </button>
-                                </div>
-                              )}
-
-                              {visibleItems.length === 0 ? (
-                                <p className="text-center py-2 text-xs text-tertiary italic">{t('emptyGroupIncomes')}</p>
-                              ) : (
-                                visibleItems.map(cat => {
-                                  const node = getNode('incomes', cat, selectedYear, selectedMonth);
-                                  const meta = getMeta('incomes', cat);
-                                  const isFresh = highlightedCategory === cat;
-                                  const notes = getNotes('incomes', cat);
-                                  const noteKey = `incomes:${cat}`;
-                                  const isNoteOpen = !!openNoteRows[noteKey];
-
-                                  return (
-                                    <div key={cat} className={`space-y-1 rounded transition ${isFresh ? 'animate-flash ring-1 ring-emerald-500' : ''}`}>
-                                      <div className="p-2 rounded border border-subtle hover:border-strong bg-surface-elevated flex items-center justify-between gap-2">
-                                        <div className="truncate flex-1 min-w-0">
-                                          <div className="flex items-center gap-1.5">
-                                            <span className="font-medium text-xs text-primary block truncate">{cat}</span>
-                                            {meta.oneTime && (
-                                              <span className="text-[9px] px-1 py-px rounded bg-notion-tagAmber text-amber-700 dark:text-amber-400">
-                                                {t('badgeOneTime')}
-                                              </span>
-                                            )}
-                                            {notes.length > 0 && (
-                                              <button
-                                                onClick={() => setOpenNoteRows(p => ({ ...p, [noteKey]: !p[noteKey] }))}
-                                                className="text-[9px] text-notion-green flex items-center gap-0.5 px-1 py-px rounded bg-subtle"
-                                              >
-                                                <i className="fa-solid fa-note-sticky text-[8px]"></i>
-                                                <span>{notes.length}</span>
-                                              </button>
-                                            )}
-                                          </div>
-                                          {(meta.payDay || node.budget > 0) && (
-                                            <span className="text-[10px] text-tertiary">
-                                              {meta.payDay ? `${t('paymentDayShort')} ${meta.payDay}` : ''}
-                                              {meta.payDay && node.budget > 0 ? ' · ' : ''}
-                                              {node.budget > 0 ? `${t('planLabel')} ${fmt(node.budget)}` : ''}
-                                            </span>
-                                          )}
-                                        </div>
-
-                                        <div className="flex items-center gap-1.5 shrink-0">
-                                          {node.actual === 0 && node.budget > 0 && (
-                                            <button
-                                              onClick={() => markAsPlanned('incomes', cat)}
-                                              title={t('markReceivedHint')}
-                                              className="text-[10px] px-1.5 py-0.5 rounded bg-notion-tagGreen text-notion-green font-semibold hover:opacity-80"
-                                            >
-                                              ✓ {t('markReceived')}
-                                            </button>
-                                          )}
-                                          <MoneyInput
-                                            value={node.actual}
-                                            onChange={(val) => updateNode('incomes', cat, selectedYear, selectedMonth, 'actual', val)}
-                                            className="w-24 py-0.5"
-                                            inputClass="text-notion-green font-semibold"
-                                            aria-label={`${cat} ${t('actualLabel')}`}
-                                          />
-                                          <button onClick={() => handleOpenRecurring('incomes', cat)} aria-label={t('replicateTitle')} className="text-tertiary hover:text-primary p-1">
-                                            <i className="fa-solid fa-repeat text-xs"></i>
-                                          </button>
-                                          <button onClick={() => handleOpenEditCategory('incomes', cat)} aria-label={t('editorTitle')} className="text-tertiary hover:text-primary p-1">
-                                            <i className="fa-solid fa-ellipsis text-xs"></i>
-                                          </button>
-                                          <button onClick={() => setSmartDeleteModal({ type: 'incomes', cat })} aria-label={t('deleteCategoryBtn')} className="text-tertiary hover:text-notion-red p-1">
-                                            <i className="fa-solid fa-trash-can text-xs"></i>
-                                          </button>
-                                        </div>
-                                      </div>
-
-                                      {isNoteOpen && notes.length > 0 && (
-                                        <div className="mx-1 p-2 rounded bg-subtle text-xs text-secondary space-y-1">
-                                          {notes.map((bullet, bIdx) => (
-                                            <div key={bIdx} className="flex items-start gap-1.5">
-                                              <span className="text-notion-green">•</span>
-                                              <span>{bullet}</span>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                })
-                              )}
-                            </div>
-                          )}
+                          {chartBox}
                         </div>
-                      );
-                    })}
-                  </div>
+                      </aside>
 
-                  {/* EXPENSES COLUMN */}
-                  <div className={`space-y-3 ${mobileTab === 'expenses' ? 'block' : 'hidden lg:block'}`}>
-                    <div className="flex items-center justify-between pb-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs">💳</span>
-                        <h2 className="text-xs font-semibold text-primary uppercase tracking-wide">{t('expensesHeader')}</h2>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-notion-tagRed text-notion-red">
-                          {fmt(currentMetrics.actualEx)}
-                        </span>
-                        <button
-                          onClick={() => handleOpenQuickAdd('expenses')}
-                          className="text-xs font-medium px-2 py-1 rounded bg-subtle hover:bg-subtle/80 text-primary border border-subtle transition flex items-center gap-1"
-                        >
-                          <span>{t('addItemBtn')}</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-1 bg-subtle p-0.5 rounded border border-subtle text-[11px]">
-                      {[['type', t('groupByType')], ['category', t('groupByCategory')]].map(([id, label]) => (
-                        <button
-                          key={id}
-                          onClick={() => setGroupBy(id)}
-                          className={`py-1 rounded ${groupBy === id ? 'bg-surface text-primary font-semibold shadow-sm' : 'text-secondary'}`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-
-                    {expenseGroups.map(b => {
-                      const allItems = categoryAnalytics.filter(b.match);
-                      const bracketActual = allItems.reduce((s, c) => s + c.actual, 0);
-                      const bracketBudget = allItems.reduce((s, c) => s + c.budget, 0);
-                      const isOpen = !!openBrackets[b.id];
-                      const palette = getPalette(b.id);
-
-                      const visibleItems = allItems.filter(c => !hideZeroes || !(c.actual === 0 && c.budget === 0));
-                      const hiddenCount = allItems.length - visibleItems.length;
-
-                      return (
-                        <div key={b.id} className="rounded-lg border border-subtle bg-surface overflow-hidden">
-                          <div className="px-3 py-2 bg-surface hover:bg-subtle/50 transition flex items-center justify-between select-none border-b border-subtle">
-                            <button onClick={() => toggleBracket(b.id)} aria-expanded={isOpen} className="flex items-center gap-2 cursor-pointer flex-1 min-w-0 text-left">
-                              <span className="text-secondary text-[11px] w-3">{isOpen ? '▾' : '▸'}</span>
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium truncate ${palette.tag}`}>
-                                {b.label}
-                              </span>
-                              <span className="text-[10px] text-tertiary">({visibleItems.length})</span>
-                            </button>
-
-                            <div className="flex items-center gap-2 shrink-0 ml-1">
-                              <div className="text-right text-xs font-mono">
-                                <span className="font-semibold text-notion-red">{fmt(bracketActual)}</span>
-                                {bracketBudget > 0 && <span className="text-tertiary text-[10px] ml-1">/ {fmt(bracketBudget)}</span>}
-                              </div>
-                              <button
-                                onClick={() => groupBy === 'type'
-                                  ? handleOpenQuickAdd('expenses', b.id === 'g_fixed' ? 'housing' : 'living', b.id === 'g_fixed' ? 'fixed' : 'variable')
-                                  : handleOpenQuickAdd('expenses', b.id)}
-                                aria-label={t('quickAddModalTitle')}
-                                className="text-tertiary hover:text-primary p-1 text-xs"
-                              >
-                                <i className="fa-solid fa-plus"></i>
-                              </button>
-                            </div>
+                      {/* EXPENSE GROUPS */}
+                      <section className={`${mobileTab === 'expenses' ? 'block' : 'hidden lg:block'} space-y-3 min-w-0`}>
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <h2 className="text-xs font-semibold text-primary uppercase tracking-wide">{t('expensesHeader')}</h2>
+                            <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-notion-tagRed text-notion-red">{fmt(cm.projectedEx)}</span>
                           </div>
-
-                          {isOpen && (
-                            <div className="p-2 space-y-2 bg-surface">
-                              {hiddenCount > 0 && hideZeroes && (
-                                <div className="p-1.5 rounded bg-subtle/50 text-[11px] text-tertiary flex items-center justify-between px-2">
-                                  <span>{t('hiddenNoticeBracket', { count: hiddenCount })}</span>
-                                  <button onClick={() => setHideZeroes(false)} className="text-notion-blue font-semibold hover:underline">
-                                    {t('showNow')}
-                                  </button>
-                                </div>
-                              )}
-
-                              {visibleItems.length === 0 ? (
-                                <p className="text-center py-2 text-xs text-tertiary italic">{t('emptyGroupExpenses')}</p>
-                              ) : (
-                                visibleItems.map(item => {
-                                  const isFresh = highlightedCategory === item.category;
-                                  // Spending that comes and goes; fixed bills and one-time payments have a known amount.
-                                  const isVar = item.mode === 'variable' && !item.isOneTime;
-                                  const notes = getNotes('expenses', item.category);
-                                  const noteKey = `expenses:${item.category}`;
-                                  const isNoteOpen = !!openNoteRows[noteKey];
-
-                                  return (
-                                    <div key={item.category} className={`space-y-1 rounded transition ${isFresh ? 'animate-flash ring-1 ring-notion-blue' : ''}`}>
-                                      <div className="p-2.5 rounded border border-subtle hover:border-strong bg-surface-elevated space-y-2">
-                                        <div className="flex items-center justify-between gap-1.5">
-                                          <div className="flex items-center gap-1.5 truncate flex-1 min-w-0">
-                                            <span className="font-medium text-xs text-primary block truncate">{item.category}</span>
-                                            {item.isOneTime && (
-                                              <span className="text-[9px] px-1 py-px rounded bg-notion-tagAmber text-amber-700 dark:text-amber-400 font-medium">
-                                                {t('badgeOneTime')}
-                                              </span>
-                                            )}
-                                            {item.isOver && (
-                                              <span className="text-[9px] px-1 py-px rounded font-medium bg-notion-tagRed text-notion-red">
-                                                {t('targetOver', { amount: fmt(item.actual - item.budget) })}
-                                              </span>
-                                            )}
-                                            {!isVar && item.actual > 0 && (
-                                              <span className="text-[9px] px-1 py-px rounded font-medium bg-notion-tagGreen text-notion-green">
-                                                ✓ {t('paidLabel')}
-                                              </span>
-                                            )}
-                                            {notes.length > 0 && (
-                                              <button
-                                                onClick={() => setOpenNoteRows(p => ({ ...p, [noteKey]: !p[noteKey] }))}
-                                                className="text-[9px] text-notion-blue flex items-center gap-0.5 px-1 py-px rounded bg-subtle"
-                                              >
-                                                <i className="fa-solid fa-note-sticky text-[8px]"></i>
-                                                <span>{notes.length}</span>
-                                              </button>
-                                            )}
-                                          </div>
-
-                                          <div className="flex items-center gap-1 shrink-0">
-                                            <button onClick={() => handleOpenRecurring('expenses', item.category)} aria-label={t('replicateTitle')} className="text-tertiary hover:text-primary p-1">
-                                              <i className="fa-solid fa-repeat text-xs"></i>
-                                            </button>
-                                            <button onClick={() => handleOpenEditCategory('expenses', item.category)} aria-label={t('editorTitle')} className="text-tertiary hover:text-primary p-1">
-                                              <i className="fa-solid fa-ellipsis text-xs"></i>
-                                            </button>
-                                            <button onClick={() => setSmartDeleteModal({ type: 'expenses', cat: item.category })} aria-label={t('deleteCategoryBtn')} className="text-tertiary hover:text-notion-red p-1">
-                                              <i className="fa-solid fa-trash-can text-xs"></i>
-                                            </button>
-                                          </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                                          <div>
-                                            <span className="text-[10px] text-secondary block mb-0.5">{isVar ? t('targetLabel') : t('planLabel')}</span>
-                                            <MoneyInput
-                                              value={item.budget}
-                                              onChange={(val) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'budget', val)}
-                                              aria-label={`${item.category} ${isVar ? t('targetLabel') : t('planLabel')}`}
-                                            />
-                                          </div>
-
-                                          <div>
-                                            <div className="flex justify-between items-center mb-0.5 text-[10px] text-secondary">
-                                              <span>{isVar ? t('spentLabel') : t('paidLabel')}</span>
-                                              {!isVar && item.actual === 0 && item.budget > 0 && (
-                                                <button
-                                                  onClick={() => markAsPlanned('expenses', item.category)}
-                                                  title={t('markPaidHint')}
-                                                  className="text-[9px] px-1.5 rounded bg-notion-tagBlue text-notion-blue font-sans font-semibold hover:opacity-80"
-                                                >
-                                                  ✓ {t('markPaid')}
-                                                </button>
-                                              )}
-                                            </div>
-                                            <MoneyInput
-                                              value={item.actual}
-                                              onChange={(val) => updateNode('expenses', item.category, selectedYear, selectedMonth, 'actual', val)}
-                                              inputClass="text-notion-red font-semibold"
-                                              aria-label={`${item.category} ${isVar ? t('spentLabel') : t('paidLabel')}`}
-                                            />
-                                          </div>
-                                        </div>
-
-                                        {isVar && item.budget > 0 && (
-                                          <div className="text-[10px] font-mono pt-0.5 text-tertiary">
-                                            {t('restBudgetLabel')}: <b className={item.remainingBudget >= 0 ? 'text-primary' : 'text-notion-red'}>{fmt(item.remainingBudget)}</b>
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      {isNoteOpen && notes.length > 0 && (
-                                        <div className="mx-1 p-2 rounded bg-subtle text-xs text-secondary space-y-1">
-                                          {notes.map((bullet, bIdx) => (
-                                            <div key={bIdx} className="flex items-start gap-1.5">
-                                              <span className="text-notion-blue">•</span>
-                                              <span>{bullet}</span>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                })
-                              )}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <div className="inline-flex bg-subtle p-0.5 rounded border border-subtle text-[11px]">
+                              {[['all', t('filterAll')], ['fixed', t('filterFixed')], ['variable', t('filterVariable')]].map(([id, label]) => (
+                                <button
+                                  key={id}
+                                  onClick={() => setExpFilter(id)}
+                                  aria-pressed={expFilter === id}
+                                  className={`px-2.5 py-1 rounded ${expFilter === id ? 'bg-surface text-primary font-semibold shadow-sm' : 'text-secondary'}`}
+                                >
+                                  {label}
+                                </button>
+                              ))}
                             </div>
-                          )}
+                            <button onClick={() => openGroupModal()} className="text-[11px] font-medium px-2.5 py-1 rounded border border-subtle bg-surface text-primary hover:bg-subtle">
+                              {t('newGroup')}
+                            </button>
+                          </div>
                         </div>
-                      );
-                    })}
-                  </div>
-
-                </div>
+                        {shownGroups.map(renderGroup)}
+                      </section>
+                    </div>
+                  );
+                })()}
               </>
             )}
           </main>
 
           {/* FLOATING ACTION BUTTON */}
           {!isAnnual && (
-            <div className="block lg:hidden fixed bottom-4 right-4 z-40">
+            <div className="fixed z-40" style={{ right: 'calc(16px + env(safe-area-inset-right, 0px))', bottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
               <button
-                onClick={() => handleOpenQuickAdd(mobileTab === 'incomes' ? 'incomes' : 'expenses')}
-                aria-label={t('quickAddModalTitle')}
-                className="w-12 h-12 rounded-full bg-primary text-surface shadow-lg flex items-center justify-center text-lg active:scale-95 transition-transform"
+                onClick={() => mobileTab === 'incomes' && window.innerWidth < 1024 ? handleOpenQuickAdd('incomes') : openReceiptSheet()}
+                className="h-12 px-5 rounded-full bg-primary text-surface shadow-lg flex items-center gap-2 text-sm font-semibold active:scale-95 transition-transform"
               >
-                <i className="fa-solid fa-plus"></i>
+                <span className="text-lg leading-none">+</span>
+                <span>{mobileTab === 'incomes' && window.innerWidth < 1024 ? t('incomesHeader') : t('addReceipt')}</span>
               </button>
+            </div>
+          )}
+
+          {toastMsg && (
+            <div
+              role="status"
+              className="fixed z-[60] left-1/2 -translate-x-1/2 bg-primary text-surface text-xs rounded-lg px-3.5 py-2.5 shadow-lg max-w-[calc(100%-32px)]"
+              style={{ bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}
+            >
+              {toastMsg}
             </div>
           )}
 
@@ -2559,6 +2910,139 @@
               </button>
             </Modal>
           )}
+
+          {/* RECEIPT SHEET */}
+          {receiptSheet && (() => {
+            const variableGroups = data.groups.filter(g => g.kind === 'variable');
+            const withItems = variableGroups.filter(g => itemsInGroup(g.id).length > 0);
+            return (
+              <Modal onClose={() => setReceiptSheet(false)} title={<><span>🧾</span><span>{t('receiptSheetTitle')}</span></>}>
+                <label className="flex items-baseline gap-1.5 border-b-2 border-strong focus-within:border-primary pb-1">
+                  <input
+                    autoFocus
+                    inputMode="decimal"
+                    value={receiptAmount}
+                    onChange={(e) => { setReceiptAmount(e.target.value); setReceiptHint(false); }}
+                    placeholder="0,00"
+                    aria-label={t('replicateAmountLabel')}
+                    className="flex-1 min-w-0 bg-transparent text-primary outline-none font-mono text-3xl font-bold text-right"
+                  />
+                  <span className="font-mono text-xl text-tertiary">€</span>
+                </label>
+                {receiptHint && <p className="text-[11px] text-notion-red">{t('receiptNeedAmount')}</p>}
+                <div className="text-[11px] text-secondary">{t('receiptWhere')}</div>
+                {withItems.length === 0 ? (
+                  <p className="text-[11px] text-tertiary">{t('receiptNoItems')}</p>
+                ) : withItems.map(g => (
+                  <div key={g.id} className="space-y-1.5">
+                    <div className="text-[10px] text-tertiary">{groupName(g)}</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {itemsInGroup(g.id).map(cat => (
+                        <button
+                          key={cat}
+                          onClick={() => submitSheetReceipt(cat)}
+                          className="px-3 py-1.5 rounded-full border border-strong bg-surface-elevated text-primary text-xs flex items-center gap-1.5 hover:border-primary"
+                        >
+                          <span className="w-2 h-2 rounded-[2px]" style={{ background: GROUP_HEX[g.color] }}></span>
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <button onClick={() => setReceiptSheet(false)} className="w-full py-1.5 bg-subtle text-secondary rounded hover:text-primary">
+                  {t('cancelBtn')}
+                </button>
+              </Modal>
+            );
+          })()}
+
+          {/* GROUP DIALOG */}
+          {groupModal && (() => {
+            const editing = groupModal.id ? data.groups.find(g => g.id === groupModal.id) : null;
+            const itemCount = editing ? itemsInGroup(editing.id).length : 0;
+            const others = editing ? data.groups.filter(g => g.id !== editing.id) : [];
+            return (
+              <Modal onClose={() => setGroupModal(null)} title={editing ? t('groupDialogEdit') : t('groupDialogNew')}>
+                <div>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('groupNameLabel')}</label>
+                  <input
+                    autoFocus
+                    type="text"
+                    value={groupForm.name}
+                    onChange={(e) => setGroupForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder={t('groupNamePlaceholder')}
+                    className="w-full bg-subtle border border-subtle rounded px-2.5 py-1.5 text-primary outline-none focus:border-strong font-medium"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('groupKindLabel')}</label>
+                  <div className="grid grid-cols-3 gap-1 bg-subtle p-0.5 rounded border border-subtle">
+                    {GROUP_KINDS.map(k => (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => setGroupForm(f => ({ ...f, kind: k }))}
+                        className={`py-1 rounded text-[11px] ${groupForm.kind === k ? 'bg-surface text-primary font-semibold shadow-sm' : 'text-secondary'}`}
+                      >
+                        {kindLabel(k)}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-tertiary mt-1">{t('groupKindHelp_' + groupForm.kind)}</p>
+                </div>
+                <div>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('groupColorLabel')}</label>
+                  <div className="flex flex-wrap gap-2">
+                    {GROUP_COLORS.map(c => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setGroupForm(f => ({ ...f, color: c }))}
+                        aria-label={c}
+                        aria-pressed={groupForm.color === c}
+                        className={`w-7 h-7 rounded-md border-2 ${groupForm.color === c ? 'border-primary' : 'border-transparent'}`}
+                        style={{ background: GROUP_HEX[c] }}
+                      ></button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2 border-t border-subtle">
+                  <button onClick={() => setGroupModal(null)} className="flex-1 py-1.5 bg-subtle text-secondary rounded hover:text-primary">
+                    {t('cancelBtn')}
+                  </button>
+                  <button
+                    disabled={!groupForm.name.trim()}
+                    onClick={saveGroup}
+                    className="flex-1 py-1.5 bg-primary text-surface font-semibold rounded disabled:opacity-40"
+                  >
+                    {t('groupSave')}
+                  </button>
+                </div>
+
+                {editing && others.length > 0 && (
+                  <div className="pt-2 border-t border-subtle space-y-1.5">
+                    {itemCount > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-secondary shrink-0">{t('groupDeleteMove', { n: itemCount })}</span>
+                        <select
+                          value={groupForm.moveTo}
+                          onChange={(e) => setGroupForm(f => ({ ...f, moveTo: e.target.value }))}
+                          className="flex-1 min-w-0 bg-subtle border border-subtle rounded px-2 py-1 text-primary outline-none"
+                        >
+                          {others.map(g => <option key={g.id} value={g.id}>{groupName(g)}</option>)}
+                        </select>
+                      </div>
+                    )}
+                    <button onClick={deleteGroup} className="w-full py-1.5 rounded bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-notion-red font-semibold">
+                      {t('groupDelete')}
+                    </button>
+                  </div>
+                )}
+              </Modal>
+            );
+          })()}
 
           {/* REAL BALANCE MODAL */}
           {balanceModal && (() => {
@@ -2704,19 +3188,48 @@
                 />
               </div>
 
-              <div>
-                <label className="text-[10px] text-secondary font-medium block mb-1">{t('bracketLabel')}</label>
-                <select
-                  value={quickAddForm.bracket}
-                  onChange={(e) => setQuickAddForm(p => ({ ...p, bracket: e.target.value }))}
-                  className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-primary outline-none"
-                >
-                  {data.brackets[quickAddModal.type].map(b => (
-                    <option key={b.id} value={b.id}>{t('brackets.' + b.id)}</option>
-                  ))}
-                </select>
-              </div>
+              {(() => {
+                const isExpense = quickAddModal.type === 'expenses';
+                const group = isExpense ? (data.groups.find(g => g.id === quickAddForm.bracket) || data.groups[0]) : null;
+                return (
+                  <>
+                    <div>
+                      <label className="text-[10px] text-secondary font-medium block mb-1">{isExpense ? t('groupLabel') : t('bracketLabel')}</label>
+                      <select
+                        value={quickAddForm.bracket}
+                        onChange={(e) => setQuickAddForm(p => ({ ...p, bracket: e.target.value }))}
+                        className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-primary outline-none"
+                      >
+                        {isExpense
+                          ? data.groups.map(g => <option key={g.id} value={g.id}>{groupName(g)} · {kindLabel(g.kind)}</option>)
+                          : data.brackets.incomes.map(b => <option key={b.id} value={b.id}>{t('brackets.' + b.id)}</option>)}
+                      </select>
+                      {isExpense && <p className="text-[10px] text-tertiary mt-1">{t('groupKindHelp_' + group.kind)}</p>}
+                    </div>
+                    {!(isExpense && group.kind === 'variable') && (
+                      <>
+                        <div>
+                          <label className="text-[10px] text-secondary font-medium block mb-1">{t('initialBudgetLabel')}</label>
+                          <MoneyInput
+                            value={quickAddForm.budget}
+                            onChange={(val) => setQuickAddForm(p => ({ ...p, budget: val }))}
+                            className="py-1.5"
+                          />
+                        </div>
+                        {renderPeriod(
+                          quickAddForm.from,
+                          quickAddForm.until,
+                          (key, value) => setQuickAddForm(p => ({ ...p, [key]: value })),
+                          isExpense ? group.kind === 'oneoff' : quickAddForm.isOneTime
+                        )}
+                      </>
+                    )}
+                  </>
+                );
+              })()}
 
+              {quickAddModal.type === 'incomes' && (
+              <>
               <div>
                 <label className="text-[10px] text-secondary font-medium block mb-1">{t('modeLabel')}</label>
                 <div className="grid grid-cols-2 gap-1 bg-subtle p-0.5 rounded border border-subtle">
@@ -2733,22 +3246,6 @@
                 </div>
               </div>
 
-              <div>
-                <label className="text-[10px] text-secondary font-medium block mb-1">{t('initialBudgetLabel')}</label>
-                <MoneyInput
-                  value={quickAddForm.budget}
-                  onChange={(val) => setQuickAddForm(p => ({ ...p, budget: val }))}
-                  className="py-1.5"
-                />
-              </div>
-
-              {renderPeriod(
-                quickAddForm.from,
-                quickAddForm.until,
-                (key, value) => setQuickAddForm(p => ({ ...p, [key]: value })),
-                quickAddForm.isOneTime
-              )}
-
               <label className="flex items-center justify-between gap-2 p-2 rounded bg-subtle/50 border border-subtle cursor-pointer">
                 <div>
                   <span className="font-medium text-primary block text-[11px]">{t('badgeOneTime')}</span>
@@ -2763,6 +3260,8 @@
                   className="w-4 h-4 rounded border-subtle"
                 />
               </label>
+              </>
+              )}
 
               <div className="flex gap-2 pt-2 border-t border-subtle">
                 <button onClick={() => setQuickAddModal(null)} className="flex-1 py-1.5 bg-subtle text-secondary rounded hover:text-primary">
@@ -2802,19 +3301,22 @@
               </div>
 
               <div>
-                <label className="text-[10px] text-secondary font-medium block mb-1">{t('bracketLabel')}</label>
+                <label className="text-[10px] text-secondary font-medium block mb-1">
+                  {activeEditCat.type === 'expenses' ? t('groupLabel') : t('bracketLabel')}
+                </label>
                 <select
                   value={editCatForm.bracket}
                   onChange={(e) => setEditCatForm(prev => ({ ...prev, bracket: e.target.value }))}
                   className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-primary outline-none"
                 >
-                  {data.brackets[activeEditCat.type].map(b => (
-                    <option key={b.id} value={b.id}>{t('brackets.' + b.id)}</option>
-                  ))}
+                  {activeEditCat.type === 'expenses'
+                    ? data.groups.map(g => <option key={g.id} value={g.id}>{groupName(g)} · {kindLabel(g.kind)}</option>)
+                    : data.brackets.incomes.map(b => <option key={b.id} value={b.id}>{t('brackets.' + b.id)}</option>)}
                 </select>
               </div>
 
               <div className="grid grid-cols-3 gap-2">
+                {activeEditCat.type === 'incomes' ? (
                 <div className="col-span-2">
                   <label className="text-[10px] text-secondary font-medium block mb-1">{t('modeLabel')}</label>
                   <div className="grid grid-cols-2 gap-1 bg-subtle p-0.5 rounded border border-subtle">
@@ -2830,6 +3332,7 @@
                     ))}
                   </div>
                 </div>
+                ) : <div className="col-span-2"></div>}
                 <div>
                   <label className="text-[10px] text-secondary font-medium block mb-1">{t('paymentDayShort')}</label>
                   <input
@@ -2841,6 +3344,7 @@
                 </div>
               </div>
 
+              {activeEditCat.type === 'incomes' && (
               <label className="flex items-center justify-between gap-2 p-2 rounded bg-subtle border border-subtle cursor-pointer">
                 <div>
                   <span className="font-medium text-primary block">{t('badgeOneTime')}</span>
@@ -2853,6 +3357,7 @@
                   className="w-4 h-4 rounded"
                 />
               </label>
+              )}
 
               <div className="space-y-1.5 pt-2 border-t border-subtle">
                 <div className="text-[10px] text-secondary font-medium flex items-center justify-between">
