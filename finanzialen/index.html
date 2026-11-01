@@ -222,13 +222,15 @@
       { id: 'leisure', kind: 'variable', color: 'pink', name: null },
       { id: 'oneoff', kind: 'oneoff', color: 'gray', name: null }
     ];
-    // An item's mode/oneTime flags always follow its group's kind.
-    const metaForGroup = (groups, groupId, payDay = null) => {
+    // An item's mode follows its group's kind. It is one-time when its group is a
+    // one-time group or when the item itself was created as a single payment ("once").
+    const metaForGroup = (groups, groupId, payDay = null, once = false) => {
       const g = groups.find(x => x.id === groupId) || groups[0];
       return {
         bracket: g.id,
         mode: g.kind === 'variable' ? 'variable' : 'fixed',
-        oneTime: g.kind === 'oneoff',
+        oneTime: g.kind === 'oneoff' || !!once,
+        once: !!once,
         payDay
       };
     };
@@ -509,6 +511,9 @@
         iouIOweBadge: "Schulde ich",
         iouOwedToMeBadge: "Bekomme ich",
         iouMarkReturned: "Als erledigt markieren",
+        iouDelete: "Löschen (falsch eingetragen)",
+        iouDeleteConfirm: "„{{person}} · {{amount}}“ löschen? Das entfernt nur diesen Eintrag aus der Schulden-Liste, nicht die Einnahme oder die Rückzahlungen.",
+        loanDuplicateWarn: "Du hast schon ein Darlehen über {{amount}} eingetragen ({{person}}, {{date}}). Nochmal buchen zählt Einnahme, Rückzahlungen und Schuld doppelt.",
         emptyGroupIncomes: "Keine aktiven Buchungen in diesem Monat.",
         emptyGroupExpenses: "Keine Ausgaben in dieser Gruppe für diesen Monat.",
         editorTitle: "Eigenschaft bearbeiten",
@@ -536,6 +541,12 @@
         repeat12: "Einmal im Jahr",
         paymentsSummary: "{{n}} Zahlungen: {{list}}",
         quickStores: "Schnell hinzufügen:",
+        rangeMonth: "Monat",
+        howOften: "Wie oft?",
+        recurringLabel: "Wiederkehrend",
+        recurringHelp: "Kommt jeden Monat oder in einem festen Rhythmus wieder.",
+        onceHelp: "Nur ein einziges Mal, in einem Monat. Erscheint in keinem anderen Monat.",
+        variableItemHelp: "Kein fester Betrag: Belege mit + eintragen. Das Monatsziel gilt für die ganze Gruppe.",
         clearOutside: "Plan außerhalb dieses Zeitraums auf 0 setzen",
         clearOutsideHint: "Entfernt den Plan aus allen anderen Monaten. Tatsächliche Beträge bleiben unverändert.",
         replicateTitle: "Betrag für Zeitraum setzen",
@@ -771,6 +782,9 @@
         iouIOweBadge: "I owe",
         iouOwedToMeBadge: "Owed to me",
         iouMarkReturned: "Mark as settled",
+        iouDelete: "Delete (entered by mistake)",
+        iouDeleteConfirm: "Delete \"{{person}} · {{amount}}\"? This only removes this entry from the debt list, not the income or the repayments.",
+        loanDuplicateWarn: "You already recorded a loan of {{amount}} ({{person}}, {{date}}). Booking it again counts the income, the repayments and the debt twice.",
         emptyGroupIncomes: "No active income records in this month.",
         emptyGroupExpenses: "No expenses in this group for this month.",
         editorTitle: "Edit Property",
@@ -798,6 +812,12 @@
         repeat12: "Once a year",
         paymentsSummary: "{{n}} payments: {{list}}",
         quickStores: "Quick add:",
+        rangeMonth: "Month",
+        howOften: "How often?",
+        recurringLabel: "Recurring",
+        recurringHelp: "Comes back every month or on a fixed rhythm.",
+        onceHelp: "Just once, in one month. It doesn't appear in any other month.",
+        variableItemHelp: "No fixed amount: add receipts with +. The monthly target covers the whole group.",
         clearOutside: "Set the plan to 0 outside this period",
         clearOutsideHint: "Removes the plan from every other month. Actual amounts stay unchanged.",
         replicateTitle: "Set amount for a period",
@@ -1025,7 +1045,7 @@
               const guess = legacyGroupFor(cat, { mode, oneTime, bracket: valid.includes(src.bracket) ? src.bracket : bracket });
               groupId = groupIds.includes(guess) ? guess : groupIds[0];
             }
-            state.meta.expenses[cat] = metaForGroup(groups, groupId, payDay);
+            state.meta.expenses[cat] = metaForGroup(groups, groupId, payDay, !needsGroups && src.once === true);
             return;
           }
           state.meta[type][cat] = { bracket, mode, oneTime, payDay };
@@ -1424,16 +1444,17 @@
           const spentByGroup = {};
           data.categories.expenses.forEach(cat => {
             const node = getNode('expenses', cat, yr, m);
-            const g = groupById[getMeta('expenses', cat).bracket];
+            const meta = getMeta('expenses', cat);
+            const g = groupById[meta.bracket];
             actualEx += node.actual;
-            if (g && g.kind === 'variable') {
+            if (g && g.kind === 'variable' && !meta.oneTime) {
               spentByGroup[g.id] = (spentByGroup[g.id] || 0) + node.actual;
               return;
             }
             const expected = knownAmount(node);
             budgetEx += node.budget;
             projectedEx += expected;
-            if (g && g.kind === 'fixed') {
+            if (g && g.kind === 'fixed' && !meta.oneTime) {
               fixed.plan += node.budget;
               fixed.paid += node.actual;
               fixed.expected += expected;
@@ -1492,11 +1513,12 @@
         return data.groups.map(g => {
           const items = data.categories.expenses
             .filter(cat => getMeta('expenses', cat).bracket === g.id)
-            .map(cat => ({ cat, node: getNode('expenses', cat, selectedYear, selectedMonth) }));
+            .map(cat => ({ cat, node: getNode('expenses', cat, selectedYear, selectedMonth), once: !!getMeta('expenses', cat).oneTime }));
           if (g.kind === 'variable') {
-            const spent = items.reduce((s, i) => s + i.node.actual, 0);
+            const spent = items.filter(i => !i.once).reduce((s, i) => s + i.node.actual, 0);
+            const onceTotal = items.filter(i => i.once).reduce((s, i) => s + knownAmount(i.node), 0);
             const target = getTarget(g.id, selectedYear, selectedMonth);
-            return { g, items, spent, target, expected: variableExpected(spent, target, selectedYear, selectedMonth) };
+            return { g, items, spent, target, expected: variableExpected(spent, target, selectedYear, selectedMonth) + onceTotal };
           }
           const total = items.reduce((s, i) => s + knownAmount(i.node), 0);
           const paid = items.reduce((s, i) => s + i.node.actual, 0);
@@ -1562,9 +1584,9 @@
         }
         const isExpense = type === 'expenses';
         const group = isExpense ? (data.groups.find(g => g.id === bracketId) || data.groups[0]) : null;
-        const oneTime = isExpense ? group.kind === 'oneoff' : !!isOneTime;
-        // Variable items only collect receipts; their group holds the target.
-        const amount = isExpense && group.kind === 'variable' ? 0 : (parseFloat(initialBudget) || 0);
+        const oneTime = isExpense ? (group.kind === 'oneoff' || !!isOneTime) : !!isOneTime;
+        // Recurring variable items only collect receipts; their group holds the target.
+        const amount = isExpense && group.kind === 'variable' && !oneTime ? 0 : (parseFloat(initialBudget) || 0);
         const [fromIdx, untilIdx] = oneTime
           ? [keyIndex(fromKey), keyIndex(fromKey)]
           : rangeIndexes(fromKey, untilKey);
@@ -1572,7 +1594,7 @@
         mutate(d => {
           d.categories[type].push(val);
           d.meta[type][val] = isExpense
-            ? metaForGroup(d.groups, group.id)
+            ? metaForGroup(d.groups, group.id, null, oneTime && group.kind !== 'oneoff')
             : { bracket: bracketId, mode: mode || 'variable', oneTime, payDay: null };
           TIMELINE.forEach(({ yr, m }, idx) => {
             if (!d.values[yr][type][val]) d.values[yr][type][val] = {};
@@ -1589,13 +1611,15 @@
 
       const handleOpenQuickAdd = (type, defaultBracket = null, defaultMode = null) => {
         const bracketsList = type === 'incomes' ? data.brackets.incomes : data.groups;
+        const bracket = defaultBracket || bracketsList[0]?.id || 'other';
         setQuickAddModal({ type });
         setQuickAddForm({
           name: "",
-          bracket: defaultBracket || bracketsList[0]?.id || 'other',
+          bracket,
           budget: "",
           mode: defaultMode || (type === 'incomes' ? 'fixed' : 'variable'),
-          isOneTime: false,
+          // Opened from a one-time group, the new item is one-time too.
+          isOneTime: type === 'expenses' && data.groups.find(g => g.id === bracket)?.kind === 'oneoff',
           from: timelineKey(selectedYear, selectedMonth),
           until: LAST_KEY,
           every: 1
@@ -1650,6 +1674,7 @@
           mode: meta.mode,
           isOneTime: !!meta.oneTime,
           pDay: meta.payDay || "",
+          wasOneTime: !!meta.oneTime,
           notes: [...getNotes(type, cat)]
         });
         setNewBulletText("");
@@ -1692,9 +1717,19 @@
 
           const day = parseInt(editCatForm.pDay);
           const payDay = day >= 1 && day <= 31 ? day : null;
+          const targetGroup = type === 'expenses' ? d.groups.find(g => g.id === editCatForm.bracket) : null;
           d.meta[type][newName] = type === 'expenses'
-            ? metaForGroup(d.groups, editCatForm.bracket, payDay)
+            ? metaForGroup(d.groups, editCatForm.bracket, payDay, editCatForm.isOneTime && targetGroup?.kind !== 'oneoff')
             : { bracket: editCatForm.bracket, mode: editCatForm.mode, oneTime: editCatForm.isOneTime, payDay };
+
+          // Turning a recurring item into a one-time one keeps only this month's plan.
+          if (d.meta[type][newName].oneTime && !editCatForm.wasOneTime) {
+            TIMELINE.forEach(({ yr, m }) => {
+              if (yr === selectedYear && m === selectedMonth) return;
+              const node = d.values[yr][type][newName]?.[m];
+              if (node) node.budget = 0;
+            });
+          }
 
           const byMonth = d.notes[type][newName] || (d.notes[type][newName] = {});
           if (notes.length) byMonth[monthKey] = notes;
@@ -1911,7 +1946,7 @@
               g.kind = groupForm.kind;
               d.categories.expenses
                 .filter(c => d.meta.expenses[c]?.bracket === gid)
-                .forEach(c => { d.meta.expenses[c] = metaForGroup(d.groups, gid, d.meta.expenses[c].payDay); });
+                .forEach(c => { d.meta.expenses[c] = metaForGroup(d.groups, gid, d.meta.expenses[c].payDay, d.meta.expenses[c].once); });
             }
           });
         }
@@ -1926,7 +1961,7 @@
           d.groups = d.groups.filter(x => x.id !== gid);
           d.categories.expenses
             .filter(c => d.meta.expenses[c]?.bracket === gid)
-            .forEach(c => { d.meta.expenses[c] = metaForGroup(d.groups, moveTo, d.meta.expenses[c].payDay); });
+            .forEach(c => { d.meta.expenses[c] = metaForGroup(d.groups, moveTo, d.meta.expenses[c].payDay, d.meta.expenses[c].once || d.meta.expenses[c].oneTime); });
           delete d.targets[gid];
         });
         setGroupModal(null);
@@ -1990,6 +2025,12 @@
         mutate(d => { d.ious = d.ious.map(i => i.id === id ? { ...i, settled: true } : i); });
       };
 
+      // For entries made by mistake: removes the debt record only, not any income or repayments.
+      const handleDeleteIou = (item) => {
+        if (!confirm(t('iouDeleteConfirm', { person: item.person, amount: fmt(item.amount) }))) return;
+        mutate(d => { d.ious = d.ious.filter(i => i.id !== item.id); });
+      };
+
       // Repayment months default to the two months after the selected one, across year boundaries.
       const loanMonthOptions = useMemo(() => {
         const idx = Math.max(0, timelineIndex(selectedYear, selectedMonth));
@@ -2000,11 +2041,14 @@
       const openLoanModal = () => {
         const n1 = pickLoanMonth(1);
         const n2 = pickLoanMonth(2);
+        // Reuse items from an earlier booking, whichever language it was made in.
+        const existingIn = data.categories.incomes.find(c => ["Darlehen Schwester (Eingang)", "Sister Loan (Inflow)"].includes(c));
+        const existingOut = data.categories.expenses.find(c => ["Rückzahlung Schwester", "Sister Repayment"].includes(c));
         setLoanForm({
           lender: lang === 'de' ? "Schwester" : "Sister",
           incomeAmount: 900,
-          incomeName: lang === 'de' ? "Darlehen Schwester (Eingang)" : "Sister Loan (Inflow)",
-          expenseName: lang === 'de' ? "Rückzahlung Schwester" : "Sister Repayment",
+          incomeName: existingIn || (lang === 'de' ? "Darlehen Schwester (Eingang)" : "Sister Loan (Inflow)"),
+          expenseName: existingOut || (lang === 'de' ? "Rückzahlung Schwester" : "Sister Repayment"),
           m1: `${n1.yr}|${n1.m}`,
           a1: 450,
           m2: `${n2.yr}|${n2.m}`,
@@ -2134,7 +2178,7 @@
         return (
           <div className="space-y-1">
             <div className={`grid ${single ? 'grid-cols-1' : 'grid-cols-2'} gap-2`}>
-              {[['from', from, 'rangeFrom'], ...(single ? [] : [['until', until, 'rangeUntil']])].map(([key, value, label]) => (
+              {[['from', from, single ? 'rangeMonth' : 'rangeFrom'], ...(single ? [] : [['until', until, 'rangeUntil']])].map(([key, value, label]) => (
                 <div key={key}>
                   <label className="text-[10px] text-secondary font-medium block mb-1">{t(label)}</label>
                   <select
@@ -2190,7 +2234,7 @@
         const node = getNode(type, cat, selectedYear, selectedMonth);
         const meta = getMeta(type, cat);
         const notes = getNotes(type, cat);
-        const isVar = kind === 'variable';
+        const isVar = kind === 'variable' && !meta.oneTime;
         const done = !isVar && node.actual > 0;
         const isOpen = openItem === key;
         const isFresh = highlightedCategory === cat;
@@ -2208,6 +2252,7 @@
         } else {
           sub = t('groupNothingPlanned');
         }
+        if (meta.oneTime && kind !== 'oneoff') sub = `${t('badgeOneTime')}${sub ? ' · ' + sub : ''}`;
         const toggleOpen = () => setOpenItem(isOpen ? null : key);
 
         return (
@@ -2324,8 +2369,11 @@
         const hex = GROUP_HEX[g.color] || GROUP_HEX.gray;
         const open = isGroupOpen(g.id);
         const isVar = g.kind === 'variable';
-        const visible = isVar ? gv.items : gv.items.filter(i => !hideZeroes || i.node.budget > 0 || i.node.actual > 0);
-        const hidden = gv.items.length - visible.length;
+        const hasAmount = (i) => i.node.budget > 0 || i.node.actual > 0;
+        // One-time items only exist in their own month; recurring ones follow the 0 € switch.
+        const visible = gv.items.filter(i => hasAmount(i) || (!i.once && (isVar || !hideZeroes)));
+        const recurringItems = gv.items.filter(i => !i.once);
+        const hidden = recurringItems.length - visible.filter(i => !i.once).length;
         let amount, sub, fill, over = false;
         if (isVar) {
           amount = fmtCents(gv.spent);
@@ -2676,13 +2724,19 @@
                     { label: t('lineFixed'), text: `− ${fmt(cm.fixed.expected)}`, cls: 'text-notion-red' },
                     { label: t('lineFlex'), text: `− ${fmt(cm.flex.expected)}`, cls: 'text-notion-red' }
                   ];
-                  const visibleIncomes = data.categories.incomes.filter(cat => {
+                  const incomeHasAmount = (cat) => {
                     const node = getNode('incomes', cat, selectedYear, selectedMonth);
-                    return !hideZeroes || node.budget > 0 || node.actual > 0;
-                  });
-                  const hiddenIncomes = data.categories.incomes.length - visibleIncomes.length;
+                    return node.budget > 0 || node.actual > 0;
+                  };
+                  const visibleIncomes = data.categories.incomes.filter(cat =>
+                    incomeHasAmount(cat) || (!getMeta('incomes', cat).oneTime && !hideZeroes));
+                  const hiddenIncomes = hideZeroes
+                    ? data.categories.incomes.filter(cat => !getMeta('incomes', cat).oneTime && !incomeHasAmount(cat)).length
+                    : 0;
                   const shownGroups = groupView.filter(gv =>
-                    expFilter === 'all' || (expFilter === 'fixed' ? gv.g.kind === 'fixed' : gv.g.kind !== 'fixed'));
+                    (expFilter === 'all' || (expFilter === 'fixed' ? gv.g.kind === 'fixed' : gv.g.kind !== 'fixed')) &&
+                    // A one-time group only shows in months where it has something.
+                    (gv.g.kind !== 'oneoff' || gv.items.some(i => i.node.budget > 0 || i.node.actual > 0)));
                   const meters = [
                     {
                       label: t('lineIncome'), done: cm.actualIn, total: cm.projectedIn, color: '#0f7b6c',
@@ -2871,6 +2925,14 @@
                                 >
                                   ✓
                                 </button>
+                                <button
+                                  onClick={() => handleDeleteIou(item)}
+                                  className="px-2 py-0.5 rounded text-[10px] bg-subtle hover:bg-rose-500/10 text-secondary hover:text-notion-red border border-subtle"
+                                  title={t('iouDelete')}
+                                  aria-label={t('iouDelete')}
+                                >
+                                  ✕
+                                </button>
                               </div>
                             </div>
                           );
@@ -2903,6 +2965,9 @@
                                 </button>
                               ))}
                             </div>
+                            <button onClick={() => handleOpenQuickAdd('expenses')} className="text-[11px] font-semibold px-2.5 py-1 rounded bg-primary text-surface hover:opacity-90">
+                              {t('addItemBtn')}
+                            </button>
                             <button onClick={() => openGroupModal()} className="text-[11px] font-medium px-2.5 py-1 rounded border border-subtle bg-surface text-primary hover:bg-subtle">
                               {t('newGroup')}
                             </button>
@@ -3164,6 +3229,16 @@
           {loanModal && loanForm && (
             <Modal size="max-w-md" onClose={() => setLoanModal(null)} title={<><span>⚡</span><span>{t('loanModalTitle')}</span></>}>
               <p className="text-secondary text-[11px] leading-relaxed">{t('loanModalDesc')}</p>
+              {(() => {
+                const amount = parseFloat(loanForm.incomeAmount) || 0;
+                const earlier = (data.ious || []).find(i => !i.settled && i.type === 'borrowed' && Math.abs((parseFloat(i.amount) || 0) - amount) < 0.01);
+                if (!earlier) return null;
+                return (
+                  <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
+                    ⚠️ {t('loanDuplicateWarn', { amount: fmt(amount), person: earlier.person, date: earlier.date })}
+                  </div>
+                );
+              })()}
 
               <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 space-y-2">
                 <span className="font-semibold text-notion-green block">{t('loanStep1', { month: formatMonth(selectedMonth, lang), year: selectedYear })}</span>
@@ -3265,22 +3340,49 @@
               {(() => {
                 const isExpense = quickAddModal.type === 'expenses';
                 const group = isExpense ? (data.groups.find(g => g.id === quickAddForm.bracket) || data.groups[0]) : null;
+                const lockedOnce = isExpense && group.kind === 'oneoff';
+                const once = quickAddForm.isOneTime || lockedOnce;
+                const needsAmount = !(isExpense && group.kind === 'variable' && !once);
                 return (
                   <>
+                    <div>
+                      <label className="text-[10px] text-secondary font-medium block mb-1">{t('howOften')}</label>
+                      <div className="grid grid-cols-2 gap-1 bg-subtle p-0.5 rounded border border-subtle">
+                        {[[false, t('recurringLabel')], [true, t('badgeOneTime')]].map(([value, label]) => (
+                          <button
+                            key={label}
+                            type="button"
+                            disabled={lockedOnce && !value}
+                            aria-pressed={once === value}
+                            onClick={() => setQuickAddForm(p => ({ ...p, isOneTime: value }))}
+                            className={`py-1.5 rounded text-[11px] disabled:opacity-40 ${once === value ? 'bg-surface text-primary font-semibold shadow-sm' : 'text-secondary'}`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-tertiary mt-1">{once ? t('onceHelp') : t('recurringHelp')}</p>
+                    </div>
+
                     <div>
                       <label className="text-[10px] text-secondary font-medium block mb-1">{isExpense ? t('groupLabel') : t('bracketLabel')}</label>
                       <select
                         value={quickAddForm.bracket}
-                        onChange={(e) => setQuickAddForm(p => ({ ...p, bracket: e.target.value }))}
+                        onChange={(e) => {
+                          const next = e.target.value;
+                          const nextKind = isExpense ? data.groups.find(g => g.id === next)?.kind : null;
+                          setQuickAddForm(p => ({ ...p, bracket: next, isOneTime: nextKind === 'oneoff' ? true : p.isOneTime }));
+                        }}
                         className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-primary outline-none"
                       >
                         {isExpense
                           ? data.groups.map(g => <option key={g.id} value={g.id}>{groupName(g)} · {kindLabel(g.kind)}</option>)
                           : data.brackets.incomes.map(b => <option key={b.id} value={b.id}>{t('brackets.' + b.id)}</option>)}
                       </select>
-                      {isExpense && <p className="text-[10px] text-tertiary mt-1">{t('groupKindHelp_' + group.kind)}</p>}
+                      {isExpense && !once && <p className="text-[10px] text-tertiary mt-1">{t('groupKindHelp_' + group.kind)}</p>}
                     </div>
-                    {!(isExpense && group.kind === 'variable') && (
+
+                    {needsAmount ? (
                       <>
                         <div>
                           <label className="text-[10px] text-secondary font-medium block mb-1">{t('initialBudgetLabel')}</label>
@@ -3294,49 +3396,34 @@
                           quickAddForm.from,
                           quickAddForm.until,
                           (key, value) => setQuickAddForm(p => ({ ...p, [key]: value })),
-                          isExpense ? group.kind === 'oneoff' : quickAddForm.isOneTime,
-                          quickAddForm.every
+                          once,
+                          once ? null : quickAddForm.every
                         )}
                       </>
+                    ) : (
+                      <p className="text-[11px] text-secondary p-2 rounded bg-subtle/50 border border-subtle">{t('variableItemHelp')}</p>
+                    )}
+
+                    {!isExpense && (
+                      <div>
+                        <label className="text-[10px] text-secondary font-medium block mb-1">{t('modeLabel')}</label>
+                        <div className="grid grid-cols-2 gap-1 bg-subtle p-0.5 rounded border border-subtle">
+                          {['fixed', 'variable'].map(m => (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() => setQuickAddForm(p => ({ ...p, mode: m }))}
+                              className={`py-1 rounded text-[11px] ${quickAddForm.mode === m ? 'bg-surface text-primary font-semibold shadow-sm' : 'text-secondary'}`}
+                            >
+                              {m === 'fixed' ? t('badgeFixed') : t('badgeVariable')}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </>
                 );
               })()}
-
-              {quickAddModal.type === 'incomes' && (
-              <>
-              <div>
-                <label className="text-[10px] text-secondary font-medium block mb-1">{t('modeLabel')}</label>
-                <div className="grid grid-cols-2 gap-1 bg-subtle p-0.5 rounded border border-subtle">
-                  {['fixed', 'variable'].map(m => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setQuickAddForm(p => ({ ...p, mode: m }))}
-                      className={`py-1 rounded text-[11px] ${quickAddForm.mode === m ? 'bg-surface text-primary font-semibold shadow-sm' : 'text-secondary'}`}
-                    >
-                      {m === 'fixed' ? t('badgeFixed') : t('badgeVariable')}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <label className="flex items-center justify-between gap-2 p-2 rounded bg-subtle/50 border border-subtle cursor-pointer">
-                <div>
-                  <span className="font-medium text-primary block text-[11px]">{t('badgeOneTime')}</span>
-                  <span className="text-[10px] text-tertiary">
-                    {t('isOneTimeCurrentOnly')}
-                  </span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={quickAddForm.isOneTime}
-                  onChange={(e) => setQuickAddForm(p => ({ ...p, isOneTime: e.target.checked }))}
-                  className="w-4 h-4 rounded border-subtle"
-                />
-              </label>
-              </>
-              )}
 
               <div className="flex gap-2 pt-2 border-t border-subtle">
                 <button onClick={() => setQuickAddModal(null)} className="flex-1 py-1.5 bg-subtle text-secondary rounded hover:text-primary">
@@ -3420,20 +3507,25 @@
                 </div>
               </div>
 
-              {activeEditCat.type === 'incomes' && (
-              <label className="flex items-center justify-between gap-2 p-2 rounded bg-subtle border border-subtle cursor-pointer">
-                <div>
-                  <span className="font-medium text-primary block">{t('badgeOneTime')}</span>
-                  <span className="text-[10px] text-secondary">{t('hideWhenZeroHint')}</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={editCatForm.isOneTime}
-                  onChange={(e) => setEditCatForm(prev => ({ ...prev, isOneTime: e.target.checked }))}
-                  className="w-4 h-4 rounded"
-                />
-              </label>
-              )}
+              {(() => {
+                const lockedOnce = activeEditCat.type === 'expenses' &&
+                  data.groups.find(g => g.id === editCatForm.bracket)?.kind === 'oneoff';
+                return (
+                  <label className="flex items-center justify-between gap-2 p-2 rounded bg-subtle border border-subtle cursor-pointer">
+                    <div>
+                      <span className="font-medium text-primary block">{t('badgeOneTime')}</span>
+                      <span className="text-[10px] text-secondary">{t('onceHelp')}</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={editCatForm.isOneTime || lockedOnce}
+                      disabled={lockedOnce}
+                      onChange={(e) => setEditCatForm(prev => ({ ...prev, isOneTime: e.target.checked }))}
+                      className="w-4 h-4 rounded shrink-0"
+                    />
+                  </label>
+                );
+              })()}
 
               <div className="space-y-1.5 pt-2 border-t border-subtle">
                 <div className="text-[10px] text-secondary font-medium flex items-center justify-between">
