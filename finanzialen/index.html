@@ -164,6 +164,100 @@
     const TIMELINE = YEARS.flatMap(yr => getMonthsForYear(yr).map(m => ({ yr, m })));
     const timelineIndex = (yr, m) => TIMELINE.findIndex(x => x.yr === yr && x.m === m);
     const timelineKey = (yr, m) => `${yr}|${m}`;
+    const round2 = (n) => Math.round(n * 100) / 100;
+    const pad2 = (n) => String(n).padStart(2, '0');
+    const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; };
+    // "2026-10-14" → { yr: 2026, m: 'Okt' }, or null outside the app's months.
+    const dateToMonth = (iso) => {
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+      if (!match) return null;
+      const yr = +match[1], m = ALL_MONTHS[+match[2] - 1];
+      return m && TIMELINE.some(x => x.yr === yr && x.m === m) ? { yr, m } : null;
+    };
+    const WHO = ['me', 'partner', 'joint'];
+
+    // ---- Bank statements (Revolut CSV/Excel in English or German, and similar German bank exports) ----
+    const parseCsv = (text) => {
+      text = text.replace(/^﻿/, '');
+      const first = text.split(/\r?\n/)[0] || '';
+      const sep = (first.match(/;/g) || []).length > (first.match(/,/g) || []).length ? ';' : ',';
+      const rows = [];
+      let row = [], field = '', quoted = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (quoted) {
+          if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else quoted = false; }
+          else field += c;
+        } else if (c === '"') quoted = true;
+        else if (c === sep) { row.push(field); field = ''; }
+        else if (c === '\n' || c === '\r') {
+          if (c === '\r' && text[i + 1] === '\n') i++;
+          row.push(field); rows.push(row); row = []; field = '';
+        } else field += c;
+      }
+      if (field || row.length) { row.push(field); rows.push(row); }
+      return rows.filter(r => r.some(x => String(x).trim()));
+    };
+    const parseBankNumber = (v) => {
+      if (typeof v === 'number') return v;
+      let str = String(v ?? '').trim().replace(/\s|€|EUR/g, '');
+      if (!str) return null;
+      if (str.includes(',') && str.includes('.')) {
+        str = str.lastIndexOf(',') > str.lastIndexOf('.') ? str.replace(/\./g, '').replace(',', '.') : str.replace(/,/g, '');
+      } else if (str.includes(',')) str = str.replace(',', '.');
+      const n = parseFloat(str);
+      return isFinite(n) ? n : null;
+    };
+    const parseBankDate = (v) => {
+      const str = String(v || '').trim();
+      let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(str);
+      if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+      m = /^(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})/.exec(str);
+      if (m) return `${m[3].length === 2 ? '20' + m[3] : m[3]}-${pad2(m[2])}-${pad2(m[1])}`;
+      return null;
+    };
+    const readStatement = (rows) => {
+      if (!rows.length) return null;
+      const header = rows[0].map(h => String(h).trim().toLowerCase());
+      const find = (...patterns) => {
+        for (const re of patterns) { const i = header.findIndex(h => re.test(h)); if (i !== -1) return i; }
+        return -1;
+      };
+      const col = {
+        date: find(/completed date|abschluss|abgeschlossen/, /started date|startdatum|^datum$|^date$|buchungstag|buchungsdatum/),
+        // Pending lines have no completion date yet; fall back to when they started.
+        started: find(/started date|startdatum/),
+        desc: find(/^description$|beschreibung|empfänger|beguenstigter|begünstigter|zahlungspflichtiger|payee/, /verwendungszweck|reference/),
+        amount: find(/^amount$|^betrag/),
+        fee: find(/^fee$|gebühr/),
+        currency: find(/currency|währung/),
+        state: find(/^state$|^status$|^zustand$/),
+        kind: find(/^type$|^art$|^typ$|umsatzart/)
+      };
+      if (col.date === -1 || col.desc === -1 || col.amount === -1) return null;
+      return rows.slice(1).map(r => ({
+        date: parseBankDate(r[col.date]) || (col.started !== -1 ? parseBankDate(r[col.started]) : null),
+        desc: String(r[col.desc] || '').trim(),
+        amount: parseBankNumber(r[col.amount]),
+        fee: col.fee !== -1 ? (parseBankNumber(r[col.fee]) || 0) : 0,
+        currency: col.currency !== -1 ? String(r[col.currency] || '').trim().toUpperCase() : 'EUR',
+        state: col.state !== -1 ? String(r[col.state] || '').trim().toUpperCase() : '',
+        kind: col.kind !== -1 ? String(r[col.kind] || '').trim().toUpperCase() : ''
+      })).filter(x => x.date && x.amount !== null && x.desc);
+    };
+    const payeeKey = (desc) => desc.toLowerCase().replace(/[0-9*#\/]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40);
+    const cleanItemName = (name) => name.toLowerCase().replace(/[^a-z0-9äöüß &-]/g, '').replace(/\s+/g, ' ').trim();
+    // Which built-in group a payee most likely belongs to.
+    const PAYEE_HINTS = [
+      [/netto|edeka|lidl|aldi(?! talk)|rewe|kaufland|penny|norma|globus|türk|turk|bäcker|backer|bakery|\bdm\b|dm-drogerie|rossmann|müller|apotheke|pharmacy|arzt|praxis/i, 'groceries'],
+      [/netflix|spotify|prime video|amazon prime|google|youtube|apple\.com|icloud|claude|anthropic|openai|chatgpt|disney/i, 'subs'],
+      [/\bo2\b|telefonica|vodafone|telekom|congstar|aldi talk|strom|stadtwerke|vattenfall|e\.on|\beon\b|rundfunk|beitragsservice/i, 'bills'],
+      [/miete|vermieter|hausverwaltung/i, 'housing'],
+      [/versicherung|insurance|care concept|haftpflicht|allianz|huk/i, 'insurance'],
+      [/restaurant|café|cafe|mcdonald|burger|pizza|döner|doner|lieferando|uber eats|wolt|kino|cinema/i, 'leisure'],
+      [/ikea|action|tedi|kik|primark|h&m|zara|amazon|amzn|bahn|bvg|mvg|hvv|rmv|flixbus|tankstelle|aral|shell|esso/i, 'household']
+    ];
+    const prettyPayee = (desc) => desc.replace(/\s+/g, ' ').trim().split(' ').slice(0, 3).join(' ').slice(0, 30);
 
     const MONTH_NAMES = {
       de: { Jan: "Jan", Feb: "Feb", Mrz: "Mär", Apr: "Apr", Mai: "Mai", Jun: "Jun", Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Okt", Nov: "Nov", Dez: "Dez" },
@@ -511,6 +605,7 @@
         iouIOweBadge: "Schulde ich",
         iouOwedToMeBadge: "Bekomme ich",
         iouMarkReturned: "Als erledigt markieren",
+        iouLoanLink: "Darlehen erhalten & Rückzahlungen planen",
         iouDelete: "Löschen (falsch eingetragen)",
         iouDeleteConfirm: "„{{person}} · {{amount}}“ löschen? Das entfernt nur diesen Eintrag aus der Schulden-Liste, nicht die Einnahme oder die Rückzahlungen.",
         loanDuplicateWarn: "Du hast schon ein Darlehen über {{amount}} eingetragen ({{person}}, {{date}}). Nochmal buchen zählt Einnahme, Rückzahlungen und Schuld doppelt.",
@@ -541,6 +636,87 @@
         repeat12: "Einmal im Jahr",
         paymentsSummary: "{{n}} Zahlungen: {{list}}",
         quickStores: "Schnell hinzufügen:",
+        importTitle: "Kontoauszug importieren",
+        importBtn: "⬇ Import",
+        importAccount: "Von welchem Konto?",
+        importOwn: "Konto {{name}}",
+        importJoint: "Gemeinsames Konto",
+        importFrom: "Nur Buchungen ab",
+        importFromHint: "Monate, die du schon von Hand eingetragen hast, würden sonst doppelt zählen.",
+        importChoose: "Datei auswählen (CSV oder Excel)",
+        importHowTo: "In der Revolut-App: das Konto öffnen → „…“ → Kontoauszug → Excel oder CSV und den Zeitraum wählen. Für das gemeinsame Konto zuerst das gemeinsame Konto öffnen. Danach die Datei hier auswählen.",
+        importBadFile: "Diese Datei konnte nicht gelesen werden. Erwartet wird ein Kontoauszug (CSV oder Excel) mit Datum, Beschreibung und Betrag.",
+        importSummary: "{{file}}: {{n}} Zeilen · {{ready}} zugeordnet · {{dup}} schon importiert · {{skipped}} übersprungen",
+        importSelectAll: "Alle mit Vorschlag auswählen",
+        importSelectNone: "Keine auswählen",
+        importSkipOption: "— nicht importieren —",
+        importNewItem: "Neu: {{name}}",
+        importNothingNew: "Keine neuen Buchungen in dieser Datei.",
+        importSkippedList: "{{n}} übersprungene Zeilen anzeigen",
+        importSkip_dup: "schon importiert",
+        importSkip_state: "nicht abgeschlossen",
+        importSkip_currency: "andere Währung",
+        importSkip_range: "außerhalb Mai 2026 – Dez 2028",
+        importSkip_before: "vor dem gewählten Datum",
+        importSkip_exchange: "Währungstausch",
+        importRun: "{{n}} Buchungen importieren",
+        importDone: "{{n}} Buchungen importiert",
+        importOwnTransfer: "Eigene Umbuchung",
+        importTransfersNote: "{{n}} Umbuchungen zwischen euren eigenen Konten erkannt. Sie sind weder Einnahme noch Ausgabe und bleiben deshalb abgewählt.",
+        dueTitle: "Fällig bald",
+        dueOverdue: "Überfällig seit {{day}}. {{month}}",
+        dueOnDay: "Fällig am {{day}}. {{month}}",
+        dueInMonth: "Im {{month}}",
+        dueMore: "+ {{n}} weitere",
+        forecastTitle: "Ausblick: Stand am Monatsende",
+        forecastLow: "Tiefster Stand: {{amount}} Ende {{month}}",
+        forecastNegative: "Achtung: Ende {{month}} wärst du bei {{amount}}",
+        setAsideTitle: "Zurücklegen",
+        setAsideHint: "Unregelmäßige und kommende einmalige Zahlungen, auf den Monat verteilt. Wer das jeden Monat zur Seite legt, wird davon nicht überrascht.",
+        setAsideRhythm: "{{n}}× in 12 Monaten · nächste {{month}}",
+        setAsideOnce: "einmalig im {{month}}",
+        perMonthShort: "{{amount}}/Monat",
+        goalsTitle: "Sparziele",
+        goalNew: "+ Ziel",
+        goalNewTitle: "Neues Sparziel",
+        goalEdit: "Sparziel bearbeiten",
+        goalsEmpty: "Noch keine Sparziele, z. B. Notgroschen, Handy oder Urlaub.",
+        goalNamePlaceholder: "z. B. Notgroschen",
+        goalTarget: "Zielbetrag",
+        goalSaved: "Schon gespart",
+        goalDeadline: "Bis wann?",
+        goalNoDeadline: "Ohne Termin",
+        goalHint: "Sparziele zählen nicht in die Monatsrechnung. Hier verfolgst du nur, wie viel schon beiseitegelegt ist.",
+        goalReached: "Ziel erreicht 🎉",
+        goalPerMonth: "{{amount}}/Monat bis {{month}}",
+        goalLeft: "Noch {{amount}}",
+        goalDeposit: "+ Einzahlen",
+        goalDeposited: "{{amount}} für „{{name}}“ gespart",
+        goalDeleteConfirm: "Sparziel „{{name}}“ löschen?",
+        iouRepaid: "{{repaid}} von {{total}} zurückgezahlt (über „{{item}}“)",
+        iouLinkRepay: "Rückzahlungen verknüpfen mit …",
+        reportGroups: "Ausgaben nach Gruppe {{year}}",
+        reportAvgNote: "Durchschnitt über {{n}} Monate mit Ausgaben.",
+        reportTopItems: "Größte Posten",
+        reportWhoNote: "Aus einzelnen Einträgen (Belege und Importe).",
+        membersLabel: "Haushalt (Namen)",
+        autoBackups: "Automatische Sicherungen (dieses Gerät)",
+        autoBackupsEmpty: "Noch keine. Ab der nächsten Änderung wird täglich eine Sicherung angelegt.",
+        autoBackupsHint: "Eine Sicherung pro Tag, die letzten 14 Tage. Wiederherstellen lässt sich rückgängig machen.",
+        autoBackupRestore: "Wiederherstellen",
+        autoBackupConfirm: "Stand vom {{day}} wiederherstellen? Alles danach wird ersetzt.",
+        autoBackupRestored: "Sicherung wiederhergestellt",
+        whoJoint: "Gemeinsam",
+        whoLabel: "Wer hat bezahlt?",
+        whoPaidTitle: "Wer hat bezahlt? (Ausgaben)",
+        noteLabel: "Notiz (optional)",
+        dateLabel: "Datum",
+        undoBtn: "Rückgängig",
+        txDeleted: "{{amount}} bei {{name}} gelöscht",
+        entriesLabel: "Einträge ({{n}})",
+        txBtn: "Buchungen",
+        txModalTitle: "Buchungen {{month}}",
+        txEmpty: "Noch keine einzelnen Einträge. Belege und importierte Kontoauszüge erscheinen hier.",
         rangeMonth: "Monat",
         howOften: "Wie oft?",
         recurringLabel: "Wiederkehrend",
@@ -782,6 +958,7 @@
         iouIOweBadge: "I owe",
         iouOwedToMeBadge: "Owed to me",
         iouMarkReturned: "Mark as settled",
+        iouLoanLink: "Record a loan and plan repayments",
         iouDelete: "Delete (entered by mistake)",
         iouDeleteConfirm: "Delete \"{{person}} · {{amount}}\"? This only removes this entry from the debt list, not the income or the repayments.",
         loanDuplicateWarn: "You already recorded a loan of {{amount}} ({{person}}, {{date}}). Booking it again counts the income, the repayments and the debt twice.",
@@ -812,6 +989,87 @@
         repeat12: "Once a year",
         paymentsSummary: "{{n}} payments: {{list}}",
         quickStores: "Quick add:",
+        importTitle: "Import bank statement",
+        importBtn: "⬇ Import",
+        importAccount: "Which account?",
+        importOwn: "{{name}}'s account",
+        importJoint: "Joint account",
+        importFrom: "Only entries from",
+        importFromHint: "Months you already entered by hand would otherwise count twice.",
+        importChoose: "Choose file (CSV or Excel)",
+        importHowTo: "In the Revolut app: open the account → “…” → Statement → choose Excel or CSV and the period. For the joint account, open the joint account first. Then pick the file here.",
+        importBadFile: "This file couldn't be read. It should be a bank statement (CSV or Excel) with a date, description and amount.",
+        importSummary: "{{file}}: {{n}} lines · {{ready}} matched · {{dup}} already imported · {{skipped}} skipped",
+        importSelectAll: "Select all with a suggestion",
+        importSelectNone: "Select none",
+        importSkipOption: "— don't import —",
+        importNewItem: "New: {{name}}",
+        importNothingNew: "No new entries in this file.",
+        importSkippedList: "Show {{n}} skipped lines",
+        importSkip_dup: "already imported",
+        importSkip_state: "not completed",
+        importSkip_currency: "other currency",
+        importSkip_range: "outside May 2026 – Dec 2028",
+        importSkip_before: "before the chosen date",
+        importSkip_exchange: "currency exchange",
+        importRun: "Import {{n}} entries",
+        importDone: "Imported {{n}} entries",
+        importOwnTransfer: "Own transfer",
+        importTransfersNote: "{{n}} transfers between your own accounts found. They're neither income nor spending, so they stay unticked.",
+        dueTitle: "Due soon",
+        dueOverdue: "Overdue since {{month}} {{day}}",
+        dueOnDay: "Due {{month}} {{day}}",
+        dueInMonth: "In {{month}}",
+        dueMore: "+ {{n}} more",
+        forecastTitle: "Outlook: month-end balance",
+        forecastLow: "Lowest point: {{amount}} at the end of {{month}}",
+        forecastNegative: "Careful: at the end of {{month}} you'd be at {{amount}}",
+        setAsideTitle: "Set aside",
+        setAsideHint: "Irregular and upcoming one-time payments, spread over the months. Put this aside every month and they won't catch you off guard.",
+        setAsideRhythm: "{{n}}× in 12 months · next {{month}}",
+        setAsideOnce: "once in {{month}}",
+        perMonthShort: "{{amount}}/month",
+        goalsTitle: "Savings goals",
+        goalNew: "+ Goal",
+        goalNewTitle: "New savings goal",
+        goalEdit: "Edit savings goal",
+        goalsEmpty: "No savings goals yet, e.g. emergency fund, phone or holiday.",
+        goalNamePlaceholder: "e.g. Emergency fund",
+        goalTarget: "Target",
+        goalSaved: "Saved so far",
+        goalDeadline: "By when?",
+        goalNoDeadline: "No deadline",
+        goalHint: "Savings goals don't count in the monthly budget. They only track how much you've put aside.",
+        goalReached: "Goal reached 🎉",
+        goalPerMonth: "{{amount}}/month until {{month}}",
+        goalLeft: "{{amount}} to go",
+        goalDeposit: "+ Add savings",
+        goalDeposited: "Saved {{amount}} for \"{{name}}\"",
+        goalDeleteConfirm: "Delete the savings goal \"{{name}}\"?",
+        iouRepaid: "{{repaid}} of {{total}} repaid (through \"{{item}}\")",
+        iouLinkRepay: "Link repayments to …",
+        reportGroups: "Spending by group {{year}}",
+        reportAvgNote: "Average over {{n}} months with spending.",
+        reportTopItems: "Biggest items",
+        reportWhoNote: "From single entries (receipts and imports).",
+        membersLabel: "Household (names)",
+        autoBackups: "Automatic backups (this device)",
+        autoBackupsEmpty: "None yet. From your next change on, one backup is kept per day.",
+        autoBackupsHint: "One backup per day, the last 14 days. A restore can be undone.",
+        autoBackupRestore: "Restore",
+        autoBackupConfirm: "Restore the state from {{day}}? Everything after it is replaced.",
+        autoBackupRestored: "Backup restored",
+        whoJoint: "Joint",
+        whoLabel: "Who paid?",
+        whoPaidTitle: "Who paid? (expenses)",
+        noteLabel: "Note (optional)",
+        dateLabel: "Date",
+        undoBtn: "Undo",
+        txDeleted: "Deleted {{amount}} at {{name}}",
+        entriesLabel: "Entries ({{n}})",
+        txBtn: "Entries",
+        txModalTitle: "Entries {{month}}",
+        txEmpty: "No single entries yet. Receipts and imported bank statements show up here.",
         rangeMonth: "Month",
         howOften: "How often?",
         recurringLabel: "Recurring",
@@ -938,6 +1196,18 @@
 
     const emptyNode = () => ({ budget: 0, actual: 0, asOfDate: null });
 
+    // One automatic snapshot per day on this device; the last 14 days are kept.
+    const BACKUP_DAYS = 14;
+    const saveDailyBackup = async (snapshot) => {
+      try {
+        const list = (await IDB.get('backups')) || [];
+        const day = todayISO();
+        if (list.length && list[list.length - 1].day === day) return;
+        list.push({ day, ts: Date.now(), data: snapshot });
+        await IDB.set('backups', list.slice(-BACKUP_DAYS));
+      } catch (e) { console.warn('Backup failed', e); }
+    };
+
     // Case-insensitive dedupe so the same category never counts twice.
     const dedupe = (list) => {
       const seen = new Set();
@@ -980,7 +1250,7 @@
               name: typeof g.name === 'string' && g.name.trim() ? g.name.trim() : null
             }));
       const state = {
-        version: 3,
+        version: 4,
         startingCapital: typeof raw?.startingCapital === 'number' ? raw.startingCapital : 0,
         // The month whose start the starting capital describes; earlier months don't feed the balance.
         startingMonth: TIMELINE.some(x => timelineKey(x.yr, x.m) === raw?.startingMonth)
@@ -998,6 +1268,23 @@
         meta: { incomes: {}, expenses: {} },
         notes: { incomes: {}, expenses: {} },
         ious: (raw?.ious || []).map(i => ({ ...i, type: i.type || 'borrowed' })),
+        // Version 4: household members, single entries (receipts, imports), learned payee
+        // rules for imports, savings goals, and which bank lines were already imported.
+        members: {
+          me: typeof raw?.members?.me === 'string' && raw.members.me.trim() ? raw.members.me.trim() : 'Mohammed',
+          partner: typeof raw?.members?.partner === 'string' && raw.members.partner.trim() ? raw.members.partner.trim() : 'Mai'
+        },
+        tx: [],
+        rules: raw?.rules && typeof raw.rules === 'object' ? { ...raw.rules } : {},
+        goals: (Array.isArray(raw?.goals) ? raw.goals : [])
+          .filter(g => g && typeof g.id === 'string' && typeof g.name === 'string')
+          .map(g => ({
+            id: g.id, name: g.name,
+            target: typeof g.target === 'number' ? g.target : 0,
+            saved: typeof g.saved === 'number' ? g.saved : 0,
+            deadline: typeof g.deadline === 'string' ? g.deadline : null
+          })),
+        imported: Array.isArray(raw?.imported) ? raw.imported.filter(k => typeof k === 'string') : [],
         values: {}
       };
 
@@ -1112,6 +1399,16 @@
         });
       });
 
+      state.tx = (Array.isArray(raw?.tx) ? raw.tx : [])
+        .filter(x => x && typeof x.id === 'string' && TYPES.includes(x.type) && typeof x.amount === 'number'
+          && dateToMonth(x.date) && state.categories[x.type].includes(x.cat))
+        .map(x => ({
+          id: x.id, date: x.date, type: x.type, cat: x.cat, amount: x.amount,
+          who: WHO.includes(x.who) ? x.who : null,
+          note: typeof x.note === 'string' ? x.note : '',
+          source: x.source === 'import' ? 'import' : 'manual'
+        }));
+
       // Moving to groups: the plans of variable items add up to their group's target.
       if (needsGroups) {
         state.categories.expenses.forEach(cat => {
@@ -1212,6 +1509,13 @@
       const toastTimerRef = useRef(null);
 
       const [balanceModal, setBalanceModal] = useState(false);
+      const [txModal, setTxModal] = useState(false);
+      const [importModal, setImportModal] = useState(null);
+      const [backups, setBackups] = useState([]);
+      useEffect(() => {
+        if (isBurgerOpen) IDB.get('backups').then(list => setBackups((list || []).slice().reverse()));
+      }, [isBurgerOpen]);
+      const [txWhoFilter, setTxWhoFilter] = useState('all');
       const [balanceInput, setBalanceInput] = useState("");
 
       const [openNoteRows, setOpenNoteRows] = useState({});
@@ -1288,6 +1592,7 @@
           setSyncStatus('local');
         }
         IDB.set('app_state', snapshot);
+        saveDailyBackup(snapshot);
       };
 
       const scheduleSave = () => {
@@ -1532,6 +1837,116 @@
 
       const fmtBalance = (v) => v == null ? '–' : fmt(v);
 
+      // Year report: spending per group, biggest items, and who paid (from entries).
+      const yearReport = useMemo(() => {
+        if (!isAnnual) return null;
+        const months = getMonthsForYear(selectedYear);
+        const spentIn = (cat) => months.reduce((sum, m) => sum + getNode('expenses', cat, selectedYear, m).actual, 0);
+        const activeMonths = months.filter(m => data.categories.expenses.some(c => getNode('expenses', c, selectedYear, m).actual > 0)).length || 1;
+        const groups = data.groups.map(g => {
+          const total = data.categories.expenses.filter(c => getMeta('expenses', c).bracket === g.id).reduce((sum, c) => sum + spentIn(c), 0);
+          return { g, total, avg: total / activeMonths };
+        }).filter(x => x.total > 0).sort((a, b) => b.total - a.total);
+        const items = data.categories.expenses.map(c => ({ cat: c, total: spentIn(c) })).filter(x => x.total > 0).sort((a, b) => b.total - a.total).slice(0, 8);
+        const yearTx = (data.tx || []).filter(x => x.type === 'expenses' && x.date.startsWith(String(selectedYear)));
+        const byWho = WHO.map(w => ({ w, total: yearTx.filter(x => x.who === w).reduce((sum, x) => sum + x.amount, 0) }));
+        return { groups, items, byWho, max: Math.max(1, ...groups.map(x => x.total)), activeMonths };
+      }, [data, selectedYear, isAnnual]);
+
+      // ---- Planning: what's due, where the balance is heading, what to set aside ----
+      const nowIdx = (() => { const d = new Date(); return timelineIndex(d.getFullYear(), ALL_MONTHS[d.getMonth()]); })();
+      const isKnownItem = (cat) => {
+        const meta = getMeta('expenses', cat);
+        const g = data.groups.find(x => x.id === meta.bracket);
+        return meta.oneTime || !g || g.kind !== 'variable';
+      };
+
+      // Planned bills not paid yet, this month and next, sorted by due day.
+      const dueSoon = useMemo(() => {
+        if (nowIdx === -1) return [];
+        const today = new Date().getDate();
+        const out = [];
+        [0, 1].forEach(off => {
+          const p = TIMELINE[nowIdx + off];
+          if (!p) return;
+          data.categories.expenses.forEach(cat => {
+            if (!isKnownItem(cat)) return;
+            const node = getNode('expenses', cat, p.yr, p.m);
+            if (!(node.budget > 0) || node.actual > 0) return;
+            const payDay = getMeta('expenses', cat).payDay;
+            const day = payDay ? Math.min(payDay, getDaysInMonth(p.yr, p.m)) : null;
+            out.push({ cat, yr: p.yr, m: p.m, off, day, overdue: off === 0 && day !== null && day < today, amount: node.budget });
+          });
+        });
+        return out.sort((a, b) => (b.overdue - a.overdue) || (a.off - b.off) || ((a.day || 99) - (b.day || 99)));
+      }, [data, nowIdx]);
+
+      const forecast = useMemo(() => {
+        if (nowIdx === -1) return [];
+        return forwardTimeline.slice(nowIdx, nowIdx + 6).filter(r => r.endProjectedBalance != null);
+      }, [forwardTimeline, nowIdx]);
+
+      // Irregular costs (quarterly, yearly) and future one-time payments, as a monthly amount to put aside.
+      const setAsides = useMemo(() => {
+        if (nowIdx === -1) return { rows: [], total: 0 };
+        const span = TIMELINE.slice(nowIdx, nowIdx + 12);
+        const rows = [];
+        data.categories.expenses.forEach(cat => {
+          if (!isKnownItem(cat)) return;
+          const meta = getMeta('expenses', cat);
+          const plans = span.map(p => getNode('expenses', cat, p.yr, p.m).budget);
+          const months = plans.map((v, i) => v > 0 ? i : -1).filter(i => i !== -1);
+          if (!months.length) return;
+          if (meta.oneTime) {
+            const i = months[0];
+            const node = getNode('expenses', cat, span[i].yr, span[i].m);
+            if (i === 0 || node.actual > 0) return; // due now or already paid
+            rows.push({ cat, kind: 'once', amount: plans[i], next: span[i], perMonth: plans[i] / (i + 1) });
+            return;
+          }
+          const consecutive = months.every((v, k) => k === 0 || v === months[k - 1] + 1);
+          if (consecutive && months.length > 1) return; // regular monthly bill
+          if (months.length === span.length) return;
+          const total = plans.reduce((sum, v) => sum + v, 0);
+          rows.push({ cat, kind: 'irregular', count: months.length, amount: Math.max(...plans), next: span[months[0]], perMonth: total / span.length });
+        });
+        rows.sort((a, b) => b.perMonth - a.perMonth);
+        return { rows, total: rows.reduce((sum, r) => sum + r.perMonth, 0) };
+      }, [data, nowIdx]);
+
+      // Savings goals live outside the month budget: saved amounts are tracked here only.
+      const [goalModal, setGoalModal] = useState(null);
+      const [depositFor, setDepositFor] = useState(null);
+      const [depositAmount, setDepositAmount] = useState('');
+      const monthsUntil = (key) => {
+        if (!key || nowIdx === -1) return null;
+        const idx = keyIndex(key);
+        return idx === -1 ? null : Math.max(1, idx - nowIdx + 1);
+      };
+      const saveGoal = () => {
+        const g = goalModal;
+        const target = parseAmount(g.target);
+        if (!g.name.trim() || target === null) return;
+        mutate(d => {
+          const existing = d.goals.find(x => x.id === g.id);
+          const fields = { name: g.name.trim(), target, saved: parseAmount(g.saved) || 0, deadline: g.deadline || null };
+          if (existing) Object.assign(existing, fields);
+          else d.goals.push({ id: 'goal' + Date.now().toString(36), ...fields });
+        });
+        setGoalModal(null);
+      };
+      const depositGoal = (id) => {
+        const amount = parseAmount(depositAmount);
+        if (amount === null) return;
+        const goal = data.goals.find(x => x.id === id);
+        mutateWithUndo(d => {
+          const g = d.goals.find(x => x.id === id);
+          if (g) g.saved = round2(g.saved + amount);
+        }, t('goalDeposited', { amount: fmtCents(amount), name: goal?.name || '' }));
+        setDepositFor(null);
+        setDepositAmount('');
+      };
+
       const prevMonthOf = (yr, m) => {
         const idx = timelineIndex(yr, m);
         return idx > 0 ? TIMELINE[idx - 1] : null;
@@ -1707,6 +2122,7 @@
                 delete byType[oldName];
               }
             });
+            d.tx.forEach(x => { if (x.type === type && x.cat === oldName) x.cat = newName; });
             // Notes are stored per category, so all months move with the rename.
             if (d.notes[type][oldName]) {
               d.notes[type][newName] = d.notes[type][oldName];
@@ -1798,6 +2214,7 @@
               });
             }
 
+            d.tx.forEach(x => { if (x.type === type && x.cat === cat) x.cat = fallback; });
             d.categories[type] = d.categories[type].filter(c => c !== cat);
             YEARS.forEach(yr => { delete d.values[yr][type][cat]; });
             delete d.meta[type][cat];
@@ -1818,10 +2235,76 @@
         setOpenBrackets(prev => ({ ...prev, ...nextState }));
       };
 
-      const showToast = (msg) => {
-        setToastMsg(msg);
+      const showToast = (msg, undoable = false) => {
+        setToastMsg({ text: msg, undo: undoable });
         clearTimeout(toastTimerRef.current);
-        toastTimerRef.current = setTimeout(() => setToastMsg(null), 2800);
+        toastTimerRef.current = setTimeout(() => setToastMsg(null), undoable ? 6000 : 2800);
+      };
+
+      // Changes that can be undone keep the state from just before them.
+      const undoRef = useRef(null);
+      const mutateWithUndo = (recipe, message) => {
+        undoRef.current = dataRef.current;
+        mutate(recipe);
+        showToast(message, true);
+      };
+      const handleUndo = () => {
+        if (!undoRef.current) return;
+        replaceState(undoRef.current);
+        undoRef.current = null;
+        setToastMsg(null);
+      };
+
+      // Entries (receipts, bank lines) add to their item's monthly amount; removing one takes it off again.
+      const applyTx = (d, tx, sign) => {
+        const pos = dateToMonth(tx.date);
+        if (!pos) return false;
+        const byCat = d.values[pos.yr][tx.type][tx.cat] || (d.values[pos.yr][tx.type][tx.cat] = {});
+        const node = byCat[pos.m] || (byCat[pos.m] = emptyNode());
+        node.actual = Math.max(0, round2(node.actual + sign * tx.amount));
+        return true;
+      };
+      const newTxId = () => 'tx' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      const defaultTxDate = () => {
+        if (monthStatus(selectedYear, selectedMonth) === 'current') return todayISO();
+        return `${selectedYear}-${pad2(ALL_MONTHS.indexOf(selectedMonth) + 1)}-01`;
+      };
+      const monthTx = (type, cat) => (data.tx || [])
+        .filter(x => x.type === type && (!cat || x.cat === cat))
+        .filter(x => { const pos = dateToMonth(x.date); return pos && pos.yr === selectedYear && pos.m === selectedMonth; })
+        .sort((a, b) => a.date < b.date ? 1 : -1);
+      const whoLabel = (w) => w === 'me' ? data.members.me : w === 'partner' ? data.members.partner : w === 'joint' ? t('whoJoint') : '';
+      const fmtDay = (iso) => { const [, mo, da] = iso.split('-'); return `${+da}.${+mo}.`; };
+
+      const [lastWho, setLastWho] = useState(() => {
+        const v = safeStorage.get('budget_last_who', 'joint');
+        return WHO.includes(v) ? v : 'joint';
+      });
+      useEffect(() => { safeStorage.set('budget_last_who', lastWho); }, [lastWho]);
+
+      const deleteTx = (id) => {
+        const tx = data.tx.find(x => x.id === id);
+        if (!tx) return;
+        mutateWithUndo(d => {
+          const cur = d.tx.find(x => x.id === id);
+          if (cur) applyTx(d, cur, -1);
+          d.tx = d.tx.filter(x => x.id !== id);
+        }, t('txDeleted', { amount: fmtCents(tx.amount), name: tx.cat }));
+      };
+
+      const [editingTx, setEditingTx] = useState(null);
+      const saveTxEdit = () => {
+        const form = editingTx;
+        const amount = parseAmount(form.amount);
+        if (amount === null || !dateToMonth(form.date)) return;
+        mutate(d => {
+          const cur = d.tx.find(x => x.id === form.id);
+          if (!cur) return;
+          applyTx(d, cur, -1);
+          Object.assign(cur, { amount, date: form.date, who: form.who, note: form.note.trim(), cat: form.cat });
+          applyTx(d, cur, +1);
+        });
+        setEditingTx(null);
       };
 
       // "23,40", "23.40" and "1.234,50" all mean what a German receipt says.
@@ -1832,20 +2315,26 @@
         return isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null;
       };
 
-      // A receipt adds to what the item already has this month.
-      const addReceipt = (cat, amount) => {
-        mutate(d => {
-          const byCat = d.values[selectedYear].expenses[cat] || (d.values[selectedYear].expenses[cat] = {});
-          const node = byCat[selectedMonth] || (byCat[selectedMonth] = emptyNode());
-          node.actual = Math.round((node.actual + amount) * 100) / 100;
-          node.receipts = (node.receipts || 0) + 1;
-        });
+      // A receipt becomes an entry and adds to what the item already has that month.
+      const addReceipt = (cat, amount, opts = {}) => {
+        const tx = {
+          id: newTxId(),
+          date: opts.date && dateToMonth(opts.date) ? opts.date : defaultTxDate(),
+          type: 'expenses', cat, amount,
+          who: WHO.includes(opts.who) ? opts.who : lastWho,
+          note: (opts.note || '').trim(),
+          source: 'manual'
+        };
         const gv = groupView.find(x => x.g.id === getMeta('expenses', cat).bracket);
-        showToast(t(gv?.target > 0 ? 'receiptAdded' : 'receiptAddedNoTarget', {
+        const sameMonth = (() => { const pos = dateToMonth(tx.date); return pos && pos.yr === selectedYear && pos.m === selectedMonth; })();
+        mutateWithUndo(d => {
+          d.tx.push(tx);
+          applyTx(d, tx, +1);
+        }, t(gv?.target > 0 && sameMonth ? 'receiptAdded' : 'receiptAddedNoTarget', {
           amount: fmtCents(amount),
           name: cat,
           group: gv ? groupName(gv.g) : '',
-          spent: fmtCents((gv?.spent || 0) + amount),
+          spent: fmtCents((gv?.spent || 0) + (sameMonth ? amount : 0)),
           target: fmtCents(gv?.target || 0)
         }));
       };
@@ -1858,17 +2347,143 @@
         setAddAmount("");
       };
 
+      const [receiptDetails, setReceiptDetails] = useState({ date: '', who: 'joint', note: '' });
       const openReceiptSheet = () => {
         setReceiptAmount("");
         setReceiptHint(false);
+        setReceiptDetails({ date: defaultTxDate(), who: lastWho, note: '' });
         setReceiptSheet(true);
       };
 
       const submitSheetReceipt = (cat) => {
         const amount = parseAmount(receiptAmount);
         if (amount === null) { setReceiptHint(true); return; }
-        addReceipt(cat, amount);
+        setLastWho(receiptDetails.who);
+        addReceipt(cat, amount, receiptDetails);
         setReceiptSheet(false);
+      };
+
+      // ---- Bank import ----
+      const openImport = () => setImportModal({
+        step: 'pick', account: 'me', fileName: '', error: '',
+        fromDate: `${selectedYear}-${pad2(ALL_MONTHS.indexOf(selectedMonth) + 1)}-01`
+      });
+
+      // Suggest where a bank line belongs: learned rule, an item named in it, or a likely group.
+      const suggestFor = (line) => {
+        const isRefund = /REFUND|ERSTATTUNG|RÜCKERSTATTUNG/.test(line.kind);
+        const type = line.amount > 0 && !isRefund ? 'incomes' : 'expenses';
+        const key = payeeKey(line.desc);
+        const rule = data.rules[key];
+        if (rule && rule.type === type && data.categories[type].includes(rule.cat)) return `item:${rule.cat}`;
+        const low = line.desc.toLowerCase();
+        const byName = data.categories[type].find(c => { const n = cleanItemName(c); return n.length >= 3 && low.includes(n); });
+        if (byName) return `item:${byName}`;
+        if (type === 'incomes') return '';
+        const hint = PAYEE_HINTS.find(([re]) => re.test(line.desc));
+        if (hint && data.groups.some(g => g.id === hint[1])) return `new:${hint[1]}`;
+        return '';
+      };
+
+      const escapeRe = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const isOwnTransfer = (line) => {
+        if (/TOPUP|TOP-UP|AUFLADUNG/.test(line.kind) || /top-?up|aufladung/i.test(line.desc)) return true;
+        if (line.kind && !/TRANSFER|ÜBERWEISUNG|UEBERWEISUNG|UMBUCHUNG/.test(line.kind)) return false;
+        const names = [data.members.me, data.members.partner]
+          .map(n => (n || '').trim().split(/\s+/)[0])
+          .filter(n => n && n.length >= 2)
+          .map(escapeRe);
+        const own = new RegExp(`\\b(${[...names, 'joint', 'gemeinsam', 'vault', 'pocket', 'savings', 'spartasche', 'tagesgeld'].join('|')})\\b`, 'i');
+        return own.test(line.desc);
+      };
+
+      const loadScript = (src) => new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) return resolve();
+        const el = document.createElement('script');
+        el.src = src; el.onload = resolve; el.onerror = reject;
+        document.head.appendChild(el);
+      });
+
+      const handleStatementFile = async (file) => {
+        if (!file) return;
+        try {
+          let rows;
+          if (/\.xlsx?$/i.test(file.name)) {
+            await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+            const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+            rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: false });
+          } else {
+            rows = parseCsv(await file.text());
+          }
+          const lines = readStatement(rows);
+          if (!lines) { setImportModal(m => ({ ...m, error: t('importBadFile') })); return; }
+          const seen = new Set(data.imported);
+          const counts = {};
+          const account = importModal.account;
+          const prepared = lines.map((line, i) => {
+            const base = `${account}|${line.date}|${line.desc}|${line.amount}`;
+            counts[base] = (counts[base] || 0) + 1;
+            const importKey = `${base}|${counts[base]}`;
+            const done = !line.state || /COMPLETED|ABGESCHLOSSEN|ERLEDIGT|AUSGEFÜHRT/.test(line.state);
+            let skip = '';
+            if (seen.has(importKey)) skip = 'dup';
+            else if (!done) skip = 'state';
+            else if (line.currency && line.currency !== 'EUR') skip = 'currency';
+            else if (!dateToMonth(line.date)) skip = 'range';
+            else if (line.date < importModal.fromDate) skip = 'before';
+            else if (/EXCHANGE|UMTAUSCH/.test(line.kind)) skip = 'exchange';
+            // Money moved between your own accounts is neither income nor spending for the household.
+            const ownTransfer = !skip && isOwnTransfer(line);
+            const target = skip || ownTransfer ? '' : suggestFor(line);
+            return { ...line, i, importKey, skip, ownTransfer, target, include: !skip && !ownTransfer && !!target };
+          }).sort((a, b) => a.date < b.date ? 1 : -1);
+          setImportModal(m => ({ ...m, step: 'review', fileName: file.name, rows: prepared, error: '' }));
+        } catch (e) {
+          console.error(e);
+          setImportModal(m => ({ ...m, error: t('importBadFile') }));
+        }
+      };
+
+      const setImportRow = (i, patch) => setImportModal(m => ({
+        ...m, rows: m.rows.map(r => r.i === i ? { ...r, ...patch } : r)
+      }));
+
+      const ensureItem = (d, type, name, groupId) => {
+        const existing = d.categories[type].find(c => c.toLowerCase() === name.toLowerCase());
+        if (existing) return existing;
+        d.categories[type].push(name);
+        d.meta[type][name] = type === 'expenses'
+          ? metaForGroup(d.groups, groupId)
+          : { bracket: d.brackets.incomes[d.brackets.incomes.length - 1].id, mode: 'variable', oneTime: false, payDay: null };
+        TIMELINE.forEach(({ yr, m }) => {
+          if (!d.values[yr][type][name]) d.values[yr][type][name] = {};
+          d.values[yr][type][name][m] = emptyNode();
+        });
+        return name;
+      };
+
+      const runImport = () => {
+        const chosen = importModal.rows.filter(r => r.include && r.target);
+        if (!chosen.length) return;
+        const account = importModal.account;
+        mutateWithUndo(d => {
+          chosen.forEach(r => {
+            const isRefund = /REFUND|ERSTATTUNG|RÜCKERSTATTUNG/.test(r.kind);
+            const type = r.amount > 0 && !isRefund ? 'incomes' : 'expenses';
+            const gross = Math.abs(r.amount) + (type === 'expenses' ? Math.abs(r.fee || 0) : 0);
+            const amount = round2(isRefund ? -Math.abs(r.amount) : gross);
+            let cat;
+            if (r.target.startsWith('new:')) cat = ensureItem(d, type, prettyPayee(r.desc), r.target.slice(4));
+            else cat = r.target.slice(5);
+            if (!d.categories[type].includes(cat)) return;
+            const tx = { id: newTxId(), date: r.date, type, cat, amount, who: account, note: r.desc, source: 'import' };
+            d.tx.push(tx);
+            applyTx(d, tx, +1);
+            d.imported.push(r.importKey);
+            d.rules[payeeKey(r.desc)] = { type, cat };
+          });
+        }, t('importDone', { n: chosen.length }));
+        setImportModal(null);
       };
 
       // Paid / received toggle: ticking copies the plan, unticking clears the amount.
@@ -1999,8 +2614,21 @@
       };
 
       // ---- IOU / Debts ----
-      const activeIous = useMemo(() => (data.ious || []).filter(i => !i.settled), [data.ious]);
-      const totalBorrowed = activeIous.filter(i => i.type === 'borrowed').reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
+      // A loan can be linked to its repayment item; what was paid there counts as repaid.
+      const LOAN_REPAY_NAMES = ["Rückzahlung Schwester", "Sister Repayment"];
+      const repayItemOf = (iou) => {
+        if (iou.type !== 'borrowed') return null;
+        if (iou.repayCat && data.categories.expenses.includes(iou.repayCat)) return iou.repayCat;
+        if (/schwester|sister/i.test(iou.person)) return data.categories.expenses.find(c => LOAN_REPAY_NAMES.includes(c)) || null;
+        return null;
+      };
+      const repaidOf = (iou) => {
+        const cat = repayItemOf(iou);
+        if (!cat) return 0;
+        return TIMELINE.reduce((sum, { yr, m }) => sum + getNode('expenses', cat, yr, m).actual, 0);
+      };
+      const activeIous = useMemo(() => (data.ious || []).filter(i => !i.settled && !(repayItemOf(i) && repaidOf(i) >= (parseFloat(i.amount) || 0) - 0.005)), [data]);
+      const totalBorrowed = activeIous.filter(i => i.type === 'borrowed').reduce((s, i) => s + Math.max(0, (parseFloat(i.amount) || 0) - repaidOf(i)), 0);
       const totalLent = activeIous.filter(i => i.type !== 'borrowed').reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
 
       const todayLabel = () => new Date().toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US', { day: '2-digit', month: 'short' });
@@ -2095,6 +2723,7 @@
 
           d.ious.push({
             id: 'iou_' + Date.now(),
+            repayCat: expName,
             person: loanForm.lender.trim() || "Schwester",
             amount: incAmt,
             type: 'borrowed',
@@ -2228,6 +2857,69 @@
         );
       };
 
+      const WhoPicker = ({ value, onChange }) => (
+        <div className="grid grid-cols-3 gap-1 bg-subtle p-0.5 rounded border border-subtle">
+          {WHO.map(w => (
+            <button
+              key={w}
+              type="button"
+              aria-pressed={value === w}
+              onClick={() => onChange(w)}
+              className={`py-1 rounded text-[11px] truncate ${value === w ? 'bg-surface text-primary font-semibold shadow-sm' : 'text-secondary'}`}
+            >
+              {whoLabel(w)}
+            </button>
+          ))}
+        </div>
+      );
+
+      // One entry: date, who, note, amount; tap ✎ to change it, ✕ to delete (with undo).
+      const renderTxRow = (x, showItem) => {
+        if (editingTx?.id === x.id) {
+          const f = editingTx;
+          const set = (patch) => setEditingTx(prev => ({ ...prev, ...patch }));
+          return (
+            <div key={x.id} className="p-2 rounded-md bg-surface border border-strong space-y-1.5">
+              <div className="grid grid-cols-2 gap-1.5">
+                <input type="date" value={f.date} onChange={(e) => set({ date: e.target.value })}
+                  className="bg-subtle border border-subtle rounded px-2 py-1 text-xs text-primary" aria-label={t('dateLabel')} />
+                <input inputMode="decimal" value={f.amount} onChange={(e) => set({ amount: e.target.value })}
+                  className="bg-subtle border border-subtle rounded px-2 py-1 text-xs text-primary font-mono text-right" aria-label={t('replicateAmountLabel')} />
+              </div>
+              {showItem && (
+                <select value={f.cat} onChange={(e) => set({ cat: e.target.value })}
+                  className="w-full bg-subtle border border-subtle rounded px-2 py-1 text-xs text-primary">
+                  {data.categories[x.type].map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              )}
+              <WhoPicker value={f.who} onChange={(w) => set({ who: w })} />
+              <input value={f.note} onChange={(e) => set({ note: e.target.value })} placeholder={t('noteLabel')}
+                className="w-full bg-subtle border border-subtle rounded px-2 py-1 text-xs text-primary" />
+              <div className="flex gap-1.5">
+                <button onClick={saveTxEdit} className="flex-1 py-1 rounded bg-primary text-surface text-xs font-semibold">{t('groupSave')}</button>
+                <button onClick={() => setEditingTx(null)} className="flex-1 py-1 rounded bg-subtle text-secondary text-xs">{t('cancelBtn')}</button>
+              </div>
+            </div>
+          );
+        }
+        return (
+          <div key={x.id} className="grid grid-cols-[42px_minmax(0,1fr)_auto_auto_auto] items-center gap-1.5 px-1.5 py-1 rounded hover:bg-subtle/70 text-[11px]">
+            <span className="font-mono text-tertiary">{fmtDay(x.date)}</span>
+            <span className="min-w-0 truncate text-secondary">
+              {showItem && <span className="text-primary font-medium">{x.cat}</span>}
+              {showItem && (x.who || x.note) ? ' · ' : ''}
+              {[whoLabel(x.who), x.note].filter(Boolean).join(' · ')}
+              {x.source === 'import' && <span className="text-tertiary"> · ⬇</span>}
+            </span>
+            <span className={`font-mono ${x.type === 'incomes' ? 'text-notion-green' : 'text-primary'}`}>{fmtCents(x.amount)}</span>
+            <button
+              onClick={() => setEditingTx({ id: x.id, date: x.date, amount: String(x.amount).replace('.', ','), who: x.who || 'joint', note: x.note || '', cat: x.cat })}
+              aria-label={t('actEdit')} className="px-1 text-tertiary hover:text-primary">✎</button>
+            <button onClick={() => deleteTx(x.id)} aria-label={t('deleteCategoryBtn')} className="px-1 text-tertiary hover:text-notion-red">✕</button>
+          </div>
+        );
+      };
+
       // One compact row for an income or expense item; tapping it opens its amounts and actions.
       const renderItemRow = (type, cat, kind) => {
         const key = `${type}:${cat}`;
@@ -2240,9 +2932,11 @@
         const isFresh = highlightedCategory === cat;
         const shown = isVar ? node.actual : knownAmount(node);
         let sub;
+        const entries = monthTx(type, cat);
         if (isVar) {
-          sub = node.receipts > 1 ? t('receiptsCount', { n: node.receipts })
-            : node.receipts === 1 ? t('receiptsOne')
+          const count = entries.length + (node.receipts || 0);
+          sub = count > 1 ? t('receiptsCount', { n: count })
+            : count === 1 ? t('receiptsOne')
             : node.actual > 0 ? '' : t('nothingYet');
         } else if (done) {
           sub = (type === 'incomes' ? t('receivedLabel') : t('paidLabel')) +
@@ -2337,6 +3031,12 @@
                   <ul className="text-[11px] text-secondary space-y-0.5 pl-1">
                     {notes.map((n, i) => <li key={i}>• {n}</li>)}
                   </ul>
+                )}
+                {entries.length > 0 && (
+                  <div className="space-y-0.5">
+                    <div className="text-[10px] text-secondary">{t('entriesLabel', { n: entries.length })}</div>
+                    {entries.map(x => renderTxRow(x, false))}
+                  </div>
                 )}
                 <div className="flex flex-wrap gap-1.5 text-[11px]">
                   {!isVar && (
@@ -2707,6 +3407,49 @@
                   </table>
                 </div>
 
+                {yearReport && yearReport.groups.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="rounded-lg border border-subtle bg-surface p-4 space-y-2">
+                      <div className="text-[11px] uppercase tracking-wide font-semibold text-secondary">{t('reportGroups', { year: selectedYear })}</div>
+                      {yearReport.groups.map(x => (
+                        <div key={x.g.id} className="space-y-0.5">
+                          <div className="flex items-baseline justify-between gap-2 text-xs">
+                            <span className="text-primary truncate">{groupName(x.g)}</span>
+                            <span className="font-mono text-primary shrink-0">{fmt(x.total)} <span className="text-tertiary text-[10px]">· {t('perMonthShort', { amount: fmt(x.avg) })}</span></span>
+                          </div>
+                          <div className="h-1.5 rounded-full bg-subtle overflow-hidden">
+                            <div className="h-full rounded-full" style={{ width: `${x.total / yearReport.max * 100}%`, background: GROUP_HEX[x.g.color] }}></div>
+                          </div>
+                        </div>
+                      ))}
+                      <p className="text-[10px] text-tertiary">{t('reportAvgNote', { n: yearReport.activeMonths })}</p>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="rounded-lg border border-subtle bg-surface p-4 space-y-1.5">
+                        <div className="text-[11px] uppercase tracking-wide font-semibold text-secondary">{t('reportTopItems')}</div>
+                        {yearReport.items.map((x, i) => (
+                          <div key={x.cat} className="flex items-baseline justify-between gap-2 text-xs">
+                            <span className="text-primary truncate"><span className="text-tertiary font-mono mr-1.5">{i + 1}</span>{x.cat}</span>
+                            <span className="font-mono text-primary shrink-0">{fmt(x.total)}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="rounded-lg border border-subtle bg-surface p-4 space-y-1.5">
+                        <div className="text-[11px] uppercase tracking-wide font-semibold text-secondary">{t('whoPaidTitle')}</div>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {yearReport.byWho.map(x => (
+                            <div key={x.w} className="p-2 rounded bg-subtle">
+                              <div className="text-[10px] text-secondary truncate">{whoLabel(x.w)}</div>
+                              <div className="font-mono text-sm font-semibold text-primary">{fmt(x.total)}</div>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-tertiary">{t('reportWhoNote')}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {chartBox}
               </div>
             ) : (
@@ -2793,11 +3536,43 @@
                           </button>
                         </div>
 
+                        {/* Due soon */}
+                        {dueSoon.length > 0 && (
+                          <div className={`${mobileTab === 'cockpit' ? 'block' : 'hidden lg:block'} rounded-lg border border-subtle bg-surface p-3 space-y-1.5`}>
+                            <div className="flex items-center justify-between px-1">
+                              <span className="text-[11px] uppercase tracking-wide font-semibold text-secondary">{t('dueTitle')}</span>
+                              <span className="text-[11px] font-mono text-secondary">{fmt(dueSoon.reduce((sum, x) => sum + x.amount, 0))}</span>
+                            </div>
+                            {dueSoon.slice(0, 6).map(x => (
+                              <div key={`${x.cat}|${x.m}|${x.yr}`} className="grid grid-cols-[22px_minmax(0,1fr)_auto] items-center gap-2 px-1 py-0.5">
+                                <button
+                                  onClick={() => updateNode('expenses', x.cat, x.yr, x.m, 'actual', x.amount)}
+                                  aria-label={t('markPaidAria', { name: x.cat })}
+                                  className="w-[20px] h-[20px] rounded-full border-[1.5px] border-strong text-transparent hover:border-notion-green hover:text-notion-green text-[10px] leading-none"
+                                >✓</button>
+                                <div className="min-w-0">
+                                  <div className="text-xs text-primary truncate">{x.cat}</div>
+                                  <div className={`text-[10px] ${x.overdue ? 'text-notion-red font-medium' : 'text-tertiary'}`}>
+                                    {x.overdue ? t('dueOverdue', { day: x.day, month: formatMonth(x.m, lang) })
+                                      : x.day ? t('dueOnDay', { day: x.day, month: formatMonth(x.m, lang) })
+                                      : t('dueInMonth', { month: formatMonth(x.m, lang) })}
+                                  </div>
+                                </div>
+                                <span className="font-mono text-xs text-primary">{fmtCents(x.amount)}</span>
+                              </div>
+                            ))}
+                            {dueSoon.length > 6 && <div className="text-[10px] text-tertiary px-1">{t('dueMore', { n: dueSoon.length - 6 })}</div>}
+                          </div>
+                        )}
+
                         {/* This month: received, paid, spent */}
                         <div className={`${mobileTab === 'cockpit' ? 'block' : 'hidden lg:block'} rounded-lg border border-subtle bg-surface p-4 space-y-3`}>
                           <div className="flex items-center justify-between">
                             <span className="text-[11px] uppercase tracking-wide font-semibold text-secondary">{t('thisMonth')}</span>
-                            <button onClick={() => setBreakdownModal(true)} className="text-[11px] text-notion-blue hover:underline">🧾 {t('breakdownBtn')}</button>
+                            <span className="flex items-center gap-3">
+                              <button onClick={() => { setTxWhoFilter('all'); setTxModal(true); }} className="text-[11px] text-notion-blue hover:underline">📋 {t('txBtn')}</button>
+                              <button onClick={() => setBreakdownModal(true)} className="text-[11px] text-notion-blue hover:underline">🧾 {t('breakdownBtn')}</button>
+                            </span>
                           </div>
                           {meters.map(mt => (
                             <div key={mt.label} className="space-y-1">
@@ -2812,6 +3587,40 @@
                             </div>
                           ))}
                         </div>
+
+                        {/* Forecast: where the balance is heading */}
+                        {forecast.length > 1 && (() => {
+                          const vals = forecast.map(r => r.endProjectedBalance);
+                          const lo = Math.min(0, ...vals), hi = Math.max(0, ...vals);
+                          const range = hi - lo || 1;
+                          const H = 90, W = 300, pad = 4, bw = (W - pad * 2) / forecast.length;
+                          const y = (v) => pad + (hi - v) / range * (H - pad * 2);
+                          const low = forecast.reduce((a, b) => b.endProjectedBalance < a.endProjectedBalance ? b : a);
+                          return (
+                            <div className={`${mobileTab === 'cockpit' ? 'block' : 'hidden lg:block'} rounded-lg border border-subtle bg-surface p-4 space-y-2`}>
+                              <span className="text-[11px] uppercase tracking-wide font-semibold text-secondary">{t('forecastTitle')}</span>
+                              <svg viewBox={`0 0 ${W} ${H + 16}`} className="w-full h-auto" role="img" aria-label={t('forecastTitle')}>
+                                <line x1="0" x2={W} y1={y(0)} y2={y(0)} stroke="currentColor" className="text-tertiary" strokeWidth="1" strokeDasharray="3 3" />
+                                {forecast.map((r, i) => {
+                                  const v = r.endProjectedBalance;
+                                  const top = Math.min(y(v), y(0)), h = Math.max(1.5, Math.abs(y(v) - y(0)));
+                                  return (
+                                    <g key={r.key}>
+                                      <rect x={pad + i * bw + bw * 0.18} y={top} width={bw * 0.64} height={h} rx="3"
+                                        fill={v < 0 ? '#e03e3e' : r === low ? '#cb912f' : '#0f7b6c'} opacity={r === low ? 1 : 0.75} />
+                                      <text x={pad + i * bw + bw / 2} y={H + 13} textAnchor="middle" fontSize="10" fill="currentColor" className="text-tertiary">
+                                        {formatMonth(r.month, lang)}
+                                      </text>
+                                    </g>
+                                  );
+                                })}
+                              </svg>
+                              <p className={`text-[11px] ${low.endProjectedBalance < 0 ? 'text-notion-red font-medium' : 'text-secondary'}`}>
+                                {t(low.endProjectedBalance < 0 ? 'forecastNegative' : 'forecastLow', { amount: fmt(low.endProjectedBalance), month: monthLabel(low.year, low.month) })}
+                              </p>
+                            </div>
+                          );
+                        })()}
 
                         {/* Income */}
                         <div className={`${mobileTab === 'incomes' ? 'block' : 'hidden lg:block'} rounded-lg border border-subtle bg-surface p-1.5`}>
@@ -2833,6 +3642,74 @@
                         </div>
 
                         <div className={`${mobileTab === 'cockpit' ? 'block' : 'hidden lg:block'} space-y-3`}>
+                          {/* Set aside for irregular and upcoming one-time costs */}
+                          {setAsides.rows.length > 0 && (
+                            <div className="rounded-lg border border-subtle bg-surface p-4 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[11px] uppercase tracking-wide font-semibold text-secondary">{t('setAsideTitle')}</span>
+                                <span className="text-xs font-mono font-semibold text-primary">{t('perMonthShort', { amount: fmtCents(setAsides.total) })}</span>
+                              </div>
+                              <p className="text-[10px] text-tertiary leading-snug">{t('setAsideHint')}</p>
+                              {setAsides.rows.map(r => (
+                                <div key={r.cat} className="flex items-center justify-between gap-2 text-xs">
+                                  <div className="min-w-0">
+                                    <div className="text-primary truncate">{r.cat}</div>
+                                    <div className="text-[10px] text-tertiary">
+                                      {fmtCents(r.amount)} · {r.kind === 'once' ? t('setAsideOnce', { month: monthLabel(r.next.yr, r.next.m) }) : t('setAsideRhythm', { n: r.count, month: monthLabel(r.next.yr, r.next.m) })}
+                                    </div>
+                                  </div>
+                                  <span className="font-mono text-primary shrink-0">{t('perMonthShort', { amount: fmtCents(r.perMonth) })}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Savings goals */}
+                          <div className="rounded-lg border border-subtle bg-surface p-4 space-y-2.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] uppercase tracking-wide font-semibold text-secondary">{t('goalsTitle')}</span>
+                              <button onClick={() => setGoalModal({ id: null, name: '', target: '', saved: '', deadline: '' })} className="text-[11px] text-notion-blue hover:underline">
+                                {t('goalNew')}
+                              </button>
+                            </div>
+                            {data.goals.length === 0 && <p className="text-[11px] text-tertiary">{t('goalsEmpty')}</p>}
+                            {data.goals.map(g => {
+                              const left = Math.max(0, g.target - g.saved);
+                              const months = monthsUntil(g.deadline);
+                              const pct = g.target > 0 ? Math.min(100, g.saved / g.target * 100) : 0;
+                              return (
+                                <div key={g.id} className="space-y-1">
+                                  <div className="flex items-baseline justify-between gap-2 text-xs">
+                                    <button onClick={() => setGoalModal({ id: g.id, name: g.name, target: String(g.target), saved: String(g.saved), deadline: g.deadline || '' })}
+                                      className="font-medium text-primary truncate text-left hover:underline">{g.name}</button>
+                                    <span className="font-mono text-primary shrink-0">{fmt(g.saved)} <span className="text-tertiary">/ {fmt(g.target)}</span></span>
+                                  </div>
+                                  <div className="h-1.5 rounded-full bg-subtle overflow-hidden">
+                                    <div className="h-full rounded-full bg-notion-green transition-all" style={{ width: `${pct}%` }}></div>
+                                  </div>
+                                  <div className="flex items-center justify-between gap-2 text-[10px] text-tertiary">
+                                    <span>
+                                      {left <= 0 ? t('goalReached')
+                                        : months ? t('goalPerMonth', { amount: fmtCents(left / months), month: keyLabel(g.deadline) })
+                                        : t('goalLeft', { amount: fmtCents(left) })}
+                                    </span>
+                                    {depositFor !== g.id && (
+                                      <button onClick={() => { setDepositFor(g.id); setDepositAmount(''); }} className="text-notion-blue text-[11px] hover:underline">{t('goalDeposit')}</button>
+                                    )}
+                                  </div>
+                                  {depositFor === g.id && (
+                                    <form onSubmit={(e) => { e.preventDefault(); depositGoal(g.id); }} className="flex gap-1.5">
+                                      <input autoFocus inputMode="decimal" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} placeholder="0,00 €"
+                                        aria-label={t('goalDeposit')} className="flex-1 min-w-0 bg-subtle border border-strong rounded px-2 py-1 font-mono text-xs text-right text-primary outline-none" />
+                                      <button type="submit" className="px-2.5 py-1 rounded bg-primary text-surface text-xs font-semibold">{t('addBtn')}</button>
+                                      <button type="button" onClick={() => setDepositFor(null)} className="px-2 py-1 rounded bg-subtle text-secondary text-xs">{t('cancelBtn')}</button>
+                                    </form>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+
                   {/* IOU & DEBT TRACKER */}
                   <div className="rounded-lg border border-subtle bg-surface p-3.5 space-y-3">
                     <div className="flex items-center justify-between gap-2 border-b border-subtle pb-2">
@@ -2846,29 +3723,9 @@
                       </div>
                     </div>
 
-                    <div className="p-3 rounded-lg bg-subtle/70 border border-subtle flex flex-col gap-2.5 text-xs">
-                      <div className="flex items-start gap-2">
-                        <span className="text-amber-500 text-sm mt-0.5">💡</span>
-                        <div>
-                          <div className="font-semibold text-primary">{t('iouSisterTip')}</div>
-                          <div className="text-[11px] text-secondary">
-                            {t('iouSisterHint', {
-                              amount: fmt(900),
-                              half: fmt(450),
-                              month: formatMonth(selectedMonth, lang),
-                              m1: monthLabel(pickLoanMonth(1).yr, pickLoanMonth(1).m),
-                              m2: monthLabel(pickLoanMonth(2).yr, pickLoanMonth(2).m)
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        onClick={openLoanModal}
-                        className="px-3 py-1.5 bg-primary text-surface rounded-md text-xs font-semibold hover:opacity-90 transition self-start shadow-sm text-left"
-                      >
-                        {t('iouSisterBtn')}
-                      </button>
-                    </div>
+                    <button onClick={openLoanModal} className="text-[11px] text-notion-blue hover:underline">
+                      ⚡ {t('iouLoanLink')}
+                    </button>
 
                     <div className="flex flex-col gap-1.5 pt-1">
                       <select
@@ -2905,8 +3762,12 @@
                       <div className="grid grid-cols-1 gap-2 pt-1">
                         {activeIous.map(item => {
                           const isBorrowed = item.type === 'borrowed';
+                          const repayCat = repayItemOf(item);
+                          const repaid = repaidOf(item);
+                          const total = parseFloat(item.amount) || 0;
                           return (
-                            <div key={item.id} className="p-2.5 rounded border border-subtle bg-surface-elevated flex items-center justify-between text-xs">
+                            <div key={item.id} className="p-2.5 rounded border border-subtle bg-surface-elevated space-y-1.5 text-xs">
+                            <div className="flex items-center justify-between">
                               <div>
                                 <div className="font-semibold text-primary">{item.person}</div>
                                 <div className="text-[10px] text-tertiary">
@@ -2934,6 +3795,24 @@
                                   ✕
                                 </button>
                               </div>
+                            </div>
+                            {isBorrowed && (repayCat ? (
+                              <div className="space-y-1">
+                                <div className="h-1.5 rounded-full bg-subtle overflow-hidden">
+                                  <div className="h-full rounded-full bg-notion-green" style={{ width: `${total > 0 ? Math.min(100, repaid / total * 100) : 0}%` }}></div>
+                                </div>
+                                <div className="text-[10px] text-tertiary">{t('iouRepaid', { repaid: fmt(repaid), total: fmt(total), item: repayCat })}</div>
+                              </div>
+                            ) : (
+                              <select
+                                value=""
+                                onChange={(e) => { const v = e.target.value; if (v) mutate(d => { const x = d.ious.find(i => i.id === item.id); if (x) x.repayCat = v; }); }}
+                                className="w-full bg-subtle border border-subtle rounded px-2 py-1 text-[11px] text-secondary"
+                              >
+                                <option value="">{t('iouLinkRepay')}</option>
+                                {data.categories.expenses.map(c => <option key={c} value={c}>{c}</option>)}
+                              </select>
+                            ))}
                             </div>
                           );
                         })}
@@ -2968,6 +3847,9 @@
                             <button onClick={() => handleOpenQuickAdd('expenses')} className="text-[11px] font-semibold px-2.5 py-1 rounded bg-primary text-surface hover:opacity-90">
                               {t('addItemBtn')}
                             </button>
+                            <button onClick={openImport} className="text-[11px] font-medium px-2.5 py-1 rounded border border-subtle bg-surface text-primary hover:bg-subtle">
+                              {t('importBtn')}
+                            </button>
                             <button onClick={() => openGroupModal()} className="text-[11px] font-medium px-2.5 py-1 rounded border border-subtle bg-surface text-primary hover:bg-subtle">
                               {t('newGroup')}
                             </button>
@@ -2998,10 +3880,15 @@
           {toastMsg && (
             <div
               role="status"
-              className="fixed z-[60] left-1/2 -translate-x-1/2 bg-primary text-surface text-xs rounded-lg px-3.5 py-2.5 shadow-lg max-w-[calc(100%-32px)]"
+              className="fixed z-[60] left-1/2 -translate-x-1/2 bg-primary text-surface text-xs rounded-lg pl-3.5 pr-2 py-2 shadow-lg max-w-[calc(100%-32px)] flex items-center gap-3"
               style={{ bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}
             >
-              {toastMsg}
+              <span className="py-0.5">{toastMsg.text}</span>
+              {toastMsg.undo && (
+                <button onClick={handleUndo} className="shrink-0 px-2 py-1 rounded font-semibold underline underline-offset-2">
+                  {t('undoBtn')}
+                </button>
+              )}
             </div>
           )}
 
@@ -3050,6 +3937,232 @@
             </Modal>
           )}
 
+          {/* SAVINGS GOAL DIALOG */}
+          {goalModal && (
+            <Modal onClose={() => setGoalModal(null)} title={<><span>🎯</span><span>{goalModal.id ? t('goalEdit') : t('goalNewTitle')}</span></>}>
+              <div>
+                <label className="text-[10px] text-secondary font-medium block mb-1">{t('groupNameLabel')}</label>
+                <input autoFocus value={goalModal.name} onChange={(e) => setGoalModal(g => ({ ...g, name: e.target.value }))} placeholder={t('goalNamePlaceholder')}
+                  className="w-full bg-subtle border border-subtle rounded px-2.5 py-1.5 text-primary outline-none focus:border-strong font-medium" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('goalTarget')}</label>
+                  <MoneyInput value={goalModal.target} onChange={(v) => setGoalModal(g => ({ ...g, target: v }))} className="py-1.5" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('goalSaved')}</label>
+                  <MoneyInput value={goalModal.saved} onChange={(v) => setGoalModal(g => ({ ...g, saved: v }))} className="py-1.5" />
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] text-secondary font-medium block mb-1">{t('goalDeadline')}</label>
+                <select value={goalModal.deadline} onChange={(e) => setGoalModal(g => ({ ...g, deadline: e.target.value }))}
+                  className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-xs text-primary outline-none">
+                  <option value="">{t('goalNoDeadline')}</option>
+                  {TIMELINE.map(({ yr, m }) => <option key={timelineKey(yr, m)} value={timelineKey(yr, m)}>{formatMonth(m, lang)} {yr}</option>)}
+                </select>
+              </div>
+              <p className="text-[10px] text-tertiary">{t('goalHint')}</p>
+              <div className="flex gap-2 pt-2 border-t border-subtle">
+                {goalModal.id && (
+                  <button
+                    onClick={() => {
+                      if (!confirm(t('goalDeleteConfirm', { name: goalModal.name }))) return;
+                      mutate(d => { d.goals = d.goals.filter(x => x.id !== goalModal.id); });
+                      setGoalModal(null);
+                    }}
+                    className="px-3 py-1.5 rounded bg-rose-500/10 border border-rose-500/20 text-notion-red"
+                  >🗑</button>
+                )}
+                <button onClick={() => setGoalModal(null)} className="flex-1 py-1.5 bg-subtle text-secondary rounded hover:text-primary">{t('cancelBtn')}</button>
+                <button onClick={saveGoal} disabled={!goalModal.name.trim() || parseAmount(goalModal.target) === null}
+                  className="flex-1 py-1.5 bg-primary text-surface font-semibold rounded disabled:opacity-40">{t('groupSave')}</button>
+              </div>
+            </Modal>
+          )}
+
+          {/* BANK IMPORT */}
+          {importModal && (() => {
+            const m = importModal;
+            const close = () => setImportModal(null);
+            if (m.step === 'pick') {
+              return (
+                <Modal size="max-w-lg" onClose={close} title={<><span>⬇</span><span>{t('importTitle')}</span></>}>
+                  <div>
+                    <div className="text-[10px] text-secondary font-medium mb-1">{t('importAccount')}</div>
+                    <div className="grid grid-cols-3 gap-1 bg-subtle p-0.5 rounded border border-subtle">
+                      {WHO.map(w => (
+                        <button
+                          key={w}
+                          type="button"
+                          aria-pressed={m.account === w}
+                          onClick={() => setImportModal(x => ({ ...x, account: w }))}
+                          className={`py-1.5 rounded text-[11px] ${m.account === w ? 'bg-surface text-primary font-semibold shadow-sm' : 'text-secondary'}`}
+                        >
+                          {w === 'joint' ? t('importJoint') : t('importOwn', { name: whoLabel(w) })}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-secondary font-medium block mb-1">{t('importFrom')}</label>
+                    <input
+                      type="date"
+                      value={m.fromDate}
+                      onChange={(e) => setImportModal(x => ({ ...x, fromDate: e.target.value }))}
+                      className="bg-subtle border border-subtle rounded px-2 py-1 text-xs text-primary"
+                    />
+                    <p className="text-[10px] text-tertiary mt-1">{t('importFromHint')}</p>
+                  </div>
+                  <label className="block p-4 rounded-lg border-2 border-dashed border-strong text-center cursor-pointer hover:border-primary text-primary font-medium">
+                    <input
+                      type="file"
+                      accept=".csv,.xlsx,.xls,text/csv"
+                      className="hidden"
+                      onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; handleStatementFile(f); }}
+                    />
+                    📄 {t('importChoose')}
+                  </label>
+                  {m.error && <p className="text-[11px] text-notion-red">{m.error}</p>}
+                  <p className="text-[11px] text-secondary leading-relaxed p-2 rounded bg-subtle/60">{t('importHowTo')}</p>
+                </Modal>
+              );
+            }
+            const rows = m.rows;
+            const open = rows.filter(r => !r.skip);
+            const skipped = rows.filter(r => r.skip);
+            const chosen = open.filter(r => r.include && r.target);
+            const dup = skipped.filter(r => r.skip === 'dup').length;
+            const transfers = open.filter(r => r.ownTransfer).length;
+            const directionOf = (r) => r.amount > 0 && !/REFUND|ERSTATTUNG|RÜCKERSTATTUNG/.test(r.kind) ? 'incomes' : 'expenses';
+            return (
+              <Modal size="max-w-2xl" onClose={close} title={<><span>⬇</span><span>{t('importTitle')}</span></>}>
+                <p className="text-[11px] text-secondary">
+                  {t('importSummary', { file: m.fileName, n: rows.length, ready: chosen.length, dup, skipped: skipped.length - dup })}
+                </p>
+                {transfers > 0 && <p className="text-[11px] text-notion-blue">{t('importTransfersNote', { n: transfers })}</p>}
+                <div className="flex gap-3 text-[11px]">
+                  <button onClick={() => setImportModal(x => ({ ...x, rows: x.rows.map(r => ({ ...r, include: !r.skip && !r.ownTransfer && !!r.target })) }))} className="text-notion-blue hover:underline">
+                    {t('importSelectAll')}
+                  </button>
+                  <button onClick={() => setImportModal(x => ({ ...x, rows: x.rows.map(r => ({ ...r, include: false })) }))} className="text-notion-blue hover:underline">
+                    {t('importSelectNone')}
+                  </button>
+                </div>
+                <div className="max-h-[55vh] overflow-y-auto border border-subtle rounded divide-y divide-subtle">
+                  {open.length === 0 && <p className="p-3 text-[11px] text-tertiary">{t('importNothingNew')}</p>}
+                  {open.map(r => {
+                    const type = directionOf(r);
+                    return (
+                      <div key={r.i} className={`grid grid-cols-[20px_minmax(0,1fr)] gap-2 items-start p-2 ${r.include ? '' : 'opacity-60'}`}>
+                        <input
+                          type="checkbox"
+                          checked={r.include}
+                          disabled={!r.target}
+                          onChange={(e) => setImportRow(r.i, { include: e.target.checked })}
+                          aria-label={r.desc}
+                          className="mt-1 w-4 h-4"
+                        />
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className="text-xs font-medium text-primary truncate">{r.desc}</span>
+                            <span className={`font-mono text-xs shrink-0 ${type === 'incomes' ? 'text-notion-green' : 'text-primary'}`}>
+                              {type === 'incomes' ? '+' : '−'}{fmtCents(Math.abs(r.amount) + (type === 'expenses' ? Math.abs(r.fee || 0) : 0))}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-tertiary">
+                            {fmtDay(r.date)}{r.kind ? ` · ${r.kind.toLowerCase().replace(/_/g, ' ')}` : ''}
+                            {r.ownTransfer && <span className="ml-1.5 px-1.5 py-px rounded bg-notion-tagBlue text-notion-blue font-medium">{t('importOwnTransfer')}</span>}
+                          </div>
+                          <select
+                            value={r.target}
+                            onChange={(e) => setImportRow(r.i, { target: e.target.value, include: !!e.target.value })}
+                            className="w-full bg-subtle border border-subtle rounded px-2 py-1 text-[11px] text-primary"
+                          >
+                            <option value="">{t('importSkipOption')}</option>
+                            {type === 'expenses'
+                              ? data.groups.map(g => (
+                                  <optgroup key={g.id} label={groupName(g)}>
+                                    {itemsInGroup(g.id).map(c => <option key={c} value={`item:${c}`}>{c}</option>)}
+                                    <option value={`new:${g.id}`}>＋ {t('importNewItem', { name: prettyPayee(r.desc) })}</option>
+                                  </optgroup>
+                                ))
+                              : (
+                                  <optgroup label={t('incomesHeader')}>
+                                    {data.categories.incomes.map(c => <option key={c} value={`item:${c}`}>{c}</option>)}
+                                    <option value="new:in">＋ {t('importNewItem', { name: prettyPayee(r.desc) })}</option>
+                                  </optgroup>
+                                )}
+                          </select>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {skipped.length > 0 && (
+                  <details className="text-[11px] text-tertiary">
+                    <summary className="cursor-pointer">{t('importSkippedList', { n: skipped.length })}</summary>
+                    <div className="mt-1 space-y-0.5 max-h-40 overflow-y-auto">
+                      {skipped.map(r => (
+                        <div key={r.i} className="truncate">{fmtDay(r.date)} · {r.desc} · {fmtCents(r.amount)} · {t('importSkip_' + r.skip)}</div>
+                      ))}
+                    </div>
+                  </details>
+                )}
+                <div className="flex gap-2 pt-2 border-t border-subtle">
+                  <button onClick={close} className="flex-1 py-1.5 bg-subtle text-secondary rounded hover:text-primary">{t('cancelBtn')}</button>
+                  <button
+                    disabled={!chosen.length}
+                    onClick={runImport}
+                    className="flex-1 py-1.5 bg-primary text-surface font-semibold rounded disabled:opacity-40"
+                  >
+                    {t('importRun', { n: chosen.length })}
+                  </button>
+                </div>
+              </Modal>
+            );
+          })()}
+
+          {/* ENTRIES OF THE MONTH */}
+          {txModal && (() => {
+            const all = [...monthTx('expenses'), ...monthTx('incomes')].sort((a, b) => a.date < b.date ? 1 : -1);
+            const shown = txWhoFilter === 'all' ? all : all.filter(x => x.who === txWhoFilter);
+            const spentBy = (w) => all.filter(x => x.type === 'expenses' && x.who === w).reduce((sum, x) => sum + x.amount, 0);
+            return (
+              <Modal size="max-w-lg" onClose={() => { setTxModal(false); setEditingTx(null); }} title={<><span>📋</span><span>{t('txModalTitle', { month: monthLabel(selectedYear, selectedMonth) })}</span></>}>
+                <div className="space-y-1">
+                  <div className="text-[10px] text-secondary">{t('whoPaidTitle')}</div>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {WHO.map(w => (
+                      <div key={w} className="p-2 rounded bg-subtle">
+                        <div className="text-[10px] text-secondary truncate">{whoLabel(w)}</div>
+                        <div className="font-mono text-sm font-semibold text-primary">{fmtCents(spentBy(w))}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {['all', ...WHO].map(w => (
+                    <button
+                      key={w}
+                      onClick={() => setTxWhoFilter(w)}
+                      aria-pressed={txWhoFilter === w}
+                      className={`px-2.5 py-1 rounded-full text-[11px] border ${txWhoFilter === w ? 'border-primary text-primary font-semibold' : 'border-subtle text-secondary'}`}
+                    >
+                      {w === 'all' ? t('filterAll') : whoLabel(w)}
+                    </button>
+                  ))}
+                </div>
+                {shown.length === 0 ? (
+                  <p className="text-[11px] text-tertiary">{t('txEmpty')}</p>
+                ) : (
+                  <div className="space-y-0.5 max-h-[50vh] overflow-y-auto">{shown.map(x => renderTxRow(x, true))}</div>
+                )}
+              </Modal>
+            );
+          })()}
+
           {/* RECEIPT SHEET */}
           {receiptSheet && (() => {
             const variableGroups = data.groups.filter(g => g.kind === 'variable');
@@ -3069,6 +4182,25 @@
                   <span className="font-mono text-xl text-tertiary">€</span>
                 </label>
                 {receiptHint && <p className="text-[11px] text-notion-red">{t('receiptNeedAmount')}</p>}
+                <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-1.5 items-center">
+                  <input
+                    type="date"
+                    value={receiptDetails.date}
+                    onChange={(e) => setReceiptDetails(p => ({ ...p, date: e.target.value }))}
+                    aria-label={t('dateLabel')}
+                    className="bg-subtle border border-subtle rounded px-2 py-1 text-xs text-primary"
+                  />
+                  <input
+                    value={receiptDetails.note}
+                    onChange={(e) => setReceiptDetails(p => ({ ...p, note: e.target.value }))}
+                    placeholder={t('noteLabel')}
+                    className="min-w-0 bg-subtle border border-subtle rounded px-2 py-1 text-xs text-primary"
+                  />
+                </div>
+                <div>
+                  <div className="text-[10px] text-secondary mb-1">{t('whoLabel')}</div>
+                  <WhoPicker value={receiptDetails.who} onChange={(w) => setReceiptDetails(p => ({ ...p, who: w }))} />
+                </div>
                 <div className="text-[11px] text-secondary">{t('receiptWhere')}</div>
                 {withItems.length === 0 ? (
                   <p className="text-[11px] text-tertiary">{t('receiptNoItems')}</p>
@@ -3714,6 +4846,21 @@
                   </div>
 
                   <div className="space-y-1.5">
+                    <label className="text-[10px] text-secondary block">{t('membersLabel')}</label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {['me', 'partner'].map(w => (
+                        <input
+                          key={w}
+                          value={data.members[w]}
+                          onChange={(e) => { const v = e.target.value; mutate(d => { d.members[w] = v; }); }}
+                          aria-label={t('membersLabel')}
+                          className="min-w-0 bg-subtle border border-subtle rounded px-2 py-1.5 text-primary outline-none focus:border-strong"
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
                     <label className="text-[10px] text-secondary block">{t('startingCapital')}</label>
                     <MoneyInput
                       value={data.startingCapital || 0}
@@ -3749,6 +4896,12 @@
 
                   <div className="space-y-1.5 pt-2 border-t border-subtle">
                     <label className="text-[10px] text-secondary block mb-1">{t('backupSection')}</label>
+                    <button
+                      onClick={() => { setIsBurgerOpen(false); openImport(); }}
+                      className="w-full bg-primary text-surface font-semibold py-1.5 rounded flex items-center justify-center gap-1.5"
+                    >
+                      ⬇ {t('importTitle')}
+                    </button>
                     <button
                       onClick={() => {
                         const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -3788,6 +4941,30 @@
                       }}
                       className="hidden"
                     />
+                  </div>
+
+                  <div className="space-y-1 pt-2 border-t border-subtle">
+                    <label className="text-[10px] text-secondary block">{t('autoBackups')}</label>
+                    {backups.length === 0 ? (
+                      <p className="text-[10px] text-tertiary">{t('autoBackupsEmpty')}</p>
+                    ) : backups.map(b => (
+                      <div key={b.day} className="flex items-center justify-between gap-2 text-[11px]">
+                        <span className="font-mono text-secondary">{b.day.split('-').reverse().join('.')}</span>
+                        <button
+                          onClick={() => {
+                            if (!confirm(t('autoBackupConfirm', { day: b.day.split('-').reverse().join('.') }))) return;
+                            undoRef.current = dataRef.current;
+                            replaceState(normalizeState(b.data));
+                            setIsBurgerOpen(false);
+                            showToast(t('autoBackupRestored'), true);
+                          }}
+                          className="text-notion-blue hover:underline"
+                        >
+                          {t('autoBackupRestore')}
+                        </button>
+                      </div>
+                    ))}
+                    <p className="text-[10px] text-tertiary">{t('autoBackupsHint')}</p>
                   </div>
                 </div>
 
