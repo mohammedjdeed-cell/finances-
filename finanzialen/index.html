@@ -5,12 +5,12 @@
   <!-- The app has its own DE/EN switch; browser translation rewrites React's text nodes and shows stale numbers. -->
   <meta name="google" content="notranslate">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Haushaltsbuch</title>
+  <title>Jdeeds' Household</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#191919">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Budget">
+  <meta name="apple-mobile-web-app-title" content="Jdeeds">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -425,7 +425,7 @@
 
     const translations = {
       de: {
-        title: "Haushaltsbuch",
+        title: "Jdeeds' Household",
         subtitle: "Persönlicher Cashflow & Budget",
         startingCapital: "Startguthaben (Konto & Bar)",
         startingMonthLabel: "Stand zu Beginn von",
@@ -662,12 +662,14 @@
         importRun: "{{n}} Buchungen importieren",
         importDone: "{{n}} Buchungen importiert",
         importOwnTransfer: "Eigene Umbuchung",
+        importReplacesTick: "ersetzt dein Häkchen",
         importTransfersNote: "{{n}} Umbuchungen zwischen euren eigenen Konten erkannt. Sie sind weder Einnahme noch Ausgabe und bleiben deshalb abgewählt.",
         dueTitle: "Fällig bald",
         dueOverdue: "Überfällig seit {{day}}. {{month}}",
         dueOnDay: "Fällig am {{day}}. {{month}}",
         dueInMonth: "Im {{month}}",
-        dueMore: "+ {{n}} weitere",
+        dueMore: "+ {{n}} weitere anzeigen",
+        dueLess: "Weniger anzeigen",
         forecastTitle: "Ausblick: Stand am Monatsende",
         forecastLow: "Tiefster Stand: {{amount}} Ende {{month}}",
         forecastNegative: "Achtung: Ende {{month}} wärst du bei {{amount}}",
@@ -778,7 +780,7 @@
         months: MONTH_NAMES.de
       },
       en: {
-        title: "Household Budget",
+        title: "Jdeeds' Household",
         subtitle: "Personal Cashflow & Ledger",
         startingCapital: "Starting Balance (Bank & Cash)",
         startingMonthLabel: "Balance at the start of",
@@ -1015,12 +1017,14 @@
         importRun: "Import {{n}} entries",
         importDone: "Imported {{n}} entries",
         importOwnTransfer: "Own transfer",
+        importReplacesTick: "replaces your tick",
         importTransfersNote: "{{n}} transfers between your own accounts found. They're neither income nor spending, so they stay unticked.",
         dueTitle: "Due soon",
         dueOverdue: "Overdue since {{month}} {{day}}",
         dueOnDay: "Due {{month}} {{day}}",
         dueInMonth: "In {{month}}",
-        dueMore: "+ {{n}} more",
+        dueMore: "+ Show {{n}} more",
+        dueLess: "Show less",
         forecastTitle: "Outlook: month-end balance",
         forecastLow: "Lowest point: {{amount}} at the end of {{month}}",
         forecastNegative: "Careful: at the end of {{month}} you'd be at {{amount}}",
@@ -1511,6 +1515,7 @@
       const [balanceModal, setBalanceModal] = useState(false);
       const [txModal, setTxModal] = useState(false);
       const [importModal, setImportModal] = useState(null);
+      const [dueExpanded, setDueExpanded] = useState(false);
       const [backups, setBackups] = useState([]);
       useEffect(() => {
         if (isBurgerOpen) IDB.get('backups').then(list => setBackups((list || []).slice().reverse()));
@@ -2379,6 +2384,11 @@
         const low = line.desc.toLowerCase();
         const byName = data.categories[type].find(c => { const n = cleanItemName(c); return n.length >= 3 && low.includes(n); });
         if (byName) return `item:${byName}`;
+        // Names rarely match exactly ("Vodafone GmbH" vs "Festnetz Vodafone"): one meaningful word is enough.
+        const GENERIC = ['from', 'payment', 'transfer', 'zahlung', 'konto', 'gmbh', 'card', 'karte', 'monat', 'month', 'sonstiges', 'other'];
+        const byWord = data.categories[type].find(c => cleanItemName(c).split(' ')
+          .some(w => w.length >= 4 && !GENERIC.includes(w) && low.includes(w)));
+        if (byWord) return `item:${byWord}`;
         if (type === 'incomes') return '';
         const hint = PAYEE_HINTS.find(([re]) => re.test(line.desc));
         if (hint && data.groups.some(g => g.id === hint[1])) return `new:${hint[1]}`;
@@ -2448,6 +2458,22 @@
         ...m, rows: m.rows.map(r => r.i === i ? { ...r, ...patch } : r)
       }));
 
+      // Fixed bills, one-time payments and incomes have a known amount; a tick sets it without an entry.
+      const isTickedByHand = (d, type, cat, date) => {
+        const pos = dateToMonth(date);
+        if (!pos) return false;
+        const meta = d.meta[type][cat];
+        const group = type === 'expenses' ? d.groups.find(g => g.id === meta?.bracket) : null;
+        if (type === 'expenses' && group?.kind === 'variable' && !meta?.oneTime) return false;
+        const node = d.values[pos.yr][type][cat]?.[pos.m];
+        if (!node || !(node.actual > 0)) return false;
+        return !d.tx.some(x => {
+          if (x.type !== type || x.cat !== cat) return false;
+          const p = dateToMonth(x.date);
+          return p && p.yr === pos.yr && p.m === pos.m;
+        });
+      };
+
       const ensureItem = (d, type, name, groupId) => {
         const existing = d.categories[type].find(c => c.toLowerCase() === name.toLowerCase());
         if (existing) return existing;
@@ -2476,6 +2502,11 @@
             if (r.target.startsWith('new:')) cat = ensureItem(d, type, prettyPayee(r.desc), r.target.slice(4));
             else cat = r.target.slice(5);
             if (!d.categories[type].includes(cat)) return;
+            // A bill ticked as paid by hand (no entries behind it) is replaced by the bank payment, not added to.
+            if (isTickedByHand(d, type, cat, r.date)) {
+              const pos = dateToMonth(r.date);
+              d.values[pos.yr][type][cat][pos.m].actual = 0;
+            }
             const tx = { id: newTxId(), date: r.date, type, cat, amount, who: account, note: r.desc, source: 'import' };
             d.tx.push(tx);
             applyTx(d, tx, +1);
@@ -3543,7 +3574,7 @@
                               <span className="text-[11px] uppercase tracking-wide font-semibold text-secondary">{t('dueTitle')}</span>
                               <span className="text-[11px] font-mono text-secondary">{fmt(dueSoon.reduce((sum, x) => sum + x.amount, 0))}</span>
                             </div>
-                            {dueSoon.slice(0, 6).map(x => (
+                            {(dueExpanded ? dueSoon : dueSoon.slice(0, 6)).map(x => (
                               <div key={`${x.cat}|${x.m}|${x.yr}`} className="grid grid-cols-[22px_minmax(0,1fr)_auto] items-center gap-2 px-1 py-0.5">
                                 <button
                                   onClick={() => updateNode('expenses', x.cat, x.yr, x.m, 'actual', x.amount)}
@@ -3561,7 +3592,11 @@
                                 <span className="font-mono text-xs text-primary">{fmtCents(x.amount)}</span>
                               </div>
                             ))}
-                            {dueSoon.length > 6 && <div className="text-[10px] text-tertiary px-1">{t('dueMore', { n: dueSoon.length - 6 })}</div>}
+                            {dueSoon.length > 6 && (
+                              <button onClick={() => setDueExpanded(v => !v)} aria-expanded={dueExpanded} className="text-[11px] text-notion-blue hover:underline px-1">
+                                {dueExpanded ? t('dueLess') : t('dueMore', { n: dueSoon.length - 6 })}
+                              </button>
+                            )}
                           </div>
                         )}
 
@@ -4074,6 +4109,9 @@
                           <div className="text-[10px] text-tertiary">
                             {fmtDay(r.date)}{r.kind ? ` · ${r.kind.toLowerCase().replace(/_/g, ' ')}` : ''}
                             {r.ownTransfer && <span className="ml-1.5 px-1.5 py-px rounded bg-notion-tagBlue text-notion-blue font-medium">{t('importOwnTransfer')}</span>}
+                            {r.target.startsWith('item:') && isTickedByHand(data, type, r.target.slice(5), r.date) && (
+                              <span className="ml-1.5 px-1.5 py-px rounded bg-notion-tagGreen text-notion-green font-medium">{t('importReplacesTick')}</span>
+                            )}
                           </div>
                           <select
                             value={r.target}
