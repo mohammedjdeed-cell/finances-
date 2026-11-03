@@ -1,7 +1,7 @@
 {
   "id": "HoueholdBudget",
-  "name": "Haushaltsbuch",
-  "short_name": "Budget",
+  "name": "Jdeeds' Household",
+  "short_name": "Jdeeds",
   "description": "Persönlicher Cashflow & Budget mit Cloud-Synchronisation",
   "lang": "de",
   "start_url": "./index.html",
