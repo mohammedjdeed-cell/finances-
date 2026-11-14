@@ -1782,8 +1782,8 @@
 
       const getTarget = (gid, yr, m) => data.targets?.[gid]?.[yr]?.[m] || 0;
 
-      // ---- Budget month from payday to payday ----
-      const payday = data.payday;
+      // Everything counts in the calendar month it happens (payday shifting switched off).
+      const payday = null;
       const isReceiptItem = (cat) => {
         const meta = getMeta('expenses', cat);
         const g = data.groups.find(x => x.id === meta.bracket);
@@ -1793,7 +1793,7 @@
       const isForNextItem = (type, cat) => {
         const meta = getMeta(type, cat);
         if (type === 'expenses' && isReceiptItem(cat)) return false;
-        return !!meta.forNext || (!!payday && !!meta.payDay && meta.payDay >= payday);
+        return false;
       };
       // Receipts dated on or after payday belong to the next budget month.
       const lateReceipts = useMemo(() => {
@@ -3814,9 +3814,6 @@
                               )}
                             </div>
                           )}
-                          {!usesShift && data.categories.incomes.length > 0 && (
-                            <p className="text-[10px] text-notion-blue leading-snug">{t('shiftTip')}</p>
-                          )}
                           <p className="text-[10px] text-tertiary leading-snug">{t('expectedRules')}</p>
                           <button onClick={openBalanceModal} className="text-[11px] text-notion-blue hover:underline">
                             ✎ {t('fixBalanceBtn')}
@@ -5004,27 +5001,6 @@
                 </div>
               </div>
 
-              {(activeEditCat.type === 'incomes' || (() => {
-                const g = data.groups.find(x => x.id === editCatForm.bracket);
-                return g && (g.kind !== 'variable' || editCatForm.isOneTime);
-              })()) && (
-                <label className="flex items-center justify-between gap-2 p-2 rounded bg-subtle border border-subtle cursor-pointer">
-                  <div>
-                    <span className="font-medium text-primary block">{activeEditCat.type === 'incomes' ? t('forNextLabel') : t('forNextExpLabel')}</span>
-                    <span className="text-[10px] text-secondary">{activeEditCat.type === 'incomes' ? t('forNextHelp') : t('forNextExpHelp')}</span>
-                    {payday && parseInt(editCatForm.pDay) >= payday && (
-                      <span className="block text-[10px] text-notion-blue mt-0.5">{t('forNextAuto', { day: editCatForm.pDay, payday })}</span>
-                    )}
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={!!editCatForm.forNext}
-                    onChange={(e) => setEditCatForm(prev => ({ ...prev, forNext: e.target.checked }))}
-                    className="w-4 h-4 rounded shrink-0"
-                  />
-                </label>
-              )}
-
               {(() => {
                 const lockedOnce = activeEditCat.type === 'expenses' &&
                   data.groups.find(g => g.id === editCatForm.bracket)?.kind === 'oneoff';
@@ -5229,21 +5205,6 @@
                         </button>
                       </div>
                     )}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] text-secondary block">{t('paydayLabel')}</label>
-                    <select
-                      value={payday || ''}
-                      onChange={(e) => { const v = parseInt(e.target.value); mutate(d => { d.payday = isNaN(v) ? null : v; }); }}
-                      className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-primary outline-none"
-                    >
-                      <option value="">{t('paydayOff')}</option>
-                      {Array.from({ length: 17 }, (_, i) => i + 15).map(d => (
-                        <option key={d} value={d}>{t('paydayOption', { day: d, until: d - 1 })}</option>
-                      ))}
-                    </select>
-                    <p className="text-[10px] text-tertiary leading-snug">{t('paydayHelp')}</p>
                   </div>
 
                   <div className="space-y-1.5">
