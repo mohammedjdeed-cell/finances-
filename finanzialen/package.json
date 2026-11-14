@@ -1,0 +1,10 @@
+{
+  "name": "jdeeds-household",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
+    "jose": "^6.2.17"
+  }
+}

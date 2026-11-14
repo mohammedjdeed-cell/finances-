@@ -847,6 +847,24 @@
         entriesLabel: "Einträge ({{n}})",
         txBtn: "Buchungen",
         logBtn: "Verlauf",
+        askBtn: "Fragen",
+        askTitle: "Haushalts-Assistent",
+        askIntro: "Frag alles zu euren Zahlen – auf Deutsch, Englisch oder Arabisch. Der Assistent liest eure Einträge, ändert aber nichts.",
+        askEx1: "Wie viel haben wir seit September für Lebensmittel ausgegeben?",
+        askEx2: "Warum ist der November niedriger als der Oktober?",
+        askEx3: "Passt etwas in diesem Monat nicht zusammen?",
+        askPlaceholder: "Frage eingeben …",
+        askSend: "Senden",
+        askNew: "Neues Gespräch",
+        askThinking: "Denkt nach …",
+        askPrivacy: "Eure Zahlen werden für die Antwort an Claude (Anthropic) gesendet.",
+        askNeedSignIn: "Bitte zuerst mit Google anmelden (Einstellungen).",
+        askErrSetup: "Der Assistent ist noch nicht eingerichtet (API-Schlüssel in Vercel fehlt oder ist falsch).",
+        askErrNotAllowed: "Dieses Google-Konto ist für den Assistenten nicht freigegeben (ALLOWED_EMAILS in Vercel).",
+        askErrBusy: "Gerade zu viele Anfragen – bitte gleich nochmal versuchen.",
+        askErrRefused: "Darauf kann der Assistent nicht antworten. Bitte anders formulieren.",
+        askErrOffline: "Keine Internetverbindung.",
+        askErrGeneric: "Das hat nicht geklappt. Bitte nochmal versuchen.",
         logTitle: "Verlauf der Änderungen",
         logAll: "Alle",
         logEmpty: "Noch keine Änderungen gespeichert. Ab jetzt wird jede Änderung hier mit Datum festgehalten.",
@@ -1258,6 +1276,24 @@
         entriesLabel: "Entries ({{n}})",
         txBtn: "Entries",
         logBtn: "History",
+        askBtn: "Ask",
+        askTitle: "Household assistant",
+        askIntro: "Ask anything about your numbers – in English, German or Arabic. The assistant reads your entries but never changes them.",
+        askEx1: "How much did we spend on groceries since September?",
+        askEx2: "Why is November lower than October?",
+        askEx3: "Does anything not add up this month?",
+        askPlaceholder: "Type a question …",
+        askSend: "Send",
+        askNew: "New conversation",
+        askThinking: "Thinking …",
+        askPrivacy: "Your numbers are sent to Claude (Anthropic) to answer.",
+        askNeedSignIn: "Please sign in with Google first (Settings).",
+        askErrSetup: "The assistant isn't set up yet (API key in Vercel missing or wrong).",
+        askErrNotAllowed: "This Google account isn't allowed to use the assistant (ALLOWED_EMAILS in Vercel).",
+        askErrBusy: "Too many requests right now – please try again shortly.",
+        askErrRefused: "The assistant can't answer that. Please rephrase.",
+        askErrOffline: "No internet connection.",
+        askErrGeneric: "That didn't work. Please try again.",
         logTitle: "Change history",
         logAll: "All",
         logEmpty: "No changes saved yet. From now on every change is kept here with its date.",
@@ -1725,6 +1761,11 @@
       const [balanceModal, setBalanceModal] = useState(false);
       const [txModal, setTxModal] = useState(false);
       const [logModal, setLogModal] = useState(false);
+      const [askModal, setAskModal] = useState(false);
+      const [askChat, setAskChat] = useState([]); // [{role, content, text}]
+      const [askInput, setAskInput] = useState('');
+      const [askBusy, setAskBusy] = useState(false);
+      const [askError, setAskError] = useState('');
       const [logScope, setLogScope] = useState('month');
       const [balanceView, setBalanceView] = useState('end');
       const [importModal, setImportModal] = useState(null);
@@ -3076,6 +3117,86 @@
         setBalanceModal(false);
       };
 
+      // ---- Assistant (Claude, through the app's own server function) ----
+      // A compact copy of the data: only months and items with numbers, plus the app's own monthly results.
+      const buildSnapshot = () => {
+        const months = {};
+        TIMELINE.forEach(({ yr, m }) => {
+          const entry = {};
+          ['incomes', 'expenses'].forEach(type => {
+            const items = {};
+            data.categories[type].forEach(cat => {
+              const n = getNode(type, cat, yr, m);
+              if (n.budget || n.actual) items[cat] = { plan: n.budget, actual: n.actual };
+            });
+            if (Object.keys(items).length) entry[type] = items;
+          });
+          const targets = {};
+          data.groups.filter(g => g.kind === 'variable').forEach(g => { const v = getTarget(g.id, yr, m); if (v) targets[g.id] = v; });
+          if (Object.keys(targets).length) entry.groupTargets = targets;
+          if (Object.keys(entry).length) months[`${yr}-${m}`] = entry;
+        });
+        const computed = forwardTimeline
+          .filter(r => months[`${r.year}-${r.month}`])
+          .map(r => ({
+            month: `${r.year}-${r.month}`, status: monthStatus(r.year, r.month),
+            startBalance: r.startBal == null ? null : round2(r.startBal),
+            expectedIn: round2(r.projectedIn), expectedOut: round2(r.projectedEx),
+            actualIn: round2(r.actualIn), actualOut: round2(r.actualEx),
+            fixedExpected: round2(r.fixed.expected), variableAndOneTimeExpected: round2(r.flex.expected),
+            endBalance: r.endProjectedBalance == null ? null : round2(r.endProjectedBalance)
+          }));
+        const items = {};
+        ['incomes', 'expenses'].forEach(type => {
+          items[type] = Object.fromEntries(data.categories[type].map(cat => {
+            const meta = getMeta(type, cat);
+            const g = type === 'expenses' ? data.groups.find(x => x.id === meta.bracket) : null;
+            return [cat, { group: g ? `${groupName(g)} (${g.kind})` : meta.bracket, oneTime: !!meta.oneTime, dueDay: meta.payDay || null }];
+          }));
+        });
+        return JSON.stringify({
+          today: todayISO(),
+          members: data.members,
+          monthKeys: 'German month abbreviations: Jan Feb Mrz Apr Mai Jun Jul Aug Sep Okt Nov Dez',
+          startingBalance: { amount: data.startingCapital, atStartOf: data.startingMonth },
+          groups: data.groups.map(g => ({ id: g.id, name: groupName(g), kind: g.kind })),
+          items, months, computed,
+          loans: data.ious, savingsGoals: data.goals,
+          tx: (data.tx || []).map(x => ({ date: x.date, type: x.type, item: x.cat, amount: x.amount, who: whoLabel(x.who), note: x.note || undefined })),
+          log: (data.log || []).slice(-200)
+        });
+      };
+
+      const sendQuestion = async () => {
+        const question = askInput.trim();
+        if (!question || askBusy) return;
+        if (!auth?.currentUser) { setAskError(t('askNeedSignIn')); return; }
+        const chat = [...askChat, { role: 'user', content: question, text: question }];
+        setAskChat(chat); setAskInput(''); setAskBusy(true); setAskError('');
+        try {
+          const token = await auth.currentUser.getIdToken();
+          const resp = await fetch('/api/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ snapshot: buildSnapshot(), messages: chat.slice(-39).map(({ role, content }) => ({ role, content })) })
+          });
+          const body = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            const key = { not_configured: 'askErrSetup', bad_api_key: 'askErrSetup', not_allowed: 'askErrNotAllowed', not_signed_in: 'askNeedSignIn', rate_limited: 'askErrBusy', refused: 'askErrRefused' }[body.error] || 'askErrGeneric';
+            setAskError(t(key));
+            setAskChat(c => c.slice(0, -1)); setAskInput(question);
+            return;
+          }
+          setAskChat(c => [...c, { role: 'assistant', content: body.content, text: body.text + (body.truncated ? ' …' : '') }]);
+        } catch (e) {
+          console.error(e);
+          setAskError(t(navigator.onLine ? 'askErrGeneric' : 'askErrOffline'));
+          setAskChat(c => c.slice(0, -1)); setAskInput(question);
+        } finally {
+          setAskBusy(false);
+        }
+      };
+
       // ---- IOU / Debts ----
       // A loan can be linked to its repayment item; what was paid there counts as repaid.
       const LOAN_REPAY_NAMES = ["Rückzahlung Schwester", "Sister Repayment"];
@@ -4164,6 +4285,7 @@
                               <button onClick={() => { setTxWhoFilter('all'); setTxModal(true); }} className="text-[11px] text-notion-blue hover:underline">📋 {t('txBtn')}</button>
                               <button onClick={() => setBreakdownModal(true)} className="text-[11px] text-notion-blue hover:underline">🧾 {t('breakdownBtn')}</button>
                               <button onClick={() => { setLogScope('month'); setLogModal(true); }} className="text-[11px] text-notion-blue hover:underline">🕓 {t('logBtn')}</button>
+                              <button onClick={() => { setAskError(''); setAskModal(true); }} className="text-[11px] text-notion-blue hover:underline">✨ {t('askBtn')}</button>
                             </span>
                           </div>
                           {meters.map(mt => (
@@ -4760,6 +4882,50 @@
               </Modal>
             );
           })()}
+
+          {/* ASSISTANT */}
+          {askModal && (
+            <Modal size="max-w-lg" onClose={() => setAskModal(false)} title={<><span>✨</span><span>{t('askTitle')}</span></>}>
+              <div className="max-h-[55vh] overflow-y-auto space-y-2">
+                {askChat.length === 0 && (
+                  <div className="space-y-2">
+                    <p className="text-[11px] text-secondary leading-relaxed">{t('askIntro')}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[t('askEx1'), t('askEx2'), t('askEx3')].map(ex => (
+                        <button key={ex} onClick={() => setAskInput(ex)} className="text-[11px] px-2 py-1 rounded border border-subtle bg-subtle text-primary hover:border-strong text-left">{ex}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {askChat.map((msg, i) => (
+                  <div key={i} className={msg.role === 'user' ? 'flex justify-end' : ''}>
+                    <div dir="auto" className={`text-xs leading-relaxed whitespace-pre-wrap rounded-lg px-3 py-2 ${msg.role === 'user' ? 'bg-primary text-surface max-w-[85%]' : 'bg-subtle text-primary border border-subtle'}`}>
+                      {msg.text}
+                    </div>
+                  </div>
+                ))}
+                {askBusy && <div className="text-[11px] text-tertiary px-1">{t('askThinking')}</div>}
+              </div>
+              {askError && <p className="text-[11px] text-notion-red">{askError}</p>}
+              <div className="flex gap-2 items-end">
+                <textarea
+                  dir="auto"
+                  rows={2}
+                  value={askInput}
+                  onChange={(e) => setAskInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendQuestion(); } }}
+                  placeholder={t('askPlaceholder')}
+                  maxLength={4000}
+                  className="flex-1 bg-subtle border border-subtle rounded px-2 py-1.5 text-xs text-primary outline-none resize-none"
+                />
+                <button onClick={sendQuestion} disabled={askBusy || !askInput.trim()} className="px-3 py-2 bg-primary text-surface text-xs font-semibold rounded disabled:opacity-40">{t('askSend')}</button>
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-tertiary">
+                <span>{t('askPrivacy')}</span>
+                {askChat.length > 0 && <button onClick={() => { setAskChat([]); setAskError(''); }} className="text-notion-blue hover:underline shrink-0 ml-2">{t('askNew')}</button>}
+              </div>
+            </Modal>
+          )}
 
           {/* CHANGE HISTORY */}
           {logModal && (() => {
