@@ -246,6 +246,42 @@
         kind: col.kind !== -1 ? String(r[col.kind] || '').trim().toUpperCase() : ''
       })).filter(x => x.date && x.amount !== null && x.desc);
     };
+    // ---- Change history ----
+    // Every edit is compared with the state before it; changed amounts are written to data.log.
+    const LOG_MAX = 800;
+    const diffForLog = (prev, next) => {
+      const out = [];
+      const txIds = (st) => new Map((st?.tx || []).map(x => [x.id, x]));
+      const before = txIds(prev), after = txIds(next);
+      const touched = new Set();
+      after.forEach((x, id) => { if (!before.has(id)) { out.push({ k: 'tx+', ty: x.type, c: x.cat, d: x.date, a: x.amount, w: x.who }); touched.add(`${x.type}|${x.cat}|${x.date.slice(0, 7)}`); } });
+      before.forEach((x, id) => {
+        const y = after.get(id);
+        if (!y) { out.push({ k: 'tx-', ty: x.type, c: x.cat, d: x.date, a: x.amount, w: x.who }); touched.add(`${x.type}|${x.cat}|${x.date.slice(0, 7)}`); }
+        else if (y.amount !== x.amount || y.date !== x.date || y.cat !== x.cat) {
+          out.push({ k: 'tx~', ty: y.type, c: y.cat, d: y.date, o: x.amount, n: y.amount });
+          touched.add(`${x.type}|${x.cat}|${x.date.slice(0, 7)}`); touched.add(`${y.type}|${y.cat}|${y.date.slice(0, 7)}`);
+        }
+      });
+      Object.keys(next.values || {}).forEach(yr => ['incomes', 'expenses'].forEach(type => {
+        const nb = next.values[yr][type] || {}, pb = prev?.values?.[yr]?.[type] || {};
+        Object.keys(nb).forEach(cat => Object.keys(nb[cat] || {}).forEach(m => {
+          const n = nb[cat][m], o = pb[cat]?.[m];
+          ['budget', 'actual'].forEach(f => {
+            const nv = n?.[f] || 0, ov = o?.[f] || 0;
+            if (nv === ov) return;
+            // A receipt already explains the change of what was spent.
+            if (f === 'actual' && touched.has(`${type}|${cat}|${yr}-${pad2(ALL_MONTHS.indexOf(m) + 1)}`)) return;
+            out.push({ k: f === 'budget' ? 'plan' : 'done', ty: type, c: cat, p: `${yr}|${m}`, o: ov, n: nv });
+          });
+        }));
+      }));
+      if ((prev?.startingCapital || 0) !== (next.startingCapital || 0) || prev?.startingMonth !== next.startingMonth) {
+        out.push({ k: 'start', p: next.startingMonth, o: prev?.startingCapital || 0, n: next.startingCapital || 0 });
+      }
+      return out;
+    };
+
     // Money Manager (Android) export: Date, Account, Category, Subcategory, Note, EUR, Income/Expense, …
     const isMoneyManagerSheet = (rows) => {
       const header = (rows[0] || []).map(h => String(h).trim().toLowerCase());
@@ -810,6 +846,26 @@
         txDeleted: "{{amount}} bei {{name}} gelöscht",
         entriesLabel: "Einträge ({{n}})",
         txBtn: "Buchungen",
+        logBtn: "Verlauf",
+        logTitle: "Verlauf der Änderungen",
+        logAll: "Alle",
+        logEmpty: "Noch keine Änderungen gespeichert. Ab jetzt wird jede Änderung hier mit Datum festgehalten.",
+        logPlan: "Plan geändert",
+        logReceived: "erhalten",
+        logPaid: "bezahlt",
+        logTxAdd: "Beleg vom {{day}} hinzugefügt",
+        logTxDel: "Beleg vom {{day}} gelöscht",
+        logTxEdit: "Beleg vom {{day}} geändert",
+        logStart: "Startguthaben",
+        logBulk: "{{n}} Werte auf einmal geändert (Import oder Wiederherstellung)",
+        logNote: "Die letzten {{n}} Änderungen werden mit deinen Daten gespeichert und synchronisiert.",
+        viewEnd: "Ende des Monats",
+        viewNow: "Jetzt",
+        nowTitle: "Stand jetzt (laut Einträgen)",
+        nowReceived: "Schon erhalten",
+        nowPaid: "Schon bezahlt & ausgegeben",
+        nowStillOpen: "Noch offen bis Monatsende",
+        nowRules: "Zählt nur, was abgehakt oder eingetragen ist. Offene Pläne kommen erst in „Ende des Monats“ dazu.",
         txModalTitle: "Buchungen {{month}}",
         txEmpty: "Noch keine einzelnen Einträge. Belege und importierte Kontoauszüge erscheinen hier.",
         rangeMonth: "Monat",
@@ -1201,6 +1257,26 @@
         txDeleted: "Deleted {{amount}} at {{name}}",
         entriesLabel: "Entries ({{n}})",
         txBtn: "Entries",
+        logBtn: "History",
+        logTitle: "Change history",
+        logAll: "All",
+        logEmpty: "No changes saved yet. From now on every change is kept here with its date.",
+        logPlan: "plan changed",
+        logReceived: "received",
+        logPaid: "paid",
+        logTxAdd: "receipt of {{day}} added",
+        logTxDel: "receipt of {{day}} deleted",
+        logTxEdit: "receipt of {{day}} changed",
+        logStart: "Starting balance",
+        logBulk: "{{n}} values changed at once (import or restore)",
+        logNote: "The last {{n}} changes are kept with your data and synced.",
+        viewEnd: "End of month",
+        viewNow: "Now",
+        nowTitle: "Balance now (per entries)",
+        nowReceived: "Received so far",
+        nowPaid: "Paid & spent so far",
+        nowStillOpen: "Still open until month end",
+        nowRules: "Counts only what is ticked or entered. Open plans are added only in “End of month”.",
         txModalTitle: "Entries {{month}}",
         txEmpty: "No single entries yet. Receipts and imported bank statements show up here.",
         rangeMonth: "Month",
@@ -1418,6 +1494,8 @@
             deadline: typeof g.deadline === 'string' ? g.deadline : null
           })),
         imported: Array.isArray(raw?.imported) ? raw.imported.filter(k => typeof k === 'string') : [],
+        // Change history: when which amount was changed, by whom (newest last).
+        log: (Array.isArray(raw?.log) ? raw.log : []).filter(e => e && typeof e.t === 'string' && typeof e.k === 'string').slice(-LOG_MAX),
         // Day the salary arrives (15–31). With it, the budget month runs from payday to the day before.
         payday: Number.isInteger(raw?.payday) && raw.payday >= 15 && raw.payday <= 31 ? raw.payday : null,
         values: {}
@@ -1646,6 +1724,9 @@
 
       const [balanceModal, setBalanceModal] = useState(false);
       const [txModal, setTxModal] = useState(false);
+      const [logModal, setLogModal] = useState(false);
+      const [logScope, setLogScope] = useState('month');
+      const [balanceView, setBalanceView] = useState('end');
       const [importModal, setImportModal] = useState(null);
       const [dueExpanded, setDueExpanded] = useState(false);
       const [dueScope, setDueScope] = useState(() => {
@@ -1744,15 +1825,42 @@
       };
 
       // Every edit goes through here: copy, change, show immediately, save debounced.
+      const logBy = () => {
+        const u = userRef.current;
+        return (u?.displayName || '').trim().split(/\s+/)[0] || (u?.email || '').split('@')[0] || '';
+      };
+      // Append what changed between two states to next.log (typing one amount stays one entry).
+      const writeLog = (prev, next, baseLog) => {
+        let entries = diffForLog(prev, next);
+        const now = new Date().toISOString();
+        const by = logBy();
+        const log = [...(baseLog || [])];
+        if (entries.length > 150) entries = [{ k: 'bulk', n: entries.length }];
+        entries.forEach(e => {
+          const last = log[log.length - 1];
+          const same = last && ['plan', 'done'].includes(e.k) && last.k === e.k && last.c === e.c && last.ty === e.ty && last.p === e.p
+            && last.by === by && Date.parse(now) - Date.parse(last.t) < 120000;
+          if (same) { last.n = e.n; last.t = now; if (last.o === last.n) log.pop(); }
+          else log.push({ t: now, by, ...e });
+        });
+        next.log = log.slice(-LOG_MAX);
+      };
+
       const mutate = (recipe) => {
-        const next = structuredClone(dataRef.current);
+        const prev = dataRef.current;
+        const next = structuredClone(prev);
         recipe(next);
+        writeLog(prev, next, next.log);
         localEditedRef.current = true;
         applyState(next);
         scheduleSave();
       };
 
       const replaceState = (next) => {
+        const prev = dataRef.current;
+        next = { ...next };
+        // Undo and restores keep the history that exists so far.
+        writeLog(prev, next, (prev.log || []).length >= (next.log || []).length ? prev.log : next.log);
         localEditedRef.current = true;
         applyState(next);
         scheduleSave();
@@ -3888,7 +3996,44 @@
                       {/* SUMMARY COLUMN */}
                       <aside className="space-y-3 min-w-0">
                         {/* End-of-month balance, built up line by line */}
+                        {availableNow !== null && balanceView === 'now' ? (
                         <div className="rounded-lg border border-subtle bg-surface-elevated p-4 space-y-3">
+                          <div className="grid grid-cols-2 gap-1 bg-subtle p-0.5 rounded border border-subtle text-[11px]">
+                            <button onClick={() => setBalanceView('end')} className="py-1 rounded text-secondary">{t('viewEnd')}</button>
+                            <button aria-pressed="true" className="py-1 rounded bg-surface text-primary font-semibold shadow-sm">{t('viewNow')}</button>
+                          </div>
+                          <div>
+                            <div className="text-[11px] text-secondary flex items-center gap-1.5"><span>👛</span><span>{t('nowTitle')}</span></div>
+                            <div className={`text-3xl font-mono font-bold mt-1 ${availableNow >= 0 ? 'text-primary' : 'text-notion-red'}`}>{fmtBalance(availableNow)}</div>
+                          </div>
+                          <div className="text-xs font-mono space-y-1">
+                            <div className="flex items-center justify-between gap-3"><span className="font-sans text-secondary">{carriedLabel}</span><span>{fmtBalance(cm.startBal)}</span></div>
+                            <div className="flex items-center justify-between gap-3"><span className="font-sans text-secondary">{t('nowReceived')}</span><span className="text-notion-green">+ {fmt(cm.actualIn)}</span></div>
+                            <div className="flex items-center justify-between gap-3"><span className="font-sans text-secondary">{t('nowPaid')}</span><span className="text-notion-red">− {fmt(cm.actualEx)}</span></div>
+                            <div className="flex items-center justify-between gap-3 border-t border-strong pt-1 font-bold">
+                              <span className="font-sans text-primary">= {t('viewNow')}</span>
+                              <span className={availableNow >= 0 ? 'text-primary' : 'text-notion-red'}>{fmtBalance(availableNow)}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-3 pt-1 text-tertiary">
+                              <span className="font-sans">{t('nowStillOpen')}</span>
+                              <span>{cm.endProjectedBalance - availableNow >= 0 ? '+' : '−'} {fmt(Math.abs(cm.endProjectedBalance - availableNow))}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-3 text-tertiary">
+                              <span className="font-sans">{t('endOfMonthTitle', { month: monthLabel(selectedYear, selectedMonth) })}</span>
+                              <span>{fmtBalance(cm.endProjectedBalance)}</span>
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-tertiary leading-snug">{t('nowRules')}</p>
+                          <button onClick={openBalanceModal} className="text-[11px] text-notion-blue hover:underline">✎ {t('fixBalanceBtn')}</button>
+                        </div>
+                        ) : (
+                        <div className="rounded-lg border border-subtle bg-surface-elevated p-4 space-y-3">
+                          {availableNow !== null && (
+                            <div className="grid grid-cols-2 gap-1 bg-subtle p-0.5 rounded border border-subtle text-[11px]">
+                              <button aria-pressed="true" className="py-1 rounded bg-surface text-primary font-semibold shadow-sm">{t('viewEnd')}</button>
+                              <button onClick={() => setBalanceView('now')} className="py-1 rounded text-secondary">{t('viewNow')}</button>
+                            </div>
+                          )}
                           <div>
                             <div className="text-[11px] text-secondary flex items-center gap-1.5">
                               <span>🏦</span>
@@ -3942,6 +4087,7 @@
                             ✎ {t('fixBalanceBtn')}
                           </button>
                         </div>
+                        )}
 
                         {/* Due soon: this month, next month or both */}
                         {dueSoon.length > 0 && (() => {
@@ -4017,6 +4163,7 @@
                             <span className="flex items-center gap-3">
                               <button onClick={() => { setTxWhoFilter('all'); setTxModal(true); }} className="text-[11px] text-notion-blue hover:underline">📋 {t('txBtn')}</button>
                               <button onClick={() => setBreakdownModal(true)} className="text-[11px] text-notion-blue hover:underline">🧾 {t('breakdownBtn')}</button>
+                              <button onClick={() => { setLogScope('month'); setLogModal(true); }} className="text-[11px] text-notion-blue hover:underline">🕓 {t('logBtn')}</button>
                             </span>
                           </div>
                           {meters.map(mt => (
@@ -4610,6 +4757,70 @@
                     {t('importRun', { n: chosen.length })}
                   </button>
                 </div>
+              </Modal>
+            );
+          })()}
+
+          {/* CHANGE HISTORY */}
+          {logModal && (() => {
+            const monthKey = `${selectedYear}|${selectedMonth}`;
+            const monthIso = `${selectedYear}-${pad2(ALL_MONTHS.indexOf(selectedMonth) + 1)}`;
+            const inMonth = (e) => e.p === monthKey || (e.d && e.d.slice(0, 7) === monthIso);
+            const all = [...(data.log || [])].reverse();
+            const shown = logScope === 'month' ? all.filter(inMonth) : all;
+            const kindLabel = (e) => {
+              const where = e.p && e.p !== monthKey && e.p.includes('|') ? ` (${monthLabel(parseInt(e.p), e.p.split('|')[1])})` : '';
+              switch (e.k) {
+                case 'plan': return [`${e.c}${where}`, t('logPlan'), `${fmtCents(e.o)} → ${fmtCents(e.n)}`];
+                case 'done': return [`${e.c}${where}`, t(e.ty === 'incomes' ? 'logReceived' : 'logPaid'), `${fmtCents(e.o)} → ${fmtCents(e.n)}`];
+                case 'tx+': return [e.c, t('logTxAdd', { day: fmtDay(e.d) }), `${e.ty === 'incomes' ? '+' : '−'} ${fmtCents(e.a)}`];
+                case 'tx-': return [e.c, t('logTxDel', { day: fmtDay(e.d) }), `${fmtCents(e.a)}`];
+                case 'tx~': return [e.c, t('logTxEdit', { day: fmtDay(e.d) }), `${fmtCents(e.o)} → ${fmtCents(e.n)}`];
+                case 'start': return [t('logStart'), e.p ? monthLabel(parseInt(e.p), e.p.split('|')[1]) : '', `${fmtCents(e.o)} → ${fmtCents(e.n)}`];
+                case 'bulk': return [t('logBulk', { n: e.n }), '', ''];
+                default: return [e.k, '', ''];
+              }
+            };
+            const days = [];
+            shown.forEach(e => {
+              const day = new Date(e.t).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+              if (!days.length || days[days.length - 1].day !== day) days.push({ day, items: [] });
+              days[days.length - 1].items.push(e);
+            });
+            return (
+              <Modal size="max-w-lg" onClose={() => setLogModal(false)} title={<><span>🕓</span><span>{t('logTitle')}</span></>}>
+                <div className="grid grid-cols-2 gap-1 bg-subtle p-0.5 rounded border border-subtle text-[11px]">
+                  {['month', 'all'].map(sc => (
+                    <button key={sc} aria-pressed={logScope === sc} onClick={() => setLogScope(sc)}
+                      className={`py-1 rounded ${logScope === sc ? 'bg-surface text-primary font-semibold shadow-sm' : 'text-secondary'}`}>
+                      {sc === 'month' ? monthLabel(selectedYear, selectedMonth) : t('logAll')}
+                    </button>
+                  ))}
+                </div>
+                <div className="max-h-[60vh] overflow-y-auto space-y-3">
+                  {days.length === 0 && <p className="text-[11px] text-tertiary p-2">{t('logEmpty')}</p>}
+                  {days.map(g => (
+                    <div key={g.day}>
+                      <div className="text-[10px] uppercase tracking-wide font-semibold text-secondary mb-1">{g.day}</div>
+                      <div className="divide-y divide-subtle border border-subtle rounded">
+                        {g.items.map((e, i) => {
+                          const [what, action, amount] = kindLabel(e);
+                          const time = new Date(e.t).toLocaleTimeString(lang === 'de' ? 'de-DE' : 'en-GB', { hour: '2-digit', minute: '2-digit' });
+                          return (
+                            <div key={e.t + i} className="flex items-baseline justify-between gap-2 px-2 py-1.5 text-[11px]">
+                              <div className="min-w-0">
+                                <div className="text-primary truncate">{what}</div>
+                                <div className="text-tertiary">{time}{e.by ? ` · ${e.by}` : ''}{action ? ` · ${action}` : ''}</div>
+                              </div>
+                              <span className="font-mono text-primary shrink-0">{amount}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] text-tertiary">{t('logNote', { n: LOG_MAX })}</p>
               </Modal>
             );
           })()}
