@@ -318,14 +318,18 @@
     ];
     // An item's mode follows its group's kind. It is one-time when its group is a
     // one-time group or when the item itself was created as a single payment ("once").
-    const metaForGroup = (groups, groupId, payDay = null, once = false) => {
+    const metaForGroup = (groups, groupId, payDay = null, once = false, forNext = false) => {
       const g = groups.find(x => x.id === groupId) || groups[0];
+      const oneTime = g.kind === 'oneoff' || !!once;
       return {
         bracket: g.id,
         mode: g.kind === 'variable' ? 'variable' : 'fixed',
-        oneTime: g.kind === 'oneoff' || !!once,
+        oneTime,
         once: !!once,
-        payDay
+        payDay,
+        // Paid at month-end from the salary that just arrived, so it belongs to the next month.
+        // Only for items with a known amount; receipts in variable groups stay where they happen.
+        forNext: !!forNext && (g.kind !== 'variable' || oneTime)
       };
     };
 
@@ -716,6 +720,10 @@
         beforePaydayTitle: "Bleibt bis zum nächsten Gehalt · {{month}}",
         beforePaydayLine: "Vor dem nächsten Gehalt",
         carriedBeforeSalary: "Rest vor dem Gehalt aus {{month}}",
+        linePaidEndPrev: "Ende {{month}} bezahlt (für diesen Monat)",
+        leavingForNext: "Geht Ende {{month}} für {{next}} ab",
+        forNextExpLabel: "Vom nächsten Gehalt bezahlt",
+        forNextExpHelp: "Wird erst nach dem Gehalt am Monatsende bezahlt (z. B. Miete am 28.) und zählt deshalb zum Folgemonat. Trag es im Monat ein, in dem es bezahlt wird.",
         lineIncomeFromPrev: "Gehalt aus {{month}} (für diesen Monat)",
         lineIncomeThis: "Weitere Einnahmen im {{month}}",
         arrivingForNext: "Kommt Ende {{month}} für {{next}}",
@@ -724,6 +732,12 @@
         forNextLabel: "Für den nächsten Monat",
         forNextHelp: "Kommt am Monatsende (z. B. am 26.) und wird im Folgemonat ausgegeben. Trag es im Monat ein, in dem es ankommt; gezählt wird es im nächsten.",
         shiftTip: "Kommt euer Gehalt erst Ende des Monats? Öffne es bei den Einnahmen → ✎ Bearbeiten → „Für den nächsten Monat“. Dann zeigt diese Zahl, was bis zum nächsten Gehalt wirklich bleibt.",
+        paydayLabel: "Gehalt kommt am",
+        paydayOff: "Kein fester Tag (Kalendermonat)",
+        paydayOption: "{{day}}. (Budgetmonat: {{day}}. bis {{until}}.)",
+        paydayHelp: "Euer Budgetmonat beginnt mit dem Gehalt. Rechnungen mit Zahltag ab diesem Tag und Belege ab diesem Datum zählen automatisch zum nächsten Monat, auch für das Monatsziel.",
+        forNextAuto: "Zählt automatisch zum Folgemonat (Zahltag {{day}}. ≥ Gehaltstag {{payday}}.)",
+        countsForNext: "Zählt für {{month}}",
         whoJoint: "Gemeinsam",
         whoLabel: "Wer hat bezahlt?",
         whoPaidTitle: "Wer hat bezahlt? (Ausgaben)",
@@ -1087,6 +1101,10 @@
         beforePaydayTitle: "Left until next payday · {{month}}",
         beforePaydayLine: "Before the next payday",
         carriedBeforeSalary: "Left before {{month}}'s salary",
+        linePaidEndPrev: "Paid end of {{month}} (for this month)",
+        leavingForNext: "Goes out end of {{month}} for {{next}}",
+        forNextExpLabel: "Paid from the next salary",
+        forNextExpHelp: "Paid only after the salary at the end of the month (e.g. rent on the 28th), so it counts in the next month. Enter it in the month it's paid.",
         lineIncomeFromPrev: "Salary from {{month}} (for this month)",
         lineIncomeThis: "Other income in {{month}}",
         arrivingForNext: "Arrives end of {{month}} for {{next}}",
@@ -1095,6 +1113,12 @@
         forNextLabel: "For next month",
         forNextHelp: "Arrives at the end of the month (e.g. on the 26th) and is spent in the next one. Enter it in the month it arrives; it counts in the next.",
         shiftTip: "Does your salary arrive at the end of the month? Open it under Income → ✎ Edit → \"For next month\". This number then shows what's really left until the next payday.",
+        paydayLabel: "Salary arrives on the",
+        paydayOff: "No fixed day (calendar month)",
+        paydayOption: "{{day}}th (budget month: {{day}}th to {{until}}th)",
+        paydayHelp: "Your budget month starts with the salary. Bills due on or after this day and receipts from this date on count for the next month automatically, including for the monthly target.",
+        forNextAuto: "Counts for the next month automatically (due day {{day}} ≥ payday {{payday}})",
+        countsForNext: "Counts for {{month}}",
         whoJoint: "Joint",
         whoLabel: "Who paid?",
         whoPaidTitle: "Who paid? (expenses)",
@@ -1321,6 +1345,8 @@
             deadline: typeof g.deadline === 'string' ? g.deadline : null
           })),
         imported: Array.isArray(raw?.imported) ? raw.imported.filter(k => typeof k === 'string') : [],
+        // Day the salary arrives (15–31). With it, the budget month runs from payday to the day before.
+        payday: Number.isInteger(raw?.payday) && raw.payday >= 15 && raw.payday <= 31 ? raw.payday : null,
         values: {}
       };
 
@@ -1368,7 +1394,7 @@
               const guess = legacyGroupFor(cat, { mode, oneTime, bracket: valid.includes(src.bracket) ? src.bracket : bracket });
               groupId = groupIds.includes(guess) ? guess : groupIds[0];
             }
-            state.meta.expenses[cat] = metaForGroup(groups, groupId, payDay, !needsGroups && src.once === true);
+            state.meta.expenses[cat] = metaForGroup(groups, groupId, payDay, !needsGroups && src.once === true, !needsGroups && src.forNext === true);
             return;
           }
           // Income that arrives at the end of a month (e.g. salary on the 26th) and pays for the next one.
@@ -1745,6 +1771,42 @@
       };
 
       const getTarget = (gid, yr, m) => data.targets?.[gid]?.[yr]?.[m] || 0;
+
+      // ---- Budget month from payday to payday ----
+      const payday = data.payday;
+      const isReceiptItem = (cat) => {
+        const meta = getMeta('expenses', cat);
+        const g = data.groups.find(x => x.id === meta.bracket);
+        return !!g && g.kind === 'variable' && !meta.oneTime;
+      };
+      // An item counts in the following month when marked so, or when it's paid on or after payday.
+      const isForNextItem = (type, cat) => {
+        const meta = getMeta(type, cat);
+        if (type === 'expenses' && isReceiptItem(cat)) return false;
+        return !!meta.forNext || (!!payday && !!meta.payDay && meta.payDay >= payday);
+      };
+      // Receipts dated on or after payday belong to the next budget month.
+      const lateReceipts = useMemo(() => {
+        const map = {};
+        if (!payday) return map;
+        (data.tx || []).forEach(x => {
+          if (x.type !== 'expenses' || !isReceiptItem(x.cat)) return;
+          if (+x.date.slice(8, 10) < payday) return;
+          const pos = dateToMonth(x.date);
+          if (!pos) return;
+          const key = `${pos.yr}|${pos.m}|${x.cat}`;
+          map[key] = (map[key] || 0) + x.amount;
+        });
+        return map;
+      }, [data, payday]);
+      const lateFor = (cat, yr, m) => lateReceipts[`${yr}|${m}|${cat}`] || 0;
+      // What a receipt item spent in budget month (yr, m): its calendar month minus the receipts
+      // from payday on, plus those from payday on in the month before.
+      const periodSpent = (cat, yr, m) => {
+        const idx = timelineIndex(yr, m);
+        const prev = idx > 0 ? TIMELINE[idx - 1] : null;
+        return getNode('expenses', cat, yr, m).actual - lateFor(cat, yr, m) + (prev ? lateFor(cat, prev.yr, prev.m) : 0);
+      };
       const groupName = (g) => g.name || t('groups.' + g.id);
 
       const getNotes = (type, cat) => data.notes[type]?.[cat]?.[monthKey] || [];
@@ -1787,7 +1849,7 @@
           const prevPos = idx > 0 ? TIMELINE[idx - 1] : null;
           let shiftedIn = 0, shiftedActual = 0, arrivingForNext = 0, arrivedForNextActual = 0;
           data.categories.incomes.forEach(cat => {
-            if (getMeta('incomes', cat).forNext) {
+            if (isForNextItem('incomes', cat)) {
               const here = getNode('incomes', cat, yr, m);
               arrivingForNext += expectedIncome(here);
               arrivedForNextActual += here.actual;
@@ -1807,15 +1869,39 @@
           });
 
           const spentByGroup = {};
+          let shiftedEx = 0, shiftedExActual = 0, leavingForNext = 0, leftForNextActual = 0;
+          // Receipts from payday on: shown inside their group, but needed for the real-balance math.
+          let lateVarPrev = 0, lateVarHere = 0;
           data.categories.expenses.forEach(cat => {
-            const node = getNode('expenses', cat, yr, m);
             const meta = getMeta('expenses', cat);
             const g = groupById[meta.bracket];
-            actualEx += node.actual;
-            if (g && g.kind === 'variable' && !meta.oneTime) {
-              spentByGroup[g.id] = (spentByGroup[g.id] || 0) + node.actual;
+            let node = getNode('expenses', cat, yr, m);
+            if (isForNextItem('expenses', cat)) {
+              // Paid at the end of this month from the new salary → counts next month.
+              leavingForNext += knownAmount(node);
+              leftForNextActual += node.actual;
+              if (!prevPos) return;
+              node = getNode('expenses', cat, prevPos.yr, prevPos.m);
+              const expected = knownAmount(node);
+              actualEx += node.actual;
+              budgetEx += node.budget;
+              projectedEx += expected;
+              shiftedEx += expected;
+              shiftedExActual += node.actual;
               return;
             }
+            if (g && g.kind === 'variable' && !meta.oneTime) {
+              // Receipts after payday move to the next budget month.
+              const lateHere = lateFor(cat, yr, m);
+              const latePrev = prevPos ? lateFor(cat, prevPos.yr, prevPos.m) : 0;
+              const spent = node.actual - lateHere + latePrev;
+              actualEx += spent;
+              spentByGroup[g.id] = (spentByGroup[g.id] || 0) + spent;
+              lateVarPrev += latePrev;
+              lateVarHere += lateHere;
+              return;
+            }
+            actualEx += node.actual;
             const expected = knownAmount(node);
             budgetEx += node.budget;
             projectedEx += expected;
@@ -1854,11 +1940,12 @@
             year: yr, month: m, key: `${m} ${yr}`, daysInMonth: getDaysInMonth(yr, m),
             budgetIn, actualIn, projectedIn, budgetEx, actualEx, projectedEx, fixed, flex,
             shiftedIn, shiftedActual, arrivingForNext, arrivedForNextActual,
+            shiftedEx, shiftedExActual, leavingForNext, leftForNextActual, lateVarPrev, lateVarHere,
             actualNet, projectedNet, isAnchor: idx === anchorIdx,
             startBal, endProjectedBalance: counted ? runningBalance : null
           };
         });
-      }, [data]);
+      }, [data, lateReceipts]);
 
       const yearRows = useMemo(() => forwardTimeline.filter(r => r.year === selectedYear), [forwardTimeline, selectedYear]);
 
@@ -1881,7 +1968,7 @@
             .filter(cat => getMeta('expenses', cat).bracket === g.id)
             .map(cat => ({ cat, node: getNode('expenses', cat, selectedYear, selectedMonth), once: !!getMeta('expenses', cat).oneTime }));
           if (g.kind === 'variable') {
-            const spent = items.filter(i => !i.once).reduce((s, i) => s + i.node.actual, 0);
+            const spent = items.filter(i => !i.once).reduce((s, i) => s + periodSpent(i.cat, selectedYear, selectedMonth), 0);
             const onceTotal = items.filter(i => i.once).reduce((s, i) => s + knownAmount(i.node), 0);
             const target = getTarget(g.id, selectedYear, selectedMonth);
             return { g, items, spent, target, expected: variableExpected(spent, target, selectedYear, selectedMonth) + onceTotal };
@@ -1894,7 +1981,7 @@
             n: active.length, nPaid: active.filter(i => i.node.actual > 0).length
           };
         });
-      }, [data, selectedYear, selectedMonth, isAnnual]);
+      }, [data, selectedYear, selectedMonth, isAnnual, lateReceipts]);
 
       const fmtBalance = (v) => v == null ? '–' : fmt(v);
 
@@ -2197,7 +2284,7 @@
           const payDay = day >= 1 && day <= 31 ? day : null;
           const targetGroup = type === 'expenses' ? d.groups.find(g => g.id === editCatForm.bracket) : null;
           d.meta[type][newName] = type === 'expenses'
-            ? metaForGroup(d.groups, editCatForm.bracket, payDay, editCatForm.isOneTime && targetGroup?.kind !== 'oneoff')
+            ? metaForGroup(d.groups, editCatForm.bracket, payDay, editCatForm.isOneTime && targetGroup?.kind !== 'oneoff', !!editCatForm.forNext)
             : { bracket: editCatForm.bracket, mode: editCatForm.mode, oneTime: editCatForm.isOneTime, payDay, forNext: !!editCatForm.forNext };
 
           // Turning a recurring item into a one-time one keeps only this month's plan.
@@ -2335,6 +2422,17 @@
         .filter(x => x.type === type && (!cat || x.cat === cat))
         .filter(x => { const pos = dateToMonth(x.date); return pos && pos.yr === selectedYear && pos.m === selectedMonth; })
         .sort((a, b) => a.date < b.date ? 1 : -1);
+      // Receipts of one item inside the budget month (payday of the month before → day before payday).
+      const periodTx = (cat) => {
+        const idx = timelineIndex(selectedYear, selectedMonth);
+        const prev = idx > 0 ? TIMELINE[idx - 1] : null;
+        const iso = (yr, m, day) => `${yr}-${pad2(ALL_MONTHS.indexOf(m) + 1)}-${pad2(day)}`;
+        const from = prev ? iso(prev.yr, prev.m, payday) : '0000';
+        const until = iso(selectedYear, selectedMonth, payday);
+        return (data.tx || [])
+          .filter(x => x.type === 'expenses' && x.cat === cat && x.date >= from && x.date < until)
+          .sort((a, b) => a.date < b.date ? 1 : -1);
+      };
       const whoLabel = (w) => w === 'me' ? data.members.me : w === 'partner' ? data.members.partner : w === 'joint' ? t('whoJoint') : '';
       const fmtDay = (iso) => { const [, mo, da] = iso.split('-'); return `${+da}.${+mo}.`; };
 
@@ -2388,11 +2486,17 @@
           source: 'manual'
         };
         const gv = groupView.find(x => x.g.id === getMeta('expenses', cat).bracket);
-        const sameMonth = (() => { const pos = dateToMonth(tx.date); return pos && pos.yr === selectedYear && pos.m === selectedMonth; })();
+        const lateReceipt = !!payday && isReceiptItem(cat) && +tx.date.slice(8, 10) >= payday;
+        const sameMonth = !lateReceipt && (() => { const pos = dateToMonth(tx.date); return pos && pos.yr === selectedYear && pos.m === selectedMonth; })();
+        const nextAfterPayday = lateReceipt ? (() => {
+          const pos = dateToMonth(tx.date);
+          return TIMELINE[timelineIndex(pos.yr, pos.m) + 1];
+        })() : null;
         mutateWithUndo(d => {
           d.tx.push(tx);
           applyTx(d, tx, +1);
-        }, t(gv?.target > 0 && sameMonth ? 'receiptAdded' : 'receiptAddedNoTarget', {
+        }, (nextAfterPayday ? t('countsForNext', { month: formatMonth(nextAfterPayday.m, lang) }) + ' · ' : '') +
+        t(gv?.target > 0 && sameMonth ? 'receiptAdded' : 'receiptAddedNoTarget', {
           amount: fmtCents(amount),
           name: cat,
           group: gv ? groupName(gv.g) : '',
@@ -2649,7 +2753,7 @@
               g.kind = groupForm.kind;
               d.categories.expenses
                 .filter(c => d.meta.expenses[c]?.bracket === gid)
-                .forEach(c => { d.meta.expenses[c] = metaForGroup(d.groups, gid, d.meta.expenses[c].payDay, d.meta.expenses[c].once); });
+                .forEach(c => { d.meta.expenses[c] = metaForGroup(d.groups, gid, d.meta.expenses[c].payDay, d.meta.expenses[c].once, d.meta.expenses[c].forNext); });
             }
           });
         }
@@ -2664,7 +2768,7 @@
           d.groups = d.groups.filter(x => x.id !== gid);
           d.categories.expenses
             .filter(c => d.meta.expenses[c]?.bracket === gid)
-            .forEach(c => { d.meta.expenses[c] = metaForGroup(d.groups, moveTo, d.meta.expenses[c].payDay, d.meta.expenses[c].once || d.meta.expenses[c].oneTime); });
+            .forEach(c => { d.meta.expenses[c] = metaForGroup(d.groups, moveTo, d.meta.expenses[c].payDay, d.meta.expenses[c].once || d.meta.expenses[c].oneTime, d.meta.expenses[c].forNext); });
           delete d.targets[gid];
         });
         setGroupModal(null);
@@ -2686,8 +2790,12 @@
         const cm = currentMetrics;
         // The bank already holds last month's late income (it counts in this month) and any
         // late income that arrived this month for next month; take both out to get the carry-over.
-        if (!balanceIsToday) return v - (cm.shiftedIn || 0);
-        return v - (cm.shiftedIn || 0) - (cm.actualIn - (cm.shiftedActual || 0)) - (cm.arrivedForNextActual || 0) + cm.actualEx;
+        // Last month's late bills were paid from that salary before this month began.
+        const carried = (cm.shiftedIn || 0) - (cm.shiftedEx || 0) - (cm.lateVarPrev || 0);
+        if (!balanceIsToday) return v - carried;
+        return v - carried
+          - (cm.actualIn - (cm.shiftedActual || 0)) + (cm.actualEx - (cm.shiftedExActual || 0) - (cm.lateVarPrev || 0))
+          - (cm.arrivedForNextActual || 0) + (cm.leftForNextActual || 0) + (cm.lateVarHere || 0);
       };
 
       const openBalanceModal = () => {
@@ -3022,9 +3130,9 @@
         const done = !isVar && node.actual > 0;
         const isOpen = openItem === key;
         const isFresh = highlightedCategory === cat;
-        const shown = isVar ? node.actual : knownAmount(node);
+        const shown = isVar ? periodSpent(cat, selectedYear, selectedMonth) : knownAmount(node);
         let sub;
-        const entries = monthTx(type, cat);
+        const entries = isVar && payday ? periodTx(cat) : monthTx(type, cat);
         if (isVar) {
           const count = entries.length + (node.receipts || 0);
           sub = count > 1 ? t('receiptsCount', { n: count })
@@ -3039,7 +3147,7 @@
           sub = t('groupNothingPlanned');
         }
         if (meta.oneTime && kind !== 'oneoff') sub = `${t('badgeOneTime')}${sub ? ' · ' + sub : ''}`;
-        if (type === 'incomes' && meta.forNext) {
+        if (isForNextItem(type, cat)) {
           const nxt = TIMELINE[timelineIndex(selectedYear, selectedMonth) + 1];
           if (nxt) sub = `${t('forNextBadge', { month: formatMonth(nxt.m, lang) })}${sub ? ' · ' + sub : ''}`;
         }
@@ -3557,7 +3665,9 @@
                   const beforeStart = cm.endProjectedBalance == null;
                   const carriedLabel = cm.isAnchor || !prev ? t('carriedStart') : t('carriedOver', { month: monthLabel(prev.yr, prev.m) });
                   const flexLeft = cm.flex.plan - cm.flex.spent;
-                  const usesShift = data.categories.incomes.some(c => getMeta('incomes', c).forNext);
+                  const usesShift = !!payday
+                    || data.categories.incomes.some(c => isForNextItem('incomes', c))
+                    || data.categories.expenses.some(c => isForNextItem('expenses', c));
                   const lines = [
                     {
                       // With late income, what carries over is what was left just before last month's payday.
@@ -3572,13 +3682,18 @@
                     ] : [
                       { label: t('lineIncome'), text: `+ ${fmt(cm.projectedIn)}`, cls: 'text-notion-green' }
                     ]),
+                    ...(usesShift && prev && cm.shiftedEx > 0
+                      ? [{ label: t('linePaidEndPrev', { month: formatMonth(prev.m, lang) }), text: `− ${fmt(cm.shiftedEx)}`, cls: 'text-notion-red' }]
+                      : []),
                     { label: t('lineFixed'), text: `− ${fmt(cm.fixed.expected)}`, cls: 'text-notion-red' },
                     { label: t('lineFlex'), text: `− ${fmt(cm.flex.expected)}`, cls: 'text-notion-red' }
                   ];
                   const nextPos = TIMELINE[timelineIndex(selectedYear, selectedMonth) + 1];
                   // What should be in the accounts right now, according to what's recorded so far.
                   const availableNow = !beforeStart && monthStatus(selectedYear, selectedMonth) === 'current'
-                    ? cm.startBal + (cm.shiftedIn || 0) + (cm.actualIn - (cm.shiftedActual || 0)) + (cm.arrivedForNextActual || 0) - cm.actualEx
+                    ? cm.startBal + (cm.shiftedIn || 0) - (cm.shiftedEx || 0) - (cm.lateVarPrev || 0)
+                      + (cm.actualIn - (cm.shiftedActual || 0)) - (cm.actualEx - (cm.shiftedExActual || 0) - (cm.lateVarPrev || 0))
+                      + (cm.arrivedForNextActual || 0) - (cm.leftForNextActual || 0) - (cm.lateVarHere || 0)
                     : null;
                   const incomeHasAmount = (cat) => {
                     const node = getNode('incomes', cat, selectedYear, selectedMonth);
@@ -3647,6 +3762,12 @@
                                 <div className="flex items-center justify-between gap-3 text-tertiary">
                                   <span className="font-sans">{t('arrivingForNext', { month: formatMonth(selectedMonth, lang), next: formatMonth(nextPos.m, lang) })}</span>
                                   <span>+ {fmt(cm.arrivingForNext)}</span>
+                                </div>
+                              )}
+                              {usesShift && cm.leavingForNext > 0 && nextPos && (
+                                <div className="flex items-center justify-between gap-3 text-tertiary">
+                                  <span className="font-sans">{t('leavingForNext', { month: formatMonth(selectedMonth, lang), next: formatMonth(nextPos.m, lang) })}</span>
+                                  <span>− {fmt(cm.leavingForNext)}</span>
                                 </div>
                               )}
                               {availableNow !== null && (
@@ -4810,11 +4931,17 @@
                 </div>
               </div>
 
-              {activeEditCat.type === 'incomes' && (
+              {(activeEditCat.type === 'incomes' || (() => {
+                const g = data.groups.find(x => x.id === editCatForm.bracket);
+                return g && (g.kind !== 'variable' || editCatForm.isOneTime);
+              })()) && (
                 <label className="flex items-center justify-between gap-2 p-2 rounded bg-subtle border border-subtle cursor-pointer">
                   <div>
-                    <span className="font-medium text-primary block">{t('forNextLabel')}</span>
-                    <span className="text-[10px] text-secondary">{t('forNextHelp')}</span>
+                    <span className="font-medium text-primary block">{activeEditCat.type === 'incomes' ? t('forNextLabel') : t('forNextExpLabel')}</span>
+                    <span className="text-[10px] text-secondary">{activeEditCat.type === 'incomes' ? t('forNextHelp') : t('forNextExpHelp')}</span>
+                    {payday && parseInt(editCatForm.pDay) >= payday && (
+                      <span className="block text-[10px] text-notion-blue mt-0.5">{t('forNextAuto', { day: editCatForm.pDay, payday })}</span>
+                    )}
                   </div>
                   <input
                     type="checkbox"
@@ -5029,6 +5156,21 @@
                         </button>
                       </div>
                     )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] text-secondary block">{t('paydayLabel')}</label>
+                    <select
+                      value={payday || ''}
+                      onChange={(e) => { const v = parseInt(e.target.value); mutate(d => { d.payday = isNaN(v) ? null : v; }); }}
+                      className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-primary outline-none"
+                    >
+                      <option value="">{t('paydayOff')}</option>
+                      {Array.from({ length: 17 }, (_, i) => i + 15).map(d => (
+                        <option key={d} value={d}>{t('paydayOption', { day: d, until: d - 1 })}</option>
+                      ))}
+                    </select>
+                    <p className="text-[10px] text-tertiary leading-snug">{t('paydayHelp')}</p>
                   </div>
 
                   <div className="space-y-1.5">
