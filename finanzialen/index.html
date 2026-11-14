@@ -435,6 +435,7 @@
         startingMonthLabel: "Stand zu Beginn von",
         startingHint: "Echter Bestand zu Beginn des ersten Monats, ab dem alle Einnahmen und Ausgaben erfasst sind. Monate davor zählen nicht zum Endbestand.",
         beforeStart: "Vor dem Startmonat",
+        backCalcNote: "Rückgerechnet vom echten Kontostand im {{month}}",
         kpiActualNet: "Ist-Saldo (Monatsgewinn)",
         kpiActualNetDesc: "Tippen für genaue Aufstellung",
         kpiProjectedNet: "Prognose Saldo",
@@ -821,6 +822,7 @@
         startingMonthLabel: "Balance at the start of",
         startingHint: "Your real balance at the start of the first month from which every income and expense is recorded. Earlier months don't count toward the reserve.",
         beforeStart: "Before the starting month",
+        backCalcNote: "Worked back from the real balance entered for {{month}}",
         kpiActualNet: "Actual Net (Monthly Surplus)",
         kpiActualNetDesc: "Tap to see full receipt",
         kpiProjectedNet: "Projected Net",
@@ -1848,7 +1850,7 @@
         const groupById = Object.fromEntries(data.groups.map(g => [g.id, g]));
         let runningBalance = data.startingCapital || 0;
         const anchorIdx = Math.max(0, TIMELINE.findIndex(x => timelineKey(x.yr, x.m) === data.startingMonth));
-        return TIMELINE.map(({ yr, m }, idx) => {
+        const rows = TIMELINE.map(({ yr, m }, idx) => {
           let budgetIn = 0, actualIn = 0, projectedIn = 0;
           let budgetEx = 0, actualEx = 0, projectedEx = 0;
           const fixed = { plan: 0, paid: 0, expected: 0, items: 0, paidItems: 0 };
@@ -1955,6 +1957,15 @@
             startBal, endProjectedBalance: counted ? runningBalance : null
           };
         });
+        // Months before the anchor: work back from the anchored balance using what actually
+        // came in and went out, so earlier months still show their balances.
+        for (let i = anchorIdx - 1; i >= 0; i--) {
+          const end = rows[i + 1].startBal;
+          rows[i].endProjectedBalance = end;
+          rows[i].startBal = end - rows[i].projectedNet;
+          rows[i].backCalculated = true;
+        }
+        return rows;
       }, [data, lateReceipts]);
 
       const yearRows = useMemo(() => forwardTimeline.filter(r => r.year === selectedYear), [forwardTimeline, selectedYear]);
@@ -3781,6 +3792,10 @@
                               {fmtBalance(cm.endProjectedBalance)}
                             </div>
                             {beforeStart && <div className="text-[11px] text-tertiary mt-1">{t('beforeStart')}</div>}
+                            {cm.backCalculated && (() => {
+                              const [ay, am] = (data.startingMonth || '').split('|');
+                              return <div className="text-[11px] text-tertiary mt-1">{t('backCalcNote', { month: monthLabel(parseInt(ay), am) })}</div>;
+                            })()}
                           </div>
                           {!beforeStart && (
                             <div className="text-xs font-mono space-y-1">
