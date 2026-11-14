@@ -679,7 +679,12 @@
         dueBoth: "Beide",
         dueNothing: "Alles bezahlt 🎉",
         dueNoDay: "Ohne festen Tag",
-        forecastTitle: "Ausblick: Stand am Monatsende",
+        forecastTitle: "Ausblick: Stand am Monatsende (12 Monate)",
+        incomeEndTitle: "Einnahmen, die enden",
+        incomeEndLast: "Letzte Zahlung: {{when}}",
+        incomeEndFrom: "fehlt ab {{month}}",
+        incomeEndTotal: "Ab {{month}} fehlen zusammen {{amount}} pro Monat.",
+        incomeEndHint: "Plant rechtzeitig, wie ihr das ersetzt: mit einem Puffer, niedrigeren Ausgaben oder neuem Einkommen. Die rote Linie im Ausblick zeigt, ab wann es fehlt.",
         forecastLow: "Tiefster Stand: {{amount}} Ende {{month}}",
         forecastNegative: "Achtung: Ende {{month}} wärst du bei {{amount}}",
         setAsideTitle: "Zurücklegen",
@@ -1060,7 +1065,12 @@
         dueBoth: "Both",
         dueNothing: "All paid 🎉",
         dueNoDay: "No fixed day",
-        forecastTitle: "Outlook: month-end balance",
+        forecastTitle: "Outlook: month-end balance (12 months)",
+        incomeEndTitle: "Income ending",
+        incomeEndLast: "Last payment: {{when}}",
+        incomeEndFrom: "missing from {{month}}",
+        incomeEndTotal: "From {{month}}, {{amount}} less per month in total.",
+        incomeEndHint: "Plan in time how to replace it: a buffer, lower costs or new income. The red line in the outlook shows when it stops.",
         forecastLow: "Lowest point: {{amount}} at the end of {{month}}",
         forecastNegative: "Careful: at the end of {{month}} you'd be at {{amount}}",
         setAsideTitle: "Set aside",
@@ -2029,9 +2039,35 @@
         return out.sort((a, b) => (b.overdue - a.overdue) || (a.off - b.off) || ((a.day || 99) - (b.day || 99)));
       }, [data, nowIdx]);
 
+      // Regular incomes whose payments stop within the next 12 months (e.g. a blocked account running out).
+      const incomeEndings = useMemo(() => {
+        if (nowIdx === -1) return { rows: [], groups: [] };
+        const rows = [];
+        data.categories.incomes.forEach(cat => {
+          const meta = getMeta('incomes', cat);
+          if (meta.oneTime) return;
+          const amounts = TIMELINE.map(p => expectedIncome(getNode('incomes', cat, p.yr, p.m)));
+          let last = -1;
+          for (let i = TIMELINE.length - 1; i >= nowIdx; i--) if (amounts[i] > 0) { last = i; break; }
+          if (last === -1 || last === TIMELINE.length - 1) return; // nothing ahead, or still paying at the end
+          if (amounts.slice(Math.max(0, last - 11), last + 1).filter(v => v > 0).length < 3) return; // not a regular income
+          const countsIdx = isForNextItem('incomes', cat) ? last + 1 : last;
+          const fromIdx = countsIdx + 1;
+          if (fromIdx >= TIMELINE.length || fromIdx > nowIdx + 12) return;
+          rows.push({ cat, last: TIMELINE[last], from: TIMELINE[fromIdx], fromIdx, amount: amounts[last], payDay: meta.payDay });
+        });
+        rows.sort((a, b) => a.fromIdx - b.fromIdx);
+        const groups = [];
+        rows.forEach(r => {
+          const g = groups.find(x => x.fromIdx === r.fromIdx);
+          if (g) g.total += r.amount; else groups.push({ fromIdx: r.fromIdx, from: r.from, total: r.amount });
+        });
+        return { rows, groups };
+      }, [data, nowIdx]);
+
       const forecast = useMemo(() => {
         if (nowIdx === -1) return [];
-        return forwardTimeline.slice(nowIdx, nowIdx + 6).filter(r => r.endProjectedBalance != null);
+        return forwardTimeline.slice(nowIdx, nowIdx + 12).filter(r => r.endProjectedBalance != null);
       }, [forwardTimeline, nowIdx]);
 
       // Irregular costs (quarterly, yearly) and future one-time payments, as a monthly amount to put aside.
@@ -3877,6 +3913,33 @@
                           ))}
                         </div>
 
+                        {/* Incomes that stop soon */}
+                        {incomeEndings.rows.length > 0 && (
+                          <div className={`${mobileTab === 'cockpit' ? 'block' : 'hidden lg:block'} rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 space-y-2`}>
+                            <span className="text-[11px] uppercase tracking-wide font-semibold text-amber-700 dark:text-amber-400">⚠️ {t('incomeEndTitle')}</span>
+                            {incomeEndings.rows.map(r => (
+                              <div key={r.cat} className="text-xs">
+                                <div className="flex items-baseline justify-between gap-2">
+                                  <span className="text-primary truncate">{r.cat}</span>
+                                  <span className="font-mono text-notion-red shrink-0">−{fmt(r.amount)}</span>
+                                </div>
+                                <div className="text-[10px] text-tertiary">
+                                  {t('incomeEndLast', { when: r.payDay ? `${r.payDay}. ${formatMonth(r.last.m, lang)} ${r.last.yr}` : `${formatMonth(r.last.m, lang)} ${r.last.yr}` })}
+                                  {' · '}{t('incomeEndFrom', { month: `${formatMonth(r.from.m, lang)} ${r.from.yr}` })}
+                                </div>
+                              </div>
+                            ))}
+                            {incomeEndings.groups.map(g => (
+                              incomeEndings.rows.filter(r => r.fromIdx === g.fromIdx).length > 1 && (
+                                <p key={g.fromIdx} className="text-[11px] font-semibold text-notion-red">
+                                  {t('incomeEndTotal', { month: `${formatMonth(g.from.m, lang)} ${g.from.yr}`, amount: fmt(g.total) })}
+                                </p>
+                              )
+                            ))}
+                            <p className="text-[10px] text-tertiary leading-snug">{t('incomeEndHint')}</p>
+                          </div>
+                        )}
+
                         {/* Forecast: where the balance is heading */}
                         {forecast.length > 1 && (() => {
                           const vals = forecast.map(r => r.endProjectedBalance);
@@ -3885,6 +3948,11 @@
                           const H = 90, W = 300, pad = 4, bw = (W - pad * 2) / forecast.length;
                           const y = (v) => pad + (hi - v) / range * (H - pad * 2);
                           const low = forecast.reduce((a, b) => b.endProjectedBalance < a.endProjectedBalance ? b : a);
+                          const labelSize = forecast.length > 8 ? 8.5 : 10;
+                          // Where a regular income stops, mark the first month without it.
+                          const endMarks = incomeEndings.groups
+                            .map(g => ({ ...g, i: forecast.findIndex(r => r.year === g.from.yr && r.month === g.from.m) }))
+                            .filter(g => g.i > 0);
                           return (
                             <div className={`${mobileTab === 'cockpit' ? 'block' : 'hidden lg:block'} rounded-lg border border-subtle bg-surface p-4 space-y-2`}>
                               <span className="text-[11px] uppercase tracking-wide font-semibold text-secondary">{t('forecastTitle')}</span>
@@ -3897,12 +3965,17 @@
                                     <g key={r.key}>
                                       <rect x={pad + i * bw + bw * 0.18} y={top} width={bw * 0.64} height={h} rx="3"
                                         fill={v < 0 ? '#e03e3e' : r === low ? '#cb912f' : '#0f7b6c'} opacity={r === low ? 1 : 0.75} />
-                                      <text x={pad + i * bw + bw / 2} y={H + 13} textAnchor="middle" fontSize="10" fill="currentColor" className="text-tertiary">
+                                      <text x={pad + i * bw + bw / 2} y={H + 13} textAnchor="middle" fontSize={labelSize} fill="currentColor" className="text-tertiary">
                                         {formatMonth(r.month, lang)}
                                       </text>
                                     </g>
                                   );
                                 })}
+                                {endMarks.map(g => (
+                                  <g key={g.fromIdx}>
+                                    <line x1={pad + g.i * bw} x2={pad + g.i * bw} y1="0" y2={H} stroke="#e03e3e" strokeWidth="1.5" strokeDasharray="2 2" />
+                                  </g>
+                                ))}
                               </svg>
                               <p className={`text-[11px] ${low.endProjectedBalance < 0 ? 'text-notion-red font-medium' : 'text-secondary'}`}>
                                 {t(low.endProjectedBalance < 0 ? 'forecastNegative' : 'forecastLow', { amount: fmt(low.endProjectedBalance), month: monthLabel(low.year, low.month) })}
