@@ -743,6 +743,15 @@
         paydayHelp: "Euer Budgetmonat beginnt mit dem Gehalt. Rechnungen mit Zahltag ab diesem Tag und Belege ab diesem Datum zählen automatisch zum nächsten Monat, auch für das Monatsziel.",
         forNextAuto: "Zählt automatisch zum Folgemonat (Zahltag {{day}}. ≥ Gehaltstag {{payday}}.)",
         countsForNext: "Zählt für {{month}}",
+        everydayTitle: "Frei für den Alltag bis Monatsende",
+        everydayTitlePayday: "Frei für den Alltag bis zum Gehalt ({{day}}.)",
+        everydayPerDay: "≈ {{amount}} pro Tag für {{days}} Tage",
+        everydayOpenBills: "Rechnungen bis dahin noch offen ({{n}})",
+        everydayIncomeLeft: "Einnahmen bis dahin noch erwartet",
+        everydayFree: "Frei für Lebensmittel, Haushalt & Co.",
+        targetsOverFree: "Eure Ziele für variable Ausgaben haben noch {{targets}} offen, das sind {{amount}} mehr als frei ist. Gebt bis zum Gehalt höchstens den freien Betrag aus oder senkt die Ziele.",
+        targetsFit: "Eure offenen Ziele ({{targets}}) passen: danach bleiben noch {{amount}}.",
+        ifAllTargets: "Wenn alle Ziele voll ausgegeben werden:",
         missingLateIncome: "{{names}} kommt erst am Monatsende und zählt für den Folgemonat. Im {{month}} ist dafür aber nichts eingetragen, deshalb fehlt es hier, und die Lücke zieht sich in alle späteren Monate.",
         missingLateFix: "Trag es im {{month}} nach, oder geh zum aktuellen Monat und tippe „Mit echtem Kontostand korrigieren“: dann zählen ältere Monate nicht mehr.",
         whoJoint: "Gemeinsam",
@@ -1131,6 +1140,15 @@
         paydayHelp: "Your budget month starts with the salary. Bills due on or after this day and receipts from this date on count for the next month automatically, including for the monthly target.",
         forNextAuto: "Counts for the next month automatically (due day {{day}} ≥ payday {{payday}})",
         countsForNext: "Counts for {{month}}",
+        everydayTitle: "Free for everyday spending until month-end",
+        everydayTitlePayday: "Free for everyday spending until payday ({{day}}th)",
+        everydayPerDay: "≈ {{amount}} per day for {{days}} days",
+        everydayOpenBills: "Bills still due before then ({{n}})",
+        everydayIncomeLeft: "Income still expected before then",
+        everydayFree: "Free for groceries, household & co.",
+        targetsOverFree: "Your variable targets still have {{targets}} open, that's {{amount}} more than is free. Spend at most the free amount until payday, or lower the targets.",
+        targetsFit: "Your open targets ({{targets}}) fit: {{amount}} remains afterwards.",
+        ifAllTargets: "If every target is spent in full:",
         missingLateIncome: "{{names}} only arrives at the end of the month and counts for the next one. Nothing is entered for it in {{month}}, so it's missing here, and the gap carries into every later month.",
         missingLateFix: "Enter it in {{month}}, or go to the current month and tap \"Correct with real balance\": older months then stop counting.",
         whoJoint: "Joint",
@@ -3744,6 +3762,28 @@
                       + (cm.actualIn - (cm.shiftedActual || 0)) - (cm.actualEx - (cm.shiftedExActual || 0) - (cm.lateVarPrev || 0))
                       + (cm.arrivedForNextActual || 0) - (cm.leftForNextActual || 0) - (cm.lateVarHere || 0)
                     : null;
+                  // The current month's real question: what can still go on everyday things until payday?
+                  // Money now, minus bills still to pay before payday, plus income still to arrive before it.
+                  const everyday = availableNow === null ? null : (() => {
+                    let openBills = 0, openCount = 0, incomeLeft = 0;
+                    data.categories.expenses.forEach(c => {
+                      if (isReceiptItem(c) || isForNextItem('expenses', c)) return;
+                      const n = getNode('expenses', c, selectedYear, selectedMonth);
+                      if (n.budget > 0 && n.actual === 0) { openBills += n.budget; openCount += 1; }
+                    });
+                    data.categories.incomes.forEach(c => {
+                      if (isForNextItem('incomes', c)) return;
+                      const n = getNode('incomes', c, selectedYear, selectedMonth);
+                      if (n.budget > 0 && n.actual === 0) incomeLeft += n.budget;
+                    });
+                    const targetsOpen = groupView.filter(gv => gv.g.kind === 'variable')
+                      .reduce((sum, gv) => sum + Math.max(0, gv.target - gv.spent), 0);
+                    const today = new Date().getDate();
+                    const lastDay = payday && today < payday ? payday - 1 : getDaysInMonth(selectedYear, selectedMonth);
+                    const days = Math.max(1, lastDay - today + 1);
+                    const free = availableNow - openBills + incomeLeft;
+                    return { openBills, openCount, incomeLeft, targetsOpen, free, days };
+                  })();
                   const incomeHasAmount = (cat) => {
                     const node = getNode('incomes', cat, selectedYear, selectedMonth);
                     return node.budget > 0 || node.actual > 0;
@@ -3786,15 +3826,58 @@
                           <div>
                             <div className="text-[11px] text-secondary flex items-center gap-1.5">
                               <span>🏦</span>
-                              <span>{usesShift
+                              <span>{everyday
+                                ? t(payday ? 'everydayTitlePayday' : 'everydayTitle', { day: payday })
+                                : usesShift
                                 ? t('beforePaydayTitle', { month: monthLabel(selectedYear, selectedMonth) })
                                 : t(isPast ? 'endOfMonthTitlePast' : 'endOfMonthTitle', { month: monthLabel(selectedYear, selectedMonth) })}</span>
                             </div>
-                            <div className={`text-3xl font-mono font-bold mt-1 ${beforeStart ? 'text-tertiary' : cm.endProjectedBalance >= 0 ? 'text-primary' : 'text-notion-red'}`}>
-                              {fmtBalance(cm.endProjectedBalance)}
-                            </div>
+                            {everyday ? (
+                              <>
+                                <div className={`text-3xl font-mono font-bold mt-1 ${everyday.free >= 0 ? 'text-primary' : 'text-notion-red'}`}>
+                                  {fmt(everyday.free)}
+                                </div>
+                                {everyday.free > 0 && (
+                                  <div className="text-[11px] text-secondary mt-0.5">{t('everydayPerDay', { amount: fmt(everyday.free / everyday.days), days: everyday.days })}</div>
+                                )}
+                              </>
+                            ) : (
+                              <div className={`text-3xl font-mono font-bold mt-1 ${beforeStart ? 'text-tertiary' : cm.endProjectedBalance >= 0 ? 'text-primary' : 'text-notion-red'}`}>
+                                {fmtBalance(cm.endProjectedBalance)}
+                              </div>
+                            )}
                             {beforeStart && <div className="text-[11px] text-tertiary mt-1">{t('beforeStart')}</div>}
                           </div>
+                          {everyday && (
+                            <div className="text-xs font-mono space-y-1">
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="font-sans text-secondary">{t('availableNow')}</span>
+                                <span className="text-primary">{fmt(availableNow)}</span>
+                              </div>
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="font-sans text-secondary">{t('everydayOpenBills', { n: everyday.openCount })}</span>
+                                <span className="text-notion-red">− {fmt(everyday.openBills)}</span>
+                              </div>
+                              {everyday.incomeLeft > 0 && (
+                                <div className="flex items-center justify-between gap-3">
+                                  <span className="font-sans text-secondary">{t('everydayIncomeLeft')}</span>
+                                  <span className="text-notion-green">+ {fmt(everyday.incomeLeft)}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between gap-3 border-t border-strong pt-1 font-bold">
+                                <span className="font-sans text-primary">= {t('everydayFree')}</span>
+                                <span className={everyday.free >= 0 ? 'text-primary' : 'text-notion-red'}>{fmt(everyday.free)}</span>
+                              </div>
+                              {everyday.targetsOpen > 0 && (
+                                <p className={`font-sans text-[11px] leading-snug pt-1 ${everyday.targetsOpen > Math.max(0, everyday.free) ? 'text-notion-red' : 'text-notion-green'}`}>
+                                  {everyday.targetsOpen > Math.max(0, everyday.free)
+                                    ? t('targetsOverFree', { targets: fmt(everyday.targetsOpen), amount: fmt(everyday.targetsOpen - Math.max(0, everyday.free)) })
+                                    : t('targetsFit', { targets: fmt(everyday.targetsOpen), amount: fmt(everyday.free - everyday.targetsOpen) })}
+                                </p>
+                              )}
+                              <div className="font-sans text-[10px] uppercase tracking-wide text-tertiary pt-2">{t('ifAllTargets')}</div>
+                            </div>
+                          )}
                           {!beforeStart && (
                             <div className="text-xs font-mono space-y-1">
                               {lines.map(l => (
@@ -3819,7 +3902,7 @@
                                   <span>− {fmt(cm.leavingForNext)}</span>
                                 </div>
                               )}
-                              {availableNow !== null && (
+                              {availableNow !== null && !everyday && (
                                 <div className="flex items-center justify-between gap-3 pt-1 mt-1 border-t border-subtle">
                                   <span className="font-sans text-secondary">{t('availableNow')}</span>
                                   <span className={availableNow >= 0 ? 'text-primary' : 'text-notion-red'}>{fmt(availableNow)}</span>
