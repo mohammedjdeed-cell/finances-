@@ -511,7 +511,7 @@
         targetOver: "{{amount}} über dem Ziel",
         stillOpen: "Noch offen: {{amount}}",
         stillExpected: "Noch erwartet: {{amount}}",
-        expectedRules: "So wird gerechnet: Einnahmen = erhalten, sonst geplant · Fixkosten & Einmaliges = bezahlt, sonst geplant · Variable Gruppen = Monatsziel, oder mehr wenn schon überschritten (abgelaufene Monate: nur tatsächlich Ausgegebenes).",
+        expectedRules: "So wird gerechnet: Einnahmen = erhalten, sonst geplant · Fixkosten & Einmaliges = bezahlt, sonst geplant · Variable Gruppen = Monatsziel, oder mehr wenn schon überschritten. Abgelaufene Monate: nur was wirklich rein- und rausging.",
         thisMonth: "Dieser Monat",
         breakdownBtn: "Alle Beträge",
         fixBalanceBtn: "Mit echtem Kontostand korrigieren",
@@ -902,7 +902,7 @@
         targetOver: "{{amount}} over target",
         stillOpen: "Still to pay: {{amount}}",
         stillExpected: "Still expected: {{amount}}",
-        expectedRules: "How it's calculated: income = received, else planned · fixed & one-time = paid, else planned · variable groups = monthly target, or more if already exceeded (finished months: only what was actually spent).",
+        expectedRules: "How it's calculated: income = received, else planned · fixed & one-time = paid, else planned · variable groups = monthly target, or more if already exceeded. Finished months: only what really came in and went out.",
         thisMonth: "This month",
         breakdownBtn: "All amounts",
         fixBalanceBtn: "Correct with real balance",
@@ -1913,6 +1913,10 @@
         const anchorIdx = Math.max(0, TIMELINE.findIndex(x => timelineKey(x.yr, x.m) === data.startingMonth));
         const rows = TIMELINE.map(({ yr, m }, idx) => {
           let budgetIn = 0, actualIn = 0, projectedIn = 0;
+          // A finished month counts only what really came in and went out; open plans there never happened.
+          const past = monthStatus(yr, m) === 'past';
+          const inc = (node) => past ? node.actual : expectedIncome(node);
+          const known = (node) => past ? node.actual : knownAmount(node);
           let budgetEx = 0, actualEx = 0, projectedEx = 0;
           const fixed = { plan: 0, paid: 0, expected: 0, items: 0, paidItems: 0 };
           const flex = { plan: 0, spent: 0, expected: 0 };
@@ -1930,15 +1934,15 @@
               const node = getNode('incomes', cat, prevPos.yr, prevPos.m);
               budgetIn += node.budget;
               actualIn += node.actual;
-              projectedIn += expectedIncome(node);
-              shiftedIn += expectedIncome(node);
+              projectedIn += inc(node);
+              shiftedIn += inc(node);
               shiftedActual += node.actual;
               return;
             }
             const node = getNode('incomes', cat, yr, m);
             budgetIn += node.budget;
             actualIn += node.actual;
-            projectedIn += expectedIncome(node);
+            projectedIn += inc(node);
           });
 
           const spentByGroup = {};
@@ -1951,11 +1955,11 @@
             let node = getNode('expenses', cat, yr, m);
             if (isForNextItem('expenses', cat)) {
               // Paid at the end of this month from the new salary → counts next month.
-              leavingForNext += knownAmount(node);
+              leavingForNext += known(node);
               leftForNextActual += node.actual;
               if (!prevPos) return;
               node = getNode('expenses', cat, prevPos.yr, prevPos.m);
-              const expected = knownAmount(node);
+              const expected = known(node);
               actualEx += node.actual;
               budgetEx += node.budget;
               projectedEx += expected;
@@ -1975,7 +1979,7 @@
               return;
             }
             actualEx += node.actual;
-            const expected = knownAmount(node);
+            const expected = known(node);
             budgetEx += node.budget;
             projectedEx += expected;
             if (g && g.kind === 'fixed' && !meta.oneTime) {
