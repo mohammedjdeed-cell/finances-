@@ -3734,7 +3734,9 @@
                   const missingLate = usesShift && prev && !beforeStart
                     ? data.categories.incomes.filter(c => isForNextItem('incomes', c)
                         && expectedIncome(getNode('incomes', c, prev.yr, prev.m)) === 0
-                        && expectedIncome(getNode('incomes', c, selectedYear, selectedMonth)) > 0)
+                        && expectedIncome(getNode('incomes', c, selectedYear, selectedMonth)) > 0
+                        // A new income (first paid this month) isn't missing anything.
+                        && TIMELINE.slice(0, timelineIndex(prev.yr, prev.m)).some(p => expectedIncome(getNode('incomes', c, p.yr, p.m)) > 0))
                     : [];
                   // What should be in the accounts right now, according to what's recorded so far.
                   const availableNow = !beforeStart && monthStatus(selectedYear, selectedMonth) === 'current'
