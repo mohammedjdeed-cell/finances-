@@ -4,6 +4,7 @@
 // Environment variables (Vercel → Project → Settings → Environment Variables):
 //   ANTHROPIC_API_KEY  the key from console.anthropic.com
 //   ALLOWED_EMAILS     comma-separated Google accounts allowed to ask, e.g. "you@gmail.com,partner@gmail.com"
+//   CLAUDE_MODEL       optional: "sonnet" (default, about half the price) or "opus" (more thorough)
 import Anthropic from "@anthropic-ai/sdk";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 
@@ -14,6 +15,13 @@ const FIREBASE_PROJECT_ID = "finances-ed83f";
 const FIREBASE_KEYS = createRemoteJWKSet(
   new URL("https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com")
 );
+
+const MODELS = { sonnet: "claude-sonnet-5-5", opus: "claude-opus-5-5" };
+const pickModel = () => {
+  const wanted = String(process.env.CLAUDE_MODEL || "").trim().toLowerCase();
+  if (Object.values(MODELS).includes(wanted)) return wanted;
+  return MODELS[wanted] || MODELS.sonnet;
+};
 
 const MAX_SNAPSHOT_CHARS = 400_000;
 const MAX_QUESTION_CHARS = 4_000;
@@ -74,7 +82,7 @@ export default async function handler(req, res) {
 
   try {
     const response = await anthropic.beta.messages.create({
-      model: "claude-opus-5-5",
+      model: pickModel(),
       max_tokens: 8000,
       output_config: { effort: "medium" },
       // If the model declines, the API retries on a fallback model inside the same call.
@@ -96,6 +104,7 @@ export default async function handler(req, res) {
       content: response.content,
       truncated: response.stop_reason === "max_tokens",
       usage: response.usage,
+      model: response.model,
     });
   } catch (error) {
     if (error instanceof Anthropic.AuthenticationError) return fail(res, 500, "bad_api_key");
