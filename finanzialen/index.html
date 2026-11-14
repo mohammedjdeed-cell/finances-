@@ -743,6 +743,8 @@
         paydayHelp: "Euer Budgetmonat beginnt mit dem Gehalt. Rechnungen mit Zahltag ab diesem Tag und Belege ab diesem Datum zählen automatisch zum nächsten Monat, auch für das Monatsziel.",
         forNextAuto: "Zählt automatisch zum Folgemonat (Zahltag {{day}}. ≥ Gehaltstag {{payday}}.)",
         countsForNext: "Zählt für {{month}}",
+        missingLateIncome: "{{names}} kommt erst am Monatsende und zählt für den Folgemonat. Im {{month}} ist dafür aber nichts eingetragen, deshalb fehlt es hier, und die Lücke zieht sich in alle späteren Monate.",
+        missingLateFix: "Trag es im {{month}} nach, oder geh zum aktuellen Monat und tippe „Mit echtem Kontostand korrigieren“: dann zählen ältere Monate nicht mehr.",
         whoJoint: "Gemeinsam",
         whoLabel: "Wer hat bezahlt?",
         whoPaidTitle: "Wer hat bezahlt? (Ausgaben)",
@@ -1129,6 +1131,8 @@
         paydayHelp: "Your budget month starts with the salary. Bills due on or after this day and receipts from this date on count for the next month automatically, including for the monthly target.",
         forNextAuto: "Counts for the next month automatically (due day {{day}} ≥ payday {{payday}})",
         countsForNext: "Counts for {{month}}",
+        missingLateIncome: "{{names}} only arrives at the end of the month and counts for the next one. Nothing is entered for it in {{month}}, so it's missing here, and the gap carries into every later month.",
+        missingLateFix: "Enter it in {{month}}, or go to the current month and tap \"Correct with real balance\": older months then stop counting.",
         whoJoint: "Joint",
         whoLabel: "Who paid?",
         whoPaidTitle: "Who paid? (expenses)",
@@ -3725,6 +3729,13 @@
                     { label: t('lineFlex'), text: `− ${fmt(cm.flex.expected)}`, cls: 'text-notion-red' }
                   ];
                   const nextPos = TIMELINE[timelineIndex(selectedYear, selectedMonth) + 1];
+                  // Late income that pays for this month but has nothing entered in the month before:
+                  // this month then looks short, and the gap carries into every later month.
+                  const missingLate = usesShift && prev && !beforeStart
+                    ? data.categories.incomes.filter(c => isForNextItem('incomes', c)
+                        && expectedIncome(getNode('incomes', c, prev.yr, prev.m)) === 0
+                        && expectedIncome(getNode('incomes', c, selectedYear, selectedMonth)) > 0)
+                    : [];
                   // What should be in the accounts right now, according to what's recorded so far.
                   const availableNow = !beforeStart && monthStatus(selectedYear, selectedMonth) === 'current'
                     ? cm.startBal + (cm.shiftedIn || 0) - (cm.shiftedEx || 0) - (cm.lateVarPrev || 0)
@@ -3812,6 +3823,12 @@
                                   <span className={availableNow >= 0 ? 'text-primary' : 'text-notion-red'}>{fmt(availableNow)}</span>
                                 </div>
                               )}
+                            </div>
+                          )}
+                          {missingLate.length > 0 && (
+                            <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-800 dark:text-amber-300 leading-snug space-y-1">
+                              <p>⚠️ {t('missingLateIncome', { names: missingLate.map(c => `„${c}“`).join(', '), month: monthLabel(prev.yr, prev.m) })}</p>
+                              <p>{t('missingLateFix', { month: monthLabel(prev.yr, prev.m) })}</p>
                             </div>
                           )}
                           {!usesShift && data.categories.incomes.length > 0 && (
