@@ -209,6 +209,7 @@
       return isFinite(n) ? n : null;
     };
     const parseBankDate = (v) => {
+      if (v instanceof Date && !isNaN(v)) return `${v.getFullYear()}-${pad2(v.getMonth() + 1)}-${pad2(v.getDate())}`;
       const str = String(v || '').trim();
       let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(str);
       if (m) return `${m[1]}-${m[2]}-${m[3]}`;
@@ -245,6 +246,58 @@
         kind: col.kind !== -1 ? String(r[col.kind] || '').trim().toUpperCase() : ''
       })).filter(x => x.date && x.amount !== null && x.desc);
     };
+    // Money Manager (Android) export: Date, Account, Category, Subcategory, Note, EUR, Income/Expense, …
+    const isMoneyManagerSheet = (rows) => {
+      const header = (rows[0] || []).map(h => String(h).trim().toLowerCase());
+      return header.includes('income/expense') && header.includes('category');
+    };
+    const readMoneyManager = (rows) => {
+      const header = rows[0].map(h => String(h).trim().toLowerCase());
+      const at = (name) => header.indexOf(name);
+      const col = { date: at('date'), account: at('account'), cat: at('category'), sub: at('subcategory'),
+        note: at('note'), eur: at('eur'), kind: at('income/expense'), currency: at('currency') };
+      if (col.date === -1 || col.cat === -1 || col.kind === -1 || col.eur === -1) return null;
+      const txt = (r, i) => i === -1 ? '' : String(r[i] ?? '').trim();
+      // Categories start with an emoji ("🪑 Household"); drop it, it can also come out garbled.
+      const plain = (v) => { const m = /^(\S{1,3})\s+(.+)$/.exec(v); return m && !/[A-Za-z0-9\u0600-\u06FF]/.test(m[1]) ? m[2].trim() : v; };
+      return rows.slice(1).map(r => {
+        const kind = txt(r, col.kind);
+        const eur = Math.abs(parseBankNumber(r[col.eur]) ?? NaN);
+        const account = txt(r, col.account), cat = plain(txt(r, col.cat)), sub = plain(txt(r, col.sub)), note = txt(r, col.note);
+        const isTransfer = /^transfer/i.test(kind);
+        return {
+          date: parseBankDate(r[col.date]),
+          desc: isTransfer ? `${account} → ${cat}` : [cat, sub, note].filter(Boolean).join(' · '),
+          amount: /^income$/i.test(kind) ? eur : -eur,
+          fee: 0, currency: 'EUR', state: '',
+          kind: isTransfer ? 'TRANSFER' : '',
+          mm: { account, cat, sub, note, kind: kind.toLowerCase() },
+          // Learn by category, not by the free-text note.
+          ruleKey: `mm:${cat}|${sub}`.toLowerCase()
+        };
+      }).filter(x => x.date && isFinite(x.amount) && x.amount !== 0 && /^(income|expense|transfer)/i.test(x.mm.kind));
+    };
+    // Money Manager category → app group, plus which item names in that group fit best.
+    const MM_HINTS = [
+      [/rent|miete/i, 'housing', /miete|rent/i],
+      [/electric|strom/i, 'bills', /strom|electric/i],
+      [/^gas$|heiz/i, 'bills', /gas|heiz/i],
+      [/water|wasser|swk/i, 'bills', /wasser|water/i],
+      [/^net\b|communication|handy|phone|internet/i, 'bills', /internet|handy|o2|vodafone|kabel|phone/i],
+      [/rundfunk|radio|ard/i, 'bills', /rundfunk|radio/i],
+      [/subscription|abo/i, 'subs', null],
+      [/insurance|versicherung/i, 'insurance', null],
+      [/grocer|lebensmittel/i, 'groceries', /lebensmittel|grocer|einkauf/i],
+      [/^dm$|drogerie|beauty|kosmetik/i, 'groceries', /drogerie|dm|beauty/i],
+      [/health|gesundheit|apotheke/i, 'groceries', /gesund|health|apotheke|drogerie/i],
+      [/food|restaurant|essen/i, 'leisure', /essen|restaurant|food|lieferung/i],
+      [/gift|geschenk/i, 'leisure', /geschenk|gift/i],
+      [/transport|ticket|bahn/i, 'household', /transport|ticket|bahn|deutschland/i],
+      [/household|haushalt|hausrat/i, 'household', /hausrat|haushalt|household/i],
+      [/apparel|kleidung|cloth/i, 'household', /kleidung|cloth|apparel/i],
+      [/electronic|amazon|امازون/i, 'household', /elektronik|electronic|amazon/i],
+      [/education|bildung|legal|papers/i, 'household', /bildung|education|papier|amt|legal/i]
+    ];
     const payeeKey = (desc) => desc.toLowerCase().replace(/[0-9*#\/]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40);
     const cleanItemName = (name) => name.toLowerCase().replace(/[^a-z0-9äöüß &-]/g, '').replace(/\s+/g, ' ').trim();
     // Which built-in group a payee most likely belongs to.
@@ -649,7 +702,7 @@
         importFrom: "Nur Buchungen ab",
         importFromHint: "Monate, die du schon von Hand eingetragen hast, würden sonst doppelt zählen.",
         importChoose: "Datei auswählen (CSV oder Excel)",
-        importHowTo: "In der Revolut-App: das Konto öffnen → „…“ → Kontoauszug → Excel oder CSV und den Zeitraum wählen. Für das gemeinsame Konto zuerst das gemeinsame Konto öffnen. Danach die Datei hier auswählen.",
+        importHowTo: "In der Revolut-App: das Konto öffnen → „…“ → Kontoauszug → Excel oder CSV und den Zeitraum wählen. Für das gemeinsame Konto zuerst das gemeinsame Konto öffnen. Danach die Datei hier auswählen. Ein Export aus Money Manager (Excel) wird ebenfalls erkannt; das Konto wird dann pro Zeile übernommen.",
         importBadFile: "Diese Datei konnte nicht gelesen werden. Erwartet wird ein Kontoauszug (CSV oder Excel) mit Datum, Beschreibung und Betrag.",
         importSummary: "{{file}}: {{n}} Zeilen · {{ready}} zugeordnet · {{dup}} schon importiert · {{skipped}} übersprungen",
         importSelectAll: "Alle mit Vorschlag auswählen",
@@ -664,6 +717,10 @@
         importSkip_range: "außerhalb Mai 2026 – Dez 2028",
         importSkip_before: "vor dem gewählten Datum",
         importSkip_exchange: "Währungstausch",
+        importSkip_future: "liegt in der Zukunft (bleibt geplant)",
+        importSkip_entered: "schon von Hand eingetragen (gleicher Tag und Betrag)",
+        importTotals: "Ausgewählt: + {{inSum}} rein · − {{outSum}} raus · netto {{net}}",
+        importThenBalance: "jetzt „Mit echtem Kontostand korrigieren“",
         importRun: "{{n}} Buchungen importieren",
         importDone: "{{n}} Buchungen importiert",
         importOwnTransfer: "Eigene Umbuchung",
@@ -1036,7 +1093,7 @@
         importFrom: "Only entries from",
         importFromHint: "Months you already entered by hand would otherwise count twice.",
         importChoose: "Choose file (CSV or Excel)",
-        importHowTo: "In the Revolut app: open the account → “…” → Statement → choose Excel or CSV and the period. For the joint account, open the joint account first. Then pick the file here.",
+        importHowTo: "In the Revolut app: open the account → “…” → Statement → choose Excel or CSV and the period. For the joint account, open the joint account first. Then pick the file here. A Money Manager export (Excel) works too; the account is then taken from each line.",
         importBadFile: "This file couldn't be read. It should be a bank statement (CSV or Excel) with a date, description and amount.",
         importSummary: "{{file}}: {{n}} lines · {{ready}} matched · {{dup}} already imported · {{skipped}} skipped",
         importSelectAll: "Select all with a suggestion",
@@ -1051,6 +1108,10 @@
         importSkip_range: "outside May 2026 – Dec 2028",
         importSkip_before: "before the chosen date",
         importSkip_exchange: "currency exchange",
+        importSkip_future: "in the future (stays planned)",
+        importSkip_entered: "already entered by hand (same day and amount)",
+        importTotals: "Selected: + {{inSum}} in · − {{outSum}} out · net {{net}}",
+        importThenBalance: "now use “Correct with real balance”",
         importRun: "Import {{n}} entries",
         importDone: "Imported {{n}} entries",
         importOwnTransfer: "Own transfer",
@@ -2586,7 +2647,7 @@
       const suggestFor = (line) => {
         const isRefund = /REFUND|ERSTATTUNG|RÜCKERSTATTUNG/.test(line.kind);
         const type = line.amount > 0 && !isRefund ? 'incomes' : 'expenses';
-        const key = payeeKey(line.desc);
+        const key = line.ruleKey || payeeKey(line.desc);
         const rule = data.rules[key];
         if (rule && rule.type === type && data.categories[type].includes(rule.cat)) return `item:${rule.cat}`;
         const low = line.desc.toLowerCase();
@@ -2597,6 +2658,29 @@
         const byWord = data.categories[type].find(c => cleanItemName(c).split(' ')
           .some(w => w.length >= 4 && !GENERIC.includes(w) && low.includes(w)));
         if (byWord) return `item:${byWord}`;
+        if (line.mm) {
+          if (type === 'incomes') {
+            const partner = (data.members.partner || '').trim().split(/\s+/)[0].toLowerCase();
+            const inRe = /allowance|stipend|sperrkonto/i.test(line.mm.cat) ? /sperrkonto|allowance|stipend|taschengeld/i
+              : /salary|gehalt|lohn/i.test(line.mm.cat) ? new RegExp(`gehalt|salary|lohn${partner ? '|' + escapeRe(partner) : ''}`, 'i') : null;
+            const fromAccount = /mai|mayo/i.test(line.mm.account) || (partner && line.mm.account.toLowerCase().includes(partner));
+            const hits = inRe ? data.categories.incomes.filter(c => inRe.test(c)) : [];
+            // Two allowances (yours and hers): pick by account.
+            const pick = hits.length > 1 && partner ? (hits.find(c => fromAccount === c.toLowerCase().includes(partner)) || hits[0]) : hits[0];
+            return pick ? `item:${pick}` : '';
+          }
+          // The category decides first; the subcategory only when the category says nothing.
+          const hint = MM_HINTS.find(([re]) => re.test(line.mm.cat)) || (line.mm.sub ? MM_HINTS.find(([re]) => re.test(line.mm.sub)) : null);
+          if (!hint || !data.groups.some(g => g.id === hint[1])) return '';
+          const items = data.categories.expenses.filter(c => getMeta('expenses', c).bracket === hint[1]);
+          const named = hint[2] ? (items.find(c => hint[2].test(c)) || data.categories.expenses.find(c => hint[2].test(c))) : null;
+          if (named) return `item:${named}`;
+          const group = data.groups.find(g => g.id === hint[1]);
+          // A variable group can take a receipt on its first item; a bill needs the right item, so the user picks.
+          if (group.kind === 'variable' && items.length) return `item:${items[0]}`;
+          if (items.length === 1) return `item:${items[0]}`;
+          return items.length ? '' : `new:${hint[1]}`;
+        }
         if (type === 'incomes') return '';
         const hint = PAYEE_HINTS.find(([re]) => re.test(line.desc));
         if (hint && data.groups.some(g => g.id === hint[1])) return `new:${hint[1]}`;
@@ -2605,6 +2689,7 @@
 
       const escapeRe = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const isOwnTransfer = (line) => {
+        if (line.mm) return line.kind === 'TRANSFER';
         if (/TOPUP|TOP-UP|AUFLADUNG/.test(line.kind) || /top-?up|aufladung/i.test(line.desc)) return true;
         if (line.kind && !/TRANSFER|ÜBERWEISUNG|UEBERWEISUNG|UMBUCHUNG/.test(line.kind)) return false;
         const names = [data.members.me, data.members.partner]
@@ -2628,18 +2713,35 @@
           let rows;
           if (/\.xlsx?$/i.test(file.name)) {
             await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
-            const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
-            rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: false });
+            const wb = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
+            const sheet = wb.Sheets[wb.SheetNames[0]];
+            rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
+            // Money Manager dates are real dates: read them unformatted so day and month don't swap.
+            if (isMoneyManagerSheet(rows)) rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true });
           } else {
             rows = parseCsv(await file.text());
           }
-          const lines = readStatement(rows);
+          const fromMM = isMoneyManagerSheet(rows);
+          const lines = fromMM ? readMoneyManager(rows) : readStatement(rows);
           if (!lines) { setImportModal(m => ({ ...m, error: t('importBadFile') })); return; }
           const seen = new Set(data.imported);
           const counts = {};
           const account = importModal.account;
+          const today = todayISO();
+          const whoOf = (line) => {
+            if (!line.mm) return account;
+            const a = line.mm.account.toLowerCase();
+            const partner = (data.members.partner || '').trim().split(/\s+/)[0].toLowerCase();
+            if (/joint|gemeinsam/.test(a)) return 'joint';
+            if (/\bmai\b|mayo/.test(a) || (partner && a.includes(partner))) return 'partner';
+            return 'me';
+          };
+          // Already in the app as an entry with the same day and amount (typed in by hand)?
+          const entered = (line) => data.tx.some(x => x.date === line.date && Math.abs(x.amount - Math.abs(line.amount)) < 0.005
+            && x.type === (line.amount > 0 ? 'incomes' : 'expenses'));
           const prepared = lines.map((line, i) => {
-            const base = `${account}|${line.date}|${line.desc}|${line.amount}`;
+            const who = whoOf(line);
+            const base = line.mm ? `mm|${line.date}|${line.desc}|${line.amount}` : `${account}|${line.date}|${line.desc}|${line.amount}`;
             counts[base] = (counts[base] || 0) + 1;
             const importKey = `${base}|${counts[base]}`;
             const done = !line.state || /COMPLETED|ABGESCHLOSSEN|ERLEDIGT|AUSGEFÜHRT/.test(line.state);
@@ -2650,10 +2752,12 @@
             else if (!dateToMonth(line.date)) skip = 'range';
             else if (line.date < importModal.fromDate) skip = 'before';
             else if (/EXCHANGE|UMTAUSCH/.test(line.kind)) skip = 'exchange';
+            else if (line.date > today) skip = 'future';
+            else if (entered(line)) skip = 'entered';
             // Money moved between your own accounts is neither income nor spending for the household.
             const ownTransfer = !skip && isOwnTransfer(line);
             const target = skip || ownTransfer ? '' : suggestFor(line);
-            return { ...line, i, importKey, skip, ownTransfer, target, include: !skip && !ownTransfer && !!target };
+            return { ...line, i, who, importKey, skip, ownTransfer, target, include: !skip && !ownTransfer && !!target };
           }).sort((a, b) => a.date < b.date ? 1 : -1);
           setImportModal(m => ({ ...m, step: 'review', fileName: file.name, rows: prepared, error: '' }));
         } catch (e) {
@@ -2715,13 +2819,13 @@
               const pos = dateToMonth(r.date);
               d.values[pos.yr][type][cat][pos.m].actual = 0;
             }
-            const tx = { id: newTxId(), date: r.date, type, cat, amount, who: account, note: r.desc, source: 'import' };
+            const tx = { id: newTxId(), date: r.date, type, cat, amount, who: r.who || account, note: r.desc, source: 'import' };
             d.tx.push(tx);
             applyTx(d, tx, +1);
             d.imported.push(r.importKey);
-            d.rules[payeeKey(r.desc)] = { type, cat };
+            d.rules[r.ruleKey || payeeKey(r.desc)] = { type, cat };
           });
-        }, t('importDone', { n: chosen.length }));
+        }, t('importDone', { n: chosen.length }) + ' · ' + t('importThenBalance'));
         setImportModal(null);
       };
 
@@ -4416,6 +4520,11 @@
                   {t('importSummary', { file: m.fileName, n: rows.length, ready: chosen.length, dup, skipped: skipped.length - dup })}
                 </p>
                 {transfers > 0 && <p className="text-[11px] text-notion-blue">{t('importTransfersNote', { n: transfers })}</p>}
+                {chosen.length > 0 && (() => {
+                  const inSum = chosen.filter(r => directionOf(r) === 'incomes').reduce((a, r) => a + Math.abs(r.amount), 0);
+                  const outSum = chosen.filter(r => directionOf(r) === 'expenses').reduce((a, r) => a + Math.abs(r.amount) + Math.abs(r.fee || 0), 0);
+                  return <p className="text-[11px] font-mono text-primary">{t('importTotals', { inSum: fmtCents(inSum), outSum: fmtCents(outSum), net: fmtCents(inSum - outSum) })}</p>;
+                })()}
                 <div className="flex gap-3 text-[11px]">
                   <button onClick={() => setImportModal(x => ({ ...x, rows: x.rows.map(r => ({ ...r, include: !r.skip && !r.ownTransfer && !!r.target })) }))} className="text-notion-blue hover:underline">
                     {t('importSelectAll')}
