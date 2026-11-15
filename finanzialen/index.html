@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -26,9 +26,9 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Inter', 'ui-sans-serif', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Helvetica', '"Apple Color Emoji"', 'Arial', 'sans-serif'],
+            sans: ['Inter', '"IBM Plex Sans Arabic"', 'ui-sans-serif', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Helvetica', '"Apple Color Emoji"', 'Arial', 'sans-serif'],
             // Numbers use the same typeface with tabular figures (see .font-mono), not a code font.
-            mono: ['Inter', 'ui-sans-serif', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif']
+            mono: ['Inter', '"IBM Plex Sans Arabic"', 'ui-sans-serif', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif']
           },
           borderRadius: { DEFAULT: '0.5rem', md: '0.625rem', lg: '0.875rem', xl: '1.125rem', '2xl': '1.375rem' },
           colors: {
@@ -361,7 +361,9 @@
 
     const MONTH_NAMES = {
       de: { Jan: "Jan", Feb: "Feb", Mrz: "Mär", Apr: "Apr", Mai: "Mai", Jun: "Jun", Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Okt", Nov: "Nov", Dez: "Dez" },
-      en: { Jan: "Jan", Feb: "Feb", Mrz: "Mar", Apr: "Apr", Mai: "May", Jun: "Jun", Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Oct", Nov: "Nov", Dez: "Dec" }
+      en: { Jan: "Jan", Feb: "Feb", Mrz: "Mar", Apr: "Apr", Mai: "May", Jun: "Jun", Jul: "Jul", Aug: "Aug", Sep: "Sep", Okt: "Oct", Nov: "Nov", Dez: "Dec" },
+      // Levantine month names, as used at home.
+      ar: { Jan: "كانون الثاني", Feb: "شباط", Mrz: "آذار", Apr: "نيسان", Mai: "أيار", Jun: "حزيران", Jul: "تموز", Aug: "آب", Sep: "أيلول", Okt: "تشرين الأول", Nov: "تشرين الثاني", Dez: "كانون الأول" }
     };
 
     const formatMonth = (mKey, lang) => MONTH_NAMES[lang]?.[mKey] || MONTH_NAMES['en']?.[mKey] || mKey;
@@ -1511,15 +1513,510 @@
           variable_in: "Variable Income & Loans"
         },
         months: MONTH_NAMES.en
+      },
+      ar: {
+        title: "Jdeeds' Household",
+        subtitle: "التدفق النقدي والحسابات الشخصية",
+        startingCapital: "الرصيد الافتتاحي (الحساب والنقد)",
+        startingMonthLabel: "الرصيد في بداية",
+        startingHint: "رصيدك الحقيقي في بداية أول شهر تُسجَّل منه كل المداخيل والمصاريف. الأشهر الأقدم لا تُحسب.",
+        beforeStart: "قبل شهر البداية",
+        backCalcNote: "محسوب رجوعًا من الرصيد الحقيقي المُدخل في {{month}}",
+        kpiActualNet: "الصافي الفعلي (فائض الشهر)",
+        kpiActualNetDesc: "اضغط لرؤية التفاصيل",
+        kpiProjectedNet: "الصافي المتوقع",
+        kpiDailyRoom: "المصروف اليومي",
+        kpiCumulative: "الرصيد النهائي",
+        kpiCumulativeSub: "الرصيد آخر الشهر",
+        kpiDailyRoomSub: "الميزانية اليومية المتاحة",
+        endOfMonthTitle: "الرصيد المتوقع آخر {{month}}",
+        endOfMonthTitlePast: "الرصيد آخر {{month}}",
+        carriedOver: "المُرحَّل من {{month}}",
+        carriedStart: "الرصيد الافتتاحي",
+        lineIncome: "المداخيل",
+        lineFixed: "المصاريف الثابتة",
+        lineFlex: "المتغيرة والمرة الواحدة",
+        receivedOf: "وصل {{done}} من {{total}}",
+        paidOf: "دُفع {{done}} من {{total}}",
+        paidCount: "دُفع {{n}} من {{m}} بنود",
+        spentOf: "صُرف {{done}} · الهدف {{total}}",
+        targetLeft: "بقي {{amount}} من الهدف",
+        targetOver: "تجاوز الهدف بـ {{amount}}",
+        stillOpen: "بقي للدفع: {{amount}}",
+        stillExpected: "ما زال متوقعًا: {{amount}}",
+        expectedRules: "طريقة الحساب: المداخيل = ما وصل، وإلا المخطط · الثابتة والمرة الواحدة = ما دُفع، وإلا المخطط · المجموعات المتغيرة = الهدف الشهري، أو أكثر إن تجاوزته. الأشهر المنتهية: فقط ما دخل وخرج فعلًا.",
+        thisMonth: "هذا الشهر",
+        breakdownBtn: "كل المبالغ",
+        fixBalanceBtn: "تصحيح بالرصيد الحقيقي",
+        fixBalanceTitle: "أدخل رصيدك الحقيقي",
+        fixBalanceTodayLabel: "الرصيد اليوم (الحساب + النقد)",
+        fixBalanceStartLabel: "الرصيد في بداية {{month}} (الحساب + النقد)",
+        fixBalanceTodayDesc: "يُحسب المبلغ المُرحَّل من هذا الرقم ومما سُجّل في {{month}} (وصل {{in}}، صُرف {{out}})، لذا سجّل أولًا كل ما حدث هذا الشهر. الأشهر الأقدم لا تُحسب بعدها.",
+        fixBalanceStartDesc: "يبدأ الحساب من هذا المبلغ في {{month}}. الأشهر الأقدم لا تُحسب بعدها.",
+        fixBalancePreview: "المُرحَّل يصبح: {{amount}}",
+        fixBalanceSave: "تطبيق",
+        groups: {
+          transport: "المواصلات",
+          health: "الصحة والرياضة",
+          education: "التعليم والامتحانات",
+          fees: "البنوك والرسوم",
+          family: "العائلة والأصدقاء",
+          housing: "السكن",
+          bills: "الفواتير والاتصالات",
+          subs: "الاشتراكات",
+          insurance: "التأمين",
+          groceries: "البقالة والصيدلية",
+          household: "المنزل",
+          leisure: "الترفيه والأكل خارجًا",
+          oneoff: "مرة واحدة"
+        },
+        filterAll: "الكل",
+        filterFixed: "ثابت",
+        filterVariable: "متغير ومرة واحدة",
+        moreTab: "نظرة عامة",
+        groupLabel: "المجموعة",
+        groupPaidSub: "دُفع {{n}} من {{m}} · بقي {{amount}}",
+        groupAllPaid: "كله مدفوع",
+        groupNothingPlanned: "لا شيء مخطط",
+        groupTargetSub: "من {{target}} · بقي {{left}}",
+        groupOverSub: "تجاوز هدف {{target}} بـ {{amount}}",
+        groupNoTarget: "لا يوجد هدف شهري بعد",
+        monthlyTarget: "الهدف الشهري",
+        monthlyTargetHint: "يسري من {{month}} فصاعدًا",
+        itemsCount: "{{n}} بنود",
+        dueOn: "مستحق يوم {{day}}",
+        notPaidYet: "لم يُدفع بعد",
+        receivedLabel: "وصل",
+        expectedLabel: "متوقع",
+        receiptsCount: "{{n}} إيصالات",
+        receiptsOne: "إيصال واحد",
+        nothingYet: "لا شيء بعد",
+        addReceipt: "إيصال",
+        addReceiptTo: "إضافة إيصال إلى {{name}}",
+        addBtn: "إضافة",
+        receiptAdded: "أُضيف {{amount}} إلى {{name}} · {{group}}: {{spent}} من {{target}}",
+        receiptAddedNoTarget: "أُضيف {{amount}} إلى {{name}} · {{group}}: {{spent}}",
+        receiptSheetTitle: "إضافة إيصال",
+        receiptWhere: "أين صرفته؟",
+        receiptNeedAmount: "أدخل المبلغ أولًا، ثم اختر أين صرفته.",
+        receiptNoItems: "أضف أولًا بندًا إلى مجموعة متغيرة، مثل Netto.",
+        spentTotalLabel: "المصروف في {{month}} (الإجمالي)",
+        tapCircleHint: "اضغط الدائرة عند الدفع",
+        tapPlusHint: "اضغط + لإضافة إيصال",
+        addItemShort: "+ بند",
+        newGroup: "+ مجموعة جديدة",
+        groupDialogNew: "مجموعة جديدة",
+        groupDialogEdit: "تعديل المجموعة",
+        groupNameLabel: "الاسم",
+        groupNamePlaceholder: "مثلًا: سيارة، حيوان أليف، ادخار",
+        groupKindLabel: "النوع",
+        groupColorLabel: "اللون",
+        groupKindHelp_fixed: "مبالغ معروفة تؤشر عليها عند الدفع: الإيجار، الاشتراكات، الفواتير.",
+        groupKindHelp_variable: "اجمع الإيصالات مقابل هدف شهري واحد للمجموعة كلها: البقالة، الصيدلية.",
+        groupKindHelp_oneoff: "دفعات منفردة في شهر محدد: رسوم امتحان، تأمين إيجار.",
+        groupDelete: "حذف المجموعة",
+        groupDeleteMove: "انقل بنودها الـ {{n}} إلى:",
+        groupSave: "حفظ",
+        actPeriod: "الفترة",
+        actEdit: "تعديل",
+        markReceivedAria: "تأشير {{name}} كواصل",
+        markPaidAria: "تأشير {{name}} كمدفوع",
+        groupFixed: "مصاريف ثابتة · إيجار، فواتير، اشتراكات",
+        groupFlex: "متغيرة ومرة واحدة",
+        targetLabel: "الهدف",
+        spentLabel: "المصروف",
+        paidLabel: "المدفوع",
+        markPaid: "مدفوع",
+        markReceived: "واصل",
+        markPaidHint: "سجّل المبلغ المخطط كمدفوع",
+        markReceivedHint: "سجّل المبلغ المخطط كواصل",
+        kpiIn: "دخل",
+        kpiOut: "خرج",
+        kpiProjPrefix: "متوقع:",
+        incomesHeader: "المداخيل",
+        expensesHeader: "المصاريف",
+        analyticsTab: "نظرة عامة وديون",
+        planLabel: "المخطط",
+        actualLabel: "الفعلي",
+        asOfDayLabel: "اليوم",
+        asOfDayHint: "يوم الشهر الذي يُحسب الفعلي حتى تاريخه. فارغ = تلقائي (اليوم).",
+        restBudgetLabel: "المتبقي",
+        perDayLabel: "/ يوم",
+        statusOver: "فوق الميزانية",
+        statusTrack: "ضمن الخطة",
+        statusFrugal: "تحت الميزانية",
+        badgeOneTime: "مرة واحدة",
+        badgeFixed: "ثابت",
+        badgeVariable: "متغير",
+        modeLabel: "النوع",
+        options: "الإعدادات",
+        themeLabel: "المظهر",
+        themeLight: "فاتح",
+        themeDark: "داكن",
+        themeSystem: "حسب الجهاز",
+        cloudSync: "المزامنة السحابية",
+        signIn: "تسجيل الدخول بـ Google",
+        signOut: "تسجيل الخروج",
+        signedInAs: "مسجّل باسم {{email}}",
+        signInError: "فشل تسجيل الدخول: {{msg}}",
+        syncLocalOnly: "محفوظ على هذا الجهاز فقط. سجّل الدخول للمزامنة بين الأجهزة.",
+        syncStatus_local: "محلي فقط",
+        syncStatus_pending: "جارٍ الحفظ…",
+        syncStatus_synced: "متزامن",
+        syncStatus_error: "خطأ في المزامنة – البيانات محفوظة محليًا",
+        backupSection: "البيانات والتخزين",
+        exportBackup: "تصدير JSON",
+        importBackup: "استعادة JSON",
+        importSuccess: "تمت استعادة البيانات بنجاح!",
+        importError: "صيغة الملف تالفة.",
+        clearAll: "حذف كل البيانات",
+        confirmClear: "هل تريد فعلًا حذف كل البيانات نهائيًا؟",
+        showAllBtn: "إظهار بنود 0 €",
+        hideZeroesBtn: "إخفاء بنود 0 €",
+        showZeroTitle: "إظهار بنود 0 €",
+        hideZeroTitle: "إخفاء بنود 0 €",
+        hiddenNoticeBracket: "{{count}} بنود غير نشطة (0 €) مخفية",
+        showNow: "إظهار",
+        expandAll: "فتح الكل",
+        collapseAll: "طي الكل",
+        annualOverview: "العرض السنوي",
+        annualRunway: "التدفق السنوي",
+        annualSavingsRate: "نسبة الادخار (متوقعة)",
+        annualMonth: "الشهر",
+        annualNet: "الصافي الفعلي",
+        annualProjected: "المتوقع",
+        annualBalance: "الرصيد",
+        annualTotal: "المجموع",
+        iouTitle: "الديون والمستحقات",
+        iouAddBtn: "إضافة",
+        iouPersonPlaceholder: "مثلًا: الأخت (دين 900 €)...",
+        iouAmountPlaceholder: "المبلغ",
+        iouOptBorrowed: "عليّ (دين/قرض)",
+        iouOptLent: "لي (أقرضت)",
+        iouDebts: "ديون:",
+        iouReceivables: "مستحقات:",
+        iouSisterTip: "استلفت مالًا من أختك (900 €)؟",
+        iouSisterHint: "يضيف +{{amount}} كدخل في {{month}} ويجدول دفعتين بقيمة {{half}} في {{m1}} و{{m2}}.",
+        iouSisterBtn: "⚡ تسجيل الدين المستلم وجدولة السداد",
+        iouIOweBadge: "عليّ",
+        iouOwedToMeBadge: "لي",
+        iouMarkReturned: "تأشير كمُسدَّد",
+        iouLoanLink: "تسجيل دين وجدولة السداد",
+        iouDelete: "حذف (أُدخل بالخطأ)",
+        iouDeleteConfirm: "حذف \"{{person}} · {{amount}}\"؟ هذا يزيله من قائمة الديون فقط، لا من المداخيل ولا من دفعات السداد.",
+        loanDuplicateWarn: "سجّلت مسبقًا دينًا بقيمة {{amount}} ({{person}}، {{date}}). تسجيله مرة أخرى يحسب الدخل والسداد والدين مرتين.",
+        emptyGroupIncomes: "لا مداخيل نشطة هذا الشهر.",
+        emptyGroupExpenses: "لا مصاريف في هذه المجموعة هذا الشهر.",
+        editorTitle: "تعديل البند",
+        posten: "اسم البند",
+        bracketLabel: "الفئة",
+        paymentDayShort: "يوم الدفع",
+        deleteCategoryBtn: "حذف",
+        saveClose: "حفظ وإغلاق",
+        addItemBtn: "+ بند جديد",
+        notesTitleMonth: "ملاحظات وإيصالات ({{month}} {{year}})",
+        addNotePlaceholder: "أضف ملاحظة أو بندًا...",
+        quickAddModalTitle: "إضافة بند جديد",
+        quickAddNamePlaceholder: "مثلًا: سداد الأخت، Netflix...",
+        initialBudgetLabel: "المبلغ المخطط (€)",
+        isOneTimeCurrentOnly: "فقط في شهر \"من\" (0 € في باقي الأشهر)",
+        rangeFrom: "من",
+        rangeUntil: "حتى",
+        rangeSummary: "{{n}} أشهر: {{from}} – {{until}}",
+        rangeSummaryOne: "شهر واحد: {{from}}",
+        repeatLabel: "التكرار",
+        repeat1: "كل شهر",
+        repeat2: "كل شهرين",
+        repeat3: "كل 3 أشهر (فصليًا)",
+        repeat6: "كل 6 أشهر",
+        repeat12: "مرة في السنة",
+        paymentsSummary: "{{n}} دفعات: {{list}}",
+        quickStores: "إضافة سريعة:",
+        importTitle: "استيراد كشف حساب",
+        importBtn: "⬇ استيراد",
+        importAccount: "أي حساب؟",
+        importOwn: "حساب {{name}}",
+        importJoint: "الحساب المشترك",
+        importFrom: "فقط القيود من تاريخ",
+        importFromHint: "الأشهر التي أدخلتها يدويًا ستُحسب مرتين لولا ذلك.",
+        importChoose: "اختر ملفًا (CSV أو Excel)",
+        importHowTo: "في تطبيق Revolut: افتح الحساب ← \"…\" ← كشف حساب ← اختر Excel أو CSV والفترة. للحساب المشترك افتح الحساب المشترك أولًا. ثم اختر الملف هنا. ملف تصدير Money Manager (Excel) يعمل أيضًا، ويُؤخذ الحساب من كل سطر.",
+        importBadFile: "تعذّرت قراءة هذا الملف. يجب أن يكون كشف حساب (CSV أو Excel) فيه تاريخ ووصف ومبلغ.",
+        importSummary: "{{file}}: {{n}} سطرًا · {{ready}} مطابق · {{dup}} مستورد مسبقًا · {{skipped}} متجاوز",
+        importSelectAll: "تحديد كل ما له اقتراح",
+        importSelectNone: "إلغاء التحديد",
+        importSkipOption: "— لا تستورد —",
+        importNewItem: "جديد: {{name}}",
+        importNothingNew: "لا قيود جديدة في هذا الملف.",
+        importSkippedList: "إظهار {{n}} أسطر متجاوزة",
+        importSkip_dup: "مستورد مسبقًا",
+        importSkip_state: "غير مكتمل",
+        importSkip_currency: "عملة أخرى",
+        importSkip_range: "خارج أيار 2026 – كانون الأول 2028",
+        importSkip_before: "قبل التاريخ المختار",
+        importSkip_exchange: "تحويل عملة",
+        importSkip_future: "في المستقبل (يبقى مخططًا)",
+        importSkip_entered: "مُدخل يدويًا مسبقًا (نفس اليوم والمبلغ)",
+        importTotals: "المحدد: + {{inSum}} دخل · − {{outSum}} خرج · الصافي {{net}}",
+        importThenBalance: "الآن استخدم \"تصحيح بالرصيد الحقيقي\"",
+        importRun: "استيراد {{n}} قيود",
+        importDone: "تم استيراد {{n}} قيود",
+        importOwnTransfer: "تحويل بين حساباتك",
+        importReplacesTick: "يحل محل تأشيرك",
+        importTransfersNote: "وُجد {{n}} تحويلات بين حساباتك. ليست دخلًا ولا مصروفًا، لذا تبقى غير محددة.",
+        dueTitle: "مستحق قريبًا",
+        dueOverdue: "متأخر منذ {{day}} {{month}}",
+        dueOnDay: "مستحق {{day}} {{month}}",
+        dueInMonth: "في {{month}}",
+        dueMore: "+ إظهار {{n}} أخرى",
+        dueLess: "إظهار أقل",
+        dueThis: "هذا الشهر",
+        dueNext: "القادم",
+        dueBoth: "كلاهما",
+        dueNothing: "كله مدفوع 🎉",
+        dueNoDay: "بلا يوم محدد",
+        forecastTitle: "التوقعات: الرصيد آخر كل شهر (12 شهرًا)",
+        incomeEndTitle: "مداخيل ستنتهي",
+        incomeEndLast: "آخر دفعة: {{when}}",
+        incomeEndFrom: "تنقص من {{month}}",
+        incomeEndTotal: "من {{month}} ينقص المجموع {{amount}} شهريًا.",
+        incomeEndHint: "خطّط مبكرًا لتعويضها: احتياطي، مصاريف أقل أو دخل جديد. الخط الأحمر في التوقعات يبيّن متى تتوقف.",
+        forecastLow: "أدنى نقطة: {{amount}} آخر {{month}}",
+        forecastNegative: "انتبه: آخر {{month}} ستكون عند {{amount}}",
+        setAsideTitle: "للتجنيب",
+        setAsideHint: "دفعات غير منتظمة أو قادمة لمرة واحدة، موزعة على الأشهر. جنّب هذا المبلغ كل شهر فلا تفاجئك.",
+        setAsideRhythm: "{{n}}× في 12 شهرًا · القادمة {{month}}",
+        setAsideOnce: "مرة في {{month}}",
+        perMonthShort: "{{amount}}/شهريًا",
+        goalsTitle: "أهداف الادخار",
+        goalNew: "+ هدف",
+        goalNewTitle: "هدف ادخار جديد",
+        goalEdit: "تعديل هدف الادخار",
+        goalsEmpty: "لا أهداف ادخار بعد، مثل احتياطي طوارئ أو هاتف أو عطلة.",
+        goalNamePlaceholder: "مثلًا: احتياطي طوارئ",
+        goalTarget: "الهدف",
+        goalSaved: "المدّخر حتى الآن",
+        goalDeadline: "حتى متى؟",
+        goalNoDeadline: "بلا موعد",
+        goalHint: "أهداف الادخار لا تُحسب في ميزانية الشهر، بل تتابع فقط ما جنّبته.",
+        goalReached: "تحقق الهدف 🎉",
+        goalPerMonth: "{{amount}}/شهريًا حتى {{month}}",
+        goalLeft: "بقي {{amount}}",
+        goalDeposit: "+ إضافة ادخار",
+        goalDeposited: "ادُّخر {{amount}} لـ \"{{name}}\"",
+        goalDeleteConfirm: "حذف هدف الادخار \"{{name}}\"؟",
+        iouRepaid: "سُدّد {{repaid}} من {{total}} (عبر \"{{item}}\")",
+        iouLinkRepay: "اربط السداد بـ …",
+        reportGroups: "المصاريف حسب المجموعة {{year}}",
+        reportAvgNote: "المتوسط على {{n}} أشهر فيها مصاريف.",
+        reportTopItems: "أكبر البنود",
+        reportWhoNote: "من القيود المفردة (الإيصالات والاستيراد).",
+        membersLabel: "أفراد المنزل (الأسماء)",
+        autoBackups: "نسخ احتياطية تلقائية (هذا الجهاز)",
+        autoBackupsEmpty: "لا شيء بعد. من تغييرك القادم تُحفظ نسخة واحدة يوميًا.",
+        autoBackupsHint: "نسخة واحدة يوميًا لآخر 14 يومًا. يمكن التراجع عن الاستعادة.",
+        autoBackupRestore: "استعادة",
+        autoBackupConfirm: "استعادة الحالة من {{day}}؟ كل ما بعدها سيُستبدل.",
+        autoBackupRestored: "تمت استعادة النسخة",
+        beforePaydayTitle: "المتبقي حتى الراتب القادم · {{month}}",
+        beforePaydayLine: "قبل الراتب القادم",
+        carriedBeforeSalary: "المتبقي قبل راتب {{month}}",
+        linePaidEndPrev: "دُفع آخر {{month}} (لهذا الشهر)",
+        leavingForNext: "يخرج آخر {{month}} لـ {{next}}",
+        forNextExpLabel: "يُدفع من الراتب القادم",
+        forNextExpHelp: "يُدفع فقط بعد الراتب آخر الشهر (مثل الإيجار يوم 28)، لذا يُحسب في الشهر التالي. أدخله في شهر الدفع.",
+        lineIncomeFromPrev: "راتب {{month}} (لهذا الشهر)",
+        lineIncomeThis: "مداخيل أخرى في {{month}}",
+        arrivingForNext: "يصل آخر {{month}} لـ {{next}}",
+        availableNow: "في الحسابات الآن (حسب القيود)",
+        forNextBadge: "← لـ {{month}}",
+        forNextLabel: "للشهر القادم",
+        forNextHelp: "يصل آخر الشهر (مثل يوم 26) ويُصرف في الشهر التالي. أدخله في شهر وصوله، ويُحسب في التالي.",
+        shiftTip: "هل يصل راتبك آخر الشهر؟ افتحه في المداخيل ← ✎ تعديل ← \"للشهر القادم\".",
+        paydayLabel: "يصل الراتب يوم",
+        paydayOff: "بلا يوم محدد (شهر تقويمي)",
+        paydayOption: "يوم {{day}} (شهر الميزانية: {{day}} حتى {{until}})",
+        paydayHelp: "يبدأ شهر ميزانيتك مع الراتب.",
+        forNextAuto: "يُحسب تلقائيًا للشهر التالي (يوم الدفع {{day}} ≥ يوم الراتب {{payday}})",
+        countsForNext: "يُحسب لـ {{month}}",
+        whoJoint: "مشترك",
+        whoLabel: "من دفع؟",
+        whoPaidTitle: "من دفع؟ (المصاريف)",
+        noteLabel: "ملاحظة (اختياري)",
+        dateLabel: "التاريخ",
+        undoBtn: "تراجع",
+        txDeleted: "حُذف {{amount}} من {{name}}",
+        entriesLabel: "القيود ({{n}})",
+        txBtn: "القيود",
+        navOverview: "نظرة عامة",
+        navMonth: "الشهر",
+        navActivity: "النشاط",
+        navPlan: "التخطيط",
+        navMore: "المزيد",
+        prevMonth: "الشهر السابق",
+        nextMonth: "الشهر التالي",
+        todayBtn: "اليوم",
+        dismiss: "إخفاء",
+        heroIn: "دخل",
+        heroOut: "خرج",
+        heroStart: "البداية",
+        heroDetails: "إظهار الحساب",
+        heroHide: "إخفاء الحساب",
+        howCalc: "كيف يُحسب هذا؟",
+        quickReceipt: "إيصال",
+        quickImport: "استيراد",
+        quickAsk: "اسأل",
+        quickHistory: "السجل",
+        incomeEndShort: "{{n}} مداخيل ستنتهي · من {{month}} ينقص {{amount}}",
+        showDetails: "التفاصيل",
+        hideDetails: "أقل",
+        emptyItems: "{{n}} بلا مبلغ",
+        hideEmpty: "إخفاء الفارغة",
+        emptyGroups: "لا شيء هذا الشهر ({{n}})",
+        actEntries: "الإيصالات",
+        actHistory: "السجل",
+        actSummary: "ملخص الشهر",
+        planYear: "السنة",
+        planOutlook: "التوقعات",
+        accountsTitle: "الحسابات",
+        accountsIntro: "أدخل أرصدتك الحقيقية من حين لآخر، والتطبيق يقارنها بأرقامه.",
+        accountsSetup: "إضافة حساباتنا",
+        accountAdd: "+ حساب",
+        accountMain: "الحسابات الرئيسية",
+        accountGateway: "حسابات العبور",
+        accountCash: "النقد",
+        accountsTotal: "المجموع",
+        accountsAppNow: "حسب التطبيق الآن",
+        accountsDiff: "الفرق",
+        accountsUse: "اعتماده كرصيد حقيقي",
+        accountsUsed: "اعتُمد الرصيد: {{amount}}",
+        accountsUpdated: "فُحص {{day}}",
+        accountName: "الاسم",
+        accountsMatch: "مطابق ✓",
+        accountRemoved: "حُذف الحساب",
+        loansTitle: "الديون والقروض",
+        toolsTitle: "الأدوات",
+        toolSettings: "الإعدادات والنسخ الاحتياطي",
+        toolGroups: "مجموعة جديدة",
+        toolLang: "اللغة: العربية",
+        tidyTitle: "ترتيب الفئات",
+        tidyIntro: "اقتراح: نقل {{n}} بنود إلى مجموعات أنسب.",
+        tidyApply: "تطبيق",
+        tidyDone: "أُعيد ترتيب {{n}} بنود",
+        tidyNone: "كل شيء مرتب جيدًا.",
+        addReceiptShort: "إضافة إيصال",
+        sectionMonth: "الشهر",
+        logBtn: "السجل",
+        askBtn: "اسأل",
+        askTitle: "مساعد المنزل",
+        askIntro: "اسأل أي شيء عن أرقامكم – بالعربية أو الإنجليزية أو الألمانية. المساعد يقرأ القيود ولا يغيّرها.",
+        askEx1: "كم صرفنا على البقالة منذ أيلول؟",
+        askEx2: "لماذا تشرين الثاني أقل من تشرين الأول؟",
+        askEx3: "هل هناك شيء غير منطقي هذا الشهر؟",
+        askPlaceholder: "اكتب سؤالًا …",
+        askSend: "إرسال",
+        askNew: "محادثة جديدة",
+        askThinking: "يفكر …",
+        askPrivacy: "تُرسل أرقامكم إلى Claude (Anthropic) للإجابة.",
+        askNeedSignIn: "سجّل الدخول بـ Google أولًا (الإعدادات).",
+        askErrSetup: "المساعد غير مُعدّ بعد (مفتاح API في Vercel مفقود أو خاطئ).",
+        askErrNotAllowed: "حساب Google هذا غير مسموح له باستخدام المساعد (ALLOWED_EMAILS في Vercel).",
+        askErrBusy: "طلبات كثيرة الآن – حاول بعد قليل.",
+        askErrRefused: "لا يستطيع المساعد الإجابة على هذا. أعد الصياغة.",
+        askErrOffline: "لا يوجد اتصال بالإنترنت.",
+        askErrGeneric: "لم ينجح ذلك. حاول مرة أخرى.",
+        logTitle: "سجل التغييرات",
+        logAll: "الكل",
+        logEmpty: "لا تغييرات محفوظة بعد. من الآن يُحفظ كل تغيير هنا مع تاريخه.",
+        logPlan: "تغيّر المخطط",
+        logReceived: "وصل",
+        logPaid: "دُفع",
+        logTxAdd: "أُضيف إيصال {{day}}",
+        logTxDel: "حُذف إيصال {{day}}",
+        logTxEdit: "عُدّل إيصال {{day}}",
+        logStart: "الرصيد الافتتاحي",
+        logBulk: "تغيّرت {{n}} قيم دفعة واحدة (استيراد أو استعادة)",
+        logNote: "آخر {{n}} تغييرًا تُحفظ مع بياناتك وتتزامن.",
+        viewEnd: "آخر الشهر",
+        viewNow: "الآن",
+        nowTitle: "الرصيد الآن (حسب القيود)",
+        nowReceived: "وصل حتى الآن",
+        nowPaid: "دُفع وصُرف حتى الآن",
+        nowStillOpen: "ما زال مفتوحًا حتى آخر الشهر",
+        nowRules: "يحسب فقط ما هو مؤشّر عليه أو مُدخل. الخطط المفتوحة تُضاف فقط في \"آخر الشهر\".",
+        txModalTitle: "قيود {{month}}",
+        txEmpty: "لا قيود مفردة بعد. الإيصالات وكشوف الحساب المستوردة تظهر هنا.",
+        rangeMonth: "الشهر",
+        howOften: "كم مرة؟",
+        recurringLabel: "متكرر",
+        recurringHelp: "يتكرر كل شهر أو بإيقاع ثابت.",
+        onceHelp: "مرة واحدة فقط في شهر واحد، ولا يظهر في غيره.",
+        variableItemHelp: "بلا مبلغ ثابت: أضف الإيصالات بـ +. الهدف الشهري يشمل المجموعة كلها.",
+        clearOutside: "اجعل المخطط 0 خارج هذه الفترة",
+        clearOutsideHint: "يزيل المخطط من كل الأشهر الأخرى. المبالغ الفعلية تبقى كما هي.",
+        replicateTitle: "تحديد مبلغ لفترة",
+        replicateCatLabel: "الفئة",
+        replicateFieldLabel: "أي قيمة؟",
+        replicateBudgetOption: "المخطط (الميزانية)",
+        replicateActualOption: "الفعلي (المصروف)",
+        replicateAmountLabel: "المبلغ (€)",
+        replicateDurationLabel: "المدة",
+        duration3: "3 أشهر ({{month}} + 2)",
+        duration6: "6 أشهر ({{month}} + 5)",
+        duration12: "12 شهرًا (سنة)",
+        durationAll: "حتى نهاية 2028",
+        replicateActionBtn: "تطبيق",
+        loanModalTitle: "تسجيل دين",
+        loanModalDesc: "يضيف المال المستلم كدخل ويجدول السداد كمصاريف في الأشهر المختارة:",
+        loanStep1: "1. المال المستلم (دخل {{month}} {{year}})",
+        loanStep2: "2. جدولة السداد (مصاريف)",
+        loanReceivedAmountLabel: "المال المستلم",
+        loanLenderLabel: "ممن استلفت؟",
+        loanIncomeCatLabel: "اسم بند الدخل",
+        loanExpenseCatLabel: "اسم بند السداد",
+        loanInst1Month: "شهر الدفعة الأولى",
+        loanInst2Month: "شهر الدفعة الثانية",
+        loanConfirmBtn: "تسجيل في المداخيل والمصاريف",
+        loanSuccessAlert: "سُجّل الدين! {{inAmount}} كدخل في {{inMonth}}، وجُدولت دفعات {{a1}} في {{m1}} و{{a2}} في {{m2}}.",
+        breakdownTitle: "تفاصيل {{month}} {{year}}",
+        breakdownIncomes: "كل مداخيل هذا الشهر (المجموع: {{total}}):",
+        breakdownExpenses: "كل مصاريف هذا الشهر (المجموع: {{total}}):",
+        breakdownNetResult: "النتيجة (الصافي الفعلي = المداخيل ناقص المصاريف):",
+        noItemsInBreakdown: "لا معاملات مسجلة.",
+        closeBtn: "إغلاق",
+        deleteItemTitle: "حذف البند: {{name}}",
+        deleteFutureOnly: "مسح الأشهر القادمة فقط",
+        deleteFutureOnlyDesc: "تبقى سجلات الأشهر الماضية والحالية كما هي.",
+        deletePurgeMerge: "حذف كامل ونقل إلى '{{fallback}}'",
+        deletePurgeMergeDesc: "بلا خسارة في الرصيد. كل المبالغ والملاحظات تبقى.",
+        deleteFallbackBlocked: "\"{{name}}\" هي الفئة العامة ولا يمكن دمجها في نفسها.",
+        cancelBtn: "إلغاء",
+        duplicateAlert: "الفئة موجودة مسبقًا: \"{{name}}\" ({{bracket}})",
+        hideWhenZeroHint: "إخفاء في الأشهر بلا نشاط",
+        fallbackCategory: "أخرى",
+        brackets: {
+          housing: "السكن والمصاريف الثابتة",
+          subscriptions: "الاشتراكات والإعلام",
+          living: "المعيشة اليومية والبقالة",
+          professional: "التعليم والصحة",
+          leisure: "الترفيه والثقافة",
+          other: "أخرى وديون",
+          fixed_in: "دخل ثابت / حساب مجمّد",
+          variable_in: "دخل متغير وديون"
+        },
+        months: MONTH_NAMES.ar
       }
     };
 
     const LanguageContext = createContext();
     function LanguageProvider({ children }) {
-      const [lang, setLang] = useState(() => safeStorage.get('budget_app_lang', 'de'));
+      const [lang, setLang] = useState(() => { const v = safeStorage.get('budget_app_lang', 'de'); return ['de', 'en', 'ar'].includes(v) ? v : 'de'; });
       const changeLanguage = (l) => { setLang(l); safeStorage.set('budget_app_lang', l); };
 
-      useEffect(() => { document.documentElement.lang = lang; }, [lang]);
+      useEffect(() => {
+        document.documentElement.lang = lang;
+        document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      }, [lang]);
 
       const getNested = (obj, path) => {
         if (!obj) return undefined;
@@ -1883,10 +2380,10 @@
             type="number" inputMode="decimal" placeholder="0"
             value={hideZero && value === 0 ? "" : value}
             onChange={(e) => onChange(e.target.value)}
-            className={`w-full min-w-0 bg-transparent text-right font-mono text-xs outline-none ${inputClass}`}
+            className={`w-full min-w-0 bg-transparent text-end font-mono text-xs outline-none ${inputClass}`}
             {...rest}
           />
-          <span className="text-[10px] font-mono text-tertiary ml-1">€</span>
+          <span className="text-[10px] font-mono text-tertiary ms-1">€</span>
         </div>
       );
     }
@@ -2170,11 +2667,11 @@
       };
 
       // ---- Helpers ----
-      const fmtCents = (v) => new Intl.NumberFormat(lang === 'de' ? 'de-DE' : 'en-US', {
+      const fmtCents = (v) => new Intl.NumberFormat(lang === 'en' ? 'en-US' : 'de-DE', {
         style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2
       }).format(v || 0);
 
-      const fmt = (v) => new Intl.NumberFormat(lang === 'de' ? 'de-DE' : 'en-US', {
+      const fmt = (v) => new Intl.NumberFormat(lang === 'en' ? 'en-US' : 'de-DE', {
         style: 'currency', currency: 'EUR', maximumFractionDigits: 0
       }).format(v || 0);
 
@@ -3409,7 +3906,7 @@
       const totalBorrowed = activeIous.filter(i => i.type === 'borrowed').reduce((s, i) => s + Math.max(0, (parseFloat(i.amount) || 0) - repaidOf(i)), 0);
       const totalLent = activeIous.filter(i => i.type !== 'borrowed').reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
 
-      const todayLabel = () => new Date().toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US', { day: '2-digit', month: 'short' });
+      const todayLabel = () => new Date().toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'ar' ? 'ar-SY-u-nu-latn' : 'de-DE', { day: '2-digit', month: 'short' });
 
       const handleAddIou = () => {
         if (!iouPerson.trim() || !iouAmount || isNaN(parseFloat(iouAmount))) return;
@@ -3662,7 +4159,7 @@
                 <input type="date" value={f.date} onChange={(e) => set({ date: e.target.value })}
                   className="bg-subtle border border-subtle rounded px-2 py-1 text-xs text-primary" aria-label={t('dateLabel')} />
                 <input inputMode="decimal" value={f.amount} onChange={(e) => set({ amount: e.target.value })}
-                  className="bg-subtle border border-subtle rounded px-2 py-1 text-xs text-primary font-mono text-right" aria-label={t('replicateAmountLabel')} />
+                  className="bg-subtle border border-subtle rounded px-2 py-1 text-xs text-primary font-mono text-end" aria-label={t('replicateAmountLabel')} />
               </div>
               {showItem && (
                 <select value={f.cat} onChange={(e) => set({ cat: e.target.value })}
@@ -3754,7 +4251,7 @@
                   ✓
                 </button>
               )}
-              <button onClick={toggleOpen} aria-expanded={isOpen} className="text-left min-w-0">
+              <button onClick={toggleOpen} aria-expanded={isOpen} className="text-start min-w-0">
                 <span className={`block truncate text-xs font-medium ${done ? 'text-secondary' : 'text-primary'}`}>{cat}</span>
                 <span className="block truncate text-[10px] text-tertiary">
                   {sub}{notes.length > 0 ? `${sub ? ' · ' : ''}✎ ${notes.length}` : ''}
@@ -3762,14 +4259,14 @@
               </button>
               <button
                 onClick={toggleOpen}
-                className={`font-mono text-xs text-right ${done ? 'text-tertiary' : type === 'incomes' ? 'text-notion-green' : 'text-primary'}`}
+                className={`font-mono text-xs text-end ${done ? 'text-tertiary' : type === 'incomes' ? 'text-notion-green' : 'text-primary'}`}
               >
                 {fmtCents(shown)}
               </button>
             </div>
 
             {isVar && addingTo === key && (
-              <form onSubmit={(e) => { e.preventDefault(); submitInlineReceipt(cat); }} className="flex gap-1.5 pl-11 pr-2 pb-2">
+              <form onSubmit={(e) => { e.preventDefault(); submitInlineReceipt(cat); }} className="flex gap-1.5 ps-11 pe-2 pb-2">
                 <input
                   autoFocus
                   inputMode="decimal"
@@ -3777,7 +4274,7 @@
                   onChange={(e) => setAddAmount(e.target.value)}
                   placeholder="0,00 €"
                   aria-label={t('addReceiptTo', { name: cat })}
-                  className="flex-1 min-w-0 bg-subtle border border-strong rounded px-2 py-1 font-mono text-sm text-right text-primary outline-none"
+                  className="flex-1 min-w-0 bg-subtle border border-strong rounded px-2 py-1 font-mono text-sm text-end text-primary outline-none"
                 />
                 <button type="submit" className="px-3 py-1 rounded bg-primary text-surface font-semibold text-xs">{t('addBtn')}</button>
                 <button type="button" onClick={() => setAddingTo(null)} className="px-2 py-1 rounded bg-subtle text-secondary text-xs">{t('cancelBtn')}</button>
@@ -3810,7 +4307,7 @@
                   </label>
                 </div>
                 {notes.length > 0 && (
-                  <ul className="text-[11px] text-secondary space-y-0.5 pl-1">
+                  <ul className="text-[11px] text-secondary space-y-0.5 ps-1">
                     {notes.map((n, i) => <li key={i}>• {n}</li>)}
                   </ul>
                 )}
@@ -3875,11 +4372,11 @@
 
         return (
           <section key={g.id} className="rounded-2xl border border-subtle bg-surface overflow-hidden">
-            <div className="flex items-start gap-1 pr-2">
+            <div className="flex items-start gap-1 pe-2">
               <button
                 onClick={() => toggleBracket(g.id)}
                 aria-expanded={open}
-                className="flex-1 min-w-0 grid grid-cols-[10px_minmax(0,1fr)_auto] gap-3 items-center text-left pl-3.5 pt-3 pb-2"
+                className="flex-1 min-w-0 grid grid-cols-[10px_minmax(0,1fr)_auto] gap-3 items-center text-start ps-3.5 pt-3 pb-2"
               >
                 <span className="w-2.5 h-2.5 rounded-[3px]" style={{ background: hex }}></span>
                 <span className="flex items-center gap-1.5 flex-wrap min-w-0">
@@ -3888,7 +4385,7 @@
                   <span className="text-[10px] text-tertiary">{t('itemsCount', { n: gv.items.length })}</span>
                   <span className={`text-[10px] text-tertiary inline-block transition-transform ${open ? 'rotate-90' : ''}`}>▸</span>
                 </span>
-                <span className="text-right">
+                <span className="text-end">
                   <span className="block font-mono text-sm font-semibold text-primary">{amount}</span>
                   <span className={`block text-[10px] ${over ? 'text-notion-red' : 'text-secondary'}`}>{sub}</span>
                 </span>
@@ -3902,7 +4399,7 @@
                 ⋯
               </button>
             </div>
-            <div className="pr-3.5 pb-3 pl-9">
+            <div className="pe-3.5 pb-3 ps-9">
               <div className="h-1.5 rounded-full bg-subtle overflow-hidden">
                 <div className="h-full rounded-full transition-all" style={{ width: `${fill}%`, background: over ? '#e03e3e' : hex }}></div>
               </div>
@@ -3947,7 +4444,7 @@
                 <div className="flex items-center justify-between gap-2 px-2 pt-1 pb-1 text-[11px]">
                   {hidden > 0 ? (
                     <button onClick={() => setShowEmpty(prev => ({ ...prev, [g.id]: !revealed }))} className="text-tertiary hover:text-primary">
-                      <i className={`fa-solid ${revealed ? 'fa-eye-slash' : 'fa-eye'} mr-1 text-[10px]`}></i>{revealed ? t('hideEmpty') : t('emptyItems', { n: hidden })}
+                      <i className={`fa-solid ${revealed ? 'fa-eye-slash' : 'fa-eye'} me-1 text-[10px]`}></i>{revealed ? t('hideEmpty') : t('emptyItems', { n: hidden })}
                     </button>
                   ) : <span></span>}
                   <button onClick={() => handleOpenQuickAdd('expenses', g.id)} className="text-notion-blue font-medium hover:underline">
@@ -4037,7 +4534,7 @@
             };
             const days = [];
             shown.forEach(e => {
-              const day = new Date(e.t).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+              const day = new Date(e.t).toLocaleDateString(lang === 'en' ? 'en-GB' : lang === 'ar' ? 'ar-SY-u-nu-latn' : 'de-DE', { weekday: 'short', day: 'numeric', month: 'short' });
               if (!days.length || days[days.length - 1].day !== day) days.push({ day, items: [] });
               days[days.length - 1].items.push(e);
             });
@@ -4059,7 +4556,7 @@
                       <div className="divide-y divide-subtle border border-subtle rounded">
                         {g.items.map((e, i) => {
                           const [what, action, amount] = kindLabel(e);
-                          const time = new Date(e.t).toLocaleTimeString(lang === 'de' ? 'de-DE' : 'en-GB', { hour: '2-digit', minute: '2-digit' });
+                          const time = new Date(e.t).toLocaleTimeString(lang === 'en' ? 'en-GB' : lang === 'ar' ? 'ar-SY-u-nu-latn' : 'de-DE', { hour: '2-digit', minute: '2-digit' });
                           return (
                             <div key={e.t + i} className="flex items-baseline justify-between gap-2 px-2 py-1.5 text-[11px]">
                               <div className="min-w-0">
@@ -4137,9 +4634,9 @@
         const warn = o.tone === 'warn';
         return (
           <section key={o.id} className={`rounded-2xl border ${warn ? 'border-amber-500/30 bg-amber-500/[0.06]' : 'border-subtle bg-surface'} ${o.className || ''}`}>
-            <div className="flex items-center gap-2 pl-4 pr-2 py-3">
+            <div className="flex items-center gap-2 ps-4 pe-2 py-3">
               <button type="button" onClick={foldable ? () => setCollapsed(prev => ({ ...prev, [o.id]: !isCol })) : undefined} aria-expanded={!isCol}
-                className={`flex-1 min-w-0 flex items-center gap-2.5 text-left ${foldable ? '' : 'cursor-default'}`}>
+                className={`flex-1 min-w-0 flex items-center gap-2.5 text-start ${foldable ? '' : 'cursor-default'}`}>
                 {o.icon && (
                   <span className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center text-[12px] ${warn ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-subtle text-secondary'}`}>
                     <i className={`fa-solid ${o.icon}`}></i>
@@ -4258,7 +4755,7 @@
                                       <rect x={pad + i * bw + bw * 0.18} y={top} width={bw * 0.64} height={h} rx="3"
                                         fill={v < 0 ? '#e03e3e' : r === low ? '#cb912f' : '#0f7b6c'} opacity={r === low ? 1 : 0.75} />
                                       <text x={pad + i * bw + bw / 2} y={H + 13} textAnchor="middle" fontSize={labelSize} fill="currentColor" className="text-tertiary">
-                                        {formatMonth(r.month, lang)}
+                                        {lang === 'ar' ? ALL_MONTHS.indexOf(r.month) + 1 : formatMonth(r.month, lang)}
                                       </text>
                                     </g>
                                   );
@@ -4332,7 +4829,7 @@
         <div className="relative flex items-center gap-0.5">
           <button onClick={() => goMonth(TIMELINE[curIdx - 1])} disabled={curIdx <= 0} aria-label={t('prevMonth')}
             className="w-8 h-8 rounded-full text-secondary hover:text-primary hover:bg-subtle disabled:opacity-30">
-            <i className="fa-solid fa-chevron-left text-[11px]"></i>
+            <i className="fa-solid fa-chevron-left text-[11px] rtl:rotate-180"></i>
           </button>
           <button onClick={() => setMonthPicker(v => !v)} aria-expanded={monthPicker}
             className="h-8 px-3 rounded-full bg-subtle text-[13px] font-semibold text-primary flex items-center gap-1.5 whitespace-nowrap">
@@ -4341,16 +4838,16 @@
           </button>
           <button onClick={() => goMonth(TIMELINE[curIdx + 1])} disabled={curIdx >= TIMELINE.length - 1} aria-label={t('nextMonth')}
             className="w-8 h-8 rounded-full text-secondary hover:text-primary hover:bg-subtle disabled:opacity-30">
-            <i className="fa-solid fa-chevron-right text-[11px]"></i>
+            <i className="fa-solid fa-chevron-right text-[11px] rtl:rotate-180"></i>
           </button>
           {monthPicker && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setMonthPicker(false)}></div>
-              <div className="absolute right-0 top-10 z-50 w-[292px] rounded-2xl border border-subtle bg-surface shadow-2xl p-3 space-y-3">
+              <div className="absolute end-0 top-10 z-50 w-[292px] rounded-2xl border border-subtle bg-surface shadow-2xl p-3 space-y-3">
                 {YEARS.map(yr => (
                   <div key={yr}>
                     <div className="text-[11px] font-semibold text-secondary mb-1.5">{yr}</div>
-                    <div className="grid grid-cols-6 gap-1">
+                    <div className={`grid ${lang === 'ar' ? 'grid-cols-4' : 'grid-cols-6'} gap-1`}>
                       {ALL_MONTHS.map(m => {
                         const ok = getMonthsForYear(yr).includes(m);
                         const sel = yr === selectedYear && m === selectedMonth;
@@ -4529,7 +5026,7 @@
                 )}
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <button onClick={() => setHeroDetails(v => !v)} aria-expanded={heroDetails} className="text-[12px] text-secondary hover:text-primary">
-                    <i className={`fa-solid fa-chevron-down text-[9px] mr-1.5 transition-transform ${heroDetails ? 'rotate-180' : ''}`}></i>
+                    <i className={`fa-solid fa-chevron-down text-[9px] me-1.5 transition-transform ${heroDetails ? 'rotate-180' : ''}`}></i>
                     {heroDetails ? t('heroHide') : t('heroDetails')}
                   </button>
                   <button onClick={openBalanceModal} className="text-[12px] text-notion-blue hover:underline">✎ {t('fixBalanceBtn')}</button>
@@ -4585,7 +5082,7 @@
             <div className="flex items-center justify-between gap-2 px-2 pt-1 pb-1 text-[11px]">
               {hiddenIncomes > 0 ? (
                 <button onClick={() => setShowEmpty(p => ({ ...p, __incomes: !p.__incomes }))} className="text-tertiary hover:text-primary">
-                  <i className={`fa-solid ${showEmpty.__incomes ? 'fa-eye-slash' : 'fa-eye'} mr-1 text-[10px]`}></i>
+                  <i className={`fa-solid ${showEmpty.__incomes ? 'fa-eye-slash' : 'fa-eye'} me-1 text-[10px]`}></i>
                   {showEmpty.__incomes ? t('hideEmpty') : t('emptyItems', { n: hiddenIncomes })}
                 </button>
               ) : <span></span>}
@@ -4666,12 +5163,12 @@
                   <table className="w-full text-xs font-mono">
                     <thead>
                       <tr className="text-secondary text-[10px] border-b border-subtle">
-                        <th className="text-left font-medium px-3 py-2 font-sans">{t('annualMonth')}</th>
-                        <th className="text-right font-medium px-2 py-2">{t('kpiIn')}</th>
-                        <th className="text-right font-medium px-2 py-2">{t('kpiOut')}</th>
-                        <th className="text-right font-medium px-2 py-2">{t('annualNet')}</th>
-                        <th className="text-right font-medium px-2 py-2">{t('annualProjected')}</th>
-                        <th className="text-right font-medium px-3 py-2">{t('annualBalance')}</th>
+                        <th className="text-start font-medium px-3 py-2 font-sans">{t('annualMonth')}</th>
+                        <th className="text-end font-medium px-2 py-2">{t('kpiIn')}</th>
+                        <th className="text-end font-medium px-2 py-2">{t('kpiOut')}</th>
+                        <th className="text-end font-medium px-2 py-2">{t('annualNet')}</th>
+                        <th className="text-end font-medium px-2 py-2">{t('annualProjected')}</th>
+                        <th className="text-end font-medium px-3 py-2">{t('annualBalance')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -4686,21 +5183,21 @@
                             <td className={`px-3 py-1.5 font-sans ${status === 'future' ? 'text-secondary' : 'text-primary font-medium'}`}>
                               {formatMonth(r.month, lang)}{status === 'current' && ' •'}
                             </td>
-                            <td className="text-right px-2 py-1.5 text-notion-green">{fmt(r.actualIn)}</td>
-                            <td className="text-right px-2 py-1.5 text-notion-red">{fmt(r.actualEx)}</td>
-                            <td className={`text-right px-2 py-1.5 ${r.actualNet >= 0 ? 'text-primary' : 'text-notion-red'}`}>{fmt(r.actualNet)}</td>
-                            <td className={`text-right px-2 py-1.5 ${r.projectedNet >= 0 ? 'text-notion-blue' : 'text-notion-red'}`}>{fmt(r.projectedNet)}</td>
-                            <td className={`text-right px-3 py-1.5 font-semibold ${r.endProjectedBalance == null ? 'text-tertiary' : r.endProjectedBalance >= 0 ? 'text-primary' : 'text-notion-red'}`}>{fmtBalance(r.endProjectedBalance)}</td>
+                            <td className="text-end px-2 py-1.5 text-notion-green">{fmt(r.actualIn)}</td>
+                            <td className="text-end px-2 py-1.5 text-notion-red">{fmt(r.actualEx)}</td>
+                            <td className={`text-end px-2 py-1.5 ${r.actualNet >= 0 ? 'text-primary' : 'text-notion-red'}`}>{fmt(r.actualNet)}</td>
+                            <td className={`text-end px-2 py-1.5 ${r.projectedNet >= 0 ? 'text-notion-blue' : 'text-notion-red'}`}>{fmt(r.projectedNet)}</td>
+                            <td className={`text-end px-3 py-1.5 font-semibold ${r.endProjectedBalance == null ? 'text-tertiary' : r.endProjectedBalance >= 0 ? 'text-primary' : 'text-notion-red'}`}>{fmtBalance(r.endProjectedBalance)}</td>
                           </tr>
                         );
                       })}
                       <tr className="border-t border-strong font-semibold">
                         <td className="px-3 py-2 font-sans text-primary">{t('annualTotal')}</td>
-                        <td className="text-right px-2 py-2 text-notion-green">{fmt(currentMetrics.actualIn)}</td>
-                        <td className="text-right px-2 py-2 text-notion-red">{fmt(currentMetrics.actualEx)}</td>
-                        <td className="text-right px-2 py-2 text-primary">{fmt(currentMetrics.actualNet)}</td>
-                        <td className="text-right px-2 py-2 text-notion-blue">{fmt(currentMetrics.projectedNet)}</td>
-                        <td className="text-right px-3 py-2 text-primary">{fmtBalance(currentMetrics.endProjectedBalance)}</td>
+                        <td className="text-end px-2 py-2 text-notion-green">{fmt(currentMetrics.actualIn)}</td>
+                        <td className="text-end px-2 py-2 text-notion-red">{fmt(currentMetrics.actualEx)}</td>
+                        <td className="text-end px-2 py-2 text-primary">{fmt(currentMetrics.actualNet)}</td>
+                        <td className="text-end px-2 py-2 text-notion-blue">{fmt(currentMetrics.projectedNet)}</td>
+                        <td className="text-end px-3 py-2 text-primary">{fmtBalance(currentMetrics.endProjectedBalance)}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -4728,7 +5225,7 @@
                         <div className="text-[13px] font-semibold text-primary">{t('reportTopItems')}</div>
                         {yearReport.items.map((x, i) => (
                           <div key={x.cat} className="flex items-baseline justify-between gap-2 text-xs">
-                            <span className="text-primary truncate"><span className="text-tertiary font-mono mr-1.5">{i + 1}</span>{x.cat}</span>
+                            <span className="text-primary truncate"><span className="text-tertiary font-mono me-1.5">{i + 1}</span>{x.cat}</span>
                             <span className="font-mono text-primary shrink-0">{fmt(x.total)}</span>
                           </div>
                         ))}
@@ -4789,7 +5286,7 @@
                                 <div key={g.id} className="space-y-1">
                                   <div className="flex items-baseline justify-between gap-2 text-xs">
                                     <button onClick={() => setGoalModal({ id: g.id, name: g.name, target: String(g.target), saved: String(g.saved), deadline: g.deadline || '' })}
-                                      className="font-medium text-primary truncate text-left hover:underline">{g.name}</button>
+                                      className="font-medium text-primary truncate text-start hover:underline">{g.name}</button>
                                     <span className="font-mono text-primary shrink-0">{fmt(g.saved)} <span className="text-tertiary">/ {fmt(g.target)}</span></span>
                                   </div>
                                   <div className="h-1.5 rounded-full bg-subtle overflow-hidden">
@@ -4808,7 +5305,7 @@
                                   {depositFor === g.id && (
                                     <form onSubmit={(e) => { e.preventDefault(); depositGoal(g.id); }} className="flex gap-1.5">
                                       <input autoFocus inputMode="decimal" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} placeholder="0,00 €"
-                                        aria-label={t('goalDeposit')} className="flex-1 min-w-0 bg-subtle border border-strong rounded px-2 py-1 font-mono text-xs text-right text-primary outline-none" />
+                                        aria-label={t('goalDeposit')} className="flex-1 min-w-0 bg-subtle border border-strong rounded px-2 py-1 font-mono text-xs text-end text-primary outline-none" />
                                       <button type="submit" className="px-2.5 py-1 rounded bg-primary text-surface text-xs font-semibold">{t('addBtn')}</button>
                                       <button type="button" onClick={() => setDepositFor(null)} className="px-2 py-1 rounded bg-subtle text-secondary text-xs">{t('cancelBtn')}</button>
                                     </form>
@@ -4843,7 +5340,7 @@
                         <div key={kind} className="space-y-1.5">
                           <div className="text-[11px] font-semibold text-tertiary uppercase tracking-wide">{t(labelKey)}</div>
                           {list.map(a => (
-                            <div key={a.id} className="flex items-center gap-2 rounded-xl bg-subtle/60 pl-3 pr-1 py-1.5">
+                            <div key={a.id} className="flex items-center gap-2 rounded-xl bg-subtle/60 ps-3 pe-1 py-1.5">
                               <input value={a.name} onChange={(e) => updateAccount(a.id, { name: e.target.value })} aria-label={t('accountName')}
                                 className="flex-1 min-w-0 bg-transparent text-[13px] text-primary outline-none" />
                               {a.updated && <span className="hidden sm:inline text-[10px] text-tertiary shrink-0">{t('accountsUpdated', { day: fmtDay(a.updated) })}</span>}
@@ -4893,7 +5390,7 @@
                     <div key={mv.cat} className="flex items-center justify-between gap-2 text-[12px]">
                       <span className="text-primary truncate">{mv.cat}</span>
                       <span className="text-secondary shrink-0 flex items-center gap-1.5">
-                        <i className="fa-solid fa-arrow-right text-[9px] text-tertiary"></i>
+                        <i className="fa-solid fa-arrow-right text-[9px] text-tertiary rtl:rotate-180"></i>
                         <span className="w-2 h-2 rounded-sm" style={{ background: GROUP_HEX[mv.rule.color] }}></span>
                         {groupName(data.groups.find(g => g.id === mv.to) || { id: mv.to, name: null })}
                       </span>
@@ -5017,17 +5514,20 @@
 
             {panel({ id: 'tools', icon: 'fa-toolbox', title: t('toolsTitle'), collapsible: false }, (
               <div className="-mx-1">
+                <div className="flex items-center gap-3 px-1 py-2">
+                  <span className="w-8 h-8 rounded-lg bg-subtle flex items-center justify-center text-secondary"><i className="fa-solid fa-language text-xs"></i></span>
+                  <Segmented size="sm" options={[['de', 'Deutsch'], ['en', 'English'], ['ar', 'العربية']]} value={lang} onChange={changeLanguage} />
+                </div>
                 {[
                   ['fa-wand-magic-sparkles', t('askTitle'), () => { setAskError(''); setAskModal(true); }],
                   ['fa-file-import', t('importTitle'), openImport],
                   ['fa-folder-plus', t('toolGroups'), () => openGroupModal()],
-                  ['fa-language', t('toolLang'), () => changeLanguage(lang === 'de' ? 'en' : 'de')],
                   ['fa-gear', t('toolSettings'), () => setIsBurgerOpen(true)]
                 ].map(([icon, label, fn]) => (
-                  <button key={label} onClick={fn} className="w-full flex items-center gap-3 px-1 py-2 text-left hover:bg-subtle/60 rounded-xl">
+                  <button key={label} onClick={fn} className="w-full flex items-center gap-3 px-1 py-2 text-start hover:bg-subtle/60 rounded-xl">
                     <span className="w-8 h-8 rounded-lg bg-subtle flex items-center justify-center text-secondary"><i className={`fa-solid ${icon} text-xs`}></i></span>
                     <span className="flex-1 text-[13px] text-primary">{label}</span>
-                    <i className="fa-solid fa-chevron-right text-[10px] text-tertiary"></i>
+                    <i className="fa-solid fa-chevron-right text-[10px] text-tertiary rtl:rotate-180"></i>
                   </button>
                 ))}
               </div>
@@ -5039,7 +5539,7 @@
       return (
         <div className="min-h-screen font-sans">
           {/* SIDEBAR (laptop) */}
-          <aside className="hidden lg:flex fixed inset-y-0 left-0 w-[232px] flex-col border-r border-subtle bg-surface z-40">
+          <aside className="hidden lg:flex fixed inset-y-0 start-0 w-[232px] flex-col border-e border-subtle bg-surface z-40">
             <div className="h-16 px-5 flex items-center gap-2.5">
               <img src="icon-192.png" alt="" className="w-8 h-8 rounded-lg" />
               <div className="min-w-0">
@@ -5062,12 +5562,12 @@
             </div>
             <div className="mt-auto p-3 flex items-center gap-1 border-t border-subtle">
               <button onClick={() => setIsBurgerOpen(true)} title={syncLabel} aria-label={syncLabel} className={`w-9 h-9 rounded-lg hover:bg-subtle ${syncColor}`}><i className={`fa-solid ${syncIcon} text-xs`}></i></button>
-              <button onClick={() => changeLanguage(lang === 'de' ? 'en' : 'de')} className="h-9 px-2.5 rounded-lg hover:bg-subtle text-[12px] font-semibold text-secondary">{lang.toUpperCase()}</button>
-              <button onClick={() => setIsBurgerOpen(true)} aria-label={t('options')} className="ml-auto w-9 h-9 rounded-lg hover:bg-subtle text-secondary"><i className="fa-solid fa-gear text-xs"></i></button>
+              <button onClick={() => changeLanguage({ de: 'en', en: 'ar', ar: 'de' }[lang])} title="Deutsch · English · العربية" className="h-9 px-2.5 rounded-lg hover:bg-subtle text-[12px] font-semibold text-secondary">{lang.toUpperCase()}</button>
+              <button onClick={() => setIsBurgerOpen(true)} aria-label={t('options')} className="ms-auto w-9 h-9 rounded-lg hover:bg-subtle text-secondary"><i className="fa-solid fa-gear text-xs"></i></button>
             </div>
           </aside>
 
-          <div className="lg:pl-[232px]">
+          <div className="lg:ps-[232px]">
             {/* TOP BAR */}
             <header className="sticky top-0 z-30 bg-app/85 backdrop-blur-xl border-b border-subtle" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
               <div className="max-w-[1280px] mx-auto h-14 px-4 lg:px-8 flex items-center justify-between gap-3">
@@ -5098,7 +5598,7 @@
           {(view === 'overview' || view === 'month' || view === 'activity') && (
             <button onClick={() => view === 'month' && monthPane === 'incomes' ? handleOpenQuickAdd('incomes') : openReceiptSheet()}
               aria-label={view === 'month' && monthPane === 'incomes' ? t('incomesHeader') : t('addReceipt')}
-              className="lg:hidden fixed z-40 right-4 w-14 h-14 rounded-full bg-primary text-surface shadow-xl flex items-center justify-center active:scale-95 transition-transform"
+              className="lg:hidden fixed z-40 end-4 w-14 h-14 rounded-full bg-primary text-surface shadow-xl flex items-center justify-center active:scale-95 transition-transform"
               style={{ bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
               <i className="fa-solid fa-plus text-lg"></i>
             </button>
@@ -5119,7 +5619,7 @@
           {toastMsg && (
             <div
               role="status"
-              className="fixed z-[60] left-1/2 -translate-x-1/2 bg-primary text-surface text-xs rounded-lg pl-3.5 pr-2 py-2 shadow-lg max-w-[calc(100%-32px)] flex items-center gap-3"
+              className="fixed z-[60] left-1/2 -translate-x-1/2 bg-primary text-surface text-xs rounded-lg ps-3.5 pe-2 py-2 shadow-lg max-w-[calc(100%-32px)] flex items-center gap-3"
               style={{ bottom: 'calc(150px + env(safe-area-inset-bottom, 0px))' }}
             >
               <span className="py-0.5">{toastMsg.text}</span>
@@ -5272,9 +5772,9 @@
                           </div>
                           <div className="text-[10px] text-tertiary">
                             {fmtDay(r.date)}{r.kind ? ` · ${r.kind.toLowerCase().replace(/_/g, ' ')}` : ''}
-                            {r.ownTransfer && <span className="ml-1.5 px-1.5 py-px rounded bg-notion-tagBlue text-notion-blue font-medium">{t('importOwnTransfer')}</span>}
+                            {r.ownTransfer && <span className="ms-1.5 px-1.5 py-px rounded bg-notion-tagBlue text-notion-blue font-medium">{t('importOwnTransfer')}</span>}
                             {r.target.startsWith('item:') && isTickedByHand(data, type, r.target.slice(5), r.date) && (
-                              <span className="ml-1.5 px-1.5 py-px rounded bg-notion-tagGreen text-notion-green font-medium">{t('importReplacesTick')}</span>
+                              <span className="ms-1.5 px-1.5 py-px rounded bg-notion-tagGreen text-notion-green font-medium">{t('importReplacesTick')}</span>
                             )}
                           </div>
                           <select
@@ -5335,7 +5835,7 @@
                     <p className="text-[11px] text-secondary leading-relaxed">{t('askIntro')}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {[t('askEx1'), t('askEx2'), t('askEx3')].map(ex => (
-                        <button key={ex} onClick={() => setAskInput(ex)} className="text-[11px] px-2 py-1 rounded border border-subtle bg-subtle text-primary hover:border-strong text-left">{ex}</button>
+                        <button key={ex} onClick={() => setAskInput(ex)} className="text-[11px] px-2 py-1 rounded border border-subtle bg-subtle text-primary hover:border-strong text-start">{ex}</button>
                       ))}
                     </div>
                   </div>
@@ -5365,7 +5865,7 @@
               </div>
               <div className="flex items-center justify-between text-[10px] text-tertiary">
                 <span>{t('askPrivacy')}</span>
-                {askChat.length > 0 && <button onClick={() => { setAskChat([]); setAskError(''); }} className="text-notion-blue hover:underline shrink-0 ml-2">{t('askNew')}</button>}
+                {askChat.length > 0 && <button onClick={() => { setAskChat([]); setAskError(''); }} className="text-notion-blue hover:underline shrink-0 ms-2">{t('askNew')}</button>}
               </div>
             </Modal>
           )}
@@ -5388,7 +5888,7 @@
                     onChange={(e) => { setReceiptAmount(e.target.value); setReceiptHint(false); }}
                     placeholder="0,00"
                     aria-label={t('replicateAmountLabel')}
-                    className="flex-1 min-w-0 bg-transparent text-primary outline-none font-mono text-3xl font-bold text-right"
+                    className="flex-1 min-w-0 bg-transparent text-primary outline-none font-mono text-3xl font-bold text-end"
                   />
                   <span className="font-mono text-xl text-tertiary">€</span>
                 </label>
@@ -5988,7 +6488,7 @@
                 <div className="space-y-1.5">
                   <button
                     onClick={() => executeSmartDelete(type, cat, 'future_only')}
-                    className="w-full text-left p-2 rounded bg-subtle hover:bg-subtle/80 border border-subtle"
+                    className="w-full text-start p-2 rounded bg-subtle hover:bg-subtle/80 border border-subtle"
                   >
                     <div className="font-semibold text-primary">{t('deleteFutureOnly')}</div>
                     <div className="text-[10px] text-tertiary">{t('deleteFutureOnlyDesc')}</div>
@@ -6001,7 +6501,7 @@
                   ) : (
                     <button
                       onClick={() => executeSmartDelete(type, cat, 'purge_and_merge')}
-                      className="w-full text-left p-2 rounded bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20"
+                      className="w-full text-start p-2 rounded bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20"
                     >
                       <div className="font-semibold text-notion-red">{t('deletePurgeMerge', { fallback })}</div>
                       <div className="text-[10px] text-tertiary">{t('deletePurgeMergeDesc')}</div>
@@ -6019,7 +6519,7 @@
           {/* SETTINGS DRAWER */}
           {isBurgerOpen && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-end" onClick={(e) => { if (e.target === e.currentTarget) setIsBurgerOpen(false); }}>
-              <div className="bg-surface border-l border-subtle w-72 sm:w-80 h-full p-4 overflow-y-auto flex flex-col justify-between text-xs">
+              <div className="bg-surface border-s border-subtle w-72 sm:w-80 h-full p-4 overflow-y-auto flex flex-col justify-between text-xs">
                 <div className="space-y-4">
                   <div className="flex justify-between items-center pb-2 border-b border-subtle">
                     <h3 className="font-semibold text-primary uppercase tracking-wide">{t('options')}</h3>
