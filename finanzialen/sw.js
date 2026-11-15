@@ -1,6 +1,6 @@
 // Haushaltsbuch service worker: makes the app open offline.
 // Bump VERSION when you change this file; old caches are removed on activate.
-const VERSION = 'v5';
+const VERSION = 'v6';
 const SHELL_CACHE = `budget-shell-${VERSION}`;
 const CDN_CACHE = `budget-cdn-${VERSION}`;
 
@@ -80,8 +80,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Shop logos (site icons) are kept too, so they show offline.
+  const isSiteIcon = (url.hostname === 'www.google.com' && url.pathname.startsWith('/s2/favicons')) || /^t\d\.gstatic\.com$/.test(url.hostname);
   // Libraries: serve from cache right away, refresh in the background.
-  if (CDN_HOSTS.includes(url.hostname)) {
+  if (CDN_HOSTS.includes(url.hostname) || isSiteIcon) {
     event.respondWith(staleWhileRevalidate(event, CDN_CACHE));
     return;
   }

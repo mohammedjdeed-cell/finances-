@@ -47,8 +47,8 @@ How to answer:
 const ICON_PROMPT = `You choose small icons for the budget items of a household in Germany. Item names may be German, English or Arabic, and are often shop, brand or service names.
 
 For each name:
-- If it names a shop, brand, bank, app or service (for example Netto, Edeka, dm, Vodafone, Spotify), return kind "brand": text = a 1–3 character label like on its logo (for example "N", "dm", "O₂"), bg and fg = the brand's main background and text colours as #RRGGBB, and icon = the closest fitting symbol from the list anyway.
-- Otherwise return kind "symbol" with the best fitting icon from the list, and text "", bg "#000000", fg "#FFFFFF".
+- If it names a shop, brand, bank, app or service (for example Netto, Edeka, dm, Vodafone, Spotify), return kind "brand": text = a 1–3 character label like on its logo (for example "N", "dm", "O₂"), bg and fg = the brand's main background and text colours as #RRGGBB, domain = its official website domain in Germany if it has one (for example "tedi.com", "amazon.de"), and icon = the closest fitting symbol from the list anyway.
+- Otherwise return kind "symbol" with the best fitting icon from the list, and text "", bg "#000000", fg "#FFFFFF", domain "".
 Return one entry per name, with the name copied exactly as given.`;
 
 const anthropic = new Anthropic();
@@ -66,10 +66,10 @@ async function suggestIcons(body, res) {
       icons: {
         type: "array",
         items: {
-          type: "object", additionalProperties: false, required: ["name", "kind", "icon", "text", "bg", "fg"],
+          type: "object", additionalProperties: false, required: ["name", "kind", "icon", "text", "bg", "fg", "domain"],
           properties: {
             name: { type: "string" }, kind: { type: "string", enum: ["symbol", "brand"] },
-            icon: { type: "string", enum: choices }, text: { type: "string" }, bg: { type: "string" }, fg: { type: "string" },
+            icon: { type: "string", enum: choices }, text: { type: "string" }, bg: { type: "string" }, fg: { type: "string" }, domain: { type: "string" },
           },
         },
       },
@@ -91,7 +91,8 @@ async function suggestIcons(body, res) {
   for (const x of parsed.icons || []) {
     if (!names.includes(x.name)) continue;
     if (x.kind === "brand" && x.text && x.text.length <= 3 && hex.test(x.bg) && hex.test(x.fg)) {
-      icons[x.name] = { kind: "brand", text: x.text, bg: x.bg, fg: x.fg };
+      const domain = String(x.domain || "").toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
+      icons[x.name] = { kind: "brand", text: x.text, bg: x.bg, fg: x.fg, ...(/^[a-z0-9.-]{1,80}\.[a-z]{2,}$/.test(domain) ? { logo: `web:${domain}` } : {}) };
     } else if (choices.includes(x.icon)) {
       icons[x.name] = { kind: "symbol", icon: x.icon };
     }

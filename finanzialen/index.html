@@ -2428,25 +2428,25 @@
       'fa-robot', 'fa-credit-card', 'fa-receipt', 'fa-tag', 'fa-store', 'fa-seedling', 'fa-hospital', 'fa-ellipsis'];
     // Shops and services: short label in the brand's colours (no logos are loaded from anywhere).
     const BRANDS = [
-      [/netto/i, 'N', '#FFE500', '#E2001A'], [/edeka/i, 'E', '#1C4E9B', '#FFE500'], [/lidl/i, 'L', '#0050AA', '#FFF000'],
-      [/\baldi\s*talk/i, 'AT', '#00005F', '#22B5EC'], [/\baldi\b/i, 'A', '#00005F', '#F59C00'], [/\brewe\b/i, 'R', '#CC071E', '#FFFFFF'],
-      [/kaufland/i, 'K', '#E10915', '#FFFFFF'], [/\bpenny\b/i, 'P', '#CD1414', '#FFED00'], [/\bdm\b|dm-drogerie|drogerie markt/i, 'dm', '#002878', '#FFFFFF'],
-      [/rossmann/i, 'R', '#C3002F', '#FFFFFF'], [/m[üu]ller\b/i, 'M', '#F39200', '#FFFFFF'], [/\baction\b/i, 'A', '#003C8F', '#FFFFFF'],
-      [/\btedi\b/i, 'T', '#FFDD00', '#003C8F'], [/\bkodi\b/i, 'K', '#E30613', '#FFFFFF'], [/woolworth/i, 'W', '#E2001A', '#FFFFFF'],
-      [/\bikea\b/i, 'IK', '#0058A3', '#FFDB00'], [/amazon|\bamzn\b/i, 'a', '#232F3E', '#FF9900'], [/media\s*markt/i, 'MM', '#DF0000', '#FFFFFF'],
-      [/saturn/i, 'S', '#F06400', '#FFFFFF'], [/shein/i, 'S', '#111111', '#FFFFFF'], [/c\s*&\s*a\b/i, 'C&A', '#1B3A93', '#FFFFFF'],
-      [/h\s*&\s*m\b/i, 'H&M', '#E50010', '#FFFFFF'], [/new\s*yorker/i, 'NY', '#111111', '#FFFFFF'], [/deichmann/i, 'D', '#E2001A', '#FFFFFF'],
-      [/spotify/i, 'S', '#1DB954', '#0B0B0B'], [/netflix/i, 'N', '#0B0B0B', '#E50914'], [/disney/i, 'D+', '#0B1A6E', '#FFFFFF'],
-      [/youtube/i, 'YT', '#FF0000', '#FFFFFF'], [/google/i, 'G', '#FFFFFF', '#4285F4'], [/apple|icloud/i, '', '#111111', '#FFFFFF'],
-      [/vodafone/i, 'V', '#E60000', '#FFFFFF'], [/\bo2\b|telef[oó]nica/i, 'O₂', '#0019A5', '#FFFFFF'], [/telekom/i, 'T', '#E20074', '#FFFFFF'],
-      [/congstar/i, 'c', '#2B2B2B', '#FFED00'], [/sparkasse/i, 'S', '#FF0000', '#FFFFFF'], [/volksbank/i, 'VB', '#003D8F', '#FF6600'],
-      [/revolut/i, 'R', '#191C1F', '#FFFFFF'], [/\bwise\b/i, 'W', '#9FE870', '#163300'], [/paypal/i, 'P', '#003087', '#FFFFFF'],
-      [/deutsche\s*bahn|\bdb\b|\bmo\.?pla\b/i, 'DB', '#EC0016', '#FFFFFF'], [/\bswk\b|stadtwerke/i, 'SWK', '#00508F', '#FFFFFF'],
-      [/mc\s*fit|rsg\b/i, 'Mc', '#FFD100', '#111111'], [/care\s*concept/i, 'CC', '#0A6E9E', '#FFFFFF'], [/fintiba/i, 'F', '#5B2D8E', '#FFFFFF'],
-      [/claude|anthropic/i, 'C', '#D97757', '#FFFFFF'], [/xiaomi/i, 'mi', '#FF6900', '#FFFFFF'], [/payback/i, 'P', '#0046AA', '#FFFFFF'],
-      [/mcdonald/i, 'M', '#DA291C', '#FFC72C'], [/\bkfc\b/i, 'KFC', '#A3080C', '#FFFFFF'], [/burger\s*king/i, 'BK', '#F5EBDC', '#D62300'],
-      [/lieferando/i, 'L', '#FF8000', '#FFFFFF'], [/wolt/i, 'W', '#00C2E8', '#FFFFFF'], [/\bdhl\b/i, 'DHL', '#FFCC00', '#D40511'],
-      [/deutsche\s*post/i, 'P', '#FFCC00', '#111111'], [/rundfunk|\bard\b|\bzdf\b/i, 'ARD', '#00305E', '#FFFFFF']
+      [/netto/i, 'N', '#FFE500', '#E2001A', 'si:netto'], [/edeka/i, 'E', '#1C4E9B', '#FFE500', 'si:edeka'], [/lidl/i, 'L', '#0050AA', '#FFF000', 'si:lidl'],
+      [/\baldi\s*talk/i, 'AT', '#00005F', '#22B5EC'], [/\baldi\b/i, 'A', '#00005F', '#F59C00', 'si:aldisud'], [/\brewe\b/i, 'R', '#CC071E', '#FFFFFF'],
+      [/kaufland/i, 'K', '#E10915', '#FFFFFF', 'si:kaufland'], [/\bpenny\b/i, 'P', '#CD1414', '#FFED00'], [/\bdm\b|dm-drogerie|drogerie markt/i, 'dm', '#002878', '#FFFFFF', 'si:dm'],
+      [/rossmann/i, 'R', '#C3002F', '#FFFFFF', 'si:rossmann'], [/m[üu]ller\b/i, 'M', '#F39200', '#FFFFFF'], [/\baction\b/i, 'A', '#003C8F', '#FFFFFF', 'web:action.com'],
+      [/\btedi\b/i, 'T', '#FFDD00', '#003C8F', 'web:tedi.com'], [/\bkodi\b/i, 'K', '#E30613', '#FFFFFF', 'web:kodi.de'], [/woolworth/i, 'W', '#E2001A', '#FFFFFF', 'web:woolworth.de'],
+      [/\bikea\b/i, 'IK', '#0058A3', '#FFDB00', 'si:ikea'], [/amazon|\bamzn\b/i, 'a', '#232F3E', '#FF9900', 'web:amazon.de'], [/media\s*markt/i, 'MM', '#DF0000', '#FFFFFF', 'si:mediamarkt'],
+      [/saturn/i, 'S', '#F06400', '#FFFFFF', 'si:saturn'], [/shein/i, 'S', '#111111', '#FFFFFF', 'web:shein.com'], [/c\s*&\s*a\b/i, 'C&A', '#1B3A93', '#FFFFFF', 'web:c-and-a.com'],
+      [/h\s*&\s*m\b/i, 'H&M', '#E50010', '#FFFFFF', 'si:handm'], [/new\s*yorker/i, 'NY', '#111111', '#FFFFFF', 'web:newyorker.de'], [/deichmann/i, 'D', '#E2001A', '#FFFFFF', 'web:deichmann.com'],
+      [/spotify/i, 'S', '#1DB954', '#0B0B0B', 'si:spotify'], [/netflix/i, 'N', '#0B0B0B', '#E50914', 'si:netflix'], [/disney/i, 'D+', '#0B1A6E', '#FFFFFF', 'web:disneyplus.com'],
+      [/youtube/i, 'YT', '#FF0000', '#FFFFFF', 'si:youtube'], [/google/i, 'G', '#FFFFFF', '#4285F4', 'si:google'], [/apple|icloud/i, '', '#111111', '#FFFFFF', 'si:apple'],
+      [/vodafone/i, 'V', '#E60000', '#FFFFFF', 'si:vodafone'], [/\bo2\b|telef[oó]nica/i, 'O₂', '#0019A5', '#FFFFFF'], [/telekom/i, 'T', '#E20074', '#FFFFFF', 'si:deutschetelekom'],
+      [/congstar/i, 'c', '#2B2B2B', '#FFED00', 'web:congstar.de'], [/sparkasse/i, 'S', '#FF0000', '#FFFFFF', 'si:sparkasse'], [/volksbank/i, 'VB', '#003D8F', '#FF6600', 'web:vr.de'],
+      [/revolut/i, 'R', '#191C1F', '#FFFFFF', 'si:revolut'], [/\bwise\b/i, 'W', '#9FE870', '#163300', 'si:wise'], [/paypal/i, 'P', '#003087', '#FFFFFF', 'si:paypal'],
+      [/deutsche\s*bahn|\bdb\b|\bmo\.?pla\b/i, 'DB', '#EC0016', '#FFFFFF', 'si:deutschebahn'], [/\bswk\b|stadtwerke/i, 'SWK', '#00508F', '#FFFFFF', 'web:swk.de'],
+      [/mc\s*fit|rsg\b/i, 'Mc', '#FFD100', '#111111', 'web:mcfit.com'], [/care\s*concept/i, 'CC', '#0A6E9E', '#FFFFFF', 'web:care-concept.de'], [/fintiba/i, 'F', '#5B2D8E', '#FFFFFF', 'web:fintiba.com'],
+      [/claude|anthropic/i, 'C', '#D97757', '#FFFFFF', 'si:claude'], [/xiaomi/i, 'mi', '#FF6900', '#FFFFFF', 'si:xiaomi'], [/payback/i, 'P', '#0046AA', '#FFFFFF', 'si:payback'],
+      [/mcdonald/i, 'M', '#DA291C', '#FFC72C', 'si:mcdonalds'], [/\bkfc\b/i, 'KFC', '#A3080C', '#FFFFFF', 'si:kfc'], [/burger\s*king/i, 'BK', '#F5EBDC', '#D62300', 'si:burgerking'],
+      [/lieferando/i, 'L', '#FF8000', '#FFFFFF', 'web:lieferando.de'], [/wolt/i, 'W', '#00C2E8', '#FFFFFF', 'web:wolt.com'], [/\bdhl\b/i, 'DHL', '#FFCC00', '#D40511', 'si:dhl'],
+      [/deutsche\s*post/i, 'P', '#FFCC00', '#111111', 'si:deutschepost'], [/rundfunk|\bard\b|\bzdf\b/i, 'ARD', '#00305E', '#FFFFFF', 'web:rundfunkbeitrag.de']
     ];
     const KEYWORD_ICONS = [
       [/miete|rent|wohnung|hause?\b/i, 'fa-house'], [/kaution|deposit/i, 'fa-key'], [/strom|electric/i, 'fa-bolt'],
@@ -2471,7 +2471,7 @@
     const autoIcon = (name) => {
       const n = String(name || '');
       const b = BRANDS.find(([re]) => re.test(n));
-      if (b) return { kind: 'brand', text: b[1], bg: b[2], fg: b[3] };
+      if (b) return { kind: 'brand', text: b[1], bg: b[2], fg: b[3], ...(b[4] ? { logo: b[4] } : {}) };
       const k = KEYWORD_ICONS.find(([re]) => re.test(n));
       return k ? { kind: 'symbol', icon: k[1] } : null;
     };
@@ -2479,12 +2479,39 @@
     const validIcon = (x) => {
       if (!x || typeof x !== 'object') return null;
       if (x.kind === 'symbol' && ICON_CHOICES.includes(x.icon)) return { kind: 'symbol', icon: x.icon };
-      if (x.kind === 'brand' && typeof x.text === 'string' && x.text.length <= 3 && HEX.test(x.bg) && HEX.test(x.fg)) return { kind: 'brand', text: x.text, bg: x.bg, fg: x.fg };
+      if (x.kind === 'brand' && typeof x.text === 'string' && x.text.length <= 3 && HEX.test(x.bg) && HEX.test(x.fg)) {
+        const logo = typeof x.logo === 'string' && /^(si:[a-z0-9]{1,40}|web:[a-z0-9.-]{1,80}\.[a-z]{2,})$/.test(x.logo) ? x.logo : null;
+        return { kind: 'brand', text: x.text, bg: x.bg, fg: x.fg, ...(logo ? { logo } : {}) };
+      }
       return null;
     };
 
+    const SIMPLE_ICONS = 'https://cdn.jsdelivr.net/npm/simple-icons@16.36.0/icons/';
+    const siteIcon = (domain) => `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`;
+    const brokenLogos = new Set();
+
     function ItemIcon({ spec, tint = '#64748b', size = 28 }) {
       const box = { width: size, height: size, minWidth: size };
+      const [failed, setFailed] = useState(false);
+      const logo = spec && spec.kind === 'brand' && spec.logo && !failed && !brokenLogos.has(spec.logo) ? spec.logo : null;
+      const markBroken = () => { brokenLogos.add(logo); setFailed(true); };
+      if (logo && logo.startsWith('si:')) {
+        const url = SIMPLE_ICONS + logo.slice(3) + '.svg';
+        return (
+          <span aria-hidden="true" className="inline-flex items-center justify-center rounded-[9px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)]" style={{ ...box, background: spec.bg }}>
+            <img src={url} alt="" onError={markBroken} className="hidden" />
+            <span style={{ width: size * 0.62, height: size * 0.62, background: spec.fg,
+              WebkitMask: `url(${url}) center / contain no-repeat`, mask: `url(${url}) center / contain no-repeat` }}></span>
+          </span>
+        );
+      }
+      if (logo && logo.startsWith('web:')) {
+        return (
+          <span aria-hidden="true" className="inline-flex items-center justify-center rounded-[9px] bg-white overflow-hidden shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]" style={box}>
+            <img src={siteIcon(logo.slice(4))} alt="" onError={markBroken} style={{ width: size * 0.72, height: size * 0.72, objectFit: 'contain' }} />
+          </span>
+        );
+      }
       if (spec && spec.kind === 'brand') {
         const len = spec.text.length;
         return (
