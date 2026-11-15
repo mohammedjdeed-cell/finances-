@@ -102,9 +102,29 @@
     .font-mono { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
     .tnum { font-variant-numeric: tabular-nums; }
     @media (prefers-reduced-motion: no-preference) {
-      .view-enter { animation: viewIn .18s ease-out; }
-      @keyframes viewIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+      .view-enter { animation: viewIn .22s cubic-bezier(.2,.8,.2,1); }
+      .slide-next { animation: slideNext .26s cubic-bezier(.2,.8,.2,1); }
+      .slide-prev { animation: slidePrev .26s cubic-bezier(.2,.8,.2,1); }
+      [dir="rtl"] .slide-next { animation-name: slidePrev; }
+      [dir="rtl"] .slide-prev { animation-name: slideNext; }
+      .sheet-in { animation: sheetUp .28s cubic-bezier(.2,.9,.25,1); }
+      .backdrop-in { animation: fadeIn .2s ease-out; }
+      .pop-in { animation: popIn .16s ease-out; }
+      @media (min-width: 640px) { .sheet-in { animation: popIn .18s ease-out; } }
+      @keyframes viewIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+      @keyframes slideNext { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+      @keyframes slidePrev { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+      @keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes popIn { from { opacity: 0; transform: scale(.97) translateY(4px); } to { opacity: 1; transform: none; } }
+      /* Pressed buttons give way a little, like a native control. */
+      button { transition: transform .12s ease, background-color .15s ease, color .15s ease, box-shadow .15s ease; }
+      button:active:not(:disabled) { transform: scale(.97); }
     }
+    .fold { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .24s cubic-bezier(.2,.8,.2,1); }
+    .fold.closed { grid-template-rows: 0fr; }
+    .fold > div { overflow: hidden; min-height: 0; }
+    html { -webkit-tap-highlight-color: transparent; }
 
     body {
       background-color: rgb(var(--bg-app));
@@ -910,6 +930,7 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        gestureTip: "Tipp: zur Seite wischen wechselt den Monat · mit zwei Fingern zusammenziehen klappt alle Gruppen zu, auseinanderziehen klappt sie auf.",
         loansTitle: "Leihen & Schulden",
         toolsTitle: "Werkzeuge",
         toolSettings: "Einstellungen & Sicherung",
@@ -1402,6 +1423,7 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        gestureTip: "Tip: swipe sideways to change month · pinch with two fingers to fold all groups, spread to unfold them.",
         loansTitle: "Loans & debts",
         toolsTitle: "Tools",
         toolSettings: "Settings & backup",
@@ -1894,6 +1916,7 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        gestureTip: "نصيحة: اسحب جانبًا لتغيير الشهر · اضمم بإصبعين لطي كل المجموعات، وافتحهما لفتحها.",
         loansTitle: "الديون والقروض",
         toolsTitle: "الأدوات",
         toolSettings: "الإعدادات والنسخ الاحتياطي",
@@ -2330,8 +2353,9 @@
         return <section className="rounded-2xl border border-subtle bg-surface p-4 space-y-3 text-xs">{children}</section>;
       }
       return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-end sm:items-center justify-center sm:p-4">
-          <div role="dialog" aria-modal="true" className={`bg-surface border border-subtle rounded-t-2xl sm:rounded-2xl ${size} w-full p-4 pb-[max(1rem,env(safe-area-inset-bottom))] space-y-3 shadow-2xl text-xs max-h-[92vh] overflow-y-auto`}>
+        <div className="backdrop-in fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-end sm:items-center justify-center sm:p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+          <div role="dialog" aria-modal="true" className={`sheet-in bg-surface border border-subtle rounded-t-2xl sm:rounded-2xl ${size} w-full p-4 pb-[max(1rem,env(safe-area-inset-bottom))] space-y-3 shadow-2xl text-xs max-h-[92vh] overflow-y-auto`}>
             <div className="sm:hidden mx-auto -mt-1 mb-1 h-1 w-10 rounded-full bg-subtle"></div>
             <div className="flex justify-between items-center gap-2 border-b border-subtle pb-2">
               <h3 className={`font-semibold flex items-center gap-1.5 ${titleClass}`}>{title}</h3>
@@ -2343,6 +2367,31 @@
           </div>
         </div>
       );
+    }
+
+    // A short buzz on Android phones; iPhones ignore it.
+    const haptic = (ms = 8) => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} };
+
+    // Counts smoothly to a new value instead of jumping.
+    function AnimatedNumber({ value, format }) {
+      const [shown, setShown] = useState(value);
+      const fromRef = useRef(value);
+      useEffect(() => {
+        const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const from = fromRef.current;
+        if (typeof value !== 'number' || typeof from !== 'number' || reduce || from === value) {
+          fromRef.current = value; setShown(value); return;
+        }
+        let raf; const t0 = performance.now(); const D = 480;
+        const step = (now) => {
+          const k = Math.min(1, (now - t0) / D); const e = 1 - Math.pow(1 - k, 3);
+          const v = from + (value - from) * e; fromRef.current = v; setShown(v);
+          if (k < 1) raf = requestAnimationFrame(step);
+        };
+        raf = requestAnimationFrame(step);
+        return () => cancelAnimationFrame(raf);
+      }, [value]);
+      return <>{format(shown)}</>;
     }
 
     // A question-mark link that unfolds an explanation instead of printing it everywhere.
@@ -2408,7 +2457,8 @@
       // Sections of the app: overview, month, activity, plan, more.
       const VIEWS = ['overview', 'month', 'activity', 'plan', 'more'];
       const [view, setViewState] = useState(() => { const v = safeStorage.get('budget_view', 'overview'); return VIEWS.includes(v) ? v : 'overview'; });
-      const setView = (v) => { setViewState(v); setMonthPicker(false); safeStorage.set('budget_view', v); try { window.scrollTo({ top: 0 }); } catch (e) {} };
+      const [anim, setAnim] = useState('view');
+      const setView = (v) => { if (v !== view) haptic(6); setAnim('view'); setViewState(v); setMonthPicker(false); safeStorage.set('budget_view', v); try { window.scrollTo({ top: 0 }); } catch (e) {} };
       const [activityTab, setActivityTab] = useState('entries');
       const [monthPane, setMonthPane] = useState('expenses');
       const [monthPicker, setMonthPicker] = useState(false);
@@ -3675,6 +3725,7 @@
 
       // Paid / received toggle: ticking copies the plan, unticking clears the amount.
       const toggleDone = (type, cat) => {
+        haptic(10);
         const node = getNode(type, cat, selectedYear, selectedMonth);
         if (node.actual > 0) updateNode(type, cat, selectedYear, selectedMonth, 'actual', 0);
         else if (node.budget > 0) updateNode(type, cat, selectedYear, selectedMonth, 'actual', node.budget);
@@ -4405,7 +4456,7 @@
               </div>
             </div>
 
-            {open && (
+            <div className={`fold ${open ? '' : 'closed'}`} aria-hidden={!open}><div>
               <div className="border-t border-subtle p-1.5 space-y-0.5">
                 {isVar && (
                   <div className="flex items-center justify-between gap-2 px-2 py-1.5">
@@ -4452,7 +4503,7 @@
                   </button>
                 </div>
               </div>
-            )}
+            </div></div>
           </section>
         );
       };
@@ -4656,14 +4707,49 @@
                 </button>
               )}
             </div>
-            {!isCol && <div className="px-4 pb-4">{body}</div>}
+            {foldable ? (
+              <div className={`fold ${isCol ? 'closed' : ''}`} aria-hidden={isCol}>
+                <div><div className="px-4 pb-4">{o.toolbar && <div className="mb-3">{o.toolbar}</div>}{body}</div></div>
+              </div>
+            ) : <div className="px-4 pb-4">{o.toolbar && <div className="mb-3">{o.toolbar}</div>}{body}</div>}
           </section>
         );
       };
 
       // ---- Month navigation ----
       const curIdx = timelineIndex(selectedYear, selectedMonth);
-      const goMonth = (pos) => { if (!pos) return; setSelectedYear(pos.yr); setSelectedMonth(pos.m); setMonthPicker(false); };
+      const goMonth = (pos) => {
+        if (!pos) return;
+        const to = timelineIndex(pos.yr, pos.m);
+        if (to !== curIdx) { haptic(6); setAnim(to > curIdx ? 'next' : 'prev'); }
+        setSelectedYear(pos.yr); setSelectedMonth(pos.m); setMonthPicker(false);
+      };
+      const setAllGroups = (open) => setOpenBrackets(prev => ({ ...prev, ...Object.fromEntries(data.groups.map(g => [g.id, open])) }));
+
+      // Touch: swipe sideways to change month, pinch on the month page to fold or unfold all groups.
+      const touchRef = useRef(null);
+      const pinchDist = (tl) => Math.hypot(tl[0].clientX - tl[1].clientX, tl[0].clientY - tl[1].clientY);
+      const onTouchStart = (e) => {
+        if (e.touches.length === 2) { touchRef.current = { pinch: pinchDist(e.touches) }; return; }
+        if (e.touches.length !== 1 || e.target.closest('input, textarea, select, [data-noswipe]')) { touchRef.current = null; return; }
+        touchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+      };
+      const onTouchMove = (e) => {
+        const st = touchRef.current;
+        if (!st || !st.pinch || e.touches.length !== 2 || view !== 'month') return;
+        const r = pinchDist(e.touches) / st.pinch;
+        if (r < 0.72) { setAllGroups(false); haptic(14); touchRef.current = { done: true }; }
+        else if (r > 1.38) { setAllGroups(true); haptic(14); touchRef.current = { done: true }; }
+      };
+      const onTouchEnd = (e) => {
+        const st = touchRef.current; touchRef.current = null;
+        if (!st || st.pinch || st.done || !(view === 'overview' || view === 'month' || view === 'activity')) return;
+        const tch = e.changedTouches[0];
+        const dx = tch.clientX - st.x, dy = tch.clientY - st.y;
+        if (Date.now() - st.t > 600 || Math.abs(dx) < 70 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
+        const forward = (dx < 0) !== (lang === 'ar');
+        goMonth(TIMELINE[curIdx + (forward ? 1 : -1)]);
+      };
 
       // ---- Accounts: real balances per bank account and cash ----
       const newAccountId = () => 'acc' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
@@ -4843,7 +4929,7 @@
           {monthPicker && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setMonthPicker(false)}></div>
-              <div className="absolute end-0 top-10 z-50 w-[292px] rounded-2xl border border-subtle bg-surface shadow-2xl p-3 space-y-3">
+              <div className="pop-in absolute end-0 top-10 z-50 w-[292px] rounded-2xl border border-subtle bg-surface shadow-2xl p-3 space-y-3">
                 {YEARS.map(yr => (
                   <div key={yr}>
                     <div className="text-[11px] font-semibold text-secondary mb-1.5">{yr}</div>
@@ -4883,7 +4969,7 @@
         const openTotal = sections.reduce((sum, sec) => sum + sec.total, 0);
         return panel({
           id: 'due', icon: 'fa-calendar-check', title: t('dueTitle'), sub: openTotal ? fmt(openTotal) : null,
-          right: <Segmented size="sm" options={[['this', t('dueThis')], ['next', t('dueNext')], ['both', t('dueBoth')]]} value={dueScope} onChange={(v) => { setDueScope(v); setDueExpanded(false); }} />
+          toolbar: <Segmented full size="sm" options={[['this', t('dueThis')], ['next', t('dueNext')], ['both', t('dueBoth')]]} value={dueScope} onChange={(v) => { setDueScope(v); setDueExpanded(false); }} />
         }, (
           <div className="space-y-3">
             {sections.map(sec => (
@@ -4975,8 +5061,8 @@
                     <div className="text-[12px] text-secondary">
                       {nowMode ? t('nowTitle') : t(isPast ? 'endOfMonthTitlePast' : 'endOfMonthTitle', { month: monthLabel(selectedYear, selectedMonth) })}
                     </div>
-                    <div className={`mt-1.5 text-[40px] leading-none font-semibold tracking-tight font-mono ${beforeStart ? 'text-tertiary' : hero < 0 ? 'text-notion-red' : 'text-primary'}`}>
-                      {fmtBalance(hero)}
+                    <div className={`mt-1.5 text-[40px] leading-none font-semibold tracking-tight font-mono transition-colors ${beforeStart ? 'text-tertiary' : hero < 0 ? 'text-notion-red' : 'text-primary'}`}>
+                      <AnimatedNumber value={hero} format={fmtBalance} />
                     </div>
                     {beforeStart && <div className="text-[11px] text-tertiary mt-2">{t('beforeStart')}</div>}
                     {cm.backCalculated && (() => {
@@ -4994,7 +5080,7 @@
                       <div key={label} className="rounded-xl bg-subtle/70 px-3 py-2.5 min-w-0">
                         <div className="text-[11px] text-secondary truncate">{label}</div>
                         <div className={`mt-0.5 text-[13px] font-semibold font-mono truncate ${sign === '+' ? 'text-notion-green' : sign === '−' ? 'text-notion-red' : 'text-primary'}`}>
-                          {sign ? `${sign} ` : ''}{fmtBalance(v)}
+                          {sign ? `${sign} ` : ''}<AnimatedNumber value={v} format={fmtBalance} />
                         </div>
                       </div>
                     ))}
@@ -5093,6 +5179,13 @@
         const iconBtn = 'h-8 w-8 rounded-lg border border-subtle bg-surface text-secondary hover:text-primary hover:bg-subtle';
         return (
           <div className="space-y-4">
+            {!dismissed.gestureTip && (
+              <div className="lg:hidden flex items-center gap-3 rounded-2xl border border-subtle bg-surface px-3.5 py-2.5">
+                <i className="fa-solid fa-hand-pointer text-notion-blue"></i>
+                <span className="flex-1 text-[12px] text-secondary leading-snug">{t('gestureTip')}</span>
+                <button onClick={() => dismiss('gestureTip')} aria-label={t('dismiss')} className="w-7 h-7 rounded-full text-tertiary hover:bg-subtle"><i className="fa-solid fa-xmark text-xs"></i></button>
+              </div>
+            )}
             <div className="lg:hidden">
               <Segmented full options={[['expenses', t('expensesHeader'), fmt(cm.projectedEx)], ['incomes', t('incomesHeader'), fmt(cm.projectedIn)]]} value={monthPane} onChange={setMonthPane} />
             </div>
@@ -5585,7 +5678,10 @@
               </div>
             </header>
 
-            <main key={view} className="view-enter max-w-[1280px] mx-auto px-4 lg:px-8 pt-4 lg:pt-6 pb-36 lg:pb-12">
+            <main key={view + (showMonthNav ? `|${curIdx}` : '')}
+              className={`${anim === 'next' ? 'slide-next' : anim === 'prev' ? 'slide-prev' : 'view-enter'} max-w-[1280px] mx-auto px-4 lg:px-8 pt-4 lg:pt-6 pb-36 lg:pb-12`}
+              onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
+              style={view === 'month' ? { touchAction: 'pan-y' } : undefined}>
               {view === 'overview' && MB && renderOverview()}
               {view === 'month' && MB && renderMonth()}
               {view === 'activity' && renderActivity()}
@@ -5609,8 +5705,12 @@
             <div className="grid grid-cols-5 h-16">
               {NAV.map(([id, icon, label]) => (
                 <button key={id} onClick={() => setView(id)} aria-current={view === id ? 'page' : undefined}
-                  className={`flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition ${view === id ? 'text-primary' : 'text-tertiary hover:text-secondary'}`}>
-                  <i className={`fa-solid ${icon} text-[17px]`}></i><span>{label}</span>
+                  className={`relative flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition ${view === id ? 'text-primary' : 'text-tertiary hover:text-secondary'}`}>
+                  <span className={`absolute top-0 h-[3px] w-8 rounded-b-full bg-notion-blue transition-transform duration-200 ${view === id ? 'scale-x-100' : 'scale-x-0'}`}></span>
+                  <span className={`w-12 h-7 rounded-full flex items-center justify-center transition-colors duration-200 ${view === id ? 'bg-subtle' : ''}`}>
+                    <i className={`fa-solid ${icon} text-[16px]`}></i>
+                  </span>
+                  <span>{label}</span>
                 </button>
               ))}
             </div>
