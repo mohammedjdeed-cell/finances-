@@ -12,6 +12,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Jdeeds">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -23,15 +26,17 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['ui-sans-serif', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Helvetica', '"Apple Color Emoji"', 'Arial', 'sans-serif'],
-            mono: ['"SFMono-Regular"', 'Consolas', '"Liberation Mono"', 'Menlo', 'monospace']
+            sans: ['Inter', 'ui-sans-serif', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Helvetica', '"Apple Color Emoji"', 'Arial', 'sans-serif'],
+            // Numbers use the same typeface with tabular figures (see .font-mono), not a code font.
+            mono: ['Inter', 'ui-sans-serif', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif']
           },
+          borderRadius: { DEFAULT: '0.5rem', md: '0.625rem', lg: '0.875rem', xl: '1.125rem', '2xl': '1.375rem' },
           colors: {
             notion: {
-              blue: '#2383e2',
-              green: '#0f7b6c',
-              red: '#e03e3e',
-              amber: '#dfab01',
+              blue: '#3b82f6',
+              green: '#10b981',
+              red: '#ef4444',
+              amber: '#f59e0b',
               tagGray: 'rgba(120, 119, 116, 0.15)',
               tagBlue: 'rgba(35, 131, 226, 0.12)',
               tagGreen: 'rgba(15, 123, 108, 0.12)',
@@ -72,34 +77,40 @@
 
   <style>
     :root {
-      --bg-app: 255 255 255;
+      --bg-app: 245 246 248;
       --bg-surface: 255 255 255;
-      --bg-surface-elevated: 251 251 250;
-      --bg-subtle: 241 241 239;
-      --border-subtle: 233 233 231;
-      --border-strong: 211 211 209;
-      --text-primary: 55 53 47;
-      --text-secondary: 120 119 116;
-      --text-tertiary: 155 154 151;
+      --bg-surface-elevated: 250 251 252;
+      --bg-subtle: 240 242 245;
+      --border-subtle: 229 231 236;
+      --border-strong: 208 212 220;
+      --text-primary: 17 20 28;
+      --text-secondary: 98 105 120;
+      --text-tertiary: 146 152 166;
     }
 
     [data-theme="dark"] {
-      --bg-app: 25 25 25;
-      --bg-surface: 32 32 32;
-      --bg-surface-elevated: 37 37 37;
-      --bg-subtle: 43 43 43;
-      --border-subtle: 47 47 47;
-      --border-strong: 64 64 64;
-      --text-primary: 235 235 235;
-      --text-secondary: 155 154 151;
-      --text-tertiary: 107 107 104;
+      --bg-app: 12 13 16;
+      --bg-surface: 21 23 28;
+      --bg-surface-elevated: 26 29 35;
+      --bg-subtle: 33 36 43;
+      --border-subtle: 39 43 51;
+      --border-strong: 58 63 74;
+      --text-primary: 236 238 242;
+      --text-secondary: 150 157 171;
+      --text-tertiary: 104 111 125;
+    }
+    .font-mono { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    .tnum { font-variant-numeric: tabular-nums; }
+    @media (prefers-reduced-motion: no-preference) {
+      .view-enter { animation: viewIn .18s ease-out; }
+      @keyframes viewIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
     }
 
     body {
       background-color: rgb(var(--bg-app));
       color: rgb(var(--text-primary));
       -webkit-font-smoothing: antialiased;
-      padding-bottom: max(env(safe-area-inset-bottom), 60px);
+      font-feature-settings: "cv11", "ss01";
       letter-spacing: -0.01em;
     }
 
@@ -559,10 +570,15 @@
         fixBalancePreview: "Übertrag wird: {{amount}}",
         fixBalanceSave: "Übernehmen",
         groups: {
+          transport: "Mobilität",
+          health: "Gesundheit & Sport",
+          education: "Bildung & Prüfungen",
+          fees: "Bank & Gebühren",
+          family: "Familie & Freunde",
           housing: "Wohnen",
           bills: "Rechnungen & Kommunikation",
           subs: "Abos",
-          insurance: "Versicherung & Schule",
+          insurance: "Versicherungen",
           groceries: "Lebensmittel & Drogerie",
           household: "Haushalt",
           leisure: "Freizeit & Essen gehen",
@@ -846,6 +862,64 @@
         txDeleted: "{{amount}} bei {{name}} gelöscht",
         entriesLabel: "Einträge ({{n}})",
         txBtn: "Buchungen",
+        navOverview: "Übersicht",
+        navMonth: "Monat",
+        navActivity: "Aktivität",
+        navPlan: "Planung",
+        navMore: "Mehr",
+        prevMonth: "Vorheriger Monat",
+        nextMonth: "Nächster Monat",
+        todayBtn: "Heute",
+        dismiss: "Ausblenden",
+        heroIn: "Rein",
+        heroOut: "Raus",
+        heroStart: "Start",
+        heroDetails: "Rechnung zeigen",
+        heroHide: "Rechnung ausblenden",
+        howCalc: "Wie wird gerechnet?",
+        quickReceipt: "Beleg",
+        quickImport: "Import",
+        quickAsk: "Fragen",
+        quickHistory: "Verlauf",
+        incomeEndShort: "{{n}} Einnahmen enden · ab {{month}} fehlen {{amount}}",
+        showDetails: "Details",
+        hideDetails: "Weniger",
+        emptyItems: "{{n}} ohne Betrag",
+        hideEmpty: "Leere ausblenden",
+        emptyGroups: "Ohne Beträge in diesem Monat ({{n}})",
+        actEntries: "Belege",
+        actHistory: "Verlauf",
+        actSummary: "Monatsabschluss",
+        planYear: "Jahr",
+        planOutlook: "Ausblick",
+        accountsTitle: "Konten",
+        accountsIntro: "Trag ab und zu die echten Kontostände ein – die App vergleicht sie mit ihren Zahlen.",
+        accountsSetup: "Unsere Konten anlegen",
+        accountAdd: "+ Konto",
+        accountMain: "Hauptkonten",
+        accountGateway: "Durchgangskonten",
+        accountCash: "Bargeld",
+        accountsTotal: "Gesamt",
+        accountsAppNow: "Laut App jetzt",
+        accountsDiff: "Unterschied",
+        accountsUse: "Als echten Kontostand übernehmen",
+        accountsUsed: "Kontostand übernommen: {{amount}}",
+        accountsUpdated: "geprüft {{day}}",
+        accountName: "Name",
+        accountsMatch: "Passt ✓",
+        accountRemoved: "Konto entfernt",
+        loansTitle: "Leihen & Schulden",
+        toolsTitle: "Werkzeuge",
+        toolSettings: "Einstellungen & Sicherung",
+        toolGroups: "Neue Gruppe",
+        toolLang: "Sprache: Deutsch",
+        tidyTitle: "Kategorien aufräumen",
+        tidyIntro: "Vorschlag: {{n}} Posten in passendere Gruppen verschieben.",
+        tidyApply: "Übernehmen",
+        tidyDone: "{{n}} Posten neu einsortiert",
+        tidyNone: "Alles ist schon gut sortiert.",
+        addReceiptShort: "Beleg hinzufügen",
+        sectionMonth: "Monat",
         logBtn: "Verlauf",
         askBtn: "Fragen",
         askTitle: "Haushalts-Assistent",
@@ -877,7 +951,7 @@
         logStart: "Startguthaben",
         logBulk: "{{n}} Werte auf einmal geändert (Import oder Wiederherstellung)",
         logNote: "Die letzten {{n}} Änderungen werden mit deinen Daten gespeichert und synchronisiert.",
-        viewEnd: "Ende des Monats",
+        viewEnd: "Monatsende",
         viewNow: "Jetzt",
         nowTitle: "Stand jetzt (laut Einträgen)",
         nowReceived: "Schon erhalten",
@@ -988,10 +1062,15 @@
         fixBalancePreview: "Carried over becomes: {{amount}}",
         fixBalanceSave: "Apply",
         groups: {
+          transport: "Transport",
+          health: "Health & fitness",
+          education: "Education & exams",
+          fees: "Banking & fees",
+          family: "Family & friends",
           housing: "Housing",
           bills: "Bills & communication",
           subs: "Subscriptions",
-          insurance: "Insurance & school",
+          insurance: "Insurance",
           groceries: "Groceries & drugstore",
           household: "Household",
           leisure: "Leisure & eating out",
@@ -1275,6 +1354,64 @@
         txDeleted: "Deleted {{amount}} at {{name}}",
         entriesLabel: "Entries ({{n}})",
         txBtn: "Entries",
+        navOverview: "Overview",
+        navMonth: "Month",
+        navActivity: "Activity",
+        navPlan: "Plan",
+        navMore: "More",
+        prevMonth: "Previous month",
+        nextMonth: "Next month",
+        todayBtn: "Today",
+        dismiss: "Dismiss",
+        heroIn: "In",
+        heroOut: "Out",
+        heroStart: "Start",
+        heroDetails: "Show calculation",
+        heroHide: "Hide calculation",
+        howCalc: "How is this calculated?",
+        quickReceipt: "Receipt",
+        quickImport: "Import",
+        quickAsk: "Ask",
+        quickHistory: "History",
+        incomeEndShort: "{{n}} incomes end · from {{month}} {{amount}} missing",
+        showDetails: "Details",
+        hideDetails: "Less",
+        emptyItems: "{{n}} without amount",
+        hideEmpty: "Hide empty",
+        emptyGroups: "Nothing this month ({{n}})",
+        actEntries: "Receipts",
+        actHistory: "History",
+        actSummary: "Month summary",
+        planYear: "Year",
+        planOutlook: "Outlook",
+        accountsTitle: "Accounts",
+        accountsIntro: "Enter your real balances now and then – the app compares them with its numbers.",
+        accountsSetup: "Add our accounts",
+        accountAdd: "+ Account",
+        accountMain: "Main accounts",
+        accountGateway: "Gateway accounts",
+        accountCash: "Cash",
+        accountsTotal: "Total",
+        accountsAppNow: "App says now",
+        accountsDiff: "Difference",
+        accountsUse: "Use as real balance",
+        accountsUsed: "Balance applied: {{amount}}",
+        accountsUpdated: "checked {{day}}",
+        accountName: "Name",
+        accountsMatch: "Matches ✓",
+        accountRemoved: "Account removed",
+        loansTitle: "Loans & debts",
+        toolsTitle: "Tools",
+        toolSettings: "Settings & backup",
+        toolGroups: "New group",
+        toolLang: "Language: English",
+        tidyTitle: "Tidy up categories",
+        tidyIntro: "Suggestion: move {{n}} items into better-fitting groups.",
+        tidyApply: "Apply",
+        tidyDone: "{{n}} items re-sorted",
+        tidyNone: "Everything is already well sorted.",
+        addReceiptShort: "Add receipt",
+        sectionMonth: "Month",
         logBtn: "History",
         askBtn: "Ask",
         askTitle: "Household assistant",
@@ -1306,7 +1443,7 @@
         logStart: "Starting balance",
         logBulk: "{{n}} values changed at once (import or restore)",
         logNote: "The last {{n}} changes are kept with your data and synced.",
-        viewEnd: "End of month",
+        viewEnd: "Month end",
         viewNow: "Now",
         nowTitle: "Balance now (per entries)",
         nowReceived: "Received so far",
@@ -1532,6 +1669,15 @@
         imported: Array.isArray(raw?.imported) ? raw.imported.filter(k => typeof k === 'string') : [],
         // Change history: when which amount was changed, by whom (newest last).
         log: (Array.isArray(raw?.log) ? raw.log : []).filter(e => e && typeof e.t === 'string' && typeof e.k === 'string').slice(-LOG_MAX),
+        // Bank and cash accounts with the balance last checked (main = Revolut, gateway = Wise/Sparkasse).
+        accounts: (Array.isArray(raw?.accounts) ? raw.accounts : [])
+          .filter(a => a && typeof a.id === 'string' && typeof a.name === 'string')
+          .map(a => ({
+            id: a.id, name: a.name,
+            kind: ['main', 'gateway', 'cash'].includes(a.kind) ? a.kind : 'main',
+            balance: typeof a.balance === 'number' ? a.balance : 0,
+            updated: typeof a.updated === 'string' ? a.updated : null
+          })),
         // Day the salary arrives (15–31). With it, the budget month runs from payday to the day before.
         payday: Number.isInteger(raw?.payday) && raw.payday >= 15 && raw.payday <= 31 ? raw.payday : null,
         values: {}
@@ -1674,16 +1820,22 @@
       return state;
     };
 
-    function Modal({ title, onClose, children, size = 'max-w-sm', titleClass = 'text-primary' }) {
+    function Modal({ title, onClose, children, size = 'max-w-sm', titleClass = 'text-primary', inline = false }) {
       useEffect(() => {
+        if (inline) return;
         const onKey = (e) => { if (e.key === 'Escape') onClose(); };
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
-      }, [onClose]);
+      }, [onClose, inline]);
 
+      // Inline: the same content as a panel inside a page (Activity tab).
+      if (inline) {
+        return <section className="rounded-2xl border border-subtle bg-surface p-4 space-y-3 text-xs">{children}</section>;
+      }
       return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div role="dialog" aria-modal="true" className={`bg-surface border border-subtle rounded-xl ${size} w-full p-4 space-y-3 shadow-xl text-xs max-h-[90vh] overflow-y-auto`}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-end sm:items-center justify-center sm:p-4">
+          <div role="dialog" aria-modal="true" className={`bg-surface border border-subtle rounded-t-2xl sm:rounded-2xl ${size} w-full p-4 pb-[max(1rem,env(safe-area-inset-bottom))] space-y-3 shadow-2xl text-xs max-h-[92vh] overflow-y-auto`}>
+            <div className="sm:hidden mx-auto -mt-1 mb-1 h-1 w-10 rounded-full bg-subtle"></div>
             <div className="flex justify-between items-center gap-2 border-b border-subtle pb-2">
               <h3 className={`font-semibold flex items-center gap-1.5 ${titleClass}`}>{title}</h3>
               <button onClick={onClose} aria-label="Close" className="text-secondary hover:text-primary p-1">
@@ -1692,6 +1844,34 @@
             </div>
             {children}
           </div>
+        </div>
+      );
+    }
+
+    // A question-mark link that unfolds an explanation instead of printing it everywhere.
+    function Hint({ text, label }) {
+      const [open, setOpen] = useState(false);
+      return (
+        <div className="text-[11px]">
+          <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open}
+            className="inline-flex items-center gap-1.5 text-tertiary hover:text-secondary">
+            <i className="fa-regular fa-circle-question"></i><span>{label}</span>
+          </button>
+          {open && <p className="mt-1.5 leading-relaxed text-secondary">{text}</p>}
+        </div>
+      );
+    }
+
+    function Segmented({ options, value, onChange, size = 'md', full = false }) {
+      return (
+        <div className={`${full ? 'grid' : 'inline-grid'} gap-0.5 bg-subtle p-0.5 rounded-lg`} style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}>
+          {options.map(([id, label, sub]) => (
+            <button key={id} type="button" onClick={() => onChange(id)} aria-pressed={value === id}
+              className={`rounded-md font-medium transition ${size === 'sm' ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1.5 text-xs'} ${value === id ? 'bg-surface text-primary shadow-sm' : 'text-secondary hover:text-primary'}`}>
+              <span className="block truncate">{label}</span>
+              {sub != null && <span className="block text-[10px] font-normal opacity-70 font-mono">{sub}</span>}
+            </button>
+          ))}
         </div>
       );
     }
@@ -1728,7 +1908,21 @@
       const initialDate = useMemo(() => getCurrentInitialDate(), []);
       const [selectedYear, setSelectedYear] = useState(initialDate.year);
       const [selectedMonth, setSelectedMonth] = useState(initialDate.month);
-      const isAnnual = selectedMonth === "AnnualOverview";
+      // Sections of the app: overview, month, activity, plan, more.
+      const VIEWS = ['overview', 'month', 'activity', 'plan', 'more'];
+      const [view, setViewState] = useState(() => { const v = safeStorage.get('budget_view', 'overview'); return VIEWS.includes(v) ? v : 'overview'; });
+      const setView = (v) => { setViewState(v); setMonthPicker(false); safeStorage.set('budget_view', v); try { window.scrollTo({ top: 0 }); } catch (e) {} };
+      const [activityTab, setActivityTab] = useState('entries');
+      const [monthPane, setMonthPane] = useState('expenses');
+      const [monthPicker, setMonthPicker] = useState(false);
+      const [heroDetails, setHeroDetails] = useState(false);
+      const [showEmpty, setShowEmpty] = useState({});
+      const readJson = (k) => { try { return JSON.parse(safeStorage.get(k, '{}')) || {}; } catch (e) { return {}; } };
+      const [collapsed, setCollapsed] = useState(() => readJson('budget_collapsed'));
+      const [dismissed, setDismissed] = useState(() => readJson('budget_dismissed'));
+      useEffect(() => { safeStorage.set('budget_collapsed', JSON.stringify(collapsed)); }, [collapsed]);
+      useEffect(() => { safeStorage.set('budget_dismissed', JSON.stringify(dismissed)); }, [dismissed]);
+      const isAnnual = view === 'plan';
       const monthKey = `${selectedYear}_${selectedMonth}`;
 
       const [hideZeroes, setHideZeroes] = useState(() => safeStorage.get('budget_hide_zeroes', 'true') === 'true');
@@ -3658,10 +3852,11 @@
         const open = isGroupOpen(g.id);
         const isVar = g.kind === 'variable';
         const hasAmount = (i) => i.node.budget > 0 || i.node.actual > 0;
-        // One-time items only exist in their own month; recurring ones follow the 0 € switch.
-        const visible = gv.items.filter(i => hasAmount(i) || (!i.once && (isVar || !hideZeroes)));
-        const recurringItems = gv.items.filter(i => !i.once);
-        const hidden = recurringItems.length - visible.filter(i => !i.once).length;
+        // Only items with a plan or an amount this month are shown; the rest is one tap away.
+        const revealed = !!showEmpty[g.id];
+        const emptyItems = gv.items.filter(i => !hasAmount(i) && !i.once);
+        const visible = gv.items.filter(i => hasAmount(i) || (revealed && !i.once));
+        const hidden = emptyItems.length;
         let amount, sub, fill, over = false;
         if (isVar) {
           amount = fmtCents(gv.spent);
@@ -3679,7 +3874,7 @@
         }
 
         return (
-          <section key={g.id} className="rounded-lg border border-subtle bg-surface overflow-hidden">
+          <section key={g.id} className="rounded-2xl border border-subtle bg-surface overflow-hidden">
             <div className="flex items-start gap-1 pr-2">
               <button
                 onClick={() => toggleBracket(g.id)}
@@ -3718,8 +3913,7 @@
                 {isVar && (
                   <div className="flex items-center justify-between gap-2 px-2 py-1.5">
                     <div className="min-w-0">
-                      <span className="text-[11px] font-medium text-primary block">{t('monthlyTarget')}</span>
-                      <span className="text-[10px] text-tertiary">{t('monthlyTargetHint', { month: monthLabel(selectedYear, selectedMonth) })}</span>
+                      <span className="text-[11px] font-medium text-primary block" title={t('monthlyTargetHint', { month: monthLabel(selectedYear, selectedMonth) })}>{t('monthlyTarget')}</span>
                     </div>
                     <MoneyInput
                       value={gv.target}
@@ -3729,14 +3923,9 @@
                     />
                   </div>
                 )}
-                {hidden > 0 && hideZeroes && (
-                  <div className="mx-2 p-1.5 rounded bg-subtle/50 text-[11px] text-tertiary flex items-center justify-between px-2">
-                    <span>{t('hiddenNoticeBracket', { count: hidden })}</span>
-                    <button onClick={() => setHideZeroes(false)} className="text-notion-blue font-semibold hover:underline">{t('showNow')}</button>
-                  </div>
-                )}
                 {visible.map(i => renderItemRow('expenses', i.cat, g.kind))}
-                {isVar && (() => {
+                {visible.length === 0 && hidden === 0 && <p className="px-2 py-1.5 text-[11px] text-tertiary">{t('groupNothingPlanned')}</p>}
+                {isVar && revealed && (() => {
                   const existing = new Set(data.categories.expenses.map(c => c.toLowerCase()));
                   const ideas = (STORE_SUGGESTIONS[g.id] || []).filter(n => !existing.has(n.toLowerCase()));
                   if (!ideas.length) return null;
@@ -3755,9 +3944,13 @@
                     </div>
                   );
                 })()}
-                <div className="flex items-center justify-between px-2 pt-1 pb-1 text-[10px] text-tertiary">
-                  <span>{isVar ? t('tapPlusHint') : t('tapCircleHint')}</span>
-                  <button onClick={() => handleOpenQuickAdd('expenses', g.id)} className="text-notion-blue text-[11px] font-medium hover:underline">
+                <div className="flex items-center justify-between gap-2 px-2 pt-1 pb-1 text-[11px]">
+                  {hidden > 0 ? (
+                    <button onClick={() => setShowEmpty(prev => ({ ...prev, [g.id]: !revealed }))} className="text-tertiary hover:text-primary">
+                      <i className={`fa-solid ${revealed ? 'fa-eye-slash' : 'fa-eye'} mr-1 text-[10px]`}></i>{revealed ? t('hideEmpty') : t('emptyItems', { n: hidden })}
+                    </button>
+                  ) : <span></span>}
+                  <button onClick={() => handleOpenQuickAdd('expenses', g.id)} className="text-notion-blue font-medium hover:underline">
                     {t('addItemShort')}
                   </button>
                 </div>
@@ -3785,551 +3978,261 @@
       const totalProjNet = yearRows.reduce((s, r) => s + r.projectedNet, 0);
       const savingsRate = totalProjIn > 0 ? totalProjNet / totalProjIn : null;
 
-      return (
-        <div className="flex flex-col min-h-screen font-sans">
-
-          {/* 1. TOP NAVBAR */}
-          <header className="sticky top-0 z-50 bg-surface border-b border-subtle h-12 px-3 sm:px-4 flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <span className="text-base">📋</span>
-              <div className="flex items-center gap-1.5 text-xs text-secondary font-mono">
-                <span className="font-semibold text-primary">{t('title')}</span>
-                <span className="hidden sm:inline">/</span>
-                <span className="hidden sm:inline text-tertiary">{selectedYear}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center bg-subtle p-0.5 rounded border border-subtle">
-              {YEARS.map(yr => (
-                <button
-                  key={yr}
-                  onClick={() => selectYear(yr)}
-                  className={`px-2 py-0.5 rounded text-[11px] font-mono transition ${selectedYear === yr ? 'bg-surface text-primary shadow-sm font-semibold' : 'text-secondary hover:text-primary'}`}
-                >
-                  {yr}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex items-center space-x-1">
-              <button
-                onClick={() => setIsBurgerOpen(true)}
-                title={syncLabel}
-                aria-label={syncLabel}
-                className={`w-7 h-7 rounded hover:bg-subtle flex items-center justify-center ${syncStatus === 'error' ? 'text-notion-red' : user ? 'text-notion-green' : 'text-tertiary'}`}
-              >
-                <i className={`fa-solid ${syncIcon} text-xs`}></i>
-              </button>
-              <button
-                onClick={() => changeLanguage(lang === 'de' ? 'en' : 'de')}
-                className="text-[11px] font-mono px-2 py-1 rounded hover:bg-subtle text-secondary hover:text-primary font-semibold"
-              >
-                {lang.toUpperCase()}
-              </button>
-              <button
-                onClick={() => setIsBurgerOpen(true)}
-                aria-label={t('options')}
-                className="w-7 h-7 rounded hover:bg-subtle text-secondary hover:text-primary flex items-center justify-center"
-              >
-                <i className="fa-solid fa-sliders text-xs"></i>
-              </button>
-            </div>
-          </header>
-
-          {/* 2. MONTH TABS */}
-          <nav className="sticky top-12 z-40 bg-surface border-b border-subtle px-3 py-1 overflow-x-auto scrollbar-none flex items-center gap-1 text-xs">
-            <div className="flex items-center space-x-0.5 overflow-x-auto scrollbar-none flex-grow">
-              {getMonthsForYear(selectedYear).map(m => (
-                <button
-                  key={m}
-                  onClick={() => setSelectedMonth(m)}
-                  className={`px-2.5 py-1 rounded text-xs transition whitespace-nowrap min-w-[42px] text-center ${
-                    selectedMonth === m
-                      ? 'bg-subtle text-primary font-semibold border-b-2 border-primary'
-                      : 'text-secondary hover:text-primary hover:bg-subtle/50'
-                  }`}
-                >
-                  {formatMonth(m, lang)}
-                </button>
-              ))}
-            </div>
-
-            <div className="h-4 w-px bg-subtle shrink-0 mx-1"></div>
-
-            <button
-              onClick={() => setSelectedMonth("AnnualOverview")}
-              aria-label={t('annualOverview')}
-              className={`px-2 py-1 rounded text-xs transition whitespace-nowrap flex items-center gap-1 shrink-0 ${
-                isAnnual ? 'bg-subtle text-primary font-semibold' : 'text-secondary hover:text-primary'
-              }`}
-            >
-              <i className="fa-solid fa-compass text-[10px]"></i>
-              <span className="hidden sm:inline">{t('annualOverview')}</span>
-            </button>
-          </nav>
-
-          {/* 3. MOBILE SECTION TOGGLE */}
-          {!isAnnual && (
-            <div className="block lg:hidden sticky top-[89px] z-30 bg-surface px-3 py-1.5 border-b border-subtle">
-              <div className="grid grid-cols-3 gap-1 bg-subtle p-0.5 rounded border border-subtle text-[11px]">
-                {[
-                  ['expenses', t('expensesHeader'), currentMetrics.projectedEx],
-                  ['incomes', t('incomesHeader'), currentMetrics.projectedIn],
-                  ['cockpit', t('moreTab'), currentMetrics.endProjectedBalance]
-                ].map(([id, label, value]) => (
-                  <button
-                    key={id}
-                    onClick={() => setMobileTab(id)}
-                    className={`py-1 rounded font-medium transition ${mobileTab === id ? 'bg-surface text-primary shadow-sm font-semibold' : 'text-secondary'}`}
-                  >
-                    <span>{label}</span>
-                    <span className="block text-[9px] opacity-75">{fmtBalance(value)}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* MAIN CANVAS */}
-          <main className="max-w-6xl mx-auto w-full px-3 sm:px-6 pt-4 pb-20 flex-grow space-y-4">
-
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-subtle pb-3">
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-primary flex items-center gap-2">
-                  <span>{isAnnual ? '🧭' : '🏠'}</span>
-                  <span>{isAnnual ? t('annualOverview') : formatMonth(selectedMonth, lang)} {selectedYear}</span>
-                </h1>
-                <p className="text-xs text-secondary">{isAnnual ? t('annualRunway') : t('subtitle')}</p>
-              </div>
-
-              {!isAnnual && (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setHideZeroes(prev => !prev)}
-                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-2 border ${
-                      !hideZeroes
-                        ? 'bg-primary text-surface border-primary shadow-sm'
-                        : 'bg-subtle text-primary border-subtle hover:bg-subtle/80'
-                    }`}
-                    title={hideZeroes ? t('showZeroTitle') : t('hideZeroTitle')}
-                  >
-                    <i className={`fa-solid ${!hideZeroes ? 'fa-eye' : 'fa-eye-slash'} text-xs`}></i>
-                    <span>{!hideZeroes ? t('showAllBtn') : t('hideZeroesBtn')}</span>
-                  </button>
-
-                  <button
-                    onClick={toggleAllBrackets}
-                    className="px-2.5 py-1.5 rounded-md text-xs text-secondary hover:text-primary transition border border-subtle bg-surface"
-                  >
-                    <i className="fa-solid fa-up-down text-[10px] mr-1"></i>
-                    <span>{anyGroupClosed ? t('expandAll') : t('collapseAll')}</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {isAnnual ? (
-              /* ANNUAL OVERVIEW */
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                  <div className="p-3 rounded-lg border border-subtle bg-surface-elevated">
-                    <div className="text-secondary text-[11px]">⚖️ {t('annualNet')}</div>
-                    <div className={`text-lg font-mono font-bold mt-1 ${currentMetrics.actualNet >= 0 ? 'text-notion-green dark:text-emerald-400' : 'text-notion-red'}`}>{fmt(currentMetrics.actualNet)}</div>
-                    <span className="text-[10px] font-mono text-tertiary">{t('kpiIn')} {fmt(currentMetrics.actualIn)} · {t('kpiOut')} {fmt(currentMetrics.actualEx)}</span>
-                  </div>
-                  <div className="p-3 rounded-lg border border-subtle bg-surface-elevated">
-                    <div className="text-secondary text-[11px]">📈 {t('kpiProjectedNet')}</div>
-                    <div className={`text-lg font-mono font-bold mt-1 ${currentMetrics.projectedNet >= 0 ? 'text-notion-blue' : 'text-notion-red'}`}>{fmt(currentMetrics.projectedNet)}</div>
-                  </div>
-                  <div className="p-3 rounded-lg border border-subtle bg-surface-elevated">
-                    <div className="text-secondary text-[11px]">💾 {t('annualSavingsRate')}</div>
-                    <div className="text-lg font-mono font-bold mt-1 text-primary">{savingsRate === null ? '–' : `${Math.round(savingsRate * 100)} %`}</div>
-                  </div>
-                  <div className="p-3 rounded-lg border border-subtle bg-surface-elevated">
-                    <div className="text-secondary text-[11px]">🏦 {t('kpiCumulative')}</div>
-                    <div className="text-lg font-mono font-bold mt-1 text-primary">{fmtBalance(currentMetrics.endProjectedBalance)}</div>
-                  </div>
-                </div>
-
-                <div className="rounded-lg border border-subtle bg-surface overflow-x-auto">
-                  <table className="w-full text-xs font-mono">
-                    <thead>
-                      <tr className="text-secondary text-[10px] border-b border-subtle">
-                        <th className="text-left font-medium px-3 py-2 font-sans">{t('annualMonth')}</th>
-                        <th className="text-right font-medium px-2 py-2">{t('kpiIn')}</th>
-                        <th className="text-right font-medium px-2 py-2">{t('kpiOut')}</th>
-                        <th className="text-right font-medium px-2 py-2">{t('annualNet')}</th>
-                        <th className="text-right font-medium px-2 py-2">{t('annualProjected')}</th>
-                        <th className="text-right font-medium px-3 py-2">{t('annualBalance')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {yearRows.map(r => {
-                        const status = monthStatus(r.year, r.month);
-                        return (
-                          <tr
-                            key={r.key}
-                            onClick={() => setSelectedMonth(r.month)}
-                            className={`border-b border-subtle last:border-0 cursor-pointer hover:bg-subtle/60 ${status === 'current' ? 'bg-subtle/40' : ''}`}
-                          >
-                            <td className={`px-3 py-1.5 font-sans ${status === 'future' ? 'text-secondary' : 'text-primary font-medium'}`}>
-                              {formatMonth(r.month, lang)}{status === 'current' && ' •'}
-                            </td>
-                            <td className="text-right px-2 py-1.5 text-notion-green">{fmt(r.actualIn)}</td>
-                            <td className="text-right px-2 py-1.5 text-notion-red">{fmt(r.actualEx)}</td>
-                            <td className={`text-right px-2 py-1.5 ${r.actualNet >= 0 ? 'text-primary' : 'text-notion-red'}`}>{fmt(r.actualNet)}</td>
-                            <td className={`text-right px-2 py-1.5 ${r.projectedNet >= 0 ? 'text-notion-blue' : 'text-notion-red'}`}>{fmt(r.projectedNet)}</td>
-                            <td className={`text-right px-3 py-1.5 font-semibold ${r.endProjectedBalance == null ? 'text-tertiary' : r.endProjectedBalance >= 0 ? 'text-primary' : 'text-notion-red'}`}>{fmtBalance(r.endProjectedBalance)}</td>
-                          </tr>
-                        );
-                      })}
-                      <tr className="border-t border-strong font-semibold">
-                        <td className="px-3 py-2 font-sans text-primary">{t('annualTotal')}</td>
-                        <td className="text-right px-2 py-2 text-notion-green">{fmt(currentMetrics.actualIn)}</td>
-                        <td className="text-right px-2 py-2 text-notion-red">{fmt(currentMetrics.actualEx)}</td>
-                        <td className="text-right px-2 py-2 text-primary">{fmt(currentMetrics.actualNet)}</td>
-                        <td className="text-right px-2 py-2 text-notion-blue">{fmt(currentMetrics.projectedNet)}</td>
-                        <td className="text-right px-3 py-2 text-primary">{fmtBalance(currentMetrics.endProjectedBalance)}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                {yearReport && yearReport.groups.length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="rounded-lg border border-subtle bg-surface p-4 space-y-2">
-                      <div className="text-[11px] uppercase tracking-wide font-semibold text-secondary">{t('reportGroups', { year: selectedYear })}</div>
-                      {yearReport.groups.map(x => (
-                        <div key={x.g.id} className="space-y-0.5">
-                          <div className="flex items-baseline justify-between gap-2 text-xs">
-                            <span className="text-primary truncate">{groupName(x.g)}</span>
-                            <span className="font-mono text-primary shrink-0">{fmt(x.total)} <span className="text-tertiary text-[10px]">· {t('perMonthShort', { amount: fmt(x.avg) })}</span></span>
-                          </div>
-                          <div className="h-1.5 rounded-full bg-subtle overflow-hidden">
-                            <div className="h-full rounded-full" style={{ width: `${x.total / yearReport.max * 100}%`, background: GROUP_HEX[x.g.color] }}></div>
-                          </div>
-                        </div>
-                      ))}
-                      <p className="text-[10px] text-tertiary">{t('reportAvgNote', { n: yearReport.activeMonths })}</p>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="rounded-lg border border-subtle bg-surface p-4 space-y-1.5">
-                        <div className="text-[11px] uppercase tracking-wide font-semibold text-secondary">{t('reportTopItems')}</div>
-                        {yearReport.items.map((x, i) => (
-                          <div key={x.cat} className="flex items-baseline justify-between gap-2 text-xs">
-                            <span className="text-primary truncate"><span className="text-tertiary font-mono mr-1.5">{i + 1}</span>{x.cat}</span>
-                            <span className="font-mono text-primary shrink-0">{fmt(x.total)}</span>
-                          </div>
-                        ))}
+      const renderEntries = (inline = false) => {
+            const all = [...monthTx('expenses'), ...monthTx('incomes')].sort((a, b) => a.date < b.date ? 1 : -1);
+            const shown = txWhoFilter === 'all' ? all : all.filter(x => x.who === txWhoFilter);
+            const spentBy = (w) => all.filter(x => x.type === 'expenses' && x.who === w).reduce((sum, x) => sum + x.amount, 0);
+            return (
+              <Modal inline={inline} size="max-w-lg" onClose={() => { setTxModal(false); setEditingTx(null); }} title={<><span>📋</span><span>{t('txModalTitle', { month: monthLabel(selectedYear, selectedMonth) })}</span></>}>
+                <div className="space-y-1">
+                  <div className="text-[10px] text-secondary">{t('whoPaidTitle')}</div>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {WHO.map(w => (
+                      <div key={w} className="p-2 rounded bg-subtle">
+                        <div className="text-[10px] text-secondary truncate">{whoLabel(w)}</div>
+                        <div className="font-mono text-sm font-semibold text-primary">{fmtCents(spentBy(w))}</div>
                       </div>
-                      <div className="rounded-lg border border-subtle bg-surface p-4 space-y-1.5">
-                        <div className="text-[11px] uppercase tracking-wide font-semibold text-secondary">{t('whoPaidTitle')}</div>
-                        <div className="grid grid-cols-3 gap-1.5">
-                          {yearReport.byWho.map(x => (
-                            <div key={x.w} className="p-2 rounded bg-subtle">
-                              <div className="text-[10px] text-secondary truncate">{whoLabel(x.w)}</div>
-                              <div className="font-mono text-sm font-semibold text-primary">{fmt(x.total)}</div>
-                            </div>
-                          ))}
-                        </div>
-                        <p className="text-[10px] text-tertiary">{t('reportWhoNote')}</p>
-                      </div>
-                    </div>
+                    ))}
                   </div>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {['all', ...WHO].map(w => (
+                    <button
+                      key={w}
+                      onClick={() => setTxWhoFilter(w)}
+                      aria-pressed={txWhoFilter === w}
+                      className={`px-2.5 py-1 rounded-full text-[11px] border ${txWhoFilter === w ? 'border-primary text-primary font-semibold' : 'border-subtle text-secondary'}`}
+                    >
+                      {w === 'all' ? t('filterAll') : whoLabel(w)}
+                    </button>
+                  ))}
+                </div>
+                {shown.length === 0 ? (
+                  <p className="text-[11px] text-tertiary">{t('txEmpty')}</p>
+                ) : (
+                  <div className={`space-y-0.5 ${inline ? '' : 'max-h-[50vh] overflow-y-auto'}`}>{shown.map(x => renderTxRow(x, true))}</div>
                 )}
+              </Modal>
+            );
+      };
 
-                {chartBox}
-              </div>
-            ) : (
-              <>
-                {(() => {
-                  const cm = currentMetrics;
-                  const prev = prevMonthOf(selectedYear, selectedMonth);
-                  const isPast = monthStatus(selectedYear, selectedMonth) === 'past';
-                  const beforeStart = cm.endProjectedBalance == null;
-                  const carriedLabel = cm.isAnchor || !prev ? t('carriedStart') : t('carriedOver', { month: monthLabel(prev.yr, prev.m) });
-                  const flexLeft = cm.flex.plan - cm.flex.spent;
-                  const usesShift = !!payday
-                    || data.categories.incomes.some(c => isForNextItem('incomes', c))
-                    || data.categories.expenses.some(c => isForNextItem('expenses', c));
-                  const lines = [
-                    {
-                      // With late income, what carries over is what was left just before last month's payday.
-                      label: usesShift && prev ? t('carriedBeforeSalary', { month: formatMonth(prev.m, lang) }) : carriedLabel,
-                      text: fmtBalance(cm.startBal), cls: cm.startBal < 0 ? 'text-notion-red' : 'text-primary'
-                    },
-                    ...(usesShift && prev ? [
-                      { label: t('lineIncomeFromPrev', { month: formatMonth(prev.m, lang) }), text: `+ ${fmt(cm.shiftedIn)}`, cls: 'text-notion-green' },
-                      ...(cm.projectedIn - cm.shiftedIn > 0
-                        ? [{ label: t('lineIncomeThis', { month: formatMonth(selectedMonth, lang) }), text: `+ ${fmt(cm.projectedIn - cm.shiftedIn)}`, cls: 'text-notion-green' }]
-                        : [])
-                    ] : [
-                      { label: t('lineIncome'), text: `+ ${fmt(cm.projectedIn)}`, cls: 'text-notion-green' }
-                    ]),
-                    ...(usesShift && prev && cm.shiftedEx > 0
-                      ? [{ label: t('linePaidEndPrev', { month: formatMonth(prev.m, lang) }), text: `− ${fmt(cm.shiftedEx)}`, cls: 'text-notion-red' }]
-                      : []),
-                    { label: t('lineFixed'), text: `− ${fmt(cm.fixed.expected)}`, cls: 'text-notion-red' },
-                    { label: t('lineFlex'), text: `− ${fmt(cm.flex.expected)}`, cls: 'text-notion-red' }
-                  ];
-                  const nextPos = TIMELINE[timelineIndex(selectedYear, selectedMonth) + 1];
-                  // What should be in the accounts right now, according to what's recorded so far.
-                  const availableNow = !beforeStart && monthStatus(selectedYear, selectedMonth) === 'current'
-                    ? cm.startBal + (cm.shiftedIn || 0) - (cm.shiftedEx || 0) - (cm.lateVarPrev || 0)
-                      + (cm.actualIn - (cm.shiftedActual || 0)) - (cm.actualEx - (cm.shiftedExActual || 0) - (cm.lateVarPrev || 0))
-                      + (cm.arrivedForNextActual || 0) - (cm.leftForNextActual || 0) - (cm.lateVarHere || 0)
-                    : null;
-                  const incomeHasAmount = (cat) => {
-                    const node = getNode('incomes', cat, selectedYear, selectedMonth);
-                    return node.budget > 0 || node.actual > 0;
-                  };
-                  const visibleIncomes = data.categories.incomes.filter(cat =>
-                    incomeHasAmount(cat) || (!getMeta('incomes', cat).oneTime && !hideZeroes));
-                  const hiddenIncomes = hideZeroes
-                    ? data.categories.incomes.filter(cat => !getMeta('incomes', cat).oneTime && !incomeHasAmount(cat)).length
-                    : 0;
-                  const shownGroups = groupView.filter(gv =>
-                    (expFilter === 'all' || (expFilter === 'fixed' ? gv.g.kind === 'fixed' : gv.g.kind !== 'fixed')) &&
-                    // A one-time group only shows in months where it has something.
-                    (gv.g.kind !== 'oneoff' || gv.items.some(i => i.node.budget > 0 || i.node.actual > 0)));
-                  const meters = [
-                    {
-                      label: t('lineIncome'), done: cm.actualIn, total: cm.projectedIn, color: '#0f7b6c',
-                      sub: cm.projectedIn > cm.actualIn
-                        ? t('stillExpected', { amount: fmt(cm.projectedIn - cm.actualIn) })
-                        : t('receivedOf', { done: fmt(cm.actualIn), total: fmt(cm.projectedIn) })
-                    },
-                    {
-                      label: t('lineFixed'), done: cm.fixed.paid, total: cm.fixed.expected, color: '#2383e2',
-                      sub: t('paidCount', { n: cm.fixed.paidItems, m: cm.fixed.items }) +
-                        (cm.fixed.expected > cm.fixed.paid ? ` · ${t('stillOpen', { amount: fmt(cm.fixed.expected - cm.fixed.paid) })}` : '')
-                    },
-                    {
-                      label: t('lineFlex'), done: cm.flex.spent, total: cm.flex.plan, color: flexLeft < 0 ? '#e03e3e' : '#cb912f',
-                      over: flexLeft < 0,
-                      sub: flexLeft < 0 ? t('targetOver', { amount: fmt(-flexLeft) }) : t('targetLeft', { amount: fmt(flexLeft) })
-                    }
-                  ];
-
-                  return (
-                    <div className="grid grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] gap-4 lg:gap-6 items-start">
-
-                      {/* SUMMARY COLUMN */}
-                      <aside className="space-y-3 min-w-0">
-                        {/* End-of-month balance, built up line by line */}
-                        {availableNow !== null && balanceView === 'now' ? (
-                        <div className="rounded-lg border border-subtle bg-surface-elevated p-4 space-y-3">
-                          <div className="grid grid-cols-2 gap-1 bg-subtle p-0.5 rounded border border-subtle text-[11px]">
-                            <button onClick={() => setBalanceView('end')} className="py-1 rounded text-secondary">{t('viewEnd')}</button>
-                            <button aria-pressed="true" className="py-1 rounded bg-surface text-primary font-semibold shadow-sm">{t('viewNow')}</button>
-                          </div>
-                          <div>
-                            <div className="text-[11px] text-secondary flex items-center gap-1.5"><span>👛</span><span>{t('nowTitle')}</span></div>
-                            <div className={`text-3xl font-mono font-bold mt-1 ${availableNow >= 0 ? 'text-primary' : 'text-notion-red'}`}>{fmtBalance(availableNow)}</div>
-                          </div>
-                          <div className="text-xs font-mono space-y-1">
-                            <div className="flex items-center justify-between gap-3"><span className="font-sans text-secondary">{carriedLabel}</span><span>{fmtBalance(cm.startBal)}</span></div>
-                            <div className="flex items-center justify-between gap-3"><span className="font-sans text-secondary">{t('nowReceived')}</span><span className="text-notion-green">+ {fmt(cm.actualIn)}</span></div>
-                            <div className="flex items-center justify-between gap-3"><span className="font-sans text-secondary">{t('nowPaid')}</span><span className="text-notion-red">− {fmt(cm.actualEx)}</span></div>
-                            <div className="flex items-center justify-between gap-3 border-t border-strong pt-1 font-bold">
-                              <span className="font-sans text-primary">= {t('viewNow')}</span>
-                              <span className={availableNow >= 0 ? 'text-primary' : 'text-notion-red'}>{fmtBalance(availableNow)}</span>
-                            </div>
-                            <div className="flex items-center justify-between gap-3 pt-1 text-tertiary">
-                              <span className="font-sans">{t('nowStillOpen')}</span>
-                              <span>{cm.endProjectedBalance - availableNow >= 0 ? '+' : '−'} {fmt(Math.abs(cm.endProjectedBalance - availableNow))}</span>
-                            </div>
-                            <div className="flex items-center justify-between gap-3 text-tertiary">
-                              <span className="font-sans">{t('endOfMonthTitle', { month: monthLabel(selectedYear, selectedMonth) })}</span>
-                              <span>{fmtBalance(cm.endProjectedBalance)}</span>
-                            </div>
-                          </div>
-                          <p className="text-[10px] text-tertiary leading-snug">{t('nowRules')}</p>
-                          <button onClick={openBalanceModal} className="text-[11px] text-notion-blue hover:underline">✎ {t('fixBalanceBtn')}</button>
-                        </div>
-                        ) : (
-                        <div className="rounded-lg border border-subtle bg-surface-elevated p-4 space-y-3">
-                          {availableNow !== null && (
-                            <div className="grid grid-cols-2 gap-1 bg-subtle p-0.5 rounded border border-subtle text-[11px]">
-                              <button aria-pressed="true" className="py-1 rounded bg-surface text-primary font-semibold shadow-sm">{t('viewEnd')}</button>
-                              <button onClick={() => setBalanceView('now')} className="py-1 rounded text-secondary">{t('viewNow')}</button>
-                            </div>
-                          )}
-                          <div>
-                            <div className="text-[11px] text-secondary flex items-center gap-1.5">
-                              <span>🏦</span>
-                              <span>{usesShift
-                                ? t('beforePaydayTitle', { month: monthLabel(selectedYear, selectedMonth) })
-                                : t(isPast ? 'endOfMonthTitlePast' : 'endOfMonthTitle', { month: monthLabel(selectedYear, selectedMonth) })}</span>
-                            </div>
-                            <div className={`text-3xl font-mono font-bold mt-1 ${beforeStart ? 'text-tertiary' : cm.endProjectedBalance >= 0 ? 'text-primary' : 'text-notion-red'}`}>
-                              {fmtBalance(cm.endProjectedBalance)}
-                            </div>
-                            {beforeStart && <div className="text-[11px] text-tertiary mt-1">{t('beforeStart')}</div>}
-                            {cm.backCalculated && (() => {
-                              const [ay, am] = (data.startingMonth || '').split('|');
-                              return <div className="text-[11px] text-tertiary mt-1">{t('backCalcNote', { month: monthLabel(parseInt(ay), am) })}</div>;
-                            })()}
-                          </div>
-                          {!beforeStart && (
-                            <div className="text-xs font-mono space-y-1">
-                              {lines.map(l => (
-                                <div key={l.label} className="flex items-center justify-between gap-3">
-                                  <span className="font-sans text-secondary">{l.label}</span>
-                                  <span className={l.cls}>{l.text}</span>
-                                </div>
-                              ))}
-                              <div className="flex items-center justify-between gap-3 border-t border-strong pt-1 font-bold">
-                                <span className="font-sans text-primary">= {usesShift ? t('beforePaydayLine') : t('kpiCumulative')}</span>
-                                <span className={cm.endProjectedBalance >= 0 ? 'text-primary' : 'text-notion-red'}>{fmtBalance(cm.endProjectedBalance)}</span>
-                              </div>
-                              {usesShift && cm.arrivingForNext > 0 && nextPos && (
-                                <div className="flex items-center justify-between gap-3 text-tertiary">
-                                  <span className="font-sans">{t('arrivingForNext', { month: formatMonth(selectedMonth, lang), next: formatMonth(nextPos.m, lang) })}</span>
-                                  <span>+ {fmt(cm.arrivingForNext)}</span>
-                                </div>
-                              )}
-                              {usesShift && cm.leavingForNext > 0 && nextPos && (
-                                <div className="flex items-center justify-between gap-3 text-tertiary">
-                                  <span className="font-sans">{t('leavingForNext', { month: formatMonth(selectedMonth, lang), next: formatMonth(nextPos.m, lang) })}</span>
-                                  <span>− {fmt(cm.leavingForNext)}</span>
-                                </div>
-                              )}
-                              {availableNow !== null && (
-                                <div className="flex items-center justify-between gap-3 pt-1 mt-1 border-t border-subtle">
-                                  <span className="font-sans text-secondary">{t('availableNow')}</span>
-                                  <span className={availableNow >= 0 ? 'text-primary' : 'text-notion-red'}>{fmt(availableNow)}</span>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          <p className="text-[10px] text-tertiary leading-snug">{t('expectedRules')}</p>
-                          <button onClick={openBalanceModal} className="text-[11px] text-notion-blue hover:underline">
-                            ✎ {t('fixBalanceBtn')}
-                          </button>
-                        </div>
-                        )}
-
-                        {/* Due soon: this month, next month or both */}
-                        {dueSoon.length > 0 && (() => {
-                          const offs = dueScope === 'this' ? [0] : dueScope === 'next' ? [1] : [0, 1];
-                          const sections = offs.map(off => {
-                            const p = TIMELINE[nowIdx + off];
-                            const items = dueSoon.filter(x => x.off === off);
-                            return { off, p, items, total: items.reduce((sum, x) => sum + x.amount, 0) };
-                          }).filter(sec => sec.p);
-                          // Collapsed, each month gets its own share of rows so both stay visible.
-                          const perSection = dueExpanded ? Infinity : (sections.length > 1 ? 4 : 6);
-                          const hiddenCount = sections.reduce((n, sec) => n + Math.max(0, sec.items.length - perSection), 0);
+      const renderHistory = (inline = false) => {
+            const monthKey = `${selectedYear}|${selectedMonth}`;
+            const monthIso = `${selectedYear}-${pad2(ALL_MONTHS.indexOf(selectedMonth) + 1)}`;
+            const inMonth = (e) => e.p === monthKey || (e.d && e.d.slice(0, 7) === monthIso);
+            const all = [...(data.log || [])].reverse();
+            const shown = logScope === 'month' ? all.filter(inMonth) : all;
+            const kindLabel = (e) => {
+              const where = e.p && e.p !== monthKey && e.p.includes('|') ? ` (${monthLabel(parseInt(e.p), e.p.split('|')[1])})` : '';
+              switch (e.k) {
+                case 'plan': return [`${e.c}${where}`, t('logPlan'), `${fmtCents(e.o)} → ${fmtCents(e.n)}`];
+                case 'done': return [`${e.c}${where}`, t(e.ty === 'incomes' ? 'logReceived' : 'logPaid'), `${fmtCents(e.o)} → ${fmtCents(e.n)}`];
+                case 'tx+': return [e.c, t('logTxAdd', { day: fmtDay(e.d) }), `${e.ty === 'incomes' ? '+' : '−'} ${fmtCents(e.a)}`];
+                case 'tx-': return [e.c, t('logTxDel', { day: fmtDay(e.d) }), `${fmtCents(e.a)}`];
+                case 'tx~': return [e.c, t('logTxEdit', { day: fmtDay(e.d) }), `${fmtCents(e.o)} → ${fmtCents(e.n)}`];
+                case 'start': return [t('logStart'), e.p ? monthLabel(parseInt(e.p), e.p.split('|')[1]) : '', `${fmtCents(e.o)} → ${fmtCents(e.n)}`];
+                case 'bulk': return [t('logBulk', { n: e.n }), '', ''];
+                default: return [e.k, '', ''];
+              }
+            };
+            const days = [];
+            shown.forEach(e => {
+              const day = new Date(e.t).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+              if (!days.length || days[days.length - 1].day !== day) days.push({ day, items: [] });
+              days[days.length - 1].items.push(e);
+            });
+            return (
+              <Modal inline={inline} size="max-w-lg" onClose={() => setLogModal(false)} title={<><span>🕓</span><span>{t('logTitle')}</span></>}>
+                <div className="grid grid-cols-2 gap-1 bg-subtle p-0.5 rounded border border-subtle text-[11px]">
+                  {['month', 'all'].map(sc => (
+                    <button key={sc} aria-pressed={logScope === sc} onClick={() => setLogScope(sc)}
+                      className={`py-1 rounded ${logScope === sc ? 'bg-surface text-primary font-semibold shadow-sm' : 'text-secondary'}`}>
+                      {sc === 'month' ? monthLabel(selectedYear, selectedMonth) : t('logAll')}
+                    </button>
+                  ))}
+                </div>
+                <div className={`space-y-3 ${inline ? '' : 'max-h-[60vh] overflow-y-auto'}`}>
+                  {days.length === 0 && <p className="text-[11px] text-tertiary p-2">{t('logEmpty')}</p>}
+                  {days.map(g => (
+                    <div key={g.day}>
+                      <div className="text-[10px] uppercase tracking-wide font-semibold text-secondary mb-1">{g.day}</div>
+                      <div className="divide-y divide-subtle border border-subtle rounded">
+                        {g.items.map((e, i) => {
+                          const [what, action, amount] = kindLabel(e);
+                          const time = new Date(e.t).toLocaleTimeString(lang === 'de' ? 'de-DE' : 'en-GB', { hour: '2-digit', minute: '2-digit' });
                           return (
-                            <div className={`${mobileTab === 'cockpit' ? 'block' : 'hidden lg:block'} rounded-lg border border-subtle bg-surface p-3 space-y-2`}>
-                              <div className="flex items-center justify-between gap-2 px-1 flex-wrap">
-                                <span className="text-[11px] uppercase tracking-wide font-semibold text-secondary">{t('dueTitle')}</span>
-                                <div className="inline-flex bg-subtle p-0.5 rounded border border-subtle text-[10px]">
-                                  {[['this', t('dueThis')], ['next', t('dueNext')], ['both', t('dueBoth')]].map(([id, label]) => (
-                                    <button
-                                      key={id}
-                                      onClick={() => { setDueScope(id); setDueExpanded(false); }}
-                                      aria-pressed={dueScope === id}
-                                      className={`px-2 py-0.5 rounded ${dueScope === id ? 'bg-surface text-primary font-semibold shadow-sm' : 'text-secondary'}`}
-                                    >
-                                      {label}
-                                    </button>
-                                  ))}
-                                </div>
+                            <div key={e.t + i} className="flex items-baseline justify-between gap-2 px-2 py-1.5 text-[11px]">
+                              <div className="min-w-0">
+                                <div className="text-primary truncate">{what}</div>
+                                <div className="text-tertiary">{time}{e.by ? ` · ${e.by}` : ''}{action ? ` · ${action}` : ''}</div>
                               </div>
-                              {sections.map(sec => {
-                                const visible = sec.items.slice(0, perSection);
-                                return (
-                                  <div key={sec.off} className="space-y-1">
-                                    <div className="flex items-center justify-between px-1 text-[11px]">
-                                      <span className="font-semibold text-primary">{formatMonth(sec.p.m, lang)} {sec.p.yr}</span>
-                                      <span className="font-mono text-secondary">{sec.items.length ? fmt(sec.total) : ''}</span>
-                                    </div>
-                                    {sec.items.length === 0 && <p className="px-1 text-[11px] text-tertiary">{t('dueNothing')}</p>}
-                                    {visible.map(x => (
-                                      <div key={`${x.cat}|${x.m}|${x.yr}`} className="grid grid-cols-[22px_minmax(0,1fr)_auto] items-center gap-2 px-1 py-0.5">
-                                        <button
-                                          onClick={() => updateNode('expenses', x.cat, x.yr, x.m, 'actual', x.amount)}
-                                          aria-label={t('markPaidAria', { name: x.cat })}
-                                          className="w-[20px] h-[20px] rounded-full border-[1.5px] border-strong text-transparent hover:border-notion-green hover:text-notion-green text-[10px] leading-none"
-                                        >✓</button>
-                                        <div className="min-w-0">
-                                          <div className="text-xs text-primary truncate">{x.cat}</div>
-                                          <div className={`text-[10px] ${x.overdue ? 'text-notion-red font-medium' : 'text-tertiary'}`}>
-                                            {x.overdue ? t('dueOverdue', { day: x.day, month: formatMonth(x.m, lang) })
-                                              : x.day ? t('dueOnDay', { day: x.day, month: formatMonth(x.m, lang) })
-                                              : t('dueNoDay')}
-                                          </div>
-                                        </div>
-                                        <span className="font-mono text-xs text-primary">{fmtCents(x.amount)}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                );
-                              })}
-                              {hiddenCount > 0 && (
-                                <button onClick={() => setDueExpanded(v => !v)} aria-expanded={dueExpanded} className="text-[11px] text-notion-blue hover:underline px-1">
-                                  {dueExpanded ? t('dueLess') : t('dueMore', { n: hiddenCount })}
-                                </button>
-                              )}
+                              <span className="font-mono text-primary shrink-0">{amount}</span>
                             </div>
                           );
-                        })()}
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] text-tertiary">{t('logNote', { n: LOG_MAX })}</p>
+              </Modal>
+            );
+      };
 
-                        {/* This month: received, paid, spent */}
-                        <div className={`${mobileTab === 'cockpit' ? 'block' : 'hidden lg:block'} rounded-lg border border-subtle bg-surface p-4 space-y-3`}>
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] uppercase tracking-wide font-semibold text-secondary">{t('thisMonth')}</span>
-                            <span className="flex items-center gap-3">
-                              <button onClick={() => { setTxWhoFilter('all'); setTxModal(true); }} className="text-[11px] text-notion-blue hover:underline">📋 {t('txBtn')}</button>
-                              <button onClick={() => setBreakdownModal(true)} className="text-[11px] text-notion-blue hover:underline">🧾 {t('breakdownBtn')}</button>
-                              <button onClick={() => { setLogScope('month'); setLogModal(true); }} className="text-[11px] text-notion-blue hover:underline">🕓 {t('logBtn')}</button>
-                              <button onClick={() => { setAskError(''); setAskModal(true); }} className="text-[11px] text-notion-blue hover:underline">✨ {t('askBtn')}</button>
-                            </span>
-                          </div>
-                          {meters.map(mt => (
-                            <div key={mt.label} className="space-y-1">
-                              <div className="flex items-baseline justify-between gap-2 text-xs">
-                                <span className="font-medium text-primary">{mt.label}</span>
-                                <span className="font-mono text-primary">{fmt(mt.done)} <span className="text-tertiary">/ {fmt(mt.total)}</span></span>
-                              </div>
-                              <div className="h-1.5 rounded-full bg-subtle overflow-hidden">
-                                <div className="h-full rounded-full transition-all" style={{ width: `${mt.total > 0 ? Math.min(100, (mt.done / mt.total) * 100) : 0}%`, background: mt.color }}></div>
-                              </div>
-                              <div className={`text-[10px] font-mono ${mt.over ? 'text-notion-red' : 'text-tertiary'}`}>{mt.sub}</div>
-                            </div>
-                          ))}
-                        </div>
+      const renderSummary = (inline = false) => (
+            <Modal
+              inline={inline}
+              size="max-w-lg"
+              onClose={() => setBreakdownModal(false)}
+              title={<><span>🧾</span><span>{t('breakdownTitle', { month: formatMonth(selectedMonth, lang), year: selectedYear })}</span></>}
+            >
+              {[
+                ['incomes', monthlyReceipt.incomeItems, t('breakdownIncomes', { total: fmt(monthlyReceipt.incomeItems.reduce((sum, i) => sum + i.actual, 0)) }), 'text-notion-green'],
+                ['expenses', monthlyReceipt.expenseItems, t('breakdownExpenses', { total: fmt(currentMetrics.actualEx) }), 'text-notion-red']
+              ].map(([type, items, heading, color]) => (
+                <div key={type} className="space-y-1.5 pt-1">
+                  <div className={`font-semibold ${color} border-b border-subtle pb-1`}>{heading}</div>
+                  {items.length === 0 ? (
+                    <p className="text-tertiary italic text-[11px]">{t('noItemsInBreakdown')}</p>
+                  ) : (
+                    items.map(item => (
+                      <div key={item.cat} className="flex items-center justify-between gap-2 p-1.5 rounded bg-subtle">
+                        <span className="font-medium text-primary truncate">{item.cat}</span>
+                        <MoneyInput
+                          value={item.actual}
+                          hideZero={false}
+                          onChange={(val) => updateNode(type, item.cat, selectedYear, selectedMonth, 'actual', val)}
+                          className="w-28 bg-surface py-0.5 shrink-0"
+                          inputClass={`${color} font-semibold`}
+                        />
+                      </div>
+                    ))
+                  )}
+                </div>
+              ))}
 
-                        {/* Incomes that stop soon */}
-                        {incomeEndings.rows.length > 0 && (
-                          <div className={`${mobileTab === 'cockpit' ? 'block' : 'hidden lg:block'} rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 space-y-2`}>
-                            <span className="text-[11px] uppercase tracking-wide font-semibold text-amber-700 dark:text-amber-400">⚠️ {t('incomeEndTitle')}</span>
-                            {incomeEndings.rows.map(r => (
-                              <div key={r.cat} className="text-xs">
-                                <div className="flex items-baseline justify-between gap-2">
-                                  <span className="text-primary truncate">{r.cat}</span>
-                                  <span className="font-mono text-notion-red shrink-0">−{fmt(r.amount)}</span>
-                                </div>
-                                <div className="text-[10px] text-tertiary">
-                                  {t('incomeEndLast', { when: r.payDay ? `${r.payDay}. ${formatMonth(r.last.m, lang)} ${r.last.yr}` : `${formatMonth(r.last.m, lang)} ${r.last.yr}` })}
-                                  {' · '}{t('incomeEndFrom', { month: `${formatMonth(r.from.m, lang)} ${r.from.yr}` })}
-                                </div>
-                              </div>
-                            ))}
-                            {incomeEndings.groups.map(g => (
-                              incomeEndings.rows.filter(r => r.fromIdx === g.fromIdx).length > 1 && (
-                                <p key={g.fromIdx} className="text-[11px] font-semibold text-notion-red">
-                                  {t('incomeEndTotal', { month: `${formatMonth(g.from.m, lang)} ${g.from.yr}`, amount: fmt(g.total) })}
-                                </p>
-                              )
-                            ))}
-                            <p className="text-[10px] text-tertiary leading-snug">{t('incomeEndHint')}</p>
-                          </div>
-                        )}
+              <div className="p-3 rounded-lg bg-surface-elevated border border-subtle flex items-center justify-between gap-2 font-mono font-bold text-sm">
+                <span>{t('breakdownNetResult')}</span>
+                <span className={currentMetrics.actualNet >= 0 ? 'text-notion-green' : 'text-notion-red'}>
+                  {fmt(currentMetrics.actualNet)}
+                </span>
+              </div>
 
-                        {/* Forecast: where the balance is heading */}
+              {!inline && (
+                <button onClick={() => setBreakdownModal(false)} className="w-full py-2 bg-primary text-surface font-semibold rounded text-xs">
+                  {t('closeBtn')}
+                </button>
+              )}
+            </Modal>
+      );
+
+      // ---- Layout helpers ----
+      const toggleCollapsed = (id) => setCollapsed(prev => ({ ...prev, [id]: !prev[id] }));
+      const dismiss = (id) => setDismissed(prev => ({ ...prev, [id]: true }));
+      // A card with a title row; it can fold away, and notices can be dismissed for good.
+      const panel = (o, body) => {
+        if (o.dismissible && dismissed[o.id]) return null;
+        const foldable = o.collapsible !== false;
+        const isCol = foldable && (o.id in collapsed ? !!collapsed[o.id] : !!o.defaultCollapsed);
+        const warn = o.tone === 'warn';
+        return (
+          <section key={o.id} className={`rounded-2xl border ${warn ? 'border-amber-500/30 bg-amber-500/[0.06]' : 'border-subtle bg-surface'} ${o.className || ''}`}>
+            <div className="flex items-center gap-2 pl-4 pr-2 py-3">
+              <button type="button" onClick={foldable ? () => setCollapsed(prev => ({ ...prev, [o.id]: !isCol })) : undefined} aria-expanded={!isCol}
+                className={`flex-1 min-w-0 flex items-center gap-2.5 text-left ${foldable ? '' : 'cursor-default'}`}>
+                {o.icon && (
+                  <span className={`w-7 h-7 shrink-0 rounded-lg flex items-center justify-center text-[12px] ${warn ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-subtle text-secondary'}`}>
+                    <i className={`fa-solid ${o.icon}`}></i>
+                  </span>
+                )}
+                <span className="min-w-0">
+                  <span className="block text-[13px] font-semibold text-primary truncate">{o.title}</span>
+                  {o.sub && <span className="block text-[11px] text-secondary truncate">{o.sub}</span>}
+                </span>
+                {foldable && <i className={`fa-solid fa-chevron-down text-[10px] text-tertiary transition-transform ${isCol ? '-rotate-90' : ''}`}></i>}
+              </button>
+              {o.right}
+              {o.dismissible && (
+                <button type="button" onClick={() => dismiss(o.id)} aria-label={t('dismiss')} title={t('dismiss')}
+                  className="w-7 h-7 shrink-0 rounded-full text-tertiary hover:text-primary hover:bg-subtle">
+                  <i className="fa-solid fa-xmark text-xs"></i>
+                </button>
+              )}
+            </div>
+            {!isCol && <div className="px-4 pb-4">{body}</div>}
+          </section>
+        );
+      };
+
+      // ---- Month navigation ----
+      const curIdx = timelineIndex(selectedYear, selectedMonth);
+      const goMonth = (pos) => { if (!pos) return; setSelectedYear(pos.yr); setSelectedMonth(pos.m); setMonthPicker(false); };
+
+      // ---- Accounts: real balances per bank account and cash ----
+      const newAccountId = () => 'acc' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+      const setupAccounts = () => mutate(d => {
+        const me = data.members.me, partner = data.members.partner;
+        const mk = (name, kind) => ({ id: newAccountId(), name, kind, balance: 0, updated: null });
+        d.accounts = [
+          mk(`Revolut ${me}`, 'main'), mk(`Revolut ${partner}`, 'main'), mk('Revolut Joint', 'main'),
+          mk(`Wise ${me}`, 'gateway'), mk(`Wise ${partner}`, 'gateway'), mk('Sparkasse', 'gateway'),
+          mk(t('accountCash'), 'cash')
+        ];
+      });
+      const addAccount = (kind) => mutate(d => { d.accounts.push({ id: newAccountId(), name: t('accountName'), kind, balance: 0, updated: null }); });
+      const updateAccount = (id, patch) => mutate(d => { const a = d.accounts.find(x => x.id === id); if (a) Object.assign(a, patch); });
+      const removeAccount = (id) => mutateWithUndo(d => { d.accounts = d.accounts.filter(x => x.id !== id); }, t('accountRemoved'));
+      const accountsTotal = round2(data.accounts.reduce((sum, a) => sum + (a.balance || 0), 0));
+      const nowRow = nowIdx >= 0 ? forwardTimeline[nowIdx] : null;
+      const appNow = nowRow && nowRow.startBal != null ? round2(nowRow.startBal + nowRow.actualIn - nowRow.actualEx) : null;
+      // Work back from today's real total to the start of this month, using what's recorded so far.
+      const useAccountsAsReal = () => {
+        if (!nowRow) return;
+        const start = round2(accountsTotal - nowRow.actualIn + nowRow.actualEx);
+        mutateWithUndo(d => { d.startingCapital = start; d.startingMonth = timelineKey(nowRow.year, nowRow.month); },
+          t('accountsUsed', { amount: fmtCents(accountsTotal) }));
+      };
+
+      // ---- Category tidy-up: suggested groups for items that sit in a catch-all group ----
+      const TIDY_RULES = [
+        { gid: 'transport', kind: 'fixed', color: 'teal', re: /ticket|transport|mo\.?pla|deutschland/i },
+        { gid: 'health', kind: 'fixed', color: 'pink', re: /\bgym\b|fitness|sport/i },
+        { gid: 'education', kind: 'oneoff', color: 'purple', re: /\bb2\b|exam|prüfung|sprachkurs|\bkurs|\bfsp\b|ausbildung|schule|school/i },
+        { gid: 'fees', kind: 'fixed', color: 'gray', re: /sparkasse|volksbank|gebühr|\bfees?\b/i },
+        { gid: 'insurance', kind: 'fixed', color: 'brown', re: /versicherung|insurance|care concept|haftpflicht/i },
+        { gid: 'family', kind: 'oneoff', color: 'orange', re: /sister|schwester|repayment|rückzahlung|darlehen/i }
+      ];
+      const tidyMoves = useMemo(() => {
+        const out = [];
+        data.categories.expenses.forEach(cat => {
+          const cur = getMeta('expenses', cat).bracket;
+          const rule = TIDY_RULES.find(r => r.re.test(cat));
+          if (!rule || rule.gid === cur) return;
+          // Receipt items (groceries, household …) stay with their monthly target.
+          if (data.groups.find(g => g.id === cur)?.kind === 'variable') return;
+          out.push({ cat, to: rule.gid, rule });
+        });
+        return out;
+      }, [data]);
+      const applyTidy = () => {
+        const moves = tidyMoves;
+        if (!moves.length) return;
+        mutateWithUndo(d => {
+          moves.forEach(({ rule }) => {
+            if (d.groups.some(g => g.id === rule.gid)) return;
+            const g = { id: rule.gid, kind: rule.kind, color: rule.color, name: null };
+            const at = d.groups.findIndex(x => x.id === 'oneoff');
+            if (at === -1) d.groups.push(g); else d.groups.splice(at, 0, g);
+          });
+          moves.forEach(({ cat, to }) => {
+            const m = d.meta.expenses[cat];
+            d.meta.expenses[cat] = metaForGroup(d.groups, to, m.payDay, m.once, m.forNext);
+          });
+        }, t('tidyDone', { n: moves.length }));
+      };
+
+      const renderForecast = () => (
+        <>
                         {forecast.length > 1 && (() => {
                           const vals = forecast.map(r => r.endProjectedBalance);
                           const lo = Math.min(0, ...vals), hi = Math.max(0, ...vals);
@@ -4343,8 +4246,8 @@
                             .map(g => ({ ...g, i: forecast.findIndex(r => r.year === g.from.yr && r.month === g.from.m) }))
                             .filter(g => g.i > 0);
                           return (
-                            <div className={`${mobileTab === 'cockpit' ? 'block' : 'hidden lg:block'} rounded-lg border border-subtle bg-surface p-4 space-y-2`}>
-                              <span className="text-[11px] uppercase tracking-wide font-semibold text-secondary">{t('forecastTitle')}</span>
+                            <div className={`rounded-2xl border border-subtle bg-surface p-4 space-y-2`}>
+                              <span className="text-[13px] font-semibold text-primary">{t('forecastTitle')}</span>
                               <svg viewBox={`0 0 ${W} ${H + 16}`} className="w-full h-auto" role="img" aria-label={t('forecastTitle')}>
                                 <line x1="0" x2={W} y1={y(0)} y2={y(0)} stroke="currentColor" className="text-tertiary" strokeWidth="1" strokeDasharray="3 3" />
                                 {forecast.map((r, i) => {
@@ -4372,35 +4275,490 @@
                             </div>
                           );
                         })()}
+        </>
+      );
 
-                        {/* Income */}
-                        <div className={`${mobileTab === 'incomes' ? 'block' : 'hidden lg:block'} rounded-lg border border-subtle bg-surface p-1.5`}>
-                          <div className="flex items-center justify-between px-2 pt-1.5 pb-1">
-                            <h2 className="text-xs font-semibold text-primary uppercase tracking-wide">{t('incomesHeader')}</h2>
-                            <span className="text-xs font-mono font-semibold text-notion-green">{fmt(cm.projectedIn)}</span>
+      // ---- Numbers for the selected month (not used on the plan page) ----
+      const MB = (() => {
+        if (isAnnual) return null;
+        const cm = currentMetrics;
+        if (!cm || !cm.fixed) return null;
+        const prev = prevMonthOf(selectedYear, selectedMonth);
+        const isPast = monthStatus(selectedYear, selectedMonth) === 'past';
+        const beforeStart = cm.endProjectedBalance == null;
+        const carriedLabel = cm.isAnchor || !prev ? t('carriedStart') : t('carriedOver', { month: monthLabel(prev.yr, prev.m) });
+        const flexLeft = cm.flex.plan - cm.flex.spent;
+        const lines = [
+          { label: carriedLabel, text: fmtBalance(cm.startBal), cls: cm.startBal < 0 ? 'text-notion-red' : 'text-primary' },
+          { label: t('lineIncome'), text: `+ ${fmt(cm.projectedIn)}`, cls: 'text-notion-green' },
+          { label: t('lineFixed'), text: `− ${fmt(cm.fixed.expected)}`, cls: 'text-notion-red' },
+          { label: t('lineFlex'), text: `− ${fmt(cm.flex.expected)}`, cls: 'text-notion-red' }
+        ];
+        // What should be in the accounts right now, according to what's recorded so far.
+        const availableNow = !beforeStart && monthStatus(selectedYear, selectedMonth) === 'current'
+          ? cm.startBal + cm.actualIn - cm.actualEx : null;
+        const incomeHasAmount = (cat) => { const n = getNode('incomes', cat, selectedYear, selectedMonth); return n.budget > 0 || n.actual > 0; };
+        const visibleIncomes = data.categories.incomes.filter(cat => incomeHasAmount(cat) || (showEmpty.__incomes && !getMeta('incomes', cat).oneTime));
+        const hiddenIncomes = data.categories.incomes.filter(cat => !incomeHasAmount(cat) && !getMeta('incomes', cat).oneTime).length;
+        const filtered = groupView.filter(gv => expFilter === 'all' || (expFilter === 'fixed' ? gv.g.kind === 'fixed' : gv.g.kind !== 'fixed'));
+        const isActive = (gv) => gv.items.some(i => i.node.budget > 0 || i.node.actual > 0) || (gv.g.kind === 'variable' && gv.target > 0);
+        const activeGroups = filtered.filter(isActive);
+        // One-time groups with nothing this month don't belong to the month at all.
+        const emptyGroups = filtered.filter(gv => !isActive(gv) && gv.g.kind !== 'oneoff');
+        const meters = [
+          { label: t('lineIncome'), done: cm.actualIn, total: cm.projectedIn, color: '#10b981',
+            sub: cm.projectedIn > cm.actualIn ? t('stillExpected', { amount: fmt(cm.projectedIn - cm.actualIn) }) : t('receivedOf', { done: fmt(cm.actualIn), total: fmt(cm.projectedIn) }) },
+          { label: t('lineFixed'), done: cm.fixed.paid, total: cm.fixed.expected, color: '#3b82f6',
+            sub: t('paidCount', { n: cm.fixed.paidItems, m: cm.fixed.items }) + (cm.fixed.expected > cm.fixed.paid ? ` · ${t('stillOpen', { amount: fmt(cm.fixed.expected - cm.fixed.paid) })}` : '') },
+          { label: t('lineFlex'), done: cm.flex.spent, total: cm.flex.plan, color: flexLeft < 0 ? '#ef4444' : '#f59e0b', over: flexLeft < 0,
+            sub: flexLeft < 0 ? t('targetOver', { amount: fmt(-flexLeft) }) : t('targetLeft', { amount: fmt(flexLeft) }) }
+        ];
+        return { cm, isPast, beforeStart, carriedLabel, lines, availableNow, visibleIncomes, hiddenIncomes, activeGroups, emptyGroups, meters };
+      })();
+
+      const NAV = [
+        ['overview', 'fa-house', t('navOverview')],
+        ['month', 'fa-layer-group', t('navMonth')],
+        ['activity', 'fa-receipt', t('navActivity')],
+        ['plan', 'fa-chart-line', t('navPlan')],
+        ['more', 'fa-grip', t('navMore')]
+      ];
+      const viewTitle = (NAV.find(n => n[0] === view) || NAV[0])[2];
+      const showMonthNav = view === 'overview' || view === 'month' || view === 'activity';
+      const syncColor = syncStatus === 'error' ? 'text-notion-red' : user ? 'text-notion-green' : 'text-tertiary';
+      const nowPos = TIMELINE[nowIdx];
+
+      const monthNav = (
+        <div className="relative flex items-center gap-0.5">
+          <button onClick={() => goMonth(TIMELINE[curIdx - 1])} disabled={curIdx <= 0} aria-label={t('prevMonth')}
+            className="w-8 h-8 rounded-full text-secondary hover:text-primary hover:bg-subtle disabled:opacity-30">
+            <i className="fa-solid fa-chevron-left text-[11px]"></i>
+          </button>
+          <button onClick={() => setMonthPicker(v => !v)} aria-expanded={monthPicker}
+            className="h-8 px-3 rounded-full bg-subtle text-[13px] font-semibold text-primary flex items-center gap-1.5 whitespace-nowrap">
+            {formatMonth(selectedMonth, lang)} {selectedYear}
+            {monthStatus(selectedYear, selectedMonth) === 'current' && <span className="w-1.5 h-1.5 rounded-full bg-notion-blue"></span>}
+          </button>
+          <button onClick={() => goMonth(TIMELINE[curIdx + 1])} disabled={curIdx >= TIMELINE.length - 1} aria-label={t('nextMonth')}
+            className="w-8 h-8 rounded-full text-secondary hover:text-primary hover:bg-subtle disabled:opacity-30">
+            <i className="fa-solid fa-chevron-right text-[11px]"></i>
+          </button>
+          {monthPicker && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setMonthPicker(false)}></div>
+              <div className="absolute right-0 top-10 z-50 w-[292px] rounded-2xl border border-subtle bg-surface shadow-2xl p-3 space-y-3">
+                {YEARS.map(yr => (
+                  <div key={yr}>
+                    <div className="text-[11px] font-semibold text-secondary mb-1.5">{yr}</div>
+                    <div className="grid grid-cols-6 gap-1">
+                      {ALL_MONTHS.map(m => {
+                        const ok = getMonthsForYear(yr).includes(m);
+                        const sel = yr === selectedYear && m === selectedMonth;
+                        const cur = nowPos && nowPos.yr === yr && nowPos.m === m;
+                        return (
+                          <button key={m} disabled={!ok} onClick={() => goMonth({ yr, m })}
+                            className={`h-8 rounded-lg text-[11px] disabled:opacity-25 ${sel ? 'bg-primary text-surface font-semibold' : cur ? 'text-notion-blue font-semibold hover:bg-subtle' : 'text-primary hover:bg-subtle'}`}>
+                            {formatMonth(m, lang)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                {nowPos && <button onClick={() => goMonth(nowPos)} className="w-full h-8 rounded-lg bg-subtle text-xs font-medium text-primary">{t('todayBtn')}</button>}
+              </div>
+            </>
+          )}
+        </div>
+      );
+
+      // ---- Cards shared by several pages ----
+      const renderDue = () => {
+        if (!dueSoon.length) return null;
+        const offs = dueScope === 'this' ? [0] : dueScope === 'next' ? [1] : [0, 1];
+        const sections = offs.map(off => {
+          const p = TIMELINE[nowIdx + off];
+          const items = dueSoon.filter(x => x.off === off);
+          return { off, p, items, total: items.reduce((sum, x) => sum + x.amount, 0) };
+        }).filter(sec => sec.p);
+        const perSection = dueExpanded ? Infinity : (sections.length > 1 ? 4 : 6);
+        const hiddenCount = sections.reduce((n, sec) => n + Math.max(0, sec.items.length - perSection), 0);
+        const openTotal = sections.reduce((sum, sec) => sum + sec.total, 0);
+        return panel({
+          id: 'due', icon: 'fa-calendar-check', title: t('dueTitle'), sub: openTotal ? fmt(openTotal) : null,
+          right: <Segmented size="sm" options={[['this', t('dueThis')], ['next', t('dueNext')], ['both', t('dueBoth')]]} value={dueScope} onChange={(v) => { setDueScope(v); setDueExpanded(false); }} />
+        }, (
+          <div className="space-y-3">
+            {sections.map(sec => (
+              <div key={sec.off} className="space-y-1">
+                {sections.length > 1 && (
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-semibold text-secondary">{formatMonth(sec.p.m, lang)} {sec.p.yr}</span>
+                    <span className="font-mono text-secondary">{sec.items.length ? fmt(sec.total) : ''}</span>
+                  </div>
+                )}
+                {sec.items.length === 0 && <p className="text-[11px] text-tertiary">{t('dueNothing')}</p>}
+                {sec.items.slice(0, perSection).map(x => (
+                  <div key={`${x.cat}|${x.m}|${x.yr}`} className="grid grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-2.5 py-1">
+                    <button onClick={() => updateNode('expenses', x.cat, x.yr, x.m, 'actual', x.amount)} aria-label={t('markPaidAria', { name: x.cat })}
+                      className="w-6 h-6 rounded-full border-[1.5px] border-strong text-transparent hover:border-notion-green hover:text-notion-green text-[10px] leading-none">✓</button>
+                    <div className="min-w-0">
+                      <div className="text-[13px] text-primary truncate">{x.cat}</div>
+                      <div className={`text-[11px] ${x.overdue ? 'text-notion-red font-medium' : 'text-tertiary'}`}>
+                        {x.overdue ? t('dueOverdue', { day: x.day, month: formatMonth(x.m, lang) }) : x.day ? t('dueOnDay', { day: x.day, month: formatMonth(x.m, lang) }) : t('dueNoDay')}
+                      </div>
+                    </div>
+                    <span className="font-mono text-[13px] text-primary">{fmtCents(x.amount)}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+            {hiddenCount > 0 && (
+              <button onClick={() => setDueExpanded(v => !v)} aria-expanded={dueExpanded} className="text-[12px] text-notion-blue hover:underline">
+                {dueExpanded ? t('dueLess') : t('dueMore', { n: hiddenCount })}
+              </button>
+            )}
+          </div>
+        ));
+      };
+
+      const renderIncomeEnd = (dismissible) => {
+        if (!incomeEndings.rows.length) return null;
+        const first = incomeEndings.groups[0];
+        const total = incomeEndings.rows.reduce((sum, r) => sum + r.amount, 0);
+        return panel({
+          id: 'incomeEnd', tone: 'warn', icon: 'fa-triangle-exclamation', title: t('incomeEndTitle'), defaultCollapsed: true, dismissible,
+          sub: t('incomeEndShort', { n: incomeEndings.rows.length, month: first ? `${formatMonth(first.from.m, lang)} ${first.from.yr}` : '', amount: fmt(total) })
+        }, (
+          <div className="space-y-2">
+            {incomeEndings.rows.map(r => (
+              <div key={r.cat} className="text-xs">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-primary truncate">{r.cat}</span>
+                  <span className="font-mono text-notion-red shrink-0">−{fmt(r.amount)}</span>
+                </div>
+                <div className="text-[11px] text-tertiary">
+                  {t('incomeEndLast', { when: r.payDay ? `${r.payDay}. ${formatMonth(r.last.m, lang)} ${r.last.yr}` : `${formatMonth(r.last.m, lang)} ${r.last.yr}` })}
+                  {' · '}{t('incomeEndFrom', { month: `${formatMonth(r.from.m, lang)} ${r.from.yr}` })}
+                </div>
+              </div>
+            ))}
+            <Hint label={t('showDetails')} text={t('incomeEndHint')} />
+          </div>
+        ));
+      };
+
+      // ---- Pages ----
+      const renderOverview = () => {
+        const { cm, carriedLabel, lines, availableNow, beforeStart, isPast, meters } = MB;
+        const nowMode = availableNow !== null && balanceView === 'now';
+        const hero = nowMode ? availableNow : cm.endProjectedBalance;
+        const stats = nowMode
+          ? [[t('heroStart'), cm.startBal, ''], [t('nowReceived'), cm.actualIn, '+'], [t('nowPaid'), cm.actualEx, '−']]
+          : [[t('heroStart'), cm.startBal, ''], [t('heroIn'), cm.projectedIn, '+'], [t('heroOut'), cm.projectedEx, '−']];
+        const detailRows = nowMode
+          ? [
+              { label: carriedLabel, text: fmtBalance(cm.startBal), cls: 'text-primary' },
+              { label: t('nowReceived'), text: `+ ${fmt(cm.actualIn)}`, cls: 'text-notion-green' },
+              { label: t('nowPaid'), text: `− ${fmt(cm.actualEx)}`, cls: 'text-notion-red' }
+            ]
+          : lines;
+        const quick = [
+          ['fa-plus', t('quickReceipt'), openReceiptSheet],
+          ['fa-file-import', t('quickImport'), openImport],
+          ['fa-wand-magic-sparkles', t('quickAsk'), () => { setAskError(''); setAskModal(true); }],
+          ['fa-clock-rotate-left', t('quickHistory'), () => { setActivityTab('history'); setView('activity'); }]
+        ];
+        return (
+          <div className="grid gap-4 lg:gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-start">
+            <div className="space-y-4 min-w-0">
+              <section className="rounded-2xl border border-subtle bg-surface p-5 space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[12px] text-secondary">
+                      {nowMode ? t('nowTitle') : t(isPast ? 'endOfMonthTitlePast' : 'endOfMonthTitle', { month: monthLabel(selectedYear, selectedMonth) })}
+                    </div>
+                    <div className={`mt-1.5 text-[40px] leading-none font-semibold tracking-tight font-mono ${beforeStart ? 'text-tertiary' : hero < 0 ? 'text-notion-red' : 'text-primary'}`}>
+                      {fmtBalance(hero)}
+                    </div>
+                    {beforeStart && <div className="text-[11px] text-tertiary mt-2">{t('beforeStart')}</div>}
+                    {cm.backCalculated && (() => {
+                      const [ay, am] = (data.startingMonth || '').split('|');
+                      return <div className="text-[11px] text-tertiary mt-2">{t('backCalcNote', { month: monthLabel(parseInt(ay), am) })}</div>;
+                    })()}
+                  </div>
+                  {availableNow !== null && (
+                    <Segmented size="sm" options={[['end', t('viewEnd')], ['now', t('viewNow')]]} value={balanceView} onChange={setBalanceView} />
+                  )}
+                </div>
+                {!beforeStart && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {stats.map(([label, v, sign]) => (
+                      <div key={label} className="rounded-xl bg-subtle/70 px-3 py-2.5 min-w-0">
+                        <div className="text-[11px] text-secondary truncate">{label}</div>
+                        <div className={`mt-0.5 text-[13px] font-semibold font-mono truncate ${sign === '+' ? 'text-notion-green' : sign === '−' ? 'text-notion-red' : 'text-primary'}`}>
+                          {sign ? `${sign} ` : ''}{fmtBalance(v)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {heroDetails && !beforeStart && (
+                  <div className="rounded-xl border border-subtle p-3 text-xs font-mono space-y-1.5">
+                    {detailRows.map(l => (
+                      <div key={l.label} className="flex items-center justify-between gap-3">
+                        <span className="font-sans text-secondary">{l.label}</span><span className={l.cls}>{l.text}</span>
+                      </div>
+                    ))}
+                    <div className="flex items-center justify-between gap-3 border-t border-strong pt-1.5 font-semibold">
+                      <span className="font-sans text-primary">= {nowMode ? t('viewNow') : t('kpiCumulative')}</span>
+                      <span className={hero < 0 ? 'text-notion-red' : 'text-primary'}>{fmtBalance(hero)}</span>
+                    </div>
+                    {nowMode ? (
+                      <div className="flex items-center justify-between gap-3 text-tertiary pt-1">
+                        <span className="font-sans">{t('endOfMonthTitle', { month: monthLabel(selectedYear, selectedMonth) })}</span>
+                        <span>{fmtBalance(cm.endProjectedBalance)}</span>
+                      </div>
+                    ) : availableNow !== null && (
+                      <div className="flex items-center justify-between gap-3 text-tertiary pt-1">
+                        <span className="font-sans">{t('availableNow')}</span><span>{fmt(availableNow)}</span>
+                      </div>
+                    )}
+                    <div className="pt-1 font-sans"><Hint label={t('howCalc')} text={nowMode ? t('nowRules') : t('expectedRules')} /></div>
+                  </div>
+                )}
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <button onClick={() => setHeroDetails(v => !v)} aria-expanded={heroDetails} className="text-[12px] text-secondary hover:text-primary">
+                    <i className={`fa-solid fa-chevron-down text-[9px] mr-1.5 transition-transform ${heroDetails ? 'rotate-180' : ''}`}></i>
+                    {heroDetails ? t('heroHide') : t('heroDetails')}
+                  </button>
+                  <button onClick={openBalanceModal} className="text-[12px] text-notion-blue hover:underline">✎ {t('fixBalanceBtn')}</button>
+                </div>
+              </section>
+
+              <div className="grid grid-cols-4 gap-2">
+                {quick.map(([icon, label, fn]) => (
+                  <button key={label} onClick={fn} className="rounded-2xl border border-subtle bg-surface py-3 flex flex-col items-center gap-1.5 hover:bg-subtle active:scale-[.98] transition">
+                    <span className="w-9 h-9 rounded-full bg-subtle flex items-center justify-center text-primary"><i className={`fa-solid ${icon} text-[13px]`}></i></span>
+                    <span className="text-[11px] font-medium text-primary">{label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {panel({ id: 'meters', icon: 'fa-gauge-high', title: t('thisMonth') }, (
+                <div className="space-y-3.5">
+                  {meters.map(mt => (
+                    <div key={mt.label} className="space-y-1.5">
+                      <div className="flex items-baseline justify-between gap-2 text-[13px]">
+                        <span className="font-medium text-primary">{mt.label}</span>
+                        <span className="font-mono text-primary">{fmt(mt.done)} <span className="text-tertiary">/ {fmt(mt.total)}</span></span>
+                      </div>
+                      <div className="h-2 rounded-full bg-subtle overflow-hidden">
+                        <div className="h-full rounded-full transition-all" style={{ width: `${mt.total > 0 ? Math.min(100, (mt.done / mt.total) * 100) : 0}%`, background: mt.color }}></div>
+                      </div>
+                      <div className={`text-[11px] ${mt.over ? 'text-notion-red' : 'text-tertiary'}`}>{mt.sub}</div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-4 min-w-0">
+              {renderIncomeEnd(true)}
+              {renderDue()}
+              {renderForecast()}
+            </div>
+          </div>
+        );
+      };
+
+      const renderMonth = () => {
+        const { cm, visibleIncomes, hiddenIncomes, activeGroups, emptyGroups } = MB;
+        const incomeCard = (
+          <section className="rounded-2xl border border-subtle bg-surface p-1.5">
+            <div className="flex items-center justify-between px-2.5 pt-2 pb-1.5">
+              <h2 className="text-[13px] font-semibold text-primary">{t('incomesHeader')}</h2>
+              <span className="text-[13px] font-mono font-semibold text-notion-green">{fmt(cm.projectedIn)}</span>
+            </div>
+            {visibleIncomes.map(cat => renderItemRow('incomes', cat, 'income'))}
+            {visibleIncomes.length === 0 && <p className="px-2.5 py-2 text-[11px] text-tertiary">{t('groupNothingPlanned')}</p>}
+            <div className="flex items-center justify-between gap-2 px-2 pt-1 pb-1 text-[11px]">
+              {hiddenIncomes > 0 ? (
+                <button onClick={() => setShowEmpty(p => ({ ...p, __incomes: !p.__incomes }))} className="text-tertiary hover:text-primary">
+                  <i className={`fa-solid ${showEmpty.__incomes ? 'fa-eye-slash' : 'fa-eye'} mr-1 text-[10px]`}></i>
+                  {showEmpty.__incomes ? t('hideEmpty') : t('emptyItems', { n: hiddenIncomes })}
+                </button>
+              ) : <span></span>}
+              <button onClick={() => handleOpenQuickAdd('incomes')} className="text-notion-blue font-medium hover:underline">{t('addItemShort')}</button>
+            </div>
+          </section>
+        );
+        const iconBtn = 'h-8 w-8 rounded-lg border border-subtle bg-surface text-secondary hover:text-primary hover:bg-subtle';
+        return (
+          <div className="space-y-4">
+            <div className="lg:hidden">
+              <Segmented full options={[['expenses', t('expensesHeader'), fmt(cm.projectedEx)], ['incomes', t('incomesHeader'), fmt(cm.projectedIn)]]} value={monthPane} onChange={setMonthPane} />
+            </div>
+            <div className="grid gap-5 lg:grid-cols-[340px_minmax(0,1fr)] items-start">
+              <div className={`${monthPane === 'incomes' ? '' : 'hidden'} lg:block lg:sticky lg:top-20 min-w-0`}>{incomeCard}</div>
+              <div className={`${monthPane === 'expenses' ? '' : 'hidden'} lg:block space-y-3 min-w-0`}>
+                <div className="hidden lg:flex items-center justify-between">
+                  <h2 className="text-[13px] font-semibold text-primary">{t('expensesHeader')}</h2>
+                  <span className="text-[13px] font-mono font-semibold text-notion-red">{fmt(cm.projectedEx)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <Segmented size="sm" options={[['all', t('filterAll')], ['fixed', t('filterFixed')], ['variable', t('filterVariable')]]} value={expFilter} onChange={setExpFilter} />
+                  <div className="flex items-center gap-1.5">
+                    <button onClick={() => handleOpenQuickAdd('expenses')} className="h-8 px-3 rounded-lg bg-primary text-surface text-[12px] font-semibold">{t('addItemBtn')}</button>
+                    <button onClick={() => openGroupModal()} title={t('newGroup')} aria-label={t('newGroup')} className={iconBtn}><i className="fa-solid fa-folder-plus text-xs"></i></button>
+                    <button onClick={toggleAllBrackets} title={anyGroupClosed ? t('expandAll') : t('collapseAll')} aria-label={anyGroupClosed ? t('expandAll') : t('collapseAll')} className={iconBtn}><i className="fa-solid fa-up-down text-xs"></i></button>
+                  </div>
+                </div>
+                {activeGroups.map(renderGroup)}
+                {emptyGroups.length > 0 && (
+                  <div className="rounded-2xl border border-dashed border-strong/60 p-3">
+                    <button onClick={() => setShowEmpty(p => ({ ...p, __groups: !p.__groups }))} aria-expanded={!!showEmpty.__groups}
+                      className="w-full flex items-center justify-between text-[12px] text-secondary hover:text-primary">
+                      <span>{t('emptyGroups', { n: emptyGroups.length })}</span>
+                      <i className={`fa-solid fa-chevron-down text-[10px] transition-transform ${showEmpty.__groups ? '' : '-rotate-90'}`}></i>
+                    </button>
+                    {showEmpty.__groups && <div className="mt-3 space-y-3">{emptyGroups.map(renderGroup)}</div>}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      };
+
+      const renderActivity = () => (
+        <div className="space-y-4 max-w-3xl">
+          <Segmented full options={[['entries', t('actEntries')], ['history', t('actHistory')], ['summary', t('actSummary')]]} value={activityTab} onChange={setActivityTab} />
+          {activityTab === 'entries' && renderEntries(true)}
+          {activityTab === 'history' && renderHistory(true)}
+          {activityTab === 'summary' && renderSummary(true)}
+        </div>
+      );
+
+      const renderPlan = () => (
+        <div className="space-y-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                  <div className="p-3 rounded-2xl border border-subtle bg-surface-elevated">
+                    <div className="text-secondary text-[11px]">⚖️ {t('annualNet')}</div>
+                    <div className={`text-lg font-mono font-bold mt-1 ${currentMetrics.actualNet >= 0 ? 'text-notion-green dark:text-emerald-400' : 'text-notion-red'}`}>{fmt(currentMetrics.actualNet)}</div>
+                    <span className="text-[10px] font-mono text-tertiary">{t('kpiIn')} {fmt(currentMetrics.actualIn)} · {t('kpiOut')} {fmt(currentMetrics.actualEx)}</span>
+                  </div>
+                  <div className="p-3 rounded-2xl border border-subtle bg-surface-elevated">
+                    <div className="text-secondary text-[11px]">📈 {t('kpiProjectedNet')}</div>
+                    <div className={`text-lg font-mono font-bold mt-1 ${currentMetrics.projectedNet >= 0 ? 'text-notion-blue' : 'text-notion-red'}`}>{fmt(currentMetrics.projectedNet)}</div>
+                  </div>
+                  <div className="p-3 rounded-2xl border border-subtle bg-surface-elevated">
+                    <div className="text-secondary text-[11px]">💾 {t('annualSavingsRate')}</div>
+                    <div className="text-lg font-mono font-bold mt-1 text-primary">{savingsRate === null ? '–' : `${Math.round(savingsRate * 100)} %`}</div>
+                  </div>
+                  <div className="p-3 rounded-2xl border border-subtle bg-surface-elevated">
+                    <div className="text-secondary text-[11px]">🏦 {t('kpiCumulative')}</div>
+                    <div className="text-lg font-mono font-bold mt-1 text-primary">{fmtBalance(currentMetrics.endProjectedBalance)}</div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-subtle bg-surface overflow-x-auto">
+                  <table className="w-full text-xs font-mono">
+                    <thead>
+                      <tr className="text-secondary text-[10px] border-b border-subtle">
+                        <th className="text-left font-medium px-3 py-2 font-sans">{t('annualMonth')}</th>
+                        <th className="text-right font-medium px-2 py-2">{t('kpiIn')}</th>
+                        <th className="text-right font-medium px-2 py-2">{t('kpiOut')}</th>
+                        <th className="text-right font-medium px-2 py-2">{t('annualNet')}</th>
+                        <th className="text-right font-medium px-2 py-2">{t('annualProjected')}</th>
+                        <th className="text-right font-medium px-3 py-2">{t('annualBalance')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {yearRows.map(r => {
+                        const status = monthStatus(r.year, r.month);
+                        return (
+                          <tr
+                            key={r.key}
+                            onClick={() => { setSelectedMonth(r.month); setView('month'); }}
+                            className={`border-b border-subtle last:border-0 cursor-pointer hover:bg-subtle/60 ${status === 'current' ? 'bg-subtle/40' : ''}`}
+                          >
+                            <td className={`px-3 py-1.5 font-sans ${status === 'future' ? 'text-secondary' : 'text-primary font-medium'}`}>
+                              {formatMonth(r.month, lang)}{status === 'current' && ' •'}
+                            </td>
+                            <td className="text-right px-2 py-1.5 text-notion-green">{fmt(r.actualIn)}</td>
+                            <td className="text-right px-2 py-1.5 text-notion-red">{fmt(r.actualEx)}</td>
+                            <td className={`text-right px-2 py-1.5 ${r.actualNet >= 0 ? 'text-primary' : 'text-notion-red'}`}>{fmt(r.actualNet)}</td>
+                            <td className={`text-right px-2 py-1.5 ${r.projectedNet >= 0 ? 'text-notion-blue' : 'text-notion-red'}`}>{fmt(r.projectedNet)}</td>
+                            <td className={`text-right px-3 py-1.5 font-semibold ${r.endProjectedBalance == null ? 'text-tertiary' : r.endProjectedBalance >= 0 ? 'text-primary' : 'text-notion-red'}`}>{fmtBalance(r.endProjectedBalance)}</td>
+                          </tr>
+                        );
+                      })}
+                      <tr className="border-t border-strong font-semibold">
+                        <td className="px-3 py-2 font-sans text-primary">{t('annualTotal')}</td>
+                        <td className="text-right px-2 py-2 text-notion-green">{fmt(currentMetrics.actualIn)}</td>
+                        <td className="text-right px-2 py-2 text-notion-red">{fmt(currentMetrics.actualEx)}</td>
+                        <td className="text-right px-2 py-2 text-primary">{fmt(currentMetrics.actualNet)}</td>
+                        <td className="text-right px-2 py-2 text-notion-blue">{fmt(currentMetrics.projectedNet)}</td>
+                        <td className="text-right px-3 py-2 text-primary">{fmtBalance(currentMetrics.endProjectedBalance)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {yearReport && yearReport.groups.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="rounded-2xl border border-subtle bg-surface p-4 space-y-2">
+                      <div className="text-[13px] font-semibold text-primary">{t('reportGroups', { year: selectedYear })}</div>
+                      {yearReport.groups.map(x => (
+                        <div key={x.g.id} className="space-y-0.5">
+                          <div className="flex items-baseline justify-between gap-2 text-xs">
+                            <span className="text-primary truncate">{groupName(x.g)}</span>
+                            <span className="font-mono text-primary shrink-0">{fmt(x.total)} <span className="text-tertiary text-[10px]">· {t('perMonthShort', { amount: fmt(x.avg) })}</span></span>
                           </div>
-                          {hiddenIncomes > 0 && hideZeroes && (
-                            <div className="mx-2 my-1 p-1.5 rounded bg-subtle/50 text-[11px] text-tertiary flex items-center justify-between px-2">
-                              <span>{t('hiddenNoticeBracket', { count: hiddenIncomes })}</span>
-                              <button onClick={() => setHideZeroes(false)} className="text-notion-blue font-semibold hover:underline">{t('showNow')}</button>
-                            </div>
-                          )}
-                          {visibleIncomes.map(cat => renderItemRow('incomes', cat, 'income'))}
-                          <div className="flex items-center justify-between px-2 pt-1 pb-1 text-[10px] text-tertiary">
-                            <span>{t('tapCircleHint')}</span>
-                            <button onClick={() => handleOpenQuickAdd('incomes')} className="text-notion-blue text-[11px] font-medium hover:underline">{t('addItemShort')}</button>
+                          <div className="h-1.5 rounded-full bg-subtle overflow-hidden">
+                            <div className="h-full rounded-full" style={{ width: `${x.total / yearReport.max * 100}%`, background: GROUP_HEX[x.g.color] }}></div>
                           </div>
                         </div>
+                      ))}
+                      <Hint label={t('showDetails')} text={t('reportAvgNote', { n: yearReport.activeMonths })} />
+                    </div>
+                    <div className="space-y-3">
+                      <div className="rounded-2xl border border-subtle bg-surface p-4 space-y-1.5">
+                        <div className="text-[13px] font-semibold text-primary">{t('reportTopItems')}</div>
+                        {yearReport.items.map((x, i) => (
+                          <div key={x.cat} className="flex items-baseline justify-between gap-2 text-xs">
+                            <span className="text-primary truncate"><span className="text-tertiary font-mono mr-1.5">{i + 1}</span>{x.cat}</span>
+                            <span className="font-mono text-primary shrink-0">{fmt(x.total)}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {yearReport.byWho.some(x => x.total > 0) && <div className="rounded-2xl border border-subtle bg-surface p-4 space-y-1.5">
+                        <div className="text-[13px] font-semibold text-primary">{t('whoPaidTitle')}</div>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {yearReport.byWho.map(x => (
+                            <div key={x.w} className="p-2 rounded bg-subtle">
+                              <div className="text-[10px] text-secondary truncate">{whoLabel(x.w)}</div>
+                              <div className="font-mono text-sm font-semibold text-primary">{fmt(x.total)}</div>
+                            </div>
+                          ))}
+                        </div>
+                        <Hint label={t('showDetails')} text={t('reportWhoNote')} />
+                      </div>}
+                    </div>
+                  </div>
+                )}
 
-                        <div className={`${mobileTab === 'cockpit' ? 'block' : 'hidden lg:block'} space-y-3`}>
-                          {/* Set aside for irregular and upcoming one-time costs */}
+          <div className="grid gap-4 lg:grid-cols-2 items-start">
+            <div className="space-y-4 min-w-0">{renderForecast()}{renderIncomeEnd(false)}</div>
+            <div className="space-y-4 min-w-0">
                           {setAsides.rows.length > 0 && (
-                            <div className="rounded-lg border border-subtle bg-surface p-4 space-y-2">
+                            <div className="rounded-2xl border border-subtle bg-surface p-4 space-y-2">
                               <div className="flex items-center justify-between">
-                                <span className="text-[11px] uppercase tracking-wide font-semibold text-secondary">{t('setAsideTitle')}</span>
+                                <span className="text-[13px] font-semibold text-primary">{t('setAsideTitle')}</span>
                                 <span className="text-xs font-mono font-semibold text-primary">{t('perMonthShort', { amount: fmtCents(setAsides.total) })}</span>
                               </div>
-                              <p className="text-[10px] text-tertiary leading-snug">{t('setAsideHint')}</p>
+                              <Hint label={t('showDetails')} text={t('setAsideHint')} />
                               {setAsides.rows.map(r => (
                                 <div key={r.cat} className="flex items-center justify-between gap-2 text-xs">
                                   <div className="min-w-0">
@@ -4415,10 +4773,9 @@
                             </div>
                           )}
 
-                          {/* Savings goals */}
-                          <div className="rounded-lg border border-subtle bg-surface p-4 space-y-2.5">
+                          <div className="rounded-2xl border border-subtle bg-surface p-4 space-y-2.5">
                             <div className="flex items-center justify-between">
-                              <span className="text-[11px] uppercase tracking-wide font-semibold text-secondary">{t('goalsTitle')}</span>
+                              <span className="text-[13px] font-semibold text-primary">{t('goalsTitle')}</span>
                               <button onClick={() => setGoalModal({ id: null, name: '', target: '', saved: '', deadline: '' })} className="text-[11px] text-notion-blue hover:underline">
                                 {t('goalNew')}
                               </button>
@@ -4461,12 +4818,99 @@
                             })}
                           </div>
 
-                  {/* IOU & DEBT TRACKER */}
-                  <div className="rounded-lg border border-subtle bg-surface p-3.5 space-y-3">
+            </div>
+          </div>
+          {chartBox}
+        </div>
+      );
+
+      const ACCOUNT_KINDS = [['main', 'accountMain'], ['gateway', 'accountGateway'], ['cash', 'accountCash']];
+      const renderMore = () => (
+        <div className="grid gap-4 lg:grid-cols-2 items-start">
+          <div className="space-y-4 min-w-0">
+            {panel({ id: 'accounts', icon: 'fa-building-columns', title: t('accountsTitle'), collapsible: false,
+              sub: data.accounts.length ? `${t('accountsTotal')} ${fmtCents(accountsTotal)}` : null }, (
+              <div className="space-y-3">
+                <p className="text-[12px] text-secondary leading-relaxed">{t('accountsIntro')}</p>
+                {data.accounts.length === 0 ? (
+                  <button onClick={setupAccounts} className="h-9 px-4 rounded-lg bg-primary text-surface text-xs font-semibold">{t('accountsSetup')}</button>
+                ) : (
+                  <>
+                    {ACCOUNT_KINDS.map(([kind, labelKey]) => {
+                      const list = data.accounts.filter(a => a.kind === kind);
+                      if (!list.length) return null;
+                      return (
+                        <div key={kind} className="space-y-1.5">
+                          <div className="text-[11px] font-semibold text-tertiary uppercase tracking-wide">{t(labelKey)}</div>
+                          {list.map(a => (
+                            <div key={a.id} className="flex items-center gap-2 rounded-xl bg-subtle/60 pl-3 pr-1 py-1.5">
+                              <input value={a.name} onChange={(e) => updateAccount(a.id, { name: e.target.value })} aria-label={t('accountName')}
+                                className="flex-1 min-w-0 bg-transparent text-[13px] text-primary outline-none" />
+                              {a.updated && <span className="hidden sm:inline text-[10px] text-tertiary shrink-0">{t('accountsUpdated', { day: fmtDay(a.updated) })}</span>}
+                              <MoneyInput value={a.balance} hideZero={false}
+                                onChange={(v) => updateAccount(a.id, { balance: Math.round((parseFloat(v) || 0) * 100) / 100, updated: todayISO() })}
+                                className="w-28 shrink-0 bg-surface" aria-label={a.name} />
+                              <button onClick={() => removeAccount(a.id)} aria-label={t('iouDelete')} className="w-7 h-7 shrink-0 rounded-full text-tertiary hover:text-notion-red">
+                                <i className="fa-solid fa-xmark text-[11px]"></i>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                    <div className="flex flex-wrap gap-1.5">
+                      {ACCOUNT_KINDS.map(([kind, labelKey]) => (
+                        <button key={kind} onClick={() => addAccount(kind)} className="h-7 px-2.5 rounded-full border border-dashed border-strong text-[11px] text-secondary hover:text-primary">+ {t(labelKey)}</button>
+                      ))}
+                    </div>
+                    <div className="rounded-xl border border-subtle p-3 space-y-1.5 text-[13px]">
+                      <div className="flex justify-between"><span className="text-secondary">{t('accountsTotal')}</span><span className="font-mono font-semibold text-primary">{fmtCents(accountsTotal)}</span></div>
+                      {appNow !== null && (
+                        <>
+                          <div className="flex justify-between"><span className="text-secondary">{t('accountsAppNow')}</span><span className="font-mono text-primary">{fmtCents(appNow)}</span></div>
+                          <div className="flex justify-between border-t border-subtle pt-1.5">
+                            <span className="text-secondary">{t('accountsDiff')}</span>
+                            {Math.abs(accountsTotal - appNow) < 0.01
+                              ? <span className="text-notion-green font-medium">{t('accountsMatch')}</span>
+                              : <span className={`font-mono font-semibold ${accountsTotal - appNow < 0 ? 'text-notion-red' : 'text-notion-green'}`}>{accountsTotal - appNow > 0 ? '+' : '−'} {fmtCents(Math.abs(accountsTotal - appNow))}</span>}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    {appNow !== null && Math.abs(accountsTotal - appNow) >= 0.01 && (
+                      <button onClick={useAccountsAsReal} className="h-9 px-4 rounded-lg bg-primary text-surface text-xs font-semibold">{t('accountsUse')}</button>
+                    )}
+                  </>
+                )}
+              </div>
+            ))}
+
+            {panel({ id: 'tidy', icon: 'fa-wand-sparkles', title: t('tidyTitle'), defaultCollapsed: !tidyMoves.length,
+              sub: tidyMoves.length ? t('tidyIntro', { n: tidyMoves.length }) : t('tidyNone') }, (
+              tidyMoves.length ? (
+                <div className="space-y-2">
+                  {tidyMoves.map(mv => (
+                    <div key={mv.cat} className="flex items-center justify-between gap-2 text-[12px]">
+                      <span className="text-primary truncate">{mv.cat}</span>
+                      <span className="text-secondary shrink-0 flex items-center gap-1.5">
+                        <i className="fa-solid fa-arrow-right text-[9px] text-tertiary"></i>
+                        <span className="w-2 h-2 rounded-sm" style={{ background: GROUP_HEX[mv.rule.color] }}></span>
+                        {groupName(data.groups.find(g => g.id === mv.to) || { id: mv.to, name: null })}
+                      </span>
+                    </div>
+                  ))}
+                  <button onClick={applyTidy} className="mt-1 h-9 px-4 rounded-lg bg-primary text-surface text-xs font-semibold">{t('tidyApply')}</button>
+                </div>
+              ) : <p className="text-[12px] text-secondary">{t('tidyNone')}</p>
+            ))}
+          </div>
+
+          <div className="space-y-4 min-w-0">
+                  <div className="rounded-2xl border border-subtle bg-surface p-3.5 space-y-3">
                     <div className="flex items-center justify-between gap-2 border-b border-subtle pb-2">
                       <div className="flex items-center gap-2">
                         <span className="text-xs">🤝</span>
-                        <span className="text-xs font-semibold text-primary uppercase tracking-wide">{t('iouTitle')}</span>
+                        <span className="text-[13px] font-semibold text-primary">{t('iouTitle')}</span>
                       </div>
                       <div className="flex items-center gap-3 text-xs font-mono">
                         {totalBorrowed > 0 && <span className="text-notion-red font-semibold">{t('iouDebts')} {fmt(totalBorrowed)}</span>}
@@ -4571,68 +5015,112 @@
                     )}
                   </div>
 
-                          {chartBox}
-                        </div>
-                      </aside>
+            {panel({ id: 'tools', icon: 'fa-toolbox', title: t('toolsTitle'), collapsible: false }, (
+              <div className="-mx-1">
+                {[
+                  ['fa-wand-magic-sparkles', t('askTitle'), () => { setAskError(''); setAskModal(true); }],
+                  ['fa-file-import', t('importTitle'), openImport],
+                  ['fa-folder-plus', t('toolGroups'), () => openGroupModal()],
+                  ['fa-language', t('toolLang'), () => changeLanguage(lang === 'de' ? 'en' : 'de')],
+                  ['fa-gear', t('toolSettings'), () => setIsBurgerOpen(true)]
+                ].map(([icon, label, fn]) => (
+                  <button key={label} onClick={fn} className="w-full flex items-center gap-3 px-1 py-2 text-left hover:bg-subtle/60 rounded-xl">
+                    <span className="w-8 h-8 rounded-lg bg-subtle flex items-center justify-center text-secondary"><i className={`fa-solid ${icon} text-xs`}></i></span>
+                    <span className="flex-1 text-[13px] text-primary">{label}</span>
+                    <i className="fa-solid fa-chevron-right text-[10px] text-tertiary"></i>
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
 
-                      {/* EXPENSE GROUPS */}
-                      <section className={`${mobileTab === 'expenses' ? 'block' : 'hidden lg:block'} space-y-3 min-w-0`}>
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <div className="flex items-center gap-2">
-                            <h2 className="text-xs font-semibold text-primary uppercase tracking-wide">{t('expensesHeader')}</h2>
-                            <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-notion-tagRed text-notion-red">{fmt(cm.projectedEx)}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <div className="inline-flex bg-subtle p-0.5 rounded border border-subtle text-[11px]">
-                              {[['all', t('filterAll')], ['fixed', t('filterFixed')], ['variable', t('filterVariable')]].map(([id, label]) => (
-                                <button
-                                  key={id}
-                                  onClick={() => setExpFilter(id)}
-                                  aria-pressed={expFilter === id}
-                                  className={`px-2.5 py-1 rounded ${expFilter === id ? 'bg-surface text-primary font-semibold shadow-sm' : 'text-secondary'}`}
-                                >
-                                  {label}
-                                </button>
-                              ))}
-                            </div>
-                            <button onClick={() => handleOpenQuickAdd('expenses')} className="text-[11px] font-semibold px-2.5 py-1 rounded bg-primary text-surface hover:opacity-90">
-                              {t('addItemBtn')}
-                            </button>
-                            <button onClick={openImport} className="text-[11px] font-medium px-2.5 py-1 rounded border border-subtle bg-surface text-primary hover:bg-subtle">
-                              {t('importBtn')}
-                            </button>
-                            <button onClick={() => openGroupModal()} className="text-[11px] font-medium px-2.5 py-1 rounded border border-subtle bg-surface text-primary hover:bg-subtle">
-                              {t('newGroup')}
-                            </button>
-                          </div>
-                        </div>
-                        {shownGroups.map(renderGroup)}
-                      </section>
-                    </div>
-                  );
-                })()}
-              </>
-            )}
-          </main>
-
-          {/* FLOATING ACTION BUTTON */}
-          {!isAnnual && (
-            <div className="fixed z-40" style={{ right: 'calc(16px + env(safe-area-inset-right, 0px))', bottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
-              <button
-                onClick={() => mobileTab === 'incomes' && window.innerWidth < 1024 ? handleOpenQuickAdd('incomes') : openReceiptSheet()}
-                className="h-12 px-5 rounded-full bg-primary text-surface shadow-lg flex items-center gap-2 text-sm font-semibold active:scale-95 transition-transform"
-              >
-                <span className="text-lg leading-none">+</span>
-                <span>{mobileTab === 'incomes' && window.innerWidth < 1024 ? t('incomesHeader') : t('addReceipt')}</span>
+      return (
+        <div className="min-h-screen font-sans">
+          {/* SIDEBAR (laptop) */}
+          <aside className="hidden lg:flex fixed inset-y-0 left-0 w-[232px] flex-col border-r border-subtle bg-surface z-40">
+            <div className="h-16 px-5 flex items-center gap-2.5">
+              <img src="icon-192.png" alt="" className="w-8 h-8 rounded-lg" />
+              <div className="min-w-0">
+                <div className="text-[14px] font-semibold text-primary truncate">{t('title')}</div>
+                <div className={`text-[11px] truncate ${syncStatus === 'error' ? 'text-notion-red' : 'text-tertiary'}`}>{syncLabel}</div>
+              </div>
+            </div>
+            <nav className="px-3 space-y-0.5">
+              {NAV.map(([id, icon, label]) => (
+                <button key={id} onClick={() => setView(id)} aria-current={view === id ? 'page' : undefined}
+                  className={`w-full h-9 px-3 rounded-lg flex items-center gap-3 text-[13px] transition ${view === id ? 'bg-subtle text-primary font-semibold' : 'text-secondary hover:text-primary hover:bg-subtle/60'}`}>
+                  <i className={`fa-solid ${icon} w-4 text-center text-[13px]`}></i><span>{label}</span>
+                </button>
+              ))}
+            </nav>
+            <div className="px-3 mt-5">
+              <button onClick={openReceiptSheet} className="w-full h-9 rounded-lg bg-primary text-surface text-[13px] font-semibold flex items-center justify-center gap-2">
+                <i className="fa-solid fa-plus text-xs"></i>{t('addReceiptShort')}
               </button>
             </div>
+            <div className="mt-auto p-3 flex items-center gap-1 border-t border-subtle">
+              <button onClick={() => setIsBurgerOpen(true)} title={syncLabel} aria-label={syncLabel} className={`w-9 h-9 rounded-lg hover:bg-subtle ${syncColor}`}><i className={`fa-solid ${syncIcon} text-xs`}></i></button>
+              <button onClick={() => changeLanguage(lang === 'de' ? 'en' : 'de')} className="h-9 px-2.5 rounded-lg hover:bg-subtle text-[12px] font-semibold text-secondary">{lang.toUpperCase()}</button>
+              <button onClick={() => setIsBurgerOpen(true)} aria-label={t('options')} className="ml-auto w-9 h-9 rounded-lg hover:bg-subtle text-secondary"><i className="fa-solid fa-gear text-xs"></i></button>
+            </div>
+          </aside>
+
+          <div className="lg:pl-[232px]">
+            {/* TOP BAR */}
+            <header className="sticky top-0 z-30 bg-app/85 backdrop-blur-xl border-b border-subtle" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+              <div className="max-w-[1280px] mx-auto h-14 px-4 lg:px-8 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="lg:hidden text-[10px] text-tertiary leading-none mb-0.5 truncate">{t('title')}</div>
+                  <h1 className="text-[17px] lg:text-[20px] font-semibold tracking-tight text-primary truncate">{viewTitle}</h1>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  {showMonthNav && monthNav}
+                  {view === 'plan' && <Segmented size="sm" options={YEARS.map(y => [y, String(y)])} value={selectedYear} onChange={selectYear} />}
+                  <button onClick={() => setIsBurgerOpen(true)} aria-label={syncLabel} title={syncLabel} className={`lg:hidden w-8 h-8 rounded-full hover:bg-subtle ${syncColor}`}>
+                    <i className={`fa-solid ${syncIcon} text-xs`}></i>
+                  </button>
+                </div>
+              </div>
+            </header>
+
+            <main key={view} className="view-enter max-w-[1280px] mx-auto px-4 lg:px-8 pt-4 lg:pt-6 pb-36 lg:pb-12">
+              {view === 'overview' && MB && renderOverview()}
+              {view === 'month' && MB && renderMonth()}
+              {view === 'activity' && renderActivity()}
+              {view === 'plan' && renderPlan()}
+              {view === 'more' && renderMore()}
+            </main>
+          </div>
+
+          {/* ADD BUTTON (phone) */}
+          {(view === 'overview' || view === 'month' || view === 'activity') && (
+            <button onClick={() => view === 'month' && monthPane === 'incomes' ? handleOpenQuickAdd('incomes') : openReceiptSheet()}
+              aria-label={view === 'month' && monthPane === 'incomes' ? t('incomesHeader') : t('addReceipt')}
+              className="lg:hidden fixed z-40 right-4 w-14 h-14 rounded-full bg-primary text-surface shadow-xl flex items-center justify-center active:scale-95 transition-transform"
+              style={{ bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
+              <i className="fa-solid fa-plus text-lg"></i>
+            </button>
           )}
+
+          {/* TAB BAR (phone) */}
+          <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-surface/90 backdrop-blur-xl border-t border-subtle" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+            <div className="grid grid-cols-5 h-16">
+              {NAV.map(([id, icon, label]) => (
+                <button key={id} onClick={() => setView(id)} aria-current={view === id ? 'page' : undefined}
+                  className={`flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition ${view === id ? 'text-primary' : 'text-tertiary hover:text-secondary'}`}>
+                  <i className={`fa-solid ${icon} text-[17px]`}></i><span>{label}</span>
+                </button>
+              ))}
+            </div>
+          </nav>
 
           {toastMsg && (
             <div
               role="status"
               className="fixed z-[60] left-1/2 -translate-x-1/2 bg-primary text-surface text-xs rounded-lg pl-3.5 pr-2 py-2 shadow-lg max-w-[calc(100%-32px)] flex items-center gap-3"
-              style={{ bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}
+              style={{ bottom: 'calc(150px + env(safe-area-inset-bottom, 0px))' }}
             >
               <span className="py-0.5">{toastMsg.text}</span>
               {toastMsg.undo && (
@@ -4641,51 +5129,6 @@
                 </button>
               )}
             </div>
-          )}
-
-          {/* BREAKDOWN MODAL */}
-          {breakdownModal && (
-            <Modal
-              size="max-w-lg"
-              onClose={() => setBreakdownModal(false)}
-              title={<><span>🧾</span><span>{t('breakdownTitle', { month: formatMonth(selectedMonth, lang), year: selectedYear })}</span></>}
-            >
-              {[
-                ['incomes', monthlyReceipt.incomeItems, t('breakdownIncomes', { total: fmt(monthlyReceipt.incomeItems.reduce((sum, i) => sum + i.actual, 0)) }), 'text-notion-green'],
-                ['expenses', monthlyReceipt.expenseItems, t('breakdownExpenses', { total: fmt(currentMetrics.actualEx) }), 'text-notion-red']
-              ].map(([type, items, heading, color]) => (
-                <div key={type} className="space-y-1.5 pt-1">
-                  <div className={`font-semibold ${color} border-b border-subtle pb-1`}>{heading}</div>
-                  {items.length === 0 ? (
-                    <p className="text-tertiary italic text-[11px]">{t('noItemsInBreakdown')}</p>
-                  ) : (
-                    items.map(item => (
-                      <div key={item.cat} className="flex items-center justify-between gap-2 p-1.5 rounded bg-subtle">
-                        <span className="font-medium text-primary truncate">{item.cat}</span>
-                        <MoneyInput
-                          value={item.actual}
-                          hideZero={false}
-                          onChange={(val) => updateNode(type, item.cat, selectedYear, selectedMonth, 'actual', val)}
-                          className="w-28 bg-surface py-0.5 shrink-0"
-                          inputClass={`${color} font-semibold`}
-                        />
-                      </div>
-                    ))
-                  )}
-                </div>
-              ))}
-
-              <div className="p-3 rounded-lg bg-surface-elevated border border-subtle flex items-center justify-between gap-2 font-mono font-bold text-sm">
-                <span>{t('breakdownNetResult')}</span>
-                <span className={currentMetrics.actualNet >= 0 ? 'text-notion-green' : 'text-notion-red'}>
-                  {fmt(currentMetrics.actualNet)}
-                </span>
-              </div>
-
-              <button onClick={() => setBreakdownModal(false)} className="w-full py-2 bg-primary text-surface font-semibold rounded text-xs">
-                {t('closeBtn')}
-              </button>
-            </Modal>
           )}
 
           {/* SAVINGS GOAL DIALOG */}
@@ -4927,108 +5370,9 @@
             </Modal>
           )}
 
-          {/* CHANGE HISTORY */}
-          {logModal && (() => {
-            const monthKey = `${selectedYear}|${selectedMonth}`;
-            const monthIso = `${selectedYear}-${pad2(ALL_MONTHS.indexOf(selectedMonth) + 1)}`;
-            const inMonth = (e) => e.p === monthKey || (e.d && e.d.slice(0, 7) === monthIso);
-            const all = [...(data.log || [])].reverse();
-            const shown = logScope === 'month' ? all.filter(inMonth) : all;
-            const kindLabel = (e) => {
-              const where = e.p && e.p !== monthKey && e.p.includes('|') ? ` (${monthLabel(parseInt(e.p), e.p.split('|')[1])})` : '';
-              switch (e.k) {
-                case 'plan': return [`${e.c}${where}`, t('logPlan'), `${fmtCents(e.o)} → ${fmtCents(e.n)}`];
-                case 'done': return [`${e.c}${where}`, t(e.ty === 'incomes' ? 'logReceived' : 'logPaid'), `${fmtCents(e.o)} → ${fmtCents(e.n)}`];
-                case 'tx+': return [e.c, t('logTxAdd', { day: fmtDay(e.d) }), `${e.ty === 'incomes' ? '+' : '−'} ${fmtCents(e.a)}`];
-                case 'tx-': return [e.c, t('logTxDel', { day: fmtDay(e.d) }), `${fmtCents(e.a)}`];
-                case 'tx~': return [e.c, t('logTxEdit', { day: fmtDay(e.d) }), `${fmtCents(e.o)} → ${fmtCents(e.n)}`];
-                case 'start': return [t('logStart'), e.p ? monthLabel(parseInt(e.p), e.p.split('|')[1]) : '', `${fmtCents(e.o)} → ${fmtCents(e.n)}`];
-                case 'bulk': return [t('logBulk', { n: e.n }), '', ''];
-                default: return [e.k, '', ''];
-              }
-            };
-            const days = [];
-            shown.forEach(e => {
-              const day = new Date(e.t).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-              if (!days.length || days[days.length - 1].day !== day) days.push({ day, items: [] });
-              days[days.length - 1].items.push(e);
-            });
-            return (
-              <Modal size="max-w-lg" onClose={() => setLogModal(false)} title={<><span>🕓</span><span>{t('logTitle')}</span></>}>
-                <div className="grid grid-cols-2 gap-1 bg-subtle p-0.5 rounded border border-subtle text-[11px]">
-                  {['month', 'all'].map(sc => (
-                    <button key={sc} aria-pressed={logScope === sc} onClick={() => setLogScope(sc)}
-                      className={`py-1 rounded ${logScope === sc ? 'bg-surface text-primary font-semibold shadow-sm' : 'text-secondary'}`}>
-                      {sc === 'month' ? monthLabel(selectedYear, selectedMonth) : t('logAll')}
-                    </button>
-                  ))}
-                </div>
-                <div className="max-h-[60vh] overflow-y-auto space-y-3">
-                  {days.length === 0 && <p className="text-[11px] text-tertiary p-2">{t('logEmpty')}</p>}
-                  {days.map(g => (
-                    <div key={g.day}>
-                      <div className="text-[10px] uppercase tracking-wide font-semibold text-secondary mb-1">{g.day}</div>
-                      <div className="divide-y divide-subtle border border-subtle rounded">
-                        {g.items.map((e, i) => {
-                          const [what, action, amount] = kindLabel(e);
-                          const time = new Date(e.t).toLocaleTimeString(lang === 'de' ? 'de-DE' : 'en-GB', { hour: '2-digit', minute: '2-digit' });
-                          return (
-                            <div key={e.t + i} className="flex items-baseline justify-between gap-2 px-2 py-1.5 text-[11px]">
-                              <div className="min-w-0">
-                                <div className="text-primary truncate">{what}</div>
-                                <div className="text-tertiary">{time}{e.by ? ` · ${e.by}` : ''}{action ? ` · ${action}` : ''}</div>
-                              </div>
-                              <span className="font-mono text-primary shrink-0">{amount}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-[10px] text-tertiary">{t('logNote', { n: LOG_MAX })}</p>
-              </Modal>
-            );
-          })()}
-
-          {/* ENTRIES OF THE MONTH */}
-          {txModal && (() => {
-            const all = [...monthTx('expenses'), ...monthTx('incomes')].sort((a, b) => a.date < b.date ? 1 : -1);
-            const shown = txWhoFilter === 'all' ? all : all.filter(x => x.who === txWhoFilter);
-            const spentBy = (w) => all.filter(x => x.type === 'expenses' && x.who === w).reduce((sum, x) => sum + x.amount, 0);
-            return (
-              <Modal size="max-w-lg" onClose={() => { setTxModal(false); setEditingTx(null); }} title={<><span>📋</span><span>{t('txModalTitle', { month: monthLabel(selectedYear, selectedMonth) })}</span></>}>
-                <div className="space-y-1">
-                  <div className="text-[10px] text-secondary">{t('whoPaidTitle')}</div>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {WHO.map(w => (
-                      <div key={w} className="p-2 rounded bg-subtle">
-                        <div className="text-[10px] text-secondary truncate">{whoLabel(w)}</div>
-                        <div className="font-mono text-sm font-semibold text-primary">{fmtCents(spentBy(w))}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {['all', ...WHO].map(w => (
-                    <button
-                      key={w}
-                      onClick={() => setTxWhoFilter(w)}
-                      aria-pressed={txWhoFilter === w}
-                      className={`px-2.5 py-1 rounded-full text-[11px] border ${txWhoFilter === w ? 'border-primary text-primary font-semibold' : 'border-subtle text-secondary'}`}
-                    >
-                      {w === 'all' ? t('filterAll') : whoLabel(w)}
-                    </button>
-                  ))}
-                </div>
-                {shown.length === 0 ? (
-                  <p className="text-[11px] text-tertiary">{t('txEmpty')}</p>
-                ) : (
-                  <div className="space-y-0.5 max-h-[50vh] overflow-y-auto">{shown.map(x => renderTxRow(x, true))}</div>
-                )}
-              </Modal>
-            );
-          })()}
+          {txModal && renderEntries()}
+          {logModal && renderHistory()}
+          {breakdownModal && renderSummary()}
 
           {/* RECEIPT SHEET */}
           {receiptSheet && (() => {

@@ -1,6 +1,6 @@
 // Haushaltsbuch service worker: makes the app open offline.
 // Bump VERSION when you change this file; old caches are removed on activate.
-const VERSION = 'v3';
+const VERSION = 'v4';
 const SHELL_CACHE = `budget-shell-${VERSION}`;
 const CDN_CACHE = `budget-cdn-${VERSION}`;
 
@@ -20,7 +20,9 @@ const CDN_HOSTS = [
   'unpkg.com',
   'cdn.jsdelivr.net',
   'cdnjs.cloudflare.com',
-  'www.gstatic.com'
+  'www.gstatic.com',
+  'fonts.googleapis.com',
+  'fonts.gstatic.com'
 ];
 
 // Live data and sign-in must always go to the network, never to a cache.
