@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "app.vercel.finanzplaner_chi.twa",
+    "sha256_cert_fingerprints": ["1A:9A:C9:17:01:1D:32:22:E9:3C:08:6B:5E:D0:83:06:46:6B:79:8B:A0:E3:B4:85:88:1B:97:74:60:02:FC:29"]
+  }
+}]
