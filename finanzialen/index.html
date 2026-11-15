@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Jdeeds' Household</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#191919">
+  <meta name="theme-color" content="#0c0d10">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Jdeeds">
@@ -930,6 +930,12 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        iconLabel: "Symbol",
+        iconAuto: "Automatisch",
+        iconAi: "KI-Vorschlag",
+        iconsAiTool: "Fehlende Symbole mit KI finden",
+        iconsDone: "{{n}} Symbole gesetzt",
+        iconsNone: "Keine passenden Symbole gefunden.",
         gestureTip: "Tipp: zur Seite wischen wechselt den Monat · mit zwei Fingern zusammenziehen klappt alle Gruppen zu, auseinanderziehen klappt sie auf.",
         loansTitle: "Leihen & Schulden",
         toolsTitle: "Werkzeuge",
@@ -1423,6 +1429,12 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        iconLabel: "Icon",
+        iconAuto: "Automatic",
+        iconAi: "AI suggestion",
+        iconsAiTool: "Find missing icons with AI",
+        iconsDone: "{{n}} icons set",
+        iconsNone: "No fitting icons found.",
         gestureTip: "Tip: swipe sideways to change month · pinch with two fingers to fold all groups, spread to unfold them.",
         loansTitle: "Loans & debts",
         toolsTitle: "Tools",
@@ -1916,6 +1928,12 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        iconLabel: "الأيقونة",
+        iconAuto: "تلقائي",
+        iconAi: "اقتراح الذكاء الاصطناعي",
+        iconsAiTool: "إيجاد الأيقونات الناقصة بالذكاء الاصطناعي",
+        iconsDone: "عُيّنت {{n}} أيقونات",
+        iconsNone: "لم توجد أيقونات مناسبة.",
         gestureTip: "نصيحة: اسحب جانبًا لتغيير الشهر · اضمم بإصبعين لطي كل المجموعات، وافتحهما لفتحها.",
         loansTitle: "الديون والقروض",
         toolsTitle: "الأدوات",
@@ -2189,6 +2207,9 @@
         imported: Array.isArray(raw?.imported) ? raw.imported.filter(k => typeof k === 'string') : [],
         // Change history: when which amount was changed, by whom (newest last).
         log: (Array.isArray(raw?.log) ? raw.log : []).filter(e => e && typeof e.t === 'string' && typeof e.k === 'string').slice(-LOG_MAX),
+        // Icon chosen per item name (by hand or by the AI); others are picked automatically.
+        icons: Object.fromEntries(Object.entries(raw?.icons && typeof raw.icons === 'object' ? raw.icons : {})
+          .map(([k, v]) => [k, validIcon(v)]).filter(([, v]) => v)),
         // Bank and cash accounts with the balance last checked (main = Revolut, gateway = Wise/Sparkasse).
         accounts: (Array.isArray(raw?.accounts) ? raw.accounts : [])
           .filter(a => a && typeof a.id === 'string' && typeof a.name === 'string')
@@ -2392,6 +2413,92 @@
         return () => cancelAnimationFrame(raf);
       }, [value]);
       return <>{format(shown)}</>;
+    }
+
+    // ---- Item icons: brand badges for shops and services, symbols for everything else ----
+    // Symbols the app (and the AI) may choose from; all are in Font Awesome 6 free.
+    const ICON_CHOICES = ['fa-house', 'fa-key', 'fa-bolt', 'fa-fire-flame-simple', 'fa-droplet', 'fa-wifi', 'fa-mobile-screen', 'fa-phone',
+      'fa-radio', 'fa-tv', 'fa-train-subway', 'fa-bus', 'fa-car', 'fa-gas-pump', 'fa-bicycle', 'fa-plane', 'fa-dumbbell', 'fa-heart-pulse',
+      'fa-pills', 'fa-kit-medical', 'fa-tooth', 'fa-glasses', 'fa-basket-shopping', 'fa-cart-shopping', 'fa-bread-slice', 'fa-apple-whole',
+      'fa-mug-hot', 'fa-utensils', 'fa-burger', 'fa-pizza-slice', 'fa-couch', 'fa-chair', 'fa-shirt', 'fa-shoe-prints', 'fa-gift',
+      'fa-cake-candles', 'fa-champagne-glasses', 'fa-masks-theater', 'fa-film', 'fa-music', 'fa-gamepad', 'fa-book', 'fa-graduation-cap',
+      'fa-language', 'fa-shield-halved', 'fa-umbrella', 'fa-plug', 'fa-laptop', 'fa-mask', 'fa-file-lines', 'fa-file-invoice', 'fa-repeat',
+      'fa-piggy-bank', 'fa-hand-holding-dollar', 'fa-building-columns', 'fa-briefcase', 'fa-coins', 'fa-people-roof', 'fa-baby', 'fa-paw',
+      'fa-scissors', 'fa-spray-can-sparkles', 'fa-soap', 'fa-broom', 'fa-screwdriver-wrench', 'fa-box', 'fa-envelope', 'fa-cloud',
+      'fa-robot', 'fa-credit-card', 'fa-receipt', 'fa-tag', 'fa-store', 'fa-seedling', 'fa-hospital', 'fa-ellipsis'];
+    // Shops and services: short label in the brand's colours (no logos are loaded from anywhere).
+    const BRANDS = [
+      [/netto/i, 'N', '#FFE500', '#E2001A'], [/edeka/i, 'E', '#1C4E9B', '#FFE500'], [/lidl/i, 'L', '#0050AA', '#FFF000'],
+      [/\baldi\s*talk/i, 'AT', '#00005F', '#22B5EC'], [/\baldi\b/i, 'A', '#00005F', '#F59C00'], [/\brewe\b/i, 'R', '#CC071E', '#FFFFFF'],
+      [/kaufland/i, 'K', '#E10915', '#FFFFFF'], [/\bpenny\b/i, 'P', '#CD1414', '#FFED00'], [/\bdm\b|dm-drogerie|drogerie markt/i, 'dm', '#002878', '#FFFFFF'],
+      [/rossmann/i, 'R', '#C3002F', '#FFFFFF'], [/m[üu]ller\b/i, 'M', '#F39200', '#FFFFFF'], [/\baction\b/i, 'A', '#003C8F', '#FFFFFF'],
+      [/\btedi\b/i, 'T', '#FFDD00', '#003C8F'], [/\bkodi\b/i, 'K', '#E30613', '#FFFFFF'], [/woolworth/i, 'W', '#E2001A', '#FFFFFF'],
+      [/\bikea\b/i, 'IK', '#0058A3', '#FFDB00'], [/amazon|\bamzn\b/i, 'a', '#232F3E', '#FF9900'], [/media\s*markt/i, 'MM', '#DF0000', '#FFFFFF'],
+      [/saturn/i, 'S', '#F06400', '#FFFFFF'], [/shein/i, 'S', '#111111', '#FFFFFF'], [/c\s*&\s*a\b/i, 'C&A', '#1B3A93', '#FFFFFF'],
+      [/h\s*&\s*m\b/i, 'H&M', '#E50010', '#FFFFFF'], [/new\s*yorker/i, 'NY', '#111111', '#FFFFFF'], [/deichmann/i, 'D', '#E2001A', '#FFFFFF'],
+      [/spotify/i, 'S', '#1DB954', '#0B0B0B'], [/netflix/i, 'N', '#0B0B0B', '#E50914'], [/disney/i, 'D+', '#0B1A6E', '#FFFFFF'],
+      [/youtube/i, 'YT', '#FF0000', '#FFFFFF'], [/google/i, 'G', '#FFFFFF', '#4285F4'], [/apple|icloud/i, '', '#111111', '#FFFFFF'],
+      [/vodafone/i, 'V', '#E60000', '#FFFFFF'], [/\bo2\b|telef[oó]nica/i, 'O₂', '#0019A5', '#FFFFFF'], [/telekom/i, 'T', '#E20074', '#FFFFFF'],
+      [/congstar/i, 'c', '#2B2B2B', '#FFED00'], [/sparkasse/i, 'S', '#FF0000', '#FFFFFF'], [/volksbank/i, 'VB', '#003D8F', '#FF6600'],
+      [/revolut/i, 'R', '#191C1F', '#FFFFFF'], [/\bwise\b/i, 'W', '#9FE870', '#163300'], [/paypal/i, 'P', '#003087', '#FFFFFF'],
+      [/deutsche\s*bahn|\bdb\b|\bmo\.?pla\b/i, 'DB', '#EC0016', '#FFFFFF'], [/\bswk\b|stadtwerke/i, 'SWK', '#00508F', '#FFFFFF'],
+      [/mc\s*fit|rsg\b/i, 'Mc', '#FFD100', '#111111'], [/care\s*concept/i, 'CC', '#0A6E9E', '#FFFFFF'], [/fintiba/i, 'F', '#5B2D8E', '#FFFFFF'],
+      [/claude|anthropic/i, 'C', '#D97757', '#FFFFFF'], [/xiaomi/i, 'mi', '#FF6900', '#FFFFFF'], [/payback/i, 'P', '#0046AA', '#FFFFFF'],
+      [/mcdonald/i, 'M', '#DA291C', '#FFC72C'], [/\bkfc\b/i, 'KFC', '#A3080C', '#FFFFFF'], [/burger\s*king/i, 'BK', '#F5EBDC', '#D62300'],
+      [/lieferando/i, 'L', '#FF8000', '#FFFFFF'], [/wolt/i, 'W', '#00C2E8', '#FFFFFF'], [/\bdhl\b/i, 'DHL', '#FFCC00', '#D40511'],
+      [/deutsche\s*post/i, 'P', '#FFCC00', '#111111'], [/rundfunk|\bard\b|\bzdf\b/i, 'ARD', '#00305E', '#FFFFFF']
+    ];
+    const KEYWORD_ICONS = [
+      [/miete|rent|wohnung|hause?\b/i, 'fa-house'], [/kaution|deposit/i, 'fa-key'], [/strom|electric/i, 'fa-bolt'],
+      [/gas\b|heiz|heating/i, 'fa-fire-flame-simple'], [/wasser|water/i, 'fa-droplet'], [/internet|wlan|wifi|festnetz|kabel/i, 'fa-wifi'],
+      [/handy|mobil|phone|s\d\d\s*ultra/i, 'fa-mobile-screen'], [/radio|rundfunk/i, 'fa-radio'], [/ticket|transport|bahn|bus\b|öpnv/i, 'fa-train-subway'],
+      [/auto\b|\bcar\b|tank|benzin/i, 'fa-gas-pump'], [/gym|fitness|sport/i, 'fa-dumbbell'], [/apotheke|pharm|medik|medic/i, 'fa-pills'],
+      [/gesundheit|health|arzt|doctor/i, 'fa-heart-pulse'], [/zahn|dent/i, 'fa-tooth'], [/lebensmittel|grocer|supermarkt|markt|einkauf/i, 'fa-basket-shopping'],
+      [/bäcker|baecker|bakery|brot/i, 'fa-bread-slice'], [/mate|kaffee|coffee|tee\b|tea\b/i, 'fa-mug-hot'], [/essen|restaurant|food|imbiss|döner/i, 'fa-utensils'],
+      [/hausrat|haushalt|household|möbel|furniture|sofa/i, 'fa-couch'], [/kleidung|cloth|apparel|schuh/i, 'fa-shirt'], [/geschenk|gift/i, 'fa-gift'],
+      [/unterhaltung|kino|cinema|entertain|freizeit/i, 'fa-masks-theater'], [/b2|exam|prüfung|fsp|ausbildung|kurs|schule|school|uni/i, 'fa-graduation-cap'],
+      [/versicherung|insurance|haftpflicht|liability/i, 'fa-shield-halved'], [/electronic|elektronik/i, 'fa-plug'], [/stolen|lost|gestohlen|verloren/i, 'fa-mask'],
+      [/paper|papier|amt\b|behörde|dokument/i, 'fa-file-lines'], [/saving|spar(en|konto)?\b|rücklage/i, 'fa-piggy-bank'],
+      [/sister|schwester|loan|darlehen|repayment|rückzahlung|schuld/i, 'fa-hand-holding-dollar'], [/sperrkonto|allowance|blocked/i, 'fa-building-columns'],
+      [/arbeit|gehalt|lohn|salary|job/i, 'fa-briefcase'], [/side income|nebenein|bonus|petty/i, 'fa-coins'], [/mother|mutter|family|familie|eltern/i, 'fa-people-roof'],
+      [/friseur|haircut|barber/i, 'fa-scissors'], [/kosmetik|beauty|parfum/i, 'fa-spray-can-sparkles'], [/haustier|pet\b|katze|hund/i, 'fa-paw'],
+      [/baby|kind|kita/i, 'fa-baby'], [/reise|urlaub|travel|flug/i, 'fa-plane'], [/abo\b|subscription/i, 'fa-repeat'], [/sonstig|other|misc/i, 'fa-ellipsis']
+    ];
+    const GROUP_ICONS = { housing: 'fa-house', bills: 'fa-file-invoice', subs: 'fa-repeat', insurance: 'fa-shield-halved', groceries: 'fa-basket-shopping',
+      household: 'fa-couch', leisure: 'fa-champagne-glasses', oneoff: 'fa-tag', transport: 'fa-train-subway', health: 'fa-heart-pulse',
+      education: 'fa-graduation-cap', fees: 'fa-building-columns', family: 'fa-people-roof' };
+    // Brand first (a shop name is most specific), then a keyword symbol; null when nothing matches.
+    const autoIcon = (name) => {
+      const n = String(name || '');
+      const b = BRANDS.find(([re]) => re.test(n));
+      if (b) return { kind: 'brand', text: b[1], bg: b[2], fg: b[3] };
+      const k = KEYWORD_ICONS.find(([re]) => re.test(n));
+      return k ? { kind: 'symbol', icon: k[1] } : null;
+    };
+    const HEX = /^#[0-9a-fA-F]{6}$/;
+    const validIcon = (x) => {
+      if (!x || typeof x !== 'object') return null;
+      if (x.kind === 'symbol' && ICON_CHOICES.includes(x.icon)) return { kind: 'symbol', icon: x.icon };
+      if (x.kind === 'brand' && typeof x.text === 'string' && x.text.length <= 3 && HEX.test(x.bg) && HEX.test(x.fg)) return { kind: 'brand', text: x.text, bg: x.bg, fg: x.fg };
+      return null;
+    };
+
+    function ItemIcon({ spec, tint = '#64748b', size = 28 }) {
+      const box = { width: size, height: size, minWidth: size };
+      if (spec && spec.kind === 'brand') {
+        const len = spec.text.length;
+        return (
+          <span aria-hidden="true" className="inline-flex items-center justify-center rounded-[9px] font-bold tracking-tight leading-none shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)] select-none"
+            style={{ ...box, background: spec.bg, color: spec.fg, fontSize: len >= 3 ? size * 0.3 : len === 2 ? size * 0.38 : size * 0.48 }}>
+            {spec.text || <i className="fa-brands fa-apple"></i>}
+          </span>
+        );
+      }
+      return (
+        <span aria-hidden="true" className="inline-flex items-center justify-center rounded-[9px]" style={{ ...box, background: `${tint}22`, color: tint }}>
+          <i className={`fa-solid ${(spec && spec.icon) || 'fa-tag'}`} style={{ fontSize: size * 0.44 }}></i>
+        </span>
+      );
     }
 
     // A question-mark link that unfolds an explanation instead of printing it everywhere.
@@ -3274,6 +3381,7 @@
               }
             });
             d.tx.forEach(x => { if (x.type === type && x.cat === oldName) x.cat = newName; });
+            if (d.icons[oldName]) { d.icons[newName] = d.icons[oldName]; delete d.icons[oldName]; }
             // Notes are stored per category, so all months move with the rename.
             if (d.notes[type][oldName]) {
               d.notes[type][newName] = d.notes[type][oldName];
@@ -4247,6 +4355,50 @@
       };
 
       // One compact row for an income or expense item; tapping it opens its amounts and actions.
+      const [iconBusy, setIconBusy] = useState(false);
+      const setItemIcon = (cat, spec) => mutate(d => { if (spec) d.icons[cat] = spec; else delete d.icons[cat]; });
+      // Items the app can't place by itself (no brand, no keyword, no chosen icon).
+      const unmatchedItems = () => [...data.categories.expenses, ...data.categories.incomes].filter(c => !data.icons[c] && !autoIcon(c));
+      const suggestIcons = async (names) => {
+        const list = [...new Set(names)].slice(0, 80);
+        if (!list.length) { showToast(t('iconsNone')); return; }
+        if (!auth?.currentUser) { showToast(t('askNeedSignIn')); return; }
+        setIconBusy(true);
+        try {
+          const token = await auth.currentUser.getIdToken();
+          const resp = await fetch('/api/ask', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ mode: 'icons', names: list, choices: ICON_CHOICES })
+          });
+          const body = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            const key = { not_configured: 'askErrSetup', bad_api_key: 'askErrSetup', not_allowed: 'askErrNotAllowed', not_signed_in: 'askNeedSignIn', rate_limited: 'askErrBusy' }[body.error] || 'askErrGeneric';
+            showToast(t(key)); return;
+          }
+          const found = Object.entries(body.icons || {}).map(([k, v]) => [k, validIcon(v)]).filter(([k, v]) => v && list.includes(k));
+          if (!found.length) { showToast(t('iconsNone')); return; }
+          mutateWithUndo(d => { found.forEach(([k, v]) => { d.icons[k] = v; }); }, t('iconsDone', { n: found.length }));
+        } catch (e) {
+          console.error(e);
+          showToast(t(navigator.onLine ? 'askErrGeneric' : 'askErrOffline'));
+        } finally {
+          setIconBusy(false);
+        }
+      };
+
+      const iconFor = (type, cat) => {
+        const own = data.icons[cat] || autoIcon(cat);
+        if (own) return own;
+        const gid = type === 'expenses' ? getMeta('expenses', cat).bracket : null;
+        return { kind: 'symbol', icon: type === 'incomes' ? 'fa-coins' : (GROUP_ICONS[gid] || 'fa-tag') };
+      };
+      const tintFor = (type, cat) => {
+        if (type === 'incomes') return '#10b981';
+        const g = data.groups.find(x => x.id === getMeta('expenses', cat).bracket);
+        return GROUP_HEX[g?.color] || '#64748b';
+      };
+
       const renderItemRow = (type, cat, kind) => {
         const key = `${type}:${cat}`;
         const node = getNode(type, cat, selectedYear, selectedMonth);
@@ -4281,7 +4433,7 @@
 
         return (
           <div key={key} className={`rounded-md ${isFresh ? 'animate-flash ring-1 ring-notion-blue' : ''}`}>
-            <div className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-subtle/60">
+            <div className="grid grid-cols-[28px_30px_minmax(0,1fr)_auto] items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-subtle/60">
               {isVar ? (
                 <button
                   onClick={() => { setAddingTo(addingTo === key ? null : key); setAddAmount(""); }}
@@ -4302,6 +4454,9 @@
                   ✓
                 </button>
               )}
+              <button onClick={() => handleOpenEditCategory(type, cat)} aria-label={t('iconLabel')} className="rounded-[9px]">
+                <ItemIcon spec={iconFor(type, cat)} tint={tintFor(type, cat)} size={30} />
+              </button>
               <button onClick={toggleOpen} aria-expanded={isOpen} className="text-start min-w-0">
                 <span className={`block truncate text-xs font-medium ${done ? 'text-secondary' : 'text-primary'}`}>{cat}</span>
                 <span className="block truncate text-[10px] text-tertiary">
@@ -4317,7 +4472,7 @@
             </div>
 
             {isVar && addingTo === key && (
-              <form onSubmit={(e) => { e.preventDefault(); submitInlineReceipt(cat); }} className="flex gap-1.5 ps-11 pe-2 pb-2">
+              <form onSubmit={(e) => { e.preventDefault(); submitInlineReceipt(cat); }} className="flex gap-1.5 ps-[5.25rem] pe-2 pb-2">
                 <input
                   autoFocus
                   inputMode="decimal"
@@ -4982,9 +5137,10 @@
                 )}
                 {sec.items.length === 0 && <p className="text-[11px] text-tertiary">{t('dueNothing')}</p>}
                 {sec.items.slice(0, perSection).map(x => (
-                  <div key={`${x.cat}|${x.m}|${x.yr}`} className="grid grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-2.5 py-1">
+                  <div key={`${x.cat}|${x.m}|${x.yr}`} className="grid grid-cols-[24px_28px_minmax(0,1fr)_auto] items-center gap-2.5 py-1">
                     <button onClick={() => updateNode('expenses', x.cat, x.yr, x.m, 'actual', x.amount)} aria-label={t('markPaidAria', { name: x.cat })}
                       className="w-6 h-6 rounded-full border-[1.5px] border-strong text-transparent hover:border-notion-green hover:text-notion-green text-[10px] leading-none">✓</button>
+                    <ItemIcon spec={iconFor('expenses', x.cat)} tint={tintFor('expenses', x.cat)} size={28} />
                     <div className="min-w-0">
                       <div className="text-[13px] text-primary truncate">{x.cat}</div>
                       <div className={`text-[11px] ${x.overdue ? 'text-notion-red font-medium' : 'text-tertiary'}`}>
@@ -5613,6 +5769,7 @@
                 </div>
                 {[
                   ['fa-wand-magic-sparkles', t('askTitle'), () => { setAskError(''); setAskModal(true); }],
+                  ['fa-icons', iconBusy ? t('askThinking') : `${t('iconsAiTool')}${unmatchedItems().length ? ` (${unmatchedItems().length})` : ''}`, () => suggestIcons(unmatchedItems())],
                   ['fa-file-import', t('importTitle'), openImport],
                   ['fa-folder-plus', t('toolGroups'), () => openGroupModal()],
                   ['fa-gear', t('toolSettings'), () => setIsBurgerOpen(true)]
@@ -6023,9 +6180,9 @@
                         <button
                           key={cat}
                           onClick={() => submitSheetReceipt(cat)}
-                          className="px-3 py-1.5 rounded-full border border-strong bg-surface-elevated text-primary text-xs flex items-center gap-1.5 hover:border-primary"
+                          className="ps-1 pe-3 py-1 rounded-full border border-strong bg-surface-elevated text-primary text-xs flex items-center gap-1.5 hover:border-primary"
                         >
-                          <span className="w-2 h-2 rounded-[2px]" style={{ background: GROUP_HEX[g.color] }}></span>
+                          <ItemIcon spec={iconFor('expenses', cat)} tint={GROUP_HEX[g.color]} size={20} />
                           {cat}
                         </button>
                       ))}
@@ -6404,6 +6561,30 @@
                   onChange={(e) => setEditCatForm(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full bg-subtle border border-subtle rounded px-2.5 py-1.5 text-primary outline-none focus:border-strong font-medium"
                 />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-secondary font-medium block mb-1">{t('iconLabel')}</label>
+                <div className="flex items-center gap-2 mb-2">
+                  <ItemIcon spec={iconFor(activeEditCat.type, activeEditCat.cat)} tint={tintFor(activeEditCat.type, activeEditCat.cat)} size={36} />
+                  <button type="button" onClick={() => setItemIcon(activeEditCat.cat, null)} aria-pressed={!data.icons[activeEditCat.cat]}
+                    className={`h-8 px-3 rounded-lg text-[11px] font-medium border ${!data.icons[activeEditCat.cat] ? 'border-primary text-primary' : 'border-subtle text-secondary'}`}>{t('iconAuto')}</button>
+                  <button type="button" disabled={iconBusy} onClick={() => suggestIcons([activeEditCat.cat])}
+                    className="h-8 px-3 rounded-lg text-[11px] font-medium border border-subtle text-secondary hover:text-primary disabled:opacity-50">
+                    {iconBusy ? t('askThinking') : `✨ ${t('iconAi')}`}
+                  </button>
+                </div>
+                <div className="grid grid-cols-8 gap-1 max-h-[132px] overflow-y-auto pe-1">
+                  {ICON_CHOICES.map(ic => {
+                    const sel = data.icons[activeEditCat.cat]?.icon === ic;
+                    return (
+                      <button key={ic} type="button" onClick={() => setItemIcon(activeEditCat.cat, { kind: 'symbol', icon: ic })} aria-label={ic.replace('fa-', '')} aria-pressed={sel}
+                        className={`h-8 rounded-lg flex items-center justify-center text-[13px] ${sel ? 'bg-primary text-surface' : 'bg-subtle text-secondary hover:text-primary'}`}>
+                        <i className={`fa-solid ${ic}`}></i>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div>

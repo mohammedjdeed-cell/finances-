@@ -44,7 +44,60 @@ How to answer:
 - When the numbers look inconsistent (for example a plan that differs from what usually arrives, an item ticked before its date, a month that doesn't add up), point it out plainly and say what to change in the app.
 - You can't change the data yourself; tell them which item, month and value to edit.`;
 
+const ICON_PROMPT = `You choose small icons for the budget items of a household in Germany. Item names may be German, English or Arabic, and are often shop, brand or service names.
+
+For each name:
+- If it names a shop, brand, bank, app or service (for example Netto, Edeka, dm, Vodafone, Spotify), return kind "brand": text = a 1–3 character label like on its logo (for example "N", "dm", "O₂"), bg and fg = the brand's main background and text colours as #RRGGBB, and icon = the closest fitting symbol from the list anyway.
+- Otherwise return kind "symbol" with the best fitting icon from the list, and text "", bg "#000000", fg "#FFFFFF".
+Return one entry per name, with the name copied exactly as given.`;
+
 const anthropic = new Anthropic();
+
+// Icon suggestions: names in, one validated icon per name out.
+async function suggestIcons(body, res) {
+  const names = (Array.isArray(body.names) ? body.names : [])
+    .filter((n) => typeof n === "string" && n.trim() && n.length <= 80).slice(0, 80);
+  const choices = (Array.isArray(body.choices) ? body.choices : [])
+    .filter((c) => typeof c === "string" && /^fa-[a-z0-9-]+$/.test(c)).slice(0, 150);
+  if (!names.length || !choices.length) return fail(res, 400, "bad_request");
+  const schema = {
+    type: "object", additionalProperties: false, required: ["icons"],
+    properties: {
+      icons: {
+        type: "array",
+        items: {
+          type: "object", additionalProperties: false, required: ["name", "kind", "icon", "text", "bg", "fg"],
+          properties: {
+            name: { type: "string" }, kind: { type: "string", enum: ["symbol", "brand"] },
+            icon: { type: "string", enum: choices }, text: { type: "string" }, bg: { type: "string" }, fg: { type: "string" },
+          },
+        },
+      },
+    },
+  };
+  const response = await anthropic.messages.create({
+    model: pickModel(),
+    max_tokens: 4000,
+    output_config: { effort: "low", format: { type: "json_schema", schema } },
+    system: ICON_PROMPT,
+    messages: [{ role: "user", content: `Items:\n${JSON.stringify(names)}\n\nAllowed symbols:\n${choices.join(", ")}` }],
+  });
+  if (response.stop_reason === "refusal") return fail(res, 422, "refused");
+  const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+  let parsed;
+  try { parsed = JSON.parse(text); } catch { return fail(res, 502, "api_error"); }
+  const hex = /^#[0-9a-fA-F]{6}$/;
+  const icons = {};
+  for (const x of parsed.icons || []) {
+    if (!names.includes(x.name)) continue;
+    if (x.kind === "brand" && x.text && x.text.length <= 3 && hex.test(x.bg) && hex.test(x.fg)) {
+      icons[x.name] = { kind: "brand", text: x.text, bg: x.bg, fg: x.fg };
+    } else if (choices.includes(x.icon)) {
+      icons[x.name] = { kind: "symbol", icon: x.icon };
+    }
+  }
+  return res.status(200).json({ icons });
+}
 
 const fail = (res, status, error) => res.status(status).json({ error });
 
@@ -68,6 +121,17 @@ export default async function handler(req, res) {
     .split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
   const email = String(claims.email || "").toLowerCase();
   if (!claims.email_verified || !allowed.includes(email)) return fail(res, 403, "not_allowed");
+
+  if (req.body?.mode === "icons") {
+    try {
+      return await suggestIcons(req.body, res);
+    } catch (error) {
+      if (error instanceof Anthropic.AuthenticationError) return fail(res, 500, "bad_api_key");
+      if (error instanceof Anthropic.RateLimitError) return fail(res, 429, "rate_limited");
+      console.error(error);
+      return fail(res, 502, "api_error");
+    }
+  }
 
   // Validate the request: the data snapshot and the conversation so far.
   const { snapshot, messages } = req.body || {};

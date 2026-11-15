@@ -1,6 +1,6 @@
 // Haushaltsbuch service worker: makes the app open offline.
 // Bump VERSION when you change this file; old caches are removed on activate.
-const VERSION = 'v4';
+const VERSION = 'v5';
 const SHELL_CACHE = `budget-shell-${VERSION}`;
 const CDN_CACHE = `budget-cdn-${VERSION}`;
 
