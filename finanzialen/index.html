@@ -930,6 +930,29 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        newLoanTitle: "Neues Darlehen",
+        loanNewBtn: "Neues Darlehen",
+        loanNoneOpen: "Keine offenen Darlehen.",
+        loanBorrowed: "Ich habe geliehen",
+        loanLent: "Ich habe verliehen",
+        loanBorrowerLabel: "An wen?",
+        loanPersonPh: "z. B. Schwester, Aram …",
+        loanBookIn: "Als Einnahme in {{month}} buchen",
+        loanBookOut: "Als Ausgabe in {{month}} buchen",
+        loanBookHint: "Ausschalten, wenn das Geld nicht über eure Konten lief.",
+        loanInstallments: "Zurückzahlen in Raten",
+        loanBackInstallments: "Rückzahlung erwartet in Raten",
+        loanNoPlan: "Ohne",
+        loanFirstMonth: "Erste Rate",
+        loanPreview: "{{n}} × {{amount}} · {{months}}",
+        loanSave: "Eintragen",
+        loanFromItem: "Darlehen von",
+        loanRepayItem: "Rückzahlung an",
+        lentToItem: "Verliehen an",
+        repaidByItem: "Rückzahlung von",
+        loanAdded: "Darlehen eingetragen: {{amount}} · {{person}}",
+        loanNeedFields: "Bitte Person, Betrag und Datum angeben.",
+        loanShared: "Dieser Rückzahlungsplan gilt für {{n}} Darlehen zusammen ({{amount}}); Zahlungen gehen zuerst an das älteste.",
         loanEditTitle: "Darlehen bearbeiten",
         loanEditExisting: "Stattdessen das bestehende Darlehen bearbeiten",
         loanPerson: "Person",
@@ -1443,6 +1466,29 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        newLoanTitle: "New loan",
+        loanNewBtn: "New loan",
+        loanNoneOpen: "No open loans.",
+        loanBorrowed: "I borrowed",
+        loanLent: "I lent",
+        loanBorrowerLabel: "To whom?",
+        loanPersonPh: "e.g. Sister, Aram …",
+        loanBookIn: "Book as income in {{month}}",
+        loanBookOut: "Book as expense in {{month}}",
+        loanBookHint: "Turn off if the money didn't go through your accounts.",
+        loanInstallments: "Pay back in instalments",
+        loanBackInstallments: "Repayment expected in instalments",
+        loanNoPlan: "None",
+        loanFirstMonth: "First instalment",
+        loanPreview: "{{n}} × {{amount}} · {{months}}",
+        loanSave: "Save",
+        loanFromItem: "Loan from",
+        loanRepayItem: "Repayment to",
+        lentToItem: "Lent to",
+        repaidByItem: "Repayment from",
+        loanAdded: "Loan saved: {{amount}} · {{person}}",
+        loanNeedFields: "Please enter a person, an amount and a date.",
+        loanShared: "This repayment plan covers {{n}} loans together ({{amount}}); payments go to the oldest first.",
         loanEditTitle: "Edit loan",
         loanEditExisting: "Edit the existing loan instead",
         loanPerson: "Person",
@@ -1956,6 +2002,29 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        newLoanTitle: "دين جديد",
+        loanNewBtn: "دين جديد",
+        loanNoneOpen: "لا ديون مفتوحة.",
+        loanBorrowed: "استلفت",
+        loanLent: "أقرضت",
+        loanBorrowerLabel: "لمن؟",
+        loanPersonPh: "مثلًا: الأخت، آرام …",
+        loanBookIn: "تسجيله كدخل في {{month}}",
+        loanBookOut: "تسجيله كمصروف في {{month}}",
+        loanBookHint: "ألغِ التحديد إن لم يمر المال عبر حساباتكم.",
+        loanInstallments: "السداد على دفعات",
+        loanBackInstallments: "السداد المتوقع على دفعات",
+        loanNoPlan: "بدون",
+        loanFirstMonth: "الدفعة الأولى",
+        loanPreview: "{{n}} × {{amount}} · {{months}}",
+        loanSave: "حفظ",
+        loanFromItem: "دين من",
+        loanRepayItem: "سداد إلى",
+        lentToItem: "إقراض إلى",
+        repaidByItem: "سداد من",
+        loanAdded: "حُفظ الدين: {{amount}} · {{person}}",
+        loanNeedFields: "أدخل الشخص والمبلغ والتاريخ.",
+        loanShared: "خطة السداد هذه تشمل {{n}} ديون معًا ({{amount}})؛ تذهب الدفعات للأقدم أولًا.",
         loanEditTitle: "تعديل الدين",
         loanEditExisting: "عدّل الدين الموجود بدلًا من ذلك",
         loanPerson: "الشخص",
@@ -4121,20 +4190,33 @@
       // ---- IOU / Debts ----
       // A loan can be linked to its repayment item; what was paid there counts as repaid.
       const LOAN_REPAY_NAMES = ["Rückzahlung Schwester", "Sister Repayment"];
+      const repayTypeOf = (iou) => iou.repayType === 'incomes' ? 'incomes' : 'expenses';
       const repayItemOf = (iou) => {
+        if (iou.repayCat && data.categories[repayTypeOf(iou)].includes(iou.repayCat)) return iou.repayCat;
         if (iou.type !== 'borrowed') return null;
-        if (iou.repayCat && data.categories.expenses.includes(iou.repayCat)) return iou.repayCat;
         if (/schwester|sister/i.test(iou.person)) return data.categories.expenses.find(c => LOAN_REPAY_NAMES.includes(c)) || null;
         return null;
+      };
+      // Loans that share one repayment item: what's paid there goes to the oldest loan first.
+      const loanSiblings = (iou) => {
+        const cat = repayItemOf(iou);
+        if (!cat) return [];
+        return (data.ious || []).filter(i => repayItemOf(i) === cat && repayTypeOf(i) === repayTypeOf(iou) && !(i.settled && !i.repayCat));
       };
       const repaidOf = (iou) => {
         const cat = repayItemOf(iou);
         if (!cat) return 0;
-        return TIMELINE.reduce((sum, { yr, m }) => sum + getNode('expenses', cat, yr, m).actual, 0);
+        let left = TIMELINE.reduce((sum, { yr, m }) => sum + getNode(repayTypeOf(iou), cat, yr, m).actual, 0);
+        for (const sib of loanSiblings(iou)) {
+          const share = Math.min(left, parseFloat(sib.amount) || 0);
+          if (sib.id === iou.id) return share;
+          left -= share;
+        }
+        return 0;
       };
       const activeIous = useMemo(() => (data.ious || []).filter(i => !i.settled && !(repayItemOf(i) && repaidOf(i) >= (parseFloat(i.amount) || 0) - 0.005)), [data]);
       const totalBorrowed = activeIous.filter(i => i.type === 'borrowed').reduce((s, i) => s + Math.max(0, (parseFloat(i.amount) || 0) - repaidOf(i)), 0);
-      const totalLent = activeIous.filter(i => i.type !== 'borrowed').reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
+      const totalLent = activeIous.filter(i => i.type !== 'borrowed').reduce((s, i) => s + Math.max(0, (parseFloat(i.amount) || 0) - repaidOf(i)), 0);
 
       const todayLabel = () => new Date().toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'ar' ? 'ar-SY-u-nu-latn' : 'de-DE', { day: '2-digit', month: 'short' });
 
@@ -4155,7 +4237,7 @@
       };
 
       const handleSettleIou = (id) => {
-        mutate(d => { d.ious = d.ious.map(i => i.id === id ? { ...i, settled: true } : i); });
+        mutate(d => { d.ious = d.ious.map(i => i.id === id ? { ...i, settled: true, repayCat: i.repayCat || repayItemOf(i) || undefined } : i); });
       };
 
       // For entries made by mistake: removes the debt record only, not any income or repayments.
@@ -4170,6 +4252,71 @@
         return TIMELINE.slice(idx);
       }, [selectedYear, selectedMonth]);
       const pickLoanMonth = (offset) => loanMonthOptions[Math.min(loanMonthOptions.length - 1, offset)];
+
+      // ---- New loan: any person and amount, booked into its month, optional repayment plan ----
+      const [newLoan, setNewLoan] = useState(null);
+      const openNewLoan = () => {
+        const next = TIMELINE[Math.max(0, nowIdx) + 1] || TIMELINE[TIMELINE.length - 1];
+        setNewLoan({ type: 'borrowed', person: '', amount: '', date: todayISO(), book: true, n: 2, start: `${next.yr}|${next.m}`, error: '' });
+      };
+      const loanSplit = (amount, n) => {
+        const cents = Math.round(amount * 100), base = Math.floor(cents / n);
+        return Array.from({ length: n }, (_, i) => (base + (i === n - 1 ? cents - base * n : 0)) / 100);
+      };
+      const saveNewLoan = () => {
+        const f = newLoan;
+        const person = f.person.trim();
+        const amount = Math.round((parseFloat(String(f.amount).replace(',', '.')) || 0) * 100) / 100;
+        const pos = dateToMonth(f.date);
+        if (!person || amount <= 0 || !pos) { setNewLoan({ ...f, error: t('loanNeedFields') }); return; }
+        const borrowed = f.type === 'borrowed';
+        const sisterLike = /sister|schwester|أخت|اختي|أختي/i.test(person);
+        const findItem = (type, names) => data.categories[type].find(c => names.some(n => c.toLowerCase() === n.toLowerCase()));
+        const moneyType = borrowed ? 'incomes' : 'expenses';
+        const backType = borrowed ? 'expenses' : 'incomes';
+        const moneyName = (borrowed && sisterLike && findItem('incomes', ['Sister Loan (Inflow)', 'Darlehen Schwester (Eingang)']))
+          || `${t(borrowed ? 'loanFromItem' : 'lentToItem')} ${person}`;
+        const backName = (borrowed && sisterLike && findItem('expenses', ['Sister Repayment', 'Rückzahlung Schwester']))
+          || `${t(borrowed ? 'loanRepayItem' : 'repaidByItem')} ${person}`;
+        const startIdx = TIMELINE.findIndex(x => timelineKey(x.yr, x.m) === f.start);
+        const parts = f.n > 0 && startIdx >= 0 ? loanSplit(amount, f.n) : [];
+        mutateWithUndo(d => {
+          const ensure = (type, name) => {
+            const existing = d.categories[type].find(c => c.toLowerCase() === name.toLowerCase());
+            if (existing) return existing;
+            d.categories[type].push(name);
+            const g = d.groups.find(x => x.id === 'family') || d.groups.find(x => x.kind === 'oneoff') || d.groups[0];
+            d.meta[type][name] = type === 'expenses' ? metaForGroup(d.groups, g.id, null, false)
+              : { bracket: d.brackets.incomes[d.brackets.incomes.length - 1].id, mode: 'variable', oneTime: false, payDay: null };
+            TIMELINE.forEach(({ yr, m }) => {
+              const byCat = d.values[yr][type][name] || (d.values[yr][type][name] = {});
+              if (!byCat[m]) byCat[m] = emptyNode();
+            });
+            return name;
+          };
+          const node = (type, name, yr, m) => { const byCat = d.values[yr][type][name] || (d.values[yr][type][name] = {}); return byCat[m] || (byCat[m] = emptyNode()); };
+          const back = ensure(backType, backName);
+          if (f.book) {
+            const money = ensure(moneyType, moneyName);
+            const n = node(moneyType, money, pos.yr, pos.m);
+            n.actual = round2(n.actual + amount);
+            n.budget = round2(Math.max(n.budget, 0) + amount);
+          }
+          // Added to what's already planned there, never overwriting another loan's repayment.
+          parts.forEach((part, i) => {
+            const p = TIMELINE[startIdx + i];
+            if (!p) return;
+            const n = node(backType, back, p.yr, p.m);
+            n.budget = round2(n.budget + part);
+          });
+          d.ious.push({
+            id: 'iou_' + Date.now(), person, amount, type: f.type, settled: false,
+            date: new Date(f.date).toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'ar' ? 'ar-SY-u-nu-latn' : 'de-DE', { day: '2-digit', month: 'short', year: 'numeric' }),
+            repayCat: back, repayType: backType
+          });
+        }, t('loanAdded', { amount: fmtCents(amount), person }));
+        setNewLoan(null);
+      };
 
       const openLoanModal = () => {
         const n1 = pickLoanMonth(1);
@@ -5735,40 +5882,10 @@
                       </div>
                     </div>
 
-                    <button onClick={openLoanModal} className="text-[11px] text-notion-blue hover:underline">
-                      ⚡ {t('iouLoanLink')}
+                    <button onClick={openNewLoan} className="w-full h-10 rounded-xl bg-primary text-surface text-[13px] font-semibold flex items-center justify-center gap-2">
+                      <i className="fa-solid fa-plus text-xs"></i>{t('loanNewBtn')}
                     </button>
-
-                    <div className="flex flex-col gap-1.5 pt-1">
-                      <select
-                        value={iouType}
-                        onChange={(e) => setIouType(e.target.value)}
-                        className="bg-subtle border border-subtle text-primary text-xs rounded px-2 py-1.5 outline-none font-medium"
-                      >
-                        <option value="borrowed">{t('iouOptBorrowed')}</option>
-                        <option value="lent">{t('iouOptLent')}</option>
-                      </select>
-
-                      <input
-                        type="text" placeholder={t('iouPersonPlaceholder')}
-                        value={iouPerson} onChange={(e) => setIouPerson(e.target.value)}
-                        className="flex-1 bg-subtle border border-subtle text-primary text-xs rounded px-2.5 py-1.5 outline-none focus:border-strong"
-                      />
-
-                      <MoneyInput
-                        value={iouAmount}
-                        onChange={setIouAmount}
-                        placeholder={t('iouAmountPlaceholder')}
-                        className="w-full"
-                      />
-
-                      <button
-                        onClick={handleAddIou}
-                        className="bg-subtle hover:bg-subtle/80 text-primary border border-subtle font-medium px-3 py-1.5 rounded text-xs transition"
-                      >
-                        + {t('iouAddBtn')}
-                      </button>
-                    </div>
+                    {activeIous.length === 0 && <p className="text-[12px] text-tertiary">{t('loanNoneOpen')}</p>}
 
                     {activeIous.length > 0 && (
                       <div className="grid grid-cols-1 gap-2 pt-1">
@@ -6404,16 +6521,79 @@
             );
           })()}
 
+          {/* NEW LOAN */}
+          {newLoan && (() => {
+            const f = newLoan;
+            const set = (patch) => setNewLoan(prev => ({ ...prev, ...patch, error: '' }));
+            const amount = parseFloat(String(f.amount).replace(',', '.')) || 0;
+            const pos = dateToMonth(f.date);
+            const startIdx = TIMELINE.findIndex(x => timelineKey(x.yr, x.m) === f.start);
+            const parts = f.n > 0 && amount > 0 ? loanSplit(amount, f.n) : [];
+            const months = parts.map((_, i) => TIMELINE[startIdx + i]).filter(Boolean).map(p => `${formatMonth(p.m, lang)} ${p.yr}`);
+            const borrowed = f.type === 'borrowed';
+            const inputCls = 'w-full bg-subtle border border-subtle rounded-lg px-2.5 py-2 text-[13px] text-primary outline-none focus:border-strong';
+            return (
+              <Modal size="max-w-md" onClose={() => setNewLoan(null)} title={<><span>🤝</span><span>{t('newLoanTitle')}</span></>}>
+                <Segmented full options={[['borrowed', t('loanBorrowed')], ['lent', t('loanLent')]]} value={f.type} onChange={(v) => set({ type: v })} />
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="col-span-2">
+                    <label className="text-[11px] text-secondary font-medium block mb-1">{borrowed ? t('loanLenderLabel') : t('loanBorrowerLabel')}</label>
+                    <input autoFocus value={f.person} onChange={(e) => set({ person: e.target.value })} placeholder={t('loanPersonPh')} className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-secondary font-medium block mb-1">{t('loanAmount')}</label>
+                    <input inputMode="decimal" value={f.amount} onChange={(e) => set({ amount: e.target.value })} placeholder="0,00 €" className={`${inputCls} text-end font-mono`} />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-secondary font-medium block mb-1">{t('loanDate')}</label>
+                    <input type="date" value={f.date} onChange={(e) => set({ date: e.target.value })} className={inputCls} />
+                  </div>
+                </div>
+                <label className="flex items-start gap-2.5 p-2.5 rounded-xl bg-subtle/60 cursor-pointer">
+                  <input type="checkbox" checked={f.book} onChange={(e) => set({ book: e.target.checked })} className="mt-0.5 w-4 h-4" />
+                  <span className="text-[12px] text-primary leading-snug">
+                    {t(borrowed ? 'loanBookIn' : 'loanBookOut', { month: pos ? `${formatMonth(pos.m, lang)} ${pos.yr}` : '' })}
+                    <span className="block text-[11px] text-tertiary">{t('loanBookHint')}</span>
+                  </span>
+                </label>
+                <div className="space-y-2">
+                  <label className="text-[11px] text-secondary font-medium block">{t(borrowed ? 'loanInstallments' : 'loanBackInstallments')}</label>
+                  <Segmented full size="sm" options={[[0, t('loanNoPlan')], [1, '1×'], [2, '2×'], [3, '3×'], [4, '4×'], [6, '6×']]} value={f.n} onChange={(v) => set({ n: v })} />
+                  {f.n > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-secondary shrink-0">{t('loanFirstMonth')}</span>
+                      <select value={f.start} onChange={(e) => set({ start: e.target.value })} className="flex-1 bg-subtle border border-subtle rounded-lg px-2 py-1.5 text-[12px] text-primary">
+                        {TIMELINE.map(({ yr, m }) => <option key={`${yr}|${m}`} value={`${yr}|${m}`}>{formatMonth(m, lang)} {yr}</option>)}
+                      </select>
+                    </div>
+                  )}
+                  {parts.length > 0 && (
+                    <p className="text-[12px] text-secondary">{t('loanPreview', { n: parts.length, amount: fmtCents(parts[0]), months: months.join(', ') })}</p>
+                  )}
+                </div>
+                {f.error && <p className="text-[12px] text-notion-red">{f.error}</p>}
+                <div className="flex gap-2 pt-1">
+                  <button onClick={() => setNewLoan(null)} className="flex-1 py-2 rounded-lg bg-subtle text-secondary text-xs font-medium">{t('cancelBtn')}</button>
+                  <button onClick={saveNewLoan} className="flex-1 py-2 rounded-lg bg-primary text-surface text-xs font-semibold">{t('loanSave')}</button>
+                </div>
+              </Modal>
+            );
+          })()}
+
           {/* LOAN EDITOR: change an existing loan and its repayment plan */}
           {loanEdit && (() => {
             const item = (data.ious || []).find(i => i.id === loanEdit);
             if (!item) return null;
             const update = (patch) => mutate(d => { const x = d.ious.find(i => i.id === item.id); if (x) Object.assign(x, patch); });
             const cat = repayItemOf(item);
-            const total = parseFloat(item.amount) || 0;
-            const rows = cat ? TIMELINE.filter(({ yr, m }) => { const n = getNode('expenses', cat, yr, m); return n.budget > 0 || n.actual > 0; }) : [];
-            const repaid = repaidOf(item);
-            const planned = rows.reduce((sum, { yr, m }) => { const n = getNode('expenses', cat, yr, m); return sum + (n.actual > 0 ? 0 : n.budget); }, 0);
+            const rt = repayTypeOf(item);
+            const sibs = loanSiblings(item);
+            const shared = sibs.length > 1;
+            // A shared repayment item covers all loans on it together.
+            const total = shared ? sibs.reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0) : (parseFloat(item.amount) || 0);
+            const rows = cat ? TIMELINE.filter(({ yr, m }) => { const n = getNode(rt, cat, yr, m); return n.budget > 0 || n.actual > 0; }) : [];
+            const repaid = shared ? TIMELINE.reduce((sum, { yr, m }) => sum + getNode(rt, cat, yr, m).actual, 0) : repaidOf(item);
+            const planned = rows.reduce((sum, { yr, m }) => { const n = getNode(rt, cat, yr, m); return sum + (n.actual > 0 ? 0 : n.budget); }, 0);
             const gap = round2(total - repaid - planned);
             const inputCls = 'w-full bg-subtle border border-subtle rounded-lg px-2.5 py-1.5 text-primary outline-none focus:border-strong';
             return (
@@ -6440,31 +6620,32 @@
                   </div>
                 </div>
 
-                {item.type === 'borrowed' && (
+                {(item.type === 'borrowed' || cat) && (
                   <div className="space-y-2 pt-1">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[12px] font-semibold text-primary">{t('loanSchedule')}</span>
                       <select value={cat || ''} onChange={(e) => update({ repayCat: e.target.value || null })} className="max-w-[55%] bg-subtle border border-subtle rounded-lg px-2 py-1 text-[11px] text-secondary">
                         <option value="">{t('iouLinkRepay')}</option>
-                        {data.categories.expenses.map(c => <option key={c} value={c}>{c}</option>)}
+                        {data.categories[rt].map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
+                    {shared && <p className="text-[11px] text-secondary">{t('loanShared', { n: sibs.length, amount: fmtCents(total) })}</p>}
                     {cat && (
                       <>
                         {rows.length === 0 && <p className="text-[11px] text-tertiary">{t('loanNoSchedule')}</p>}
                         {rows.map(({ yr, m }) => {
-                          const n = getNode('expenses', cat, yr, m);
+                          const n = getNode(rt, cat, yr, m);
                           const paid = n.actual > 0;
                           return (
                             <div key={`${yr}|${m}`} className="grid grid-cols-[minmax(0,1fr)_7rem_auto_auto] items-center gap-2 rounded-xl bg-subtle/60 ps-3 pe-1.5 py-1.5">
                               <span className="text-[12px] text-primary truncate">{formatMonth(m, lang)} {yr}</span>
                               <MoneyInput value={paid ? n.actual : n.budget} hideZero={false}
-                                onChange={(v) => updateNode('expenses', cat, yr, m, paid ? 'actual' : 'budget', v)} className="w-28 bg-surface" />
-                              <button type="button" onClick={() => updateNode('expenses', cat, yr, m, 'actual', paid ? 0 : n.budget)} aria-pressed={paid}
+                                onChange={(v) => updateNode(rt, cat, yr, m, paid ? 'actual' : 'budget', v)} className="w-28 bg-surface" />
+                              <button type="button" onClick={() => updateNode(rt, cat, yr, m, 'actual', paid ? 0 : n.budget)} aria-pressed={paid}
                                 className={`h-7 px-2 rounded-lg text-[11px] font-medium ${paid ? 'bg-notion-green text-white' : 'border border-strong text-secondary'}`}>
                                 {paid ? `✓ ${t('loanPaid')}` : t('loanPlan')}
                               </button>
-                              <button type="button" aria-label={t('iouDelete')} onClick={() => mutate(d => { const node = d.values[yr].expenses[cat]?.[m]; if (node) { node.budget = 0; node.actual = 0; } })}
+                              <button type="button" aria-label={t('iouDelete')} onClick={() => mutate(d => { const node = d.values[yr][rt][cat]?.[m]; if (node) { node.budget = 0; node.actual = 0; } })}
                                 className="w-7 h-7 rounded-full text-tertiary hover:text-notion-red"><i className="fa-solid fa-xmark text-[11px]"></i></button>
                             </div>
                           );
@@ -6472,12 +6653,12 @@
                         <div className="flex items-center gap-2">
                           <select value={loanAddPos} onChange={(e) => setLoanAddPos(e.target.value)} className="flex-1 bg-subtle border border-subtle rounded-lg px-2 py-1.5 text-[12px] text-primary">
                             <option value="">{t('loanAddMonth')}</option>
-                            {TIMELINE.filter(({ yr, m }) => { const n = getNode('expenses', cat, yr, m); return !(n.budget > 0 || n.actual > 0); })
+                            {TIMELINE.filter(({ yr, m }) => { const n = getNode(rt, cat, yr, m); return !(n.budget > 0 || n.actual > 0); })
                               .map(({ yr, m }) => <option key={`${yr}|${m}`} value={`${yr}|${m}`}>{formatMonth(m, lang)} {yr}</option>)}
                           </select>
                           <button type="button" disabled={!loanAddPos} onClick={() => {
                               const [yr, m] = loanAddPos.split('|');
-                              updateNode('expenses', cat, parseInt(yr), m, 'budget', Math.max(0, gap));
+                              updateNode(rt, cat, parseInt(yr), m, 'budget', Math.max(0, gap));
                               setLoanAddPos('');
                             }} className="h-8 px-3 rounded-lg bg-primary text-surface text-[12px] font-semibold disabled:opacity-40">{t('addBtn')}</button>
                         </div>
