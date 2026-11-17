@@ -930,6 +930,20 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        loanEditTitle: "Darlehen bearbeiten",
+        loanEditExisting: "Stattdessen das bestehende Darlehen bearbeiten",
+        loanPerson: "Person",
+        loanAmount: "Betrag",
+        loanDate: "Datum",
+        loanType: "Art",
+        loanSchedule: "Rückzahlungsplan",
+        loanPlan: "Geplant",
+        loanPaid: "Bezahlt",
+        loanAddMonth: "+ Monat hinzufügen …",
+        loanRemaining: "Noch nicht eingeplant",
+        loanPlannedOk: "Alles eingeplant ✓",
+        loanPlannedGap: "Die Rückzahlungen ergeben noch nicht den ganzen Betrag. Füg einen Monat hinzu oder ändere einen Betrag.",
+        loanNoSchedule: "Noch keine Rückzahlung eingeplant.",
         iconLabel: "Symbol",
         iconAuto: "Automatisch",
         iconAi: "KI-Vorschlag",
@@ -1429,6 +1443,20 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        loanEditTitle: "Edit loan",
+        loanEditExisting: "Edit the existing loan instead",
+        loanPerson: "Person",
+        loanAmount: "Amount",
+        loanDate: "Date",
+        loanType: "Type",
+        loanSchedule: "Repayment plan",
+        loanPlan: "Planned",
+        loanPaid: "Paid",
+        loanAddMonth: "+ Add a month …",
+        loanRemaining: "Not planned yet",
+        loanPlannedOk: "All planned ✓",
+        loanPlannedGap: "The repayments don't add up to the full amount yet. Add a month or change an amount.",
+        loanNoSchedule: "No repayment planned yet.",
         iconLabel: "Icon",
         iconAuto: "Automatic",
         iconAi: "AI suggestion",
@@ -1928,6 +1956,20 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        loanEditTitle: "تعديل الدين",
+        loanEditExisting: "عدّل الدين الموجود بدلًا من ذلك",
+        loanPerson: "الشخص",
+        loanAmount: "المبلغ",
+        loanDate: "التاريخ",
+        loanType: "النوع",
+        loanSchedule: "خطة السداد",
+        loanPlan: "مخطط",
+        loanPaid: "مدفوع",
+        loanAddMonth: "+ إضافة شهر …",
+        loanRemaining: "غير مجدول بعد",
+        loanPlannedOk: "كله مجدول ✓",
+        loanPlannedGap: "دفعات السداد لا تساوي المبلغ كاملًا بعد. أضف شهرًا أو غيّر مبلغًا.",
+        loanNoSchedule: "لا سداد مجدول بعد.",
         iconLabel: "الأيقونة",
         iconAuto: "تلقائي",
         iconAi: "اقتراح الذكاء الاصطناعي",
@@ -2674,6 +2716,8 @@
       const [smartDeleteModal, setSmartDeleteModal] = useState(null);
 
       const [loanModal, setLoanModal] = useState(null);
+      const [loanEdit, setLoanEdit] = useState(null); // id of the loan being edited
+      const [loanAddPos, setLoanAddPos] = useState('');
       const [loanForm, setLoanForm] = useState(null);
 
       const [iouPerson, setIouPerson] = useState("");
@@ -5747,6 +5791,14 @@
                                   {fmt(item.amount)}
                                 </span>
                                 <button
+                                  onClick={() => { setLoanAddPos(''); setLoanEdit(item.id); }}
+                                  className="px-2 py-0.5 rounded text-[10px] bg-subtle text-secondary hover:text-primary border border-subtle"
+                                  title={t('loanEditTitle')}
+                                  aria-label={t('loanEditTitle')}
+                                >
+                                  ✎
+                                </button>
+                                <button
                                   onClick={() => handleSettleIou(item.id)}
                                   className="px-2 py-0.5 rounded text-[10px] bg-subtle hover:bg-emerald-500/10 text-secondary hover:text-emerald-500 border border-subtle"
                                   title={t('iouMarkReturned')}
@@ -6352,6 +6404,102 @@
             );
           })()}
 
+          {/* LOAN EDITOR: change an existing loan and its repayment plan */}
+          {loanEdit && (() => {
+            const item = (data.ious || []).find(i => i.id === loanEdit);
+            if (!item) return null;
+            const update = (patch) => mutate(d => { const x = d.ious.find(i => i.id === item.id); if (x) Object.assign(x, patch); });
+            const cat = repayItemOf(item);
+            const total = parseFloat(item.amount) || 0;
+            const rows = cat ? TIMELINE.filter(({ yr, m }) => { const n = getNode('expenses', cat, yr, m); return n.budget > 0 || n.actual > 0; }) : [];
+            const repaid = repaidOf(item);
+            const planned = rows.reduce((sum, { yr, m }) => { const n = getNode('expenses', cat, yr, m); return sum + (n.actual > 0 ? 0 : n.budget); }, 0);
+            const gap = round2(total - repaid - planned);
+            const inputCls = 'w-full bg-subtle border border-subtle rounded-lg px-2.5 py-1.5 text-primary outline-none focus:border-strong';
+            return (
+              <Modal size="max-w-md" onClose={() => setLoanEdit(null)} title={<><span>🤝</span><span>{t('loanEditTitle')}</span></>}>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] text-secondary font-medium block mb-1">{t('loanPerson')}</label>
+                    <input value={item.person} onChange={(e) => update({ person: e.target.value })} className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-secondary font-medium block mb-1">{t('loanAmount')}</label>
+                    <MoneyInput value={total} hideZero={false} onChange={(v) => update({ amount: Math.round((parseFloat(v) || 0) * 100) / 100 })} className="w-full" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-secondary font-medium block mb-1">{t('loanDate')}</label>
+                    <input value={item.date || ''} onChange={(e) => update({ date: e.target.value })} className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-secondary font-medium block mb-1">{t('loanType')}</label>
+                    <select value={item.type} onChange={(e) => update({ type: e.target.value })} className={inputCls}>
+                      <option value="borrowed">{t('iouOptBorrowed')}</option>
+                      <option value="lent">{t('iouOptLent')}</option>
+                    </select>
+                  </div>
+                </div>
+
+                {item.type === 'borrowed' && (
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[12px] font-semibold text-primary">{t('loanSchedule')}</span>
+                      <select value={cat || ''} onChange={(e) => update({ repayCat: e.target.value || null })} className="max-w-[55%] bg-subtle border border-subtle rounded-lg px-2 py-1 text-[11px] text-secondary">
+                        <option value="">{t('iouLinkRepay')}</option>
+                        {data.categories.expenses.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    {cat && (
+                      <>
+                        {rows.length === 0 && <p className="text-[11px] text-tertiary">{t('loanNoSchedule')}</p>}
+                        {rows.map(({ yr, m }) => {
+                          const n = getNode('expenses', cat, yr, m);
+                          const paid = n.actual > 0;
+                          return (
+                            <div key={`${yr}|${m}`} className="grid grid-cols-[minmax(0,1fr)_7rem_auto_auto] items-center gap-2 rounded-xl bg-subtle/60 ps-3 pe-1.5 py-1.5">
+                              <span className="text-[12px] text-primary truncate">{formatMonth(m, lang)} {yr}</span>
+                              <MoneyInput value={paid ? n.actual : n.budget} hideZero={false}
+                                onChange={(v) => updateNode('expenses', cat, yr, m, paid ? 'actual' : 'budget', v)} className="w-28 bg-surface" />
+                              <button type="button" onClick={() => updateNode('expenses', cat, yr, m, 'actual', paid ? 0 : n.budget)} aria-pressed={paid}
+                                className={`h-7 px-2 rounded-lg text-[11px] font-medium ${paid ? 'bg-notion-green text-white' : 'border border-strong text-secondary'}`}>
+                                {paid ? `✓ ${t('loanPaid')}` : t('loanPlan')}
+                              </button>
+                              <button type="button" aria-label={t('iouDelete')} onClick={() => mutate(d => { const node = d.values[yr].expenses[cat]?.[m]; if (node) { node.budget = 0; node.actual = 0; } })}
+                                className="w-7 h-7 rounded-full text-tertiary hover:text-notion-red"><i className="fa-solid fa-xmark text-[11px]"></i></button>
+                            </div>
+                          );
+                        })}
+                        <div className="flex items-center gap-2">
+                          <select value={loanAddPos} onChange={(e) => setLoanAddPos(e.target.value)} className="flex-1 bg-subtle border border-subtle rounded-lg px-2 py-1.5 text-[12px] text-primary">
+                            <option value="">{t('loanAddMonth')}</option>
+                            {TIMELINE.filter(({ yr, m }) => { const n = getNode('expenses', cat, yr, m); return !(n.budget > 0 || n.actual > 0); })
+                              .map(({ yr, m }) => <option key={`${yr}|${m}`} value={`${yr}|${m}`}>{formatMonth(m, lang)} {yr}</option>)}
+                          </select>
+                          <button type="button" disabled={!loanAddPos} onClick={() => {
+                              const [yr, m] = loanAddPos.split('|');
+                              updateNode('expenses', cat, parseInt(yr), m, 'budget', Math.max(0, gap));
+                              setLoanAddPos('');
+                            }} className="h-8 px-3 rounded-lg bg-primary text-surface text-[12px] font-semibold disabled:opacity-40">{t('addBtn')}</button>
+                        </div>
+                        <div className="rounded-xl border border-subtle p-3 space-y-1 text-[12px]">
+                          <div className="flex justify-between"><span className="text-secondary">{t('loanAmount')}</span><span className="font-mono text-primary">{fmtCents(total)}</span></div>
+                          <div className="flex justify-between"><span className="text-secondary">{t('loanPaid')}</span><span className="font-mono text-notion-green">− {fmtCents(repaid)}</span></div>
+                          <div className="flex justify-between"><span className="text-secondary">{t('loanPlan')}</span><span className="font-mono text-primary">− {fmtCents(planned)}</span></div>
+                          <div className="flex justify-between border-t border-subtle pt-1 font-semibold">
+                            <span className="text-primary">{t('loanRemaining')}</span>
+                            <span className={`font-mono ${Math.abs(gap) < 0.01 ? 'text-notion-green' : 'text-notion-red'}`}>{Math.abs(gap) < 0.01 ? t('loanPlannedOk') : fmtCents(gap)}</span>
+                          </div>
+                          {Math.abs(gap) >= 0.01 && <p className="text-[11px] text-secondary">{t('loanPlannedGap')}</p>}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+                <button onClick={() => setLoanEdit(null)} className="w-full py-2 bg-primary text-surface font-semibold rounded-lg text-xs">{t('closeBtn')}</button>
+              </Modal>
+            );
+          })()}
+
           {/* LOAN MODAL */}
           {loanModal && loanForm && (
             <Modal size="max-w-md" onClose={() => setLoanModal(null)} title={<><span>⚡</span><span>{t('loanModalTitle')}</span></>}>
@@ -6363,6 +6511,8 @@
                 return (
                   <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
                     ⚠️ {t('loanDuplicateWarn', { amount: fmt(amount), person: earlier.person, date: earlier.date })}
+                    <button type="button" onClick={() => { setLoanModal(null); setLoanAddPos(''); setLoanEdit(earlier.id); }}
+                      className="block mt-2 font-semibold underline underline-offset-2">✎ {t('loanEditExisting')}</button>
                   </div>
                 );
               })()}
