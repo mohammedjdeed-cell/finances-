@@ -930,6 +930,9 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        ycEvery: "alle {{n}} Mon.",
+        ycShowAll: "Alle {{n}} anzeigen",
+        ycShowLess: "Weniger anzeigen",
         loanRate: "Zinsen pro Jahr in % (optional)",
         healthTitle: "Finanz-Check",
         healthSub: "Rücklage reicht für {{n}} Monate",
@@ -1515,6 +1518,9 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        ycEvery: "every {{n}} mo",
+        ycShowAll: "Show all {{n}}",
+        ycShowLess: "Show less",
         loanRate: "Interest per year in % (optional)",
         healthTitle: "Money health",
         healthSub: "Savings cover {{n}} months",
@@ -2100,6 +2106,9 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        ycEvery: "كل {{n}} أشهر",
+        ycShowAll: "عرض الكل ({{n}})",
+        ycShowLess: "عرض أقل",
         loanRate: "الفائدة السنوية ٪ (اختياري)",
         healthTitle: "صحة المال",
         healthSub: "الاحتياطي يكفي {{n}} أشهر",
@@ -2858,7 +2867,7 @@
       const [selectedYear, setSelectedYear] = useState(initialDate.year);
       const [selectedMonth, setSelectedMonth] = useState(initialDate.month);
       // Sections of the app: overview, month, activity, plan, more.
-      const VIEWS = ['overview', 'month', 'activity', 'plan', 'more'];
+      const VIEWS = ['overview', 'month', 'activity', 'plan', 'health', 'more'];
       const [view, setViewState] = useState(() => { const v = safeStorage.get('budget_view', 'overview'); return VIEWS.includes(v) ? v : 'overview'; });
       const [anim, setAnim] = useState('view');
       const setView = (v) => { if (v !== view) haptic(6); setAnim('view'); setViewState(v); setMonthPicker(false); safeStorage.set('budget_view', v); try { window.scrollTo({ top: 0 }); } catch (e) {} };
@@ -5340,13 +5349,28 @@
         const wantRows = [...past.slice(-3), pos].map(wantsOf);
         const shares = wantRows.slice(0, -1).map(r => r.share).filter(x => x != null);
         const rising = shares.length >= 3 && shares[1] > shares[0] && shares[2] > shares[1];
-        // Regular costs per year (bills, subscriptions, insurance).
+        // Regular costs per year (bills, subscriptions, insurance). Items paid every few months
+        // (radio fee, bank fees …) are counted by how often they really come.
+        const CYCLES = [1, 2, 3, 4, 6, 12];
         const yearly = data.categories.expenses.filter(c => { const g = groupOfCat(c); return g && g.kind === 'fixed' && !getMeta('expenses', c).oneTime && spendOk(c); })
           .map(c => {
-            const here = knownAmount(getNode('expenses', c, pos.yr, pos.m));
-            const prev = past.length ? getNode('expenses', c, past[past.length - 1].yr, past[past.length - 1].m).actual : 0;
-            return { cat: c, monthly: here || prev, gid: groupOfCat(c).id };
-          }).filter(x => x.monthly > 0).map(x => ({ ...x, year: x.monthly * 12 })).sort((a, b) => b.year - a.year);
+            const lo = Math.max(0, nowIdx - 12), hi = Math.min(TIMELINE.length - 1, nowIdx + 12);
+            const hits = [];
+            for (let i = lo; i <= hi; i++) {
+              const p = TIMELINE[i], n = getNode('expenses', c, p.yr, p.m);
+              const v = i < nowIdx ? n.actual : knownAmount(n);
+              if (v > 0) hits.push({ i, v });
+            }
+            if (!hits.length) return null;
+            const gaps = hits.slice(1).map((x, k) => x.i - hits[k].i).sort((x, y) => x - y);
+            const median = gaps.length ? gaps[Math.floor(gaps.length / 2)] : 12;
+            const every = CYCLES.reduce((best, cyc) => Math.abs(cyc - median) < Math.abs(best - median) ? cyc : best, 1);
+            const next = hits.find(x => x.i >= nowIdx) || hits[hits.length - 1];
+            // Ended: nothing planned ahead and the last payment is older than one cycle.
+            if (next.i < nowIdx && nowIdx - next.i > every) return null;
+            const times = 12 / every;
+            return { cat: c, amount: next.v, every, times, monthly: next.v / every, year: next.v * times, gid: groupOfCat(c).id };
+          }).filter(Boolean).sort((a, b) => b.year - a.year);
         const subsYear = yearly.filter(x => x.gid === 'subs').reduce((s, x) => s + x.year, 0);
         // Bank fees over the last 12 months.
         const last12 = [...past.slice(-11), pos];
@@ -5371,6 +5395,7 @@
       // Wishlist: wait 72 hours before buying.
       const WISH_WAIT = 72 * 3600 * 1000;
       const [wishName, setWishName] = useState('');
+      const [showAllYearly, setShowAllYearly] = useState(false);
       const [wishAmount, setWishAmount] = useState('');
       const addWish = () => {
         const amount = Math.round((parseFloat(String(wishAmount).replace(',', '.')) || 0) * 100) / 100;
@@ -5516,6 +5541,7 @@
         ['month', 'fa-layer-group', t('navMonth')],
         ['activity', 'fa-receipt', t('navActivity')],
         ['plan', 'fa-chart-line', t('navPlan')],
+        ['health', 'fa-heart-pulse', t('healthTitle')],
         ['more', 'fa-grip', t('navMore')]
       ];
       const viewTitle = (NAV.find(n => n[0] === view) || NAV[0])[2];
@@ -5646,20 +5672,16 @@
 
       // ---- Pages ----
       const pct = (x) => x == null ? '–' : `${Math.round(x * 100)} %`;
-      const renderHealth = () => {
+      // Each topic is its own card, so the page can spread over two columns on wide screens.
+      const renderHealth = (only) => {
         const h = health;
         if (!h) return null;
-        const sec = (icon, title, hint, body, right) => (
-          <div className="space-y-2 pt-3 first:pt-0 border-t first:border-t-0 border-subtle">
-            <div className="flex items-center gap-2">
-              <i className={`fa-solid ${icon} text-[12px] text-tertiary w-4 text-center`}></i>
-              <span className="flex-1 text-[13px] font-semibold text-primary">{title}</span>
-              {right}
-            </div>
+        const sec = (icon, title, hint, body) => only && !only.includes(icon) ? null : panel({ id: 'health_' + icon, icon, title }, (
+          <div className="space-y-2">
             {body}
-            {hint && <div className="text-[11px]"><Hint label={t('healthWhy')} text={hint} /></div>}
+            {hint && <div className="text-[11px] pt-1"><Hint label={t('healthWhy')} text={hint} /></div>}
           </div>
-        );
+        ));
         const bar = (v, max, color) => (
           <div className="h-2 rounded-full bg-subtle overflow-hidden"><div className="h-full rounded-full transition-all" style={{ width: `${max > 0 ? Math.max(0, Math.min(100, v / max * 100)) : 0}%`, background: color }}></div></div>
         );
@@ -5670,9 +5692,8 @@
         const tmin = Math.min(...h.trend.map(x => x.v), 0), tmax = Math.max(...h.trend.map(x => x.v), 1);
         const W = 300, H = 64, X = (i) => h.trend.length > 1 ? 6 + i * (W - 12) / (h.trend.length - 1) : W / 2, Y = (v) => H - 6 - (v - tmin) / (tmax - tmin || 1) * (H - 12);
         const groupsForToggle = data.groups.filter(g => g.kind !== 'oneoff');
-        return panel({ id: 'health', icon: 'fa-heart-pulse', title: t('healthTitle'),
-          sub: h.months != null ? t('healthSub', { n: h.months.toFixed(1).replace('.', lang === 'en' ? '.' : ',') }) : t('healthSubNone') }, (
-          <div className="space-y-3">
+        return (
+          <>
             {sec('fa-umbrella', t('efTitle'), t('efHint'), (
               <div className="space-y-2">
                 <div className="flex items-baseline justify-between gap-2">
@@ -5745,12 +5766,17 @@
 
             {sec('fa-calendar-days', t('ycTitle'), t('ycHint'), (
               <div className="space-y-1.5">
-                {h.yearly.slice(0, 6).map(x => (
+                {(showAllYearly ? h.yearly : h.yearly.slice(0, 6)).map(x => (
                   <div key={x.cat} className="flex items-center justify-between gap-2 text-[12px]">
                     <span className="truncate text-primary">{x.cat}</span>
-                    <span className="font-mono text-secondary shrink-0">{fmt(x.monthly)} × 12 = <span className="text-primary font-semibold">{fmt(x.year)}</span></span>
+                    <span className="font-mono text-secondary shrink-0">{x.every > 1 && <span className="font-sans text-[10px] text-tertiary me-1.5">{t('ycEvery', { n: x.every })}</span>}{fmtCents(x.amount).replace(/[.,]00(?=\D*$)/, '')} × {x.times} = <span className="text-primary font-semibold">{fmt(x.year)}</span></span>
                   </div>
                 ))}
+                {h.yearly.length > 6 && (
+                  <button onClick={() => setShowAllYearly(v => !v)} className="text-[11px] text-notion-blue hover:underline">
+                    {showAllYearly ? t('ycShowLess') : t('ycShowAll', { n: h.yearly.length })}
+                  </button>
+                )}
                 <div className="flex justify-between text-[12px] border-t border-subtle pt-1.5">
                   <span className="text-secondary">{t('ycAll')}</span><span className="font-mono font-semibold text-primary">{fmt(h.yearly.reduce((s, x) => s + x.year, 0))}</span>
                 </div>
@@ -5784,19 +5810,19 @@
                 </div>
                 <div className="text-[11px] text-tertiary font-mono">{h.money == null ? '' : `${fmt(h.money)} − ${fmt(h.debtTotal)}${h.owedToUs > 0 ? ` + ${fmt(h.owedToUs)}` : ''}`}</div>
                 {h.trend.length > 1 && (
-                  <svg viewBox={`0 0 ${W} ${H + 14}`} className="w-full h-auto" role="img" aria-label={t('wtTitle')}>
+                  <svg viewBox={`0 0 ${W} ${H + 14}`} className="w-full h-auto" style={{ maxWidth: 420 }} role="img" aria-label={t('wtTitle')}>
                     {tmin < 0 && <line x1="0" x2={W} y1={Y(0)} y2={Y(0)} stroke="currentColor" className="text-tertiary" strokeDasharray="3 3" strokeWidth="0.6" />}
                     <polyline fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinejoin="round" points={h.trend.map((p, i) => `${X(i)},${Y(p.v)}`).join(' ')} />
                     {h.trend.map((p, i) => <circle key={i} cx={X(i)} cy={Y(p.v)} r={p.now ? 3.5 : 2} fill={p.now ? '#10b981' : '#3b82f6'} />)}
                     {h.trend.map((p, i) => (i === 0 || i === h.trend.length - 1 || i % 2 === 0) && (
-                      <text key={'l' + i} x={X(i)} y={H + 11} textAnchor="middle" fontSize="9" fill="currentColor" className="text-tertiary">{lang === 'ar' ? (ALL_MONTHS.indexOf(p.label) + 1) : formatMonth(p.label, lang)}</text>
+                      <text key={'l' + i} x={X(i)} y={H + 11} textAnchor={i === 0 ? 'start' : i === h.trend.length - 1 ? 'end' : 'middle'} fontSize="9" fill="currentColor" className="text-tertiary">{lang === 'ar' ? (ALL_MONTHS.indexOf(p.label) + 1) : formatMonth(p.label, lang)}</text>
                     ))}
                   </svg>
                 )}
               </div>
             ))}
-          </div>
-        ));
+          </>
+        );
       };
 
       const renderWishlist = () => {
@@ -5840,6 +5866,40 @@
           </div>
         ));
       };
+
+      // Small entry on Overview and More that opens the Money health page.
+      const renderHealthLink = () => {
+        const h = health;
+        if (!h) return null;
+        const tone = h.months == null ? 'text-tertiary' : h.months >= 6 ? 'text-notion-green' : h.months >= 3 ? 'text-primary' : 'text-notion-red';
+        const lastRate = [...h.rates].reverse().find(r => !r.now && r.rate != null);
+        return (
+          <button onClick={() => setView('health')} className="w-full text-start rounded-2xl border border-subtle bg-surface px-4 py-3 flex items-center gap-3 hover:bg-subtle/60 active:scale-[.99] transition">
+            <span className="w-9 h-9 rounded-xl bg-subtle flex items-center justify-center text-notion-red shrink-0"><i className="fa-solid fa-heart-pulse text-[13px]"></i></span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-[13px] font-semibold text-primary">{t('healthTitle')}</span>
+              <span className="block text-[11px] text-secondary truncate">
+                <span className={tone}>{h.months == null ? '–' : t('efMonths', { n: h.months.toFixed(1).replace('.', lang === 'en' ? '.' : ',') })}</span>
+                {' · '}{t('srTitle')} {lastRate ? pct(lastRate.rate) : '–'}
+                {data.wishlist.some(x => x.status === 'wait') ? ` · ${t('wlTitle').split(' (')[0]} ${data.wishlist.filter(x => x.status === 'wait').length}` : ''}
+              </span>
+            </span>
+            <i className="fa-solid fa-chevron-right text-[11px] text-tertiary rtl:rotate-180"></i>
+          </button>
+        );
+      };
+      const renderHealthView = () => (
+        <div className="grid gap-4 lg:gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-start">
+          <div className="space-y-4 min-w-0">
+            {renderHealth(['fa-umbrella', 'fa-piggy-bank', 'fa-scale-balanced', 'fa-chart-line'])}
+            <div className="lg:hidden space-y-4">{renderHealth(['fa-calendar-days', 'fa-hand-holding-dollar'])}</div>
+          </div>
+          <div className="space-y-4 min-w-0">
+            {renderWishlist()}
+            <div className="hidden lg:block space-y-4">{renderHealth(['fa-hand-holding-dollar', 'fa-calendar-days'])}</div>
+          </div>
+        </div>
+      );
 
       const renderOverview = () => {
         const { cm, carriedLabel, lines, availableNow, beforeStart, isPast, meters } = MB;
@@ -5953,14 +6013,14 @@
                   ))}
                 </div>
               ))}
+              <div className="hidden lg:block">{renderForecast()}</div>
             </div>
 
             <div className="space-y-4 min-w-0">
               {renderIncomeEnd(true)}
               {renderDue()}
-              {renderForecast()}
-              {renderHealth()}
-              {renderWishlist()}
+              <div className="lg:hidden">{renderForecast()}</div>
+              {renderHealthLink()}
             </div>
           </div>
         );
@@ -6229,6 +6289,7 @@
       const renderMore = () => (
         <div className="grid gap-4 lg:grid-cols-2 items-start">
           <div className="space-y-4 min-w-0">
+            <div className="lg:hidden">{renderHealthLink()}</div>
             {panel({ id: 'accounts', icon: 'fa-building-columns', title: t('accountsTitle'), collapsible: false,
               sub: data.accounts.length ? `${t('accountsTotal')} ${fmtCents(accountsTotal)}` : null }, (
               <div className="space-y-3">
@@ -6476,6 +6537,7 @@
               {view === 'month' && MB && renderMonth()}
               {view === 'activity' && renderActivity()}
               {view === 'plan' && renderPlan()}
+              {view === 'health' && renderHealthView()}
               {view === 'more' && renderMore()}
             </main>
           </div>
@@ -6493,7 +6555,7 @@
           {/* TAB BAR (phone) */}
           <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-surface/90 backdrop-blur-xl border-t border-subtle" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
             <div className="grid grid-cols-5 h-16">
-              {NAV.map(([id, icon, label]) => (
+              {NAV.filter(([id]) => id !== 'health').map(([id, icon, label]) => (
                 <button key={id} onClick={() => setView(id)} aria-current={view === id ? 'page' : undefined}
                   className={`relative flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition ${view === id ? 'text-primary' : 'text-tertiary hover:text-secondary'}`}>
                   <span className={`absolute top-0 h-[3px] w-8 rounded-b-full bg-notion-blue transition-transform duration-200 ${view === id ? 'scale-x-100' : 'scale-x-0'}`}></span>
