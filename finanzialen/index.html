@@ -76,6 +76,14 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
+    /* View mode: fields on the pages show their values but can't be changed by a stray tap while scrolling. */
+    main.locked input:not([data-free]), main.locked select:not([data-free]), main.locked textarea:not([data-free]),
+    main.locked .money-input, main.locked [data-edit] { pointer-events: none; }
+    main.locked input:not([data-free]):not([type=checkbox]), main.locked select:not([data-free]), main.locked .money-input {
+      background: transparent !important; border-color: transparent !important; box-shadow: none !important;
+    }
+    main.locked select:not([data-free]) { appearance: none; -webkit-appearance: none; }
+    main.locked [data-edit] { opacity: .3; }
     :root {
       --bg-app: 245 246 248;
       --bg-surface: 255 255 255;
@@ -930,6 +938,10 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        editStart: "Bearbeiten",
+        editDone: "Fertig",
+        editOnToast: "Bearbeiten an – Felder können geändert werden",
+        editOffToast: "Ansicht – Felder sind gesperrt",
         wgTitle: "Wohin das Geld ging · {{month}}",
         wgSpent: "ausgegeben",
         wgNone: "Für den letzten Monat sind noch keine Ausgaben eingetragen.",
@@ -1529,6 +1541,10 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        editStart: "Edit",
+        editDone: "Done",
+        editOnToast: "Editing on – fields can be changed",
+        editOffToast: "View mode – fields are locked",
         wgTitle: "Where the money went · {{month}}",
         wgSpent: "spent",
         wgNone: "No spending recorded for last month yet.",
@@ -2128,6 +2144,10 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        editStart: "تعديل",
+        editDone: "تم",
+        editOnToast: "التعديل مفعّل – يمكن تغيير الحقول",
+        editOffToast: "وضع العرض – الحقول مقفلة",
         wgTitle: "أين ذهب المال · {{month}}",
         wgSpent: "مصروف",
         wgNone: "لا مصاريف مسجلة للشهر الماضي بعد.",
@@ -2869,7 +2889,7 @@
 
     function MoneyInput({ value, onChange, className = '', inputClass = 'text-primary font-medium', hideZero = true, ...rest }) {
       return (
-        <div className={`flex items-center bg-subtle border border-subtle rounded px-2 py-1 focus-within:border-strong ${className}`}>
+        <div className={`money-input flex items-center bg-subtle border border-subtle rounded px-2 py-1 focus-within:border-strong ${className}`}>
           <input
             type="number" inputMode="decimal" placeholder="0"
             value={hideZero && value === 0 ? "" : value}
@@ -2901,6 +2921,14 @@
       const [selectedMonth, setSelectedMonth] = useState(initialDate.month);
       // Sections of the app: overview, month, activity, plan, more.
       const VIEWS = ['overview', 'month', 'activity', 'plan', 'health', 'more'];
+      // View mode (default): page fields are locked; tap the pencil in the header to edit.
+      const [editMode, setEditModeState] = useState(false);
+      const setEditMode = (on) => { haptic(8); setEditModeState(on); showToast(on ? t('editOnToast') : t('editOffToast')); };
+      useEffect(() => {
+        const lock = () => { if (document.visibilityState === 'hidden') setEditModeState(false); };
+        document.addEventListener('visibilitychange', lock);
+        return () => document.removeEventListener('visibilitychange', lock);
+      }, []);
       const [view, setViewState] = useState(() => { const v = safeStorage.get('budget_view', 'overview'); return VIEWS.includes(v) ? v : 'overview'; });
       const [anim, setAnim] = useState('view');
       const setView = (v) => { if (v !== view) haptic(6); setAnim('view'); setViewState(v); setMonthPicker(false); safeStorage.set('budget_view', v); try { window.scrollTo({ top: 0 }); } catch (e) {} };
@@ -5987,9 +6015,9 @@
         return panel({ id: 'wishlist', icon: 'fa-hourglass-half', title: t('wlTitle'), sub: savedBySkipping > 0 ? t('wlSaved', { amount: fmt(savedBySkipping) }) : t('wlSub') }, (
           <div className="space-y-2.5">
             <div className="flex gap-2">
-              <input value={wishName} onChange={(e) => setWishName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addWish()} placeholder={t('wlNamePh')}
+              <input data-free value={wishName} onChange={(e) => setWishName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addWish()} placeholder={t('wlNamePh')}
                 className="flex-1 min-w-0 bg-subtle border border-subtle rounded-lg px-2.5 py-2 text-[13px] text-primary outline-none focus:border-strong" />
-              <input value={wishAmount} onChange={(e) => setWishAmount(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addWish()} inputMode="decimal" placeholder="€" style={{ width: 80 }}
+              <input data-free value={wishAmount} onChange={(e) => setWishAmount(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addWish()} inputMode="decimal" placeholder="€" style={{ width: 80 }}
                 className="shrink-0 bg-subtle border border-subtle rounded-lg px-2.5 py-2 text-[13px] text-primary text-end font-mono outline-none focus:border-strong" />
               <button onClick={addWish} aria-label={t('wlAdd')} className="w-10 rounded-lg bg-primary text-surface"><i className="fa-solid fa-plus text-xs"></i></button>
             </div>
@@ -6466,7 +6494,7 @@
                               <MoneyInput value={a.balance} hideZero={false}
                                 onChange={(v) => updateAccount(a.id, { balance: Math.round((parseFloat(v) || 0) * 100) / 100, updated: todayISO() })}
                                 className="w-28 shrink-0 bg-surface" aria-label={a.name} />
-                              <button onClick={() => removeAccount(a.id)} aria-label={t('iouDelete')} className="w-7 h-7 shrink-0 rounded-full text-tertiary hover:text-notion-red">
+                              <button data-edit onClick={() => removeAccount(a.id)} aria-label={t('iouDelete')} className="w-7 h-7 shrink-0 rounded-full text-tertiary hover:text-notion-red">
                                 <i className="fa-solid fa-xmark text-[11px]"></i>
                               </button>
                             </div>
@@ -6567,7 +6595,7 @@
                                 >
                                   ✎
                                 </button>
-                                <button
+                                <button data-edit
                                   onClick={() => handleSettleIou(item.id)}
                                   className="px-2 py-0.5 rounded text-[10px] bg-subtle hover:bg-emerald-500/10 text-secondary hover:text-emerald-500 border border-subtle"
                                   title={t('iouMarkReturned')}
@@ -6575,7 +6603,7 @@
                                 >
                                   ✓
                                 </button>
-                                <button
+                                <button data-edit
                                   onClick={() => handleDeleteIou(item)}
                                   className="px-2 py-0.5 rounded text-[10px] bg-subtle hover:bg-rose-500/10 text-secondary hover:text-notion-red border border-subtle"
                                   title={t('iouDelete')}
@@ -6676,6 +6704,11 @@
                 <div className="flex items-center gap-1 shrink-0">
                   {showMonthNav && monthNav}
                   {view === 'plan' && <Segmented size="sm" options={YEARS.map(y => [y, String(y)])} value={selectedYear} onChange={selectYear} />}
+                  <button onClick={() => setEditMode(!editMode)} aria-pressed={editMode} title={editMode ? t('editDone') : t('editStart')}
+                    className={`h-8 rounded-full flex items-center gap-1.5 transition-colors ${editMode ? 'px-3 bg-notion-blue text-white' : 'w-8 lg:w-auto lg:px-3 justify-center text-secondary hover:bg-subtle'}`}>
+                    <i className={`fa-solid ${editMode ? 'fa-check' : 'fa-pen'} text-[11px]`}></i>
+                    <span className={`text-[12px] font-medium ${editMode ? '' : 'hidden lg:inline'}`}>{editMode ? t('editDone') : t('editStart')}</span>
+                  </button>
                   <button onClick={() => setIsBurgerOpen(true)} aria-label={syncLabel} title={syncLabel} className={`lg:hidden w-8 h-8 rounded-full hover:bg-subtle ${syncColor}`}>
                     <i className={`fa-solid ${syncIcon} text-xs`}></i>
                   </button>
@@ -6684,7 +6717,7 @@
             </header>
 
             <main key={view + (showMonthNav ? `|${curIdx}` : '')}
-              className={`${anim === 'next' ? 'slide-next' : anim === 'prev' ? 'slide-prev' : 'view-enter'} max-w-[1280px] mx-auto px-4 lg:px-8 pt-4 lg:pt-6 pb-36 lg:pb-12`}
+              className={`${editMode ? '' : 'locked'} ${anim === 'next' ? 'slide-next' : anim === 'prev' ? 'slide-prev' : 'view-enter'} max-w-[1280px] mx-auto px-4 lg:px-8 pt-4 lg:pt-6 pb-36 lg:pb-12`}
               onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
               style={view === 'month' ? { touchAction: 'pan-y' } : undefined}>
               {view === 'overview' && MB && renderOverview()}
