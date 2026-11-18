@@ -930,6 +930,55 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        loanRate: "Zinsen pro Jahr in % (optional)",
+        healthTitle: "Finanz-Check",
+        healthSub: "Rücklage reicht für {{n}} Monate",
+        healthSubNone: "Notgroschen, Sparquote, Wünsche & Bedürfnisse",
+        healthWhy: "Warum?",
+        efTitle: "Notgroschen",
+        efMonths: "{{n}} Monate",
+        efCore: "Grundkosten {{amount}} / Monat",
+        efHave: "Vorhanden",
+        ef3: "Ziel 3 Monate",
+        ef6: "Ziel 6 Monate",
+        efNoAccounts: "Berechnet aus dem App-Kontostand. Trage unter Mehr → Konten eure echten Kontostände ein, dann wird es genauer.",
+        efHint: "Grundkosten = was ihr monatlich wirklich braucht (Miete, Rechnungen, Versicherung, Lebensmittel …), Durchschnitt der letzten 3 abgeschlossenen Monate; Gruppen, die als „Wunsch“ markiert sind, und einmalige Posten zählen nicht. Empfehlung: 3 Monate als Minimum, 6 Monate für mehr Sicherheit, am besten auf einem Tagesgeldkonto mit Zinsen.",
+        srTitle: "Sparquote",
+        srRule: "Zuerst sparen:",
+        srOff: "Aus",
+        srPayday: "Diesen Monat {{amount}} zur Seite legen ({{pct}} % von {{income}} Einnahmen) – am besten direkt am Zahltag.",
+        srDone: "Erledigt ✓",
+        srSoFar: "Bisher auf „Ersparnisse“ gebucht: {{amount}}",
+        srHint: "Sparquote = (Einnahmen − Ausgaben) ÷ Einnahmen. Darlehen und Umbuchungen auf/von Ersparnissen zählen nicht; Rückzahlungen von Schulden zählen als gespart, weil sie eure Schulden senken. Einen festen Prozentsatz zu sparen heißt: bei jeder Gehaltserhöhung spart ihr automatisch mehr.",
+        nwTitle: "Bedürfnisse & Wünsche",
+        nwShare: "Anteil Wünsche im {{month}}",
+        nwWant: "Wunsch",
+        nwNeed: "Bedürfnis",
+        nwRising: "Der Anteil der Wünsche steigt seit 3 Monaten.",
+        nwHint: "Tippe auf eine Gruppe, um sie als Bedürfnis oder Wunsch zu markieren. Faustregel 50/30/20: etwa die Hälfte für Bedürfnisse, bis 30 % für Wünsche, 20 % sparen. Gebt gern viel für die Dinge aus, die euch wirklich wichtig sind, und spart beim Rest.",
+        ycTitle: "Laufende Kosten pro Jahr",
+        ycAll: "Alle laufenden Kosten / Jahr",
+        ycSubs: "Davon Abos / Jahr",
+        ycFees: "Bankgebühren (letzte 12 Monate)",
+        ycHint: "Monatliche Beträge sehen klein aus; aufs Jahr gerechnet sieht man, was ein Vertrag wirklich kostet. Einmal im Jahr alle Verträge prüfen und kündigen, was ihr nicht nutzt.",
+        dbTitle: "Schulden nach Zinsen",
+        dbNone: "Keine offenen Schulden.",
+        dbExpensive: "Schulden über 8 % Zinsen zuerst abbezahlen, bevor ihr investiert.",
+        dbHint: "Teuerste Schuld zuerst abbezahlen. Zinsen trägst du beim Darlehen ein (✎). Ein Darlehen von der Familie ohne Zinsen ist günstig – keine Eile, aber zuverlässig zurückzahlen.",
+        wtTitle: "Nettovermögen",
+        wtNow: "Heute (Geld − Schulden + Forderungen)",
+        wtHint: "Linie = euer Geld am Monatsende laut App; der grüne Punkt ist heute. Nettovermögen = Geld minus offene Schulden plus Geld, das andere euch schulden. Das Einkommen bezahlt den Alltag, das Vermögen schafft Freiheit.",
+        wlTitle: "Wunschliste (72 Stunden)",
+        wlSub: "Wünsche erst nach 3 Tagen kaufen",
+        wlSaved: "{{amount}} durch Verzicht gespart",
+        wlNamePh: "Was möchtest du kaufen?",
+        wlAdd: "Wunsch hinzufügen",
+        wlEmpty: "Neuer Wunsch über 50 €? Hier eintragen und 3 Tage warten.",
+        wlWait: "Noch {{h}} Std. warten",
+        wlReady: "Willst du es immer noch?",
+        wlSkip: "Verzichten",
+        wlBuy: "Kaufen",
+        wlSkippedN: "{{n}} Wünsche verworfen · {{amount}} gespart",
         newLoanTitle: "Neues Darlehen",
         loanNewBtn: "Neues Darlehen",
         loanNoneOpen: "Keine offenen Darlehen.",
@@ -1466,6 +1515,55 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        loanRate: "Interest per year in % (optional)",
+        healthTitle: "Money health",
+        healthSub: "Savings cover {{n}} months",
+        healthSubNone: "Emergency fund, savings rate, needs & wants",
+        healthWhy: "Why?",
+        efTitle: "Emergency fund",
+        efMonths: "{{n}} months",
+        efCore: "Core costs {{amount}} / month",
+        efHave: "You have",
+        ef3: "Target 3 months",
+        ef6: "Target 6 months",
+        efNoAccounts: "Based on the app balance. Enter your real balances under More → Accounts for a more exact number.",
+        efHint: "Core costs = what you really need each month (rent, bills, insurance, groceries …), averaged over the last 3 finished months; groups marked as \"want\" and one-time items are left out. Aim for 3 months at least, 6 for more safety, ideally in an instant-access savings account that pays interest.",
+        srTitle: "Savings rate",
+        srRule: "Save first:",
+        srOff: "Off",
+        srPayday: "Set aside {{amount}} this month ({{pct}} % of {{income}} income) – best on payday.",
+        srDone: "Done ✓",
+        srSoFar: "Booked to \"savings\" so far: {{amount}}",
+        srHint: "Savings rate = (income − spending) ÷ income. Loans and transfers to/from savings are left out; paying back debt counts as saved because it lowers what you owe. Saving a fixed percentage means every pay rise automatically saves more.",
+        nwTitle: "Needs & wants",
+        nwShare: "Wants share in {{month}}",
+        nwWant: "want",
+        nwNeed: "need",
+        nwRising: "Your wants share has been rising for 3 months.",
+        nwHint: "Tap a group to mark it as a need or a want. Rule of thumb 50/30/20: about half for needs, up to 30 % for wants, 20 % saved. Spend freely on what you truly love and cut back on the rest.",
+        ycTitle: "Regular costs per year",
+        ycAll: "All regular costs / year",
+        ycSubs: "Of which subscriptions / year",
+        ycFees: "Bank fees (last 12 months)",
+        ycHint: "Monthly amounts look small; per year you see what a contract really costs. Once a year, check every contract and cancel what you don't use.",
+        dbTitle: "Debts by interest",
+        dbNone: "No open debts.",
+        dbExpensive: "Pay off debts above 8 % interest before you invest.",
+        dbHint: "Pay off the most expensive debt first. Enter the interest on the loan (✎). An interest-free family loan is cheap – no rush, but repay it reliably.",
+        wtTitle: "Net worth",
+        wtNow: "Today (money − debts + owed to you)",
+        wtHint: "The line is your money at each month's end according to the app; the green dot is today. Net worth = money minus open debts plus money others owe you. Income pays for your life; net worth buys your freedom.",
+        wlTitle: "Wishlist (72 hours)",
+        wlSub: "Buy wants only after 3 days",
+        wlSaved: "{{amount}} saved by skipping",
+        wlNamePh: "What would you like to buy?",
+        wlAdd: "Add wish",
+        wlEmpty: "A new want over 50 €? Add it here and wait 3 days.",
+        wlWait: "{{h}} h left to wait",
+        wlReady: "Do you still want it?",
+        wlSkip: "Skip",
+        wlBuy: "Buy",
+        wlSkippedN: "{{n}} wishes skipped · {{amount}} saved",
         newLoanTitle: "New loan",
         loanNewBtn: "New loan",
         loanNoneOpen: "No open loans.",
@@ -2002,6 +2100,55 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        loanRate: "الفائدة السنوية ٪ (اختياري)",
+        healthTitle: "صحة المال",
+        healthSub: "الاحتياطي يكفي {{n}} أشهر",
+        healthSubNone: "صندوق الطوارئ، نسبة الادخار، الحاجات والرغبات",
+        healthWhy: "لماذا؟",
+        efTitle: "صندوق الطوارئ",
+        efMonths: "{{n}} أشهر",
+        efCore: "التكاليف الأساسية {{amount}} / شهر",
+        efHave: "المتوفر",
+        ef3: "هدف 3 أشهر",
+        ef6: "هدف 6 أشهر",
+        efNoAccounts: "محسوب من رصيد التطبيق. أدخل أرصدتكم الحقيقية في المزيد ← الحسابات لدقة أكبر.",
+        efHint: "التكاليف الأساسية = ما تحتاجونه فعلًا كل شهر (الإيجار، الفواتير، التأمين، الطعام …)، متوسط آخر 3 أشهر منتهية؛ لا تُحسب المجموعات المعلَّمة كـ\"رغبة\" ولا البنود لمرة واحدة. الهدف 3 أشهر على الأقل و6 لأمان أكبر، ويفضَّل في حساب توفير بفائدة وسحب فوري.",
+        srTitle: "نسبة الادخار",
+        srRule: "ادّخر أولًا:",
+        srOff: "إيقاف",
+        srPayday: "ضع جانبًا {{amount}} هذا الشهر ({{pct}} ٪ من دخل {{income}}) – والأفضل يوم الراتب.",
+        srDone: "تم ✓",
+        srSoFar: "المحوَّل إلى \"التوفير\" حتى الآن: {{amount}}",
+        srHint: "نسبة الادخار = (الدخل − المصروف) ÷ الدخل. لا تُحسب الديون والتحويلات من/إلى التوفير؛ وسداد الديون يُحسب ادخارًا لأنه يقلل ما عليكم. ادخار نسبة ثابتة يعني أن كل زيادة في الدخل تزيد الادخار تلقائيًا.",
+        nwTitle: "الحاجات والرغبات",
+        nwShare: "نسبة الرغبات في {{month}}",
+        nwWant: "رغبة",
+        nwNeed: "حاجة",
+        nwRising: "نسبة الرغبات ترتفع منذ 3 أشهر.",
+        nwHint: "اضغط على مجموعة لتعليمها كحاجة أو رغبة. قاعدة 50/30/20: نحو النصف للحاجات، حتى 30٪ للرغبات، و20٪ للادخار. أنفقوا بسخاء على ما تحبونه حقًا وقلّلوا الباقي.",
+        ycTitle: "التكاليف الثابتة سنويًا",
+        ycAll: "كل التكاليف الثابتة / سنة",
+        ycSubs: "منها الاشتراكات / سنة",
+        ycFees: "رسوم البنك (آخر 12 شهرًا)",
+        ycHint: "المبالغ الشهرية تبدو صغيرة؛ على مستوى السنة ترى الكلفة الحقيقية للعقد. راجعوا العقود مرة في السنة وألغوا ما لا تستخدمونه.",
+        dbTitle: "الديون حسب الفائدة",
+        dbNone: "لا ديون مفتوحة.",
+        dbExpensive: "سدّدوا الديون بفائدة أعلى من 8٪ قبل الاستثمار.",
+        dbHint: "سدّدوا الدين الأغلى أولًا. أدخل الفائدة في الدين (✎). دين العائلة بلا فائدة رخيص – لا عجلة، لكن سدّدوه بانتظام.",
+        wtTitle: "صافي الثروة",
+        wtNow: "اليوم (المال − الديون + المستحق لكم)",
+        wtHint: "الخط هو مالكم في نهاية كل شهر حسب التطبيق؛ النقطة الخضراء هي اليوم. صافي الثروة = المال ناقص الديون المفتوحة زائد ما يدين به الآخرون لكم. الدخل يدفع الحياة، والثروة تشتري الحرية.",
+        wlTitle: "قائمة الرغبات (72 ساعة)",
+        wlSub: "اشترِ الرغبات بعد 3 أيام فقط",
+        wlSaved: "وفّرتم {{amount}} بالاستغناء",
+        wlNamePh: "ماذا تريد أن تشتري؟",
+        wlAdd: "إضافة رغبة",
+        wlEmpty: "رغبة جديدة فوق 50 €؟ أضفها هنا وانتظر 3 أيام.",
+        wlWait: "بقي {{h}} ساعة للانتظار",
+        wlReady: "هل ما زلت تريده؟",
+        wlSkip: "استغنِ",
+        wlBuy: "اشترِ",
+        wlSkippedN: "{{n}} رغبات متروكة · وُفّر {{amount}}",
         newLoanTitle: "دين جديد",
         loanNewBtn: "دين جديد",
         loanNoneOpen: "لا ديون مفتوحة.",
@@ -2332,6 +2479,17 @@
           })),
         // Day the salary arrives (15–31). With it, the budget month runs from payday to the day before.
         payday: Number.isInteger(raw?.payday) && raw.payday >= 15 && raw.payday <= 31 ? raw.payday : null,
+        // Money health: which groups are wants, and the share of income to save first.
+        health: {
+          wants: raw?.health?.wants && typeof raw.health.wants === 'object' ? Object.fromEntries(Object.entries(raw.health.wants).map(([k, v]) => [k, !!v])) : {},
+          savePct: typeof raw?.health?.savePct === 'number' && raw.health.savePct >= 0 && raw.health.savePct <= 80 ? raw.health.savePct : 0
+        },
+        // Things you'd like to buy: they wait 72 hours before you decide.
+        wishlist: (Array.isArray(raw?.wishlist) ? raw.wishlist : [])
+          .filter(w => w && typeof w.id === 'string' && typeof w.name === 'string')
+          .map(w => ({ id: w.id, name: w.name, amount: typeof w.amount === 'number' ? w.amount : 0,
+            added: typeof w.added === 'string' ? w.added : new Date().toISOString(),
+            status: ['wait', 'bought', 'skipped'].includes(w.status) ? w.status : 'wait', decided: typeof w.decided === 'string' ? w.decided : null })),
         values: {}
       };
 
@@ -4312,7 +4470,8 @@
           d.ious.push({
             id: 'iou_' + Date.now(), person, amount, type: f.type, settled: false,
             date: new Date(f.date).toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'ar' ? 'ar-SY-u-nu-latn' : 'de-DE', { day: '2-digit', month: 'short', year: 'numeric' }),
-            repayCat: back, repayType: backType
+            repayCat: back, repayType: backType,
+            rate: f.rate ? Math.max(0, Math.min(100, parseFloat(String(f.rate).replace(',', '.')) || 0)) : null
           });
         }, t('loanAdded', { amount: fmtCents(amount), person }));
         setNewLoan(null);
@@ -5141,6 +5300,86 @@
       const accountsTotal = round2(data.accounts.reduce((sum, a) => sum + (a.balance || 0), 0));
       const nowRow = nowIdx >= 0 ? forwardTimeline[nowIdx] : null;
       const appNow = nowRow && nowRow.startBal != null ? round2(nowRow.startBal + nowRow.actualIn - nowRow.actualEx) : null;
+
+      // ---- Money health: emergency fund, savings rate, needs vs wants, yearly costs, debts ----
+      const DEFAULT_WANTS = { leisure: true, subs: true };
+      const isWantGroup = (gid) => (gid in data.health.wants ? data.health.wants[gid] : !!DEFAULT_WANTS[gid]);
+      const SAVINGS_RE = /saving|spar(?!kasse)|ersparnis|ادخار|توفير/i;
+      const LOAN_MONEY_RE = /loan|darlehen|verliehen|lent to|rückzahlung|repayment|دين|سداد|إقراض/i;
+      const FEE_RE = /sparkasse|volksbank|gebühr|\bfees?\b|kontof|bank/i;
+      const health = useMemo(() => {
+        if (nowIdx < 0) return null;
+        const pos = TIMELINE[nowIdx];
+        const past = TIMELINE.slice(0, nowIdx).filter(({ yr, m }) => monthStatus(yr, m) === 'past');
+        const groupOfCat = (cat) => data.groups.find(g => g.id === getMeta('expenses', cat).bracket);
+        const loanItems = new Set([...(data.ious || []).map(i => repayItemOf(i)), ...data.categories.expenses.filter(c => LOAN_MONEY_RE.test(c))].filter(Boolean));
+        const incomeOk = (c) => !SAVINGS_RE.test(c) && !LOAN_MONEY_RE.test(c);
+        // Day-to-day spending: everything except moving money to savings and paying back loans.
+        const spendOk = (c) => !SAVINGS_RE.test(c) && !loanItems.has(c);
+        const sumIn = ({ yr, m }) => data.categories.incomes.filter(incomeOk).reduce((s, c) => s + getNode('incomes', c, yr, m).actual, 0);
+        const sumOut = ({ yr, m }, ok = spendOk) => data.categories.expenses.filter(ok).reduce((s, c) => s + getNode('expenses', c, yr, m).actual, 0);
+        const regular = (c) => { const g = groupOfCat(c); return spendOk(c) && g && g.kind !== 'oneoff' && !getMeta('expenses', c).oneTime; };
+        // Core costs: regular needs (rent, bills, insurance, groceries …), averaged over the last 3 finished months.
+        const coreOf = (p) => sumOut(p, (c) => regular(c) && !isWantGroup(groupOfCat(c).id));
+        const recent = past.slice(-3);
+        const core = recent.length ? recent.reduce((s, p) => s + coreOf(p), 0) / recent.length : coreOf(pos);
+        const hasAccounts = data.accounts.some(a => a.updated);
+        const money = hasAccounts ? accountsTotal : appNow;
+        const months = core > 0 && money != null ? money / core : null;
+        // Savings rate per finished month (plus this month so far).
+        const rates = [...past.slice(-5), pos].map(p => {
+          const income = sumIn(p), spent = sumOut(p);
+          return { ...p, income, spent, rate: income > 0 ? (income - spent) / income : null, now: p === pos };
+        });
+        // Needs vs wants, regular spending only.
+        const wantsOf = (p) => {
+          const total = sumOut(p, regular);
+          const wants = sumOut(p, (c) => regular(c) && isWantGroup(groupOfCat(c).id));
+          return { ...p, total, wants, share: total > 0 ? wants / total : null };
+        };
+        const wantRows = [...past.slice(-3), pos].map(wantsOf);
+        const shares = wantRows.slice(0, -1).map(r => r.share).filter(x => x != null);
+        const rising = shares.length >= 3 && shares[1] > shares[0] && shares[2] > shares[1];
+        // Regular costs per year (bills, subscriptions, insurance).
+        const yearly = data.categories.expenses.filter(c => { const g = groupOfCat(c); return g && g.kind === 'fixed' && !getMeta('expenses', c).oneTime && spendOk(c); })
+          .map(c => {
+            const here = knownAmount(getNode('expenses', c, pos.yr, pos.m));
+            const prev = past.length ? getNode('expenses', c, past[past.length - 1].yr, past[past.length - 1].m).actual : 0;
+            return { cat: c, monthly: here || prev, gid: groupOfCat(c).id };
+          }).filter(x => x.monthly > 0).map(x => ({ ...x, year: x.monthly * 12 })).sort((a, b) => b.year - a.year);
+        const subsYear = yearly.filter(x => x.gid === 'subs').reduce((s, x) => s + x.year, 0);
+        // Bank fees over the last 12 months.
+        const last12 = [...past.slice(-11), pos];
+        const fees = data.categories.expenses.filter(c => FEE_RE.test(c))
+          .map(c => ({ cat: c, total: last12.reduce((s, p) => s + getNode('expenses', c, p.yr, p.m).actual, 0) })).filter(x => x.total > 0);
+        // Saving first: share of this month's expected income, and what's gone to savings so far.
+        const incomeNow = data.categories.incomes.filter(incomeOk).reduce((s, c) => s + expectedIncome(getNode('incomes', c, pos.yr, pos.m)), 0);
+        const setAside = data.health.savePct > 0 ? round2(incomeNow * data.health.savePct / 100) : 0;
+        const movedNow = data.categories.expenses.filter(c => SAVINGS_RE.test(c)).reduce((s, c) => s + getNode('expenses', c, pos.yr, pos.m).actual, 0);
+        // Money at each month's end, and net worth now.
+        const trend = forwardTimeline.slice(0, nowIdx).filter(r => r.endProjectedBalance != null).slice(-11).map(r => ({ label: r.month, v: r.endProjectedBalance }));
+        if (money != null) trend.push({ label: pos.m, v: money, now: true });
+        const debts = (data.ious || []).filter(i => !i.settled && i.type === 'borrowed')
+          .map(i => ({ ...i, left: Math.max(0, (parseFloat(i.amount) || 0) - repaidOf(i)), rate: typeof i.rate === 'number' ? i.rate : 0 }))
+          .filter(i => i.left > 0.005).sort((a, b) => b.rate - a.rate || b.left - a.left);
+        const owedToUs = (data.ious || []).filter(i => !i.settled && i.type !== 'borrowed').reduce((s, i) => s + Math.max(0, (parseFloat(i.amount) || 0) - repaidOf(i)), 0);
+        const debtTotal = debts.reduce((s, i) => s + i.left, 0);
+        return { core, money, hasAccounts, months, rates, wantRows, rising, yearly, subsYear, fees, incomeNow, setAside, movedNow, trend, debts, debtTotal, owedToUs,
+          netWorth: money != null ? money - debtTotal + owedToUs : null };
+      }, [data, forwardTimeline, nowIdx, accountsTotal, appNow]);
+
+      // Wishlist: wait 72 hours before buying.
+      const WISH_WAIT = 72 * 3600 * 1000;
+      const [wishName, setWishName] = useState('');
+      const [wishAmount, setWishAmount] = useState('');
+      const addWish = () => {
+        const amount = Math.round((parseFloat(String(wishAmount).replace(',', '.')) || 0) * 100) / 100;
+        if (!wishName.trim()) return;
+        mutate(d => { d.wishlist.push({ id: 'w' + Date.now().toString(36), name: wishName.trim(), amount, added: new Date().toISOString(), status: 'wait', decided: null }); });
+        setWishName(''); setWishAmount('');
+      };
+      const decideWish = (id, status) => mutate(d => { const w = d.wishlist.find(x => x.id === id); if (w) { w.status = status; w.decided = new Date().toISOString(); } });
+      const removeWish = (id) => mutate(d => { d.wishlist = d.wishlist.filter(x => x.id !== id); });
       // Work back from today's real total to the start of this month, using what's recorded so far.
       const useAccountsAsReal = () => {
         if (!nowRow) return;
@@ -5406,6 +5645,202 @@
       };
 
       // ---- Pages ----
+      const pct = (x) => x == null ? '–' : `${Math.round(x * 100)} %`;
+      const renderHealth = () => {
+        const h = health;
+        if (!h) return null;
+        const sec = (icon, title, hint, body, right) => (
+          <div className="space-y-2 pt-3 first:pt-0 border-t first:border-t-0 border-subtle">
+            <div className="flex items-center gap-2">
+              <i className={`fa-solid ${icon} text-[12px] text-tertiary w-4 text-center`}></i>
+              <span className="flex-1 text-[13px] font-semibold text-primary">{title}</span>
+              {right}
+            </div>
+            {body}
+            {hint && <div className="text-[11px]"><Hint label={t('healthWhy')} text={hint} /></div>}
+          </div>
+        );
+        const bar = (v, max, color) => (
+          <div className="h-2 rounded-full bg-subtle overflow-hidden"><div className="h-full rounded-full transition-all" style={{ width: `${max > 0 ? Math.max(0, Math.min(100, v / max * 100)) : 0}%`, background: color }}></div></div>
+        );
+        const monthsTone = h.months == null ? 'text-tertiary' : h.months >= 6 ? 'text-notion-green' : h.months >= 3 ? 'text-primary' : 'text-notion-red';
+        const target = data.health.savePct / 100;
+        const rateMax = Math.max(0.3, target, ...h.rates.map(r => Math.abs(r.rate || 0)));
+        const w = h.wantRows[h.wantRows.length - 1];
+        const tmin = Math.min(...h.trend.map(x => x.v), 0), tmax = Math.max(...h.trend.map(x => x.v), 1);
+        const W = 300, H = 64, X = (i) => h.trend.length > 1 ? 6 + i * (W - 12) / (h.trend.length - 1) : W / 2, Y = (v) => H - 6 - (v - tmin) / (tmax - tmin || 1) * (H - 12);
+        const groupsForToggle = data.groups.filter(g => g.kind !== 'oneoff');
+        return panel({ id: 'health', icon: 'fa-heart-pulse', title: t('healthTitle'),
+          sub: h.months != null ? t('healthSub', { n: h.months.toFixed(1).replace('.', lang === 'en' ? '.' : ',') }) : t('healthSubNone') }, (
+          <div className="space-y-3">
+            {sec('fa-umbrella', t('efTitle'), t('efHint'), (
+              <div className="space-y-2">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className={`text-[22px] font-semibold font-mono ${monthsTone}`}>{h.months == null ? '–' : t('efMonths', { n: h.months.toFixed(1).replace('.', lang === 'en' ? '.' : ',') })}</span>
+                  <span className="text-[11px] text-secondary text-end">{t('efCore', { amount: fmt(h.core) })}</span>
+                </div>
+                {bar(h.money || 0, h.core * 6, h.months >= 3 ? '#10b981' : '#f59e0b')}
+                <div className="grid grid-cols-3 gap-2 text-[11px]">
+                  {[[t('efHave'), h.money], [t('ef3'), h.core * 3], [t('ef6'), h.core * 6]].map(([l, v]) => (
+                    <div key={l} className="rounded-lg bg-subtle/70 px-2 py-1.5 min-w-0"><div className="text-tertiary truncate">{l}</div><div className="font-mono text-primary truncate">{v == null ? '–' : fmt(v)}</div></div>
+                  ))}
+                </div>
+                {!h.hasAccounts && <p className="text-[11px] text-tertiary">{t('efNoAccounts')}</p>}
+              </div>
+            ))}
+
+            {sec('fa-piggy-bank', t('srTitle'), t('srHint'), (
+              <div className="space-y-2">
+                <div className="flex items-end gap-1.5 h-20">
+                  {h.rates.map(r => {
+                    const v = r.rate == null ? 0 : r.rate;
+                    return (
+                      <div key={`${r.yr}|${r.m}`} className="flex-1 min-w-0 flex flex-col items-center gap-1 h-full justify-end">
+                        <span className={`text-[10px] font-mono ${r.rate == null ? 'text-tertiary' : v < 0 ? 'text-notion-red' : v >= target && target > 0 ? 'text-notion-green' : 'text-primary'}`}>{pct(r.rate)}</span>
+                        <div className={`w-full rounded-t ${r.now ? 'opacity-60' : ''}`} style={{ height: `${Math.max(2, Math.abs(v) / rateMax * 44)}px`, background: v < 0 ? '#ef4444' : '#3b82f6' }}></div>
+                        <span className="text-[10px] text-tertiary truncate">{formatMonth(r.m, lang)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] text-secondary">{t('srRule')}</span>
+                  <Segmented size="sm" options={[[0, t('srOff')], [10, '10 %'], [15, '15 %'], [20, '20 %'], [25, '25 %']]} value={data.health.savePct}
+                    onChange={(v) => mutate(d => { d.health.savePct = v; })} />
+                </div>
+                {data.health.savePct > 0 && (
+                  <div className="rounded-xl bg-subtle/60 px-3 py-2 text-[12px] text-primary">
+                    {t('srPayday', { amount: fmt(h.setAside), pct: data.health.savePct, income: fmt(h.incomeNow) })}
+                    <div className="mt-1.5">{bar(h.movedNow, h.setAside, '#10b981')}</div>
+                    <div className="mt-1 text-[11px] text-secondary">{h.movedNow >= h.setAside - 0.005 ? t('srDone') : t('srSoFar', { amount: fmt(h.movedNow) })}</div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {sec('fa-scale-balanced', t('nwTitle'), t('nwHint'), (
+              <div className="space-y-2">
+                <div className="flex items-baseline justify-between text-[12px]">
+                  <span className="text-secondary">{t('nwShare', { month: formatMonth(w.m, lang) })}</span>
+                  <span className={`font-mono font-semibold ${w.share > 0.3 ? 'text-notion-red' : 'text-primary'}`}>{pct(w.share)}</span>
+                </div>
+                {bar(w.wants, w.total, '#ec4899')}
+                <div className="flex gap-3 text-[11px] text-tertiary">
+                  {h.wantRows.slice(0, -1).map(r => <span key={`${r.yr}|${r.m}`}>{formatMonth(r.m, lang)} {pct(r.share)}</span>)}
+                </div>
+                {h.rising && <p className="text-[11px] text-notion-red">{t('nwRising')}</p>}
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {groupsForToggle.map(g => {
+                    const want = isWantGroup(g.id);
+                    return (
+                      <button key={g.id} type="button" onClick={() => mutate(d => { d.health.wants[g.id] = !want; })}
+                        className={`px-2.5 py-1 rounded-full text-[11px] border ${want ? 'border-pink-500/40 bg-pink-500/10 text-pink-600 dark:text-pink-300' : 'border-subtle bg-subtle text-secondary'}`}>
+                        {groupName(g)} · {want ? t('nwWant') : t('nwNeed')}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+
+            {sec('fa-calendar-days', t('ycTitle'), t('ycHint'), (
+              <div className="space-y-1.5">
+                {h.yearly.slice(0, 6).map(x => (
+                  <div key={x.cat} className="flex items-center justify-between gap-2 text-[12px]">
+                    <span className="truncate text-primary">{x.cat}</span>
+                    <span className="font-mono text-secondary shrink-0">{fmt(x.monthly)} × 12 = <span className="text-primary font-semibold">{fmt(x.year)}</span></span>
+                  </div>
+                ))}
+                <div className="flex justify-between text-[12px] border-t border-subtle pt-1.5">
+                  <span className="text-secondary">{t('ycAll')}</span><span className="font-mono font-semibold text-primary">{fmt(h.yearly.reduce((s, x) => s + x.year, 0))}</span>
+                </div>
+                {h.subsYear > 0 && <div className="flex justify-between text-[12px]"><span className="text-secondary">{t('ycSubs')}</span><span className="font-mono text-primary">{fmt(h.subsYear)}</span></div>}
+                {h.fees.length > 0 && (
+                  <div className="flex justify-between text-[12px]"><span className="text-secondary">{t('ycFees')}</span><span className="font-mono text-notion-red">{fmt(h.fees.reduce((s, x) => s + x.total, 0))}</span></div>
+                )}
+              </div>
+            ))}
+
+            {sec('fa-hand-holding-dollar', t('dbTitle'), t('dbHint'), h.debts.length === 0 ? <p className="text-[12px] text-tertiary">{t('dbNone')}</p> : (
+              <div className="space-y-1.5">
+                {h.debts.map((i, n) => (
+                  <div key={i.id} className="flex items-center justify-between gap-2 text-[12px]">
+                    <span className="truncate text-primary">{n + 1}. {i.person}</span>
+                    <span className="shrink-0 flex items-center gap-2">
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${i.rate > 8 ? 'bg-red-500/15 text-notion-red' : 'bg-subtle text-secondary'}`}>{i.rate ? `${String(i.rate).replace('.', lang === 'en' ? '.' : ',')} %` : '0 %'}</span>
+                      <span className="font-mono text-primary">{fmt(i.left)}</span>
+                    </span>
+                  </div>
+                ))}
+                {h.debts.some(i => i.rate > 8) && <p className="text-[11px] text-notion-red">{t('dbExpensive')}</p>}
+              </div>
+            ))}
+
+            {sec('fa-chart-line', t('wtTitle'), t('wtHint'), (
+              <div className="space-y-1.5">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-[11px] text-secondary">{t('wtNow')}</span>
+                  <span className={`text-[18px] font-semibold font-mono ${h.netWorth < 0 ? 'text-notion-red' : 'text-primary'}`}>{h.netWorth == null ? '–' : fmt(h.netWorth)}</span>
+                </div>
+                <div className="text-[11px] text-tertiary font-mono">{h.money == null ? '' : `${fmt(h.money)} − ${fmt(h.debtTotal)}${h.owedToUs > 0 ? ` + ${fmt(h.owedToUs)}` : ''}`}</div>
+                {h.trend.length > 1 && (
+                  <svg viewBox={`0 0 ${W} ${H + 14}`} className="w-full h-auto" role="img" aria-label={t('wtTitle')}>
+                    {tmin < 0 && <line x1="0" x2={W} y1={Y(0)} y2={Y(0)} stroke="currentColor" className="text-tertiary" strokeDasharray="3 3" strokeWidth="0.6" />}
+                    <polyline fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinejoin="round" points={h.trend.map((p, i) => `${X(i)},${Y(p.v)}`).join(' ')} />
+                    {h.trend.map((p, i) => <circle key={i} cx={X(i)} cy={Y(p.v)} r={p.now ? 3.5 : 2} fill={p.now ? '#10b981' : '#3b82f6'} />)}
+                    {h.trend.map((p, i) => (i === 0 || i === h.trend.length - 1 || i % 2 === 0) && (
+                      <text key={'l' + i} x={X(i)} y={H + 11} textAnchor="middle" fontSize="9" fill="currentColor" className="text-tertiary">{lang === 'ar' ? (ALL_MONTHS.indexOf(p.label) + 1) : formatMonth(p.label, lang)}</text>
+                    ))}
+                  </svg>
+                )}
+              </div>
+            ))}
+          </div>
+        ));
+      };
+
+      const renderWishlist = () => {
+        const now = Date.now();
+        const open = data.wishlist.filter(x => x.status === 'wait');
+        const skipped = data.wishlist.filter(x => x.status === 'skipped');
+        const savedBySkipping = skipped.reduce((s, x) => s + x.amount, 0);
+        return panel({ id: 'wishlist', icon: 'fa-hourglass-half', title: t('wlTitle'), sub: savedBySkipping > 0 ? t('wlSaved', { amount: fmt(savedBySkipping) }) : t('wlSub') }, (
+          <div className="space-y-2.5">
+            <div className="flex gap-2">
+              <input value={wishName} onChange={(e) => setWishName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addWish()} placeholder={t('wlNamePh')}
+                className="flex-1 min-w-0 bg-subtle border border-subtle rounded-lg px-2.5 py-2 text-[13px] text-primary outline-none focus:border-strong" />
+              <input value={wishAmount} onChange={(e) => setWishAmount(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addWish()} inputMode="decimal" placeholder="€"
+                className="w-20 bg-subtle border border-subtle rounded-lg px-2.5 py-2 text-[13px] text-primary text-end font-mono outline-none focus:border-strong" />
+              <button onClick={addWish} aria-label={t('wlAdd')} className="w-10 rounded-lg bg-primary text-surface"><i className="fa-solid fa-plus text-xs"></i></button>
+            </div>
+            {open.length === 0 && <p className="text-[12px] text-tertiary">{t('wlEmpty')}</p>}
+            {open.map(x => {
+              const left = new Date(x.added).getTime() + WISH_WAIT - now;
+              const ready = left <= 0;
+              return (
+                <div key={x.id} className="flex items-center gap-2 rounded-xl bg-subtle/60 ps-3 pe-1.5 py-1.5">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] text-primary truncate">{x.name}</div>
+                    <div className={`text-[11px] ${ready ? 'text-notion-green' : 'text-tertiary'}`}>{ready ? t('wlReady') : t('wlWait', { h: Math.ceil(left / 3600000) })}</div>
+                  </div>
+                  {x.amount > 0 && <span className="font-mono text-[12px] text-primary">{fmt(x.amount)}</span>}
+                  {ready ? (
+                    <>
+                      <button onClick={() => decideWish(x.id, 'skipped')} className="px-2 py-1 rounded-lg bg-notion-green/15 text-notion-green text-[11px] font-medium">{t('wlSkip')}</button>
+                      <button onClick={() => decideWish(x.id, 'bought')} className="px-2 py-1 rounded-lg bg-surface text-secondary text-[11px]">{t('wlBuy')}</button>
+                    </>
+                  ) : (
+                    <button onClick={() => decideWish(x.id, 'skipped')} className="px-2 py-1 rounded-lg bg-surface text-secondary text-[11px]">{t('wlSkip')}</button>
+                  )}
+                  <button onClick={() => removeWish(x.id)} aria-label={t('deleteCategoryBtn')} className="w-7 h-7 rounded-full text-tertiary hover:text-primary"><i className="fa-solid fa-xmark text-xs"></i></button>
+                </div>
+              );
+            })}
+            {skipped.length > 0 && <p className="text-[11px] text-secondary">{t('wlSkippedN', { n: skipped.length, amount: fmt(savedBySkipping) })}</p>}
+          </div>
+        ));
+      };
+
       const renderOverview = () => {
         const { cm, carriedLabel, lines, availableNow, beforeStart, isPast, meters } = MB;
         const nowMode = availableNow !== null && balanceView === 'now';
@@ -5524,6 +5959,8 @@
               {renderIncomeEnd(true)}
               {renderDue()}
               {renderForecast()}
+              {renderHealth()}
+              {renderWishlist()}
             </div>
           </div>
         );
@@ -6548,6 +6985,10 @@
                     <label className="text-[11px] text-secondary font-medium block mb-1">{t('loanDate')}</label>
                     <input type="date" value={f.date} onChange={(e) => set({ date: e.target.value })} className={inputCls} />
                   </div>
+                  <div className="col-span-2">
+                    <label className="text-[11px] text-secondary font-medium block mb-1">{t('loanRate')}</label>
+                    <input inputMode="decimal" value={f.rate || ''} onChange={(e) => set({ rate: e.target.value })} placeholder="0" className={`${inputCls} font-mono`} />
+                  </div>
                 </div>
                 <label className="flex items-start gap-2.5 p-2.5 rounded-xl bg-subtle/60 cursor-pointer">
                   <input type="checkbox" checked={f.book} onChange={(e) => set({ book: e.target.checked })} className="mt-0.5 w-4 h-4" />
@@ -6605,7 +7046,7 @@
                   </div>
                   <div>
                     <label className="text-[10px] text-secondary font-medium block mb-1">{t('loanAmount')}</label>
-                    <MoneyInput value={total} hideZero={false} onChange={(v) => update({ amount: Math.round((parseFloat(v) || 0) * 100) / 100 })} className="w-full" />
+                    <MoneyInput value={parseFloat(item.amount) || 0} hideZero={false} onChange={(v) => update({ amount: Math.round((parseFloat(v) || 0) * 100) / 100 })} className="w-full" />
                   </div>
                   <div>
                     <label className="text-[10px] text-secondary font-medium block mb-1">{t('loanDate')}</label>
@@ -6617,6 +7058,12 @@
                       <option value="borrowed">{t('iouOptBorrowed')}</option>
                       <option value="lent">{t('iouOptLent')}</option>
                     </select>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-[10px] text-secondary font-medium block mb-1">{t('loanRate')}</label>
+                    <input inputMode="decimal" value={item.rate ?? ''} placeholder="0"
+                      onChange={(e) => { const v = e.target.value.replace(',', '.'); update({ rate: v === '' ? null : Math.max(0, Math.min(100, parseFloat(v) || 0)) }); }}
+                      className={`${inputCls} font-mono`} />
                   </div>
                 </div>
 
