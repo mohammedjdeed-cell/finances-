@@ -930,6 +930,17 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        wgTitle: "Wohin das Geld ging · {{month}}",
+        wgSpent: "ausgegeben",
+        wgNone: "Für den letzten Monat sind noch keine Ausgaben eingetragen.",
+        wgFlow: "Einnahmen und wofür sie gebraucht wurden",
+        wg_needs: "Bedürfnisse",
+        wg_wants: "Wünsche",
+        wg_once: "Einmalig",
+        wg_debt: "Schulden getilgt",
+        wg_left: "Übrig",
+        wgShort: "{{amount}} mehr ausgegeben als eingenommen",
+        wgHint: "Der Ring zeigt die Ausgaben des letzten abgeschlossenen Monats nach Gruppen (ohne Sparen und Darlehen). Der Balken teilt die Einnahmen dieses Monats auf: Bedürfnisse, Wünsche, einmalige Ausgaben, getilgte Schulden und was übrig blieb.",
         ycEvery: "alle {{n}} Mon.",
         ycShowAll: "Alle {{n}} anzeigen",
         ycShowLess: "Weniger anzeigen",
@@ -1518,6 +1529,17 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        wgTitle: "Where the money went · {{month}}",
+        wgSpent: "spent",
+        wgNone: "No spending recorded for last month yet.",
+        wgFlow: "Income and what it went to",
+        wg_needs: "Needs",
+        wg_wants: "Wants",
+        wg_once: "One-time",
+        wg_debt: "Debt repaid",
+        wg_left: "Left over",
+        wgShort: "{{amount}} more spent than came in",
+        wgHint: "The ring shows last finished month's spending by group (savings and loans left out). The bar splits that month's income into needs, wants, one-time costs, debt repaid and what was left over.",
         ycEvery: "every {{n}} mo",
         ycShowAll: "Show all {{n}}",
         ycShowLess: "Show less",
@@ -2106,6 +2128,17 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        wgTitle: "أين ذهب المال · {{month}}",
+        wgSpent: "مصروف",
+        wgNone: "لا مصاريف مسجلة للشهر الماضي بعد.",
+        wgFlow: "الدخل وأين ذهب",
+        wg_needs: "حاجات",
+        wg_wants: "رغبات",
+        wg_once: "لمرة واحدة",
+        wg_debt: "سداد ديون",
+        wg_left: "متبقٍ",
+        wgShort: "صُرف {{amount}} أكثر من الدخل",
+        wgHint: "الحلقة تُظهر مصاريف آخر شهر منتهٍ حسب المجموعات (دون التوفير والديون). والشريط يقسم دخل ذلك الشهر إلى حاجات ورغبات ومصاريف لمرة واحدة وسداد ديون وما تبقى.",
         ycEvery: "كل {{n}} أشهر",
         ycShowAll: "عرض الكل ({{n}})",
         ycShowLess: "عرض أقل",
@@ -5388,7 +5421,19 @@
           .filter(i => i.left > 0.005).sort((a, b) => b.rate - a.rate || b.left - a.left);
         const owedToUs = (data.ious || []).filter(i => !i.settled && i.type !== 'borrowed').reduce((s, i) => s + Math.max(0, (parseFloat(i.amount) || 0) - repaidOf(i)), 0);
         const debtTotal = debts.reduce((s, i) => s + i.left, 0);
-        return { core, money, hasAccounts, months, rates, wantRows, rising, yearly, subsYear, fees, incomeNow, setAside, movedNow, trend, debts, debtTotal, owedToUs,
+        // Where the money went in the last finished month: per group, plus debt paid back and what was left.
+        const fp = past.length ? past[past.length - 1] : pos;
+        const spentIn = (ok) => data.categories.expenses.filter(ok).reduce((s, c) => s + getNode('expenses', c, fp.yr, fp.m).actual, 0);
+        const slices = data.groups.map(g => ({
+          id: g.id, name: groupName(g), color: GROUP_HEX[g.color] || '#787774', oneoff: g.kind === 'oneoff', want: g.kind !== 'oneoff' && isWantGroup(g.id),
+          v: spentIn(c => spendOk(c) && getMeta('expenses', c).bracket === g.id)
+        })).filter(x => x.v > 0.005).sort((a, b) => b.v - a.v);
+        const flowIn = sumIn(fp);
+        const flowDebt = spentIn(c => loanItems.has(c) && !SAVINGS_RE.test(c));
+        const flowSum = (pred) => slices.filter(pred).reduce((s, x) => s + x.v, 0);
+        const flow = { pos: fp, income: flowIn, needs: flowSum(x => !x.oneoff && !x.want), wants: flowSum(x => x.want), once: flowSum(x => x.oneoff), debt: flowDebt };
+        flow.left = flowIn - flow.needs - flow.wants - flow.once - flow.debt;
+        return { slices, flow, core, money, hasAccounts, months, rates, wantRows, rising, yearly, subsYear, fees, incomeNow, setAside, movedNow, trend, debts, debtTotal, owedToUs,
           netWorth: money != null ? money - debtTotal + owedToUs : null };
       }, [data, forwardTimeline, nowIdx, accountsTotal, appNow]);
 
@@ -5692,15 +5737,39 @@
         const tmin = Math.min(...h.trend.map(x => x.v), 0), tmax = Math.max(...h.trend.map(x => x.v), 1);
         const W = 300, H = 64, X = (i) => h.trend.length > 1 ? 6 + i * (W - 12) / (h.trend.length - 1) : W / 2, Y = (v) => H - 6 - (v - tmin) / (tmax - tmin || 1) * (H - 12);
         const groupsForToggle = data.groups.filter(g => g.kind !== 'oneoff');
+        // Half-circle gauge from 0 to 6 months.
+        const arc = (cx, cy, r, a0, a1) => {
+          const pt = (a) => [cx + r * Math.cos(Math.PI * (1 - a)), cy - r * Math.sin(Math.PI * (1 - a))];
+          const [x0, y0] = pt(a0), [x1, y1] = pt(a1);
+          return `M ${x0} ${y0} A ${r} ${r} 0 0 1 ${x1} ${y1}`;
+        };
+        const gaugeV = Math.max(0, Math.min(6, h.months || 0)) / 6;
+        const needle = [100 + 62 * Math.cos(Math.PI * (1 - gaugeV)), 96 - 62 * Math.sin(Math.PI * (1 - gaugeV))];
+        const fmtShort = (v) => Math.abs(v) >= 1000 ? `${(v / 1000).toFixed(1).replace('.', lang === 'en' ? '.' : ',')}k` : String(Math.round(v));
         return (
           <>
             {sec('fa-umbrella', t('efTitle'), t('efHint'), (
               <div className="space-y-2">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className={`text-[22px] font-semibold font-mono ${monthsTone}`}>{h.months == null ? '–' : t('efMonths', { n: h.months.toFixed(1).replace('.', lang === 'en' ? '.' : ',') })}</span>
+                <div className="flex justify-center">
+                  <svg viewBox="0 0 200 112" className="w-full h-auto" style={{ maxWidth: 260 }} role="img" aria-label={t('efTitle')}>
+                    <defs>
+                      <linearGradient id="efGrad" x1="0" x2="1" y1="0" y2="0">
+                        <stop offset="0" stopColor="#ef4444" /><stop offset="0.45" stopColor="#f59e0b" /><stop offset="1" stopColor="#10b981" />
+                      </linearGradient>
+                    </defs>
+                    <path d={arc(100, 96, 72, 0, 1)} fill="none" stroke="currentColor" className="text-subtle" strokeOpacity="0.5" strokeWidth="14" strokeLinecap="round" />
+                    {gaugeV > 0.005 && <path d={arc(100, 96, 72, 0, gaugeV)} fill="none" stroke="url(#efGrad)" strokeWidth="14" strokeLinecap="round" />}
+                    {[0.5, 1].map(a => { const [x, y] = [100 + 86 * Math.cos(Math.PI * (1 - a)), 96 - 86 * Math.sin(Math.PI * (1 - a))]; return <text key={a} x={x} y={y + 3} textAnchor="middle" fontSize="9" fill="currentColor" className="text-tertiary">{a * 6}</text>; })}
+                    <text x={100 - 86} y={99} textAnchor="middle" fontSize="9" fill="currentColor" className="text-tertiary">0</text>
+                    <line x1="100" y1="96" x2={needle[0]} y2={needle[1]} stroke="currentColor" className="text-primary" strokeWidth="2.5" strokeLinecap="round" />
+                    <circle cx="100" cy="96" r="5" fill="currentColor" className="text-primary" />
+                    <text x="100" y="76" textAnchor="middle" fontSize="20" fontWeight="700" fill="currentColor" className={monthsTone}>{h.months == null ? '–' : h.months.toFixed(1).replace('.', lang === 'en' ? '.' : ',')}</text>
+                  </svg>
+                </div>
+                <div className="flex items-baseline justify-between gap-2 -mt-1">
+                  <span className={`text-[13px] font-semibold ${monthsTone}`}>{h.months == null ? '–' : t('efMonths', { n: h.months.toFixed(1).replace('.', lang === 'en' ? '.' : ',') })}</span>
                   <span className="text-[11px] text-secondary text-end">{t('efCore', { amount: fmt(h.core) })}</span>
                 </div>
-                {bar(h.money || 0, h.core * 6, h.months >= 3 ? '#10b981' : '#f59e0b')}
                 <div className="grid grid-cols-3 gap-2 text-[11px]">
                   {[[t('efHave'), h.money], [t('ef3'), h.core * 3], [t('ef6'), h.core * 6]].map(([l, v]) => (
                     <div key={l} className="rounded-lg bg-subtle/70 px-2 py-1.5 min-w-0"><div className="text-tertiary truncate">{l}</div><div className="font-mono text-primary truncate">{v == null ? '–' : fmt(v)}</div></div>
@@ -5764,8 +5833,89 @@
               </div>
             ))}
 
+            {sec('fa-chart-pie', t('wgTitle', { month: `${formatMonth(h.flow.pos.m, lang)} ${h.flow.pos.yr}` }), t('wgHint'), h.slices.length === 0 ? <p className="text-[12px] text-tertiary">{t('wgNone')}</p> : (() => {
+              const total = h.slices.reduce((s, x) => s + x.v, 0);
+              const R = 42, C = 2 * Math.PI * R;
+              let acc = 0;
+              const f = h.flow;
+              const flowParts = [
+                ['needs', f.needs, '#3b82f6'], ['wants', f.wants, '#ec4899'], ['once', f.once, '#94a3b8'], ['debt', f.debt, '#f59e0b'],
+                ['left', Math.max(0, f.left), '#10b981']
+              ].filter(x => x[1] > 0.005);
+              const flowTotal = Math.max(f.income, flowParts.reduce((s, x) => s + x[1], 0)) || 1;
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <svg viewBox="0 0 120 120" className="shrink-0" style={{ width: 128, height: 128 }} role="img" aria-label={t('wgTitle', { month: '' })}>
+                      <g transform="rotate(-90 60 60)">
+                      <circle cx="60" cy="60" r={R} fill="none" stroke="currentColor" className="text-subtle" strokeWidth="16" />
+                      {h.slices.map(x => {
+                        const len = x.v / total * C;
+                        const el = <circle key={x.id} cx="60" cy="60" r={R} fill="none" stroke={x.color} strokeWidth="16" strokeDasharray={`${Math.max(0, len - 1.5)} ${C}`} strokeDashoffset={-acc} />;
+                        acc += len;
+                        return el;
+                      })}
+                      </g>
+                      <g>
+                        <text x="60" y="57" textAnchor="middle" fontSize="15" fontWeight="700" fill="currentColor" className="text-primary">{fmtShort(total)} €</text>
+                        <text x="60" y="72" textAnchor="middle" fontSize="8.5" fill="currentColor" className="text-tertiary">{t('wgSpent')}</text>
+                      </g>
+                    </svg>
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                      {h.slices.slice(0, 7).map(x => (
+                        <div key={x.id} className="flex items-center gap-2 text-[12px]">
+                          <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: x.color }}></span>
+                          <span className="flex-1 truncate text-primary">{x.name}</span>
+                          <span className="text-tertiary font-mono text-[11px]">{Math.round(x.v / total * 100)}%</span>
+                          <span className="font-mono text-secondary w-16 text-end">{fmt(x.v)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {f.income > 0 && (
+                    <div className="space-y-1.5">
+                      <div className="flex items-baseline justify-between text-[12px]">
+                        <span className="text-secondary">{t('wgFlow')}</span>
+                        <span className="font-mono text-primary">{fmt(f.income)}</span>
+                      </div>
+                      <div className="flex rounded-lg overflow-hidden" style={{ height: 28 }}>
+                        {flowParts.map(([k, v, color]) => (
+                          <div key={k} title={`${t('wg_' + k)} ${fmt(v)}`} className="h-full flex items-center justify-center text-[10px] font-semibold text-white overflow-hidden transition-all"
+                            style={{ width: `${v / flowTotal * 100}%`, background: color }}>{v / flowTotal > 0.09 ? `${Math.round(v / (f.income || 1) * 100)}%` : ''}</div>
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+                        {flowParts.map(([k, v, color]) => (
+                          <span key={k} className="flex items-center gap-1.5 text-secondary"><span className="w-2 h-2 rounded-full" style={{ background: color }}></span>{t('wg_' + k)} <span className="font-mono text-primary">{fmt(v)}</span></span>
+                        ))}
+                        {f.left < -0.005 && <span className="text-notion-red">{t('wgShort', { amount: fmt(-f.left) })}</span>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })())}
+
             {sec('fa-calendar-days', t('ycTitle'), t('ycHint'), (
               <div className="space-y-1.5">
+                {(() => {
+                  const byG = {};
+                  h.yearly.forEach(x => { byG[x.gid] = (byG[x.gid] || 0) + x.year; });
+                  const all = Object.values(byG).reduce((s, v) => s + v, 0) || 1;
+                  const parts = data.groups.filter(g => byG[g.id] > 0).map(g => ({ g, v: byG[g.id] })).sort((a, b) => b.v - a.v);
+                  return (
+                    <div className="space-y-1.5 pb-2">
+                      <div className="flex rounded-full overflow-hidden" style={{ height: 12 }}>
+                        {parts.map(({ g, v }) => <div key={g.id} style={{ width: `${v / all * 100}%`, background: GROUP_HEX[g.color] || '#787774' }} title={`${groupName(g)} ${fmt(v)}`}></div>)}
+                      </div>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+                        {parts.map(({ g, v }) => (
+                          <span key={g.id} className="flex items-center gap-1.5 text-secondary"><span className="w-2 h-2 rounded-full" style={{ background: GROUP_HEX[g.color] || '#787774' }}></span>{groupName(g)} <span className="font-mono text-primary">{fmt(v)}</span></span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
                 {(showAllYearly ? h.yearly : h.yearly.slice(0, 6)).map(x => (
                   <div key={x.cat} className="flex items-center justify-between gap-2 text-[12px]">
                     <span className="truncate text-primary">{x.cat}</span>
@@ -5812,6 +5962,10 @@
                 {h.trend.length > 1 && (
                   <svg viewBox={`0 0 ${W} ${H + 14}`} className="w-full h-auto" style={{ maxWidth: 420 }} role="img" aria-label={t('wtTitle')}>
                     {tmin < 0 && <line x1="0" x2={W} y1={Y(0)} y2={Y(0)} stroke="currentColor" className="text-tertiary" strokeDasharray="3 3" strokeWidth="0.6" />}
+                    <defs>
+                      <linearGradient id="nwGrad" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#3b82f6" stopOpacity="0.35" /><stop offset="1" stopColor="#3b82f6" stopOpacity="0" /></linearGradient>
+                    </defs>
+                    <path d={`M ${X(0)} ${H - 6} ${h.trend.map((p, i) => `L ${X(i)} ${Y(p.v)}`).join(' ')} L ${X(h.trend.length - 1)} ${H - 6} Z`} fill="url(#nwGrad)" />
                     <polyline fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinejoin="round" points={h.trend.map((p, i) => `${X(i)},${Y(p.v)}`).join(' ')} />
                     {h.trend.map((p, i) => <circle key={i} cx={X(i)} cy={Y(p.v)} r={p.now ? 3.5 : 2} fill={p.now ? '#10b981' : '#3b82f6'} />)}
                     {h.trend.map((p, i) => (i === 0 || i === h.trend.length - 1 || i % 2 === 0) && (
@@ -5835,8 +5989,8 @@
             <div className="flex gap-2">
               <input value={wishName} onChange={(e) => setWishName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addWish()} placeholder={t('wlNamePh')}
                 className="flex-1 min-w-0 bg-subtle border border-subtle rounded-lg px-2.5 py-2 text-[13px] text-primary outline-none focus:border-strong" />
-              <input value={wishAmount} onChange={(e) => setWishAmount(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addWish()} inputMode="decimal" placeholder="€"
-                className="w-20 bg-subtle border border-subtle rounded-lg px-2.5 py-2 text-[13px] text-primary text-end font-mono outline-none focus:border-strong" />
+              <input value={wishAmount} onChange={(e) => setWishAmount(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addWish()} inputMode="decimal" placeholder="€" style={{ width: 80 }}
+                className="shrink-0 bg-subtle border border-subtle rounded-lg px-2.5 py-2 text-[13px] text-primary text-end font-mono outline-none focus:border-strong" />
               <button onClick={addWish} aria-label={t('wlAdd')} className="w-10 rounded-lg bg-primary text-surface"><i className="fa-solid fa-plus text-xs"></i></button>
             </div>
             {open.length === 0 && <p className="text-[12px] text-tertiary">{t('wlEmpty')}</p>}
@@ -5892,11 +6046,11 @@
         <div className="grid gap-4 lg:gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-start">
           <div className="space-y-4 min-w-0">
             {renderHealth(['fa-umbrella', 'fa-piggy-bank', 'fa-scale-balanced', 'fa-chart-line'])}
-            <div className="lg:hidden space-y-4">{renderHealth(['fa-calendar-days', 'fa-hand-holding-dollar'])}</div>
+            <div className="lg:hidden space-y-4">{renderHealth(['fa-chart-pie', 'fa-calendar-days', 'fa-hand-holding-dollar'])}</div>
           </div>
           <div className="space-y-4 min-w-0">
             {renderWishlist()}
-            <div className="hidden lg:block space-y-4">{renderHealth(['fa-hand-holding-dollar', 'fa-calendar-days'])}</div>
+            <div className="hidden lg:block space-y-4">{renderHealth(['fa-chart-pie', 'fa-hand-holding-dollar', 'fa-calendar-days'])}</div>
           </div>
         </div>
       );
