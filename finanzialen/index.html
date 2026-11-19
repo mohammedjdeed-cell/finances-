@@ -548,7 +548,15 @@
       expenses: ["Miete", "Strom ⚡", "Internet & Handy", "Rundfunkbeitrag", "Lebensmittel 🍞", "Hausrat 🛋️",
         "Restaurant & Cafe 🍔", "Transport & Tickets", "Kleidung", "Geschenke", "Sonstiges"]
     };
-    const freshHousehold = () => normalizeState({ categories: FRESH_CATEGORIES, members: { me: 'Ich', partner: 'Partner' }, name: '' });
+    // Names a household starts with (they can be changed in Settings).
+    const HOUSEHOLD_PRESETS = {
+      household_2: { name: "Miea's Household", members: { me: 'Sawsan', partner: 'Rabee' } }
+    };
+    const freshHousehold = () => normalizeState({
+      categories: FRESH_CATEGORIES,
+      members: HOUSEHOLD_PRESETS[activeHousehold]?.members || { me: 'Ich', partner: 'Partner' },
+      name: HOUSEHOLD_PRESETS[activeHousehold]?.name || ''
+    });
 
     const DEFAULT_ONE_TIME = {
       "Kaution": true,
