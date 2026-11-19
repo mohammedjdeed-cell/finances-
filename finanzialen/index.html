@@ -3169,6 +3169,13 @@
       const [households, setHouseholds] = useState([]);
       // Signed in, but the Firestore rules don't open any household for this account.
       const [noAccess, setNoAccess] = useState(false);
+      // Ask again which households are open: after a "permission denied", and when the app comes back to the front.
+      const [probeTick, setProbeTick] = useState(0);
+      useEffect(() => {
+        const again = () => { if (document.visibilityState === 'visible') setProbeTick(n => n + 1); };
+        document.addEventListener('visibilitychange', again);
+        return () => document.removeEventListener('visibilitychange', again);
+      }, []);
       // Save what's pending in the current household, then load the other one (device cache first).
       const switchHousehold = (id) => {
         if (id === activeHousehold) return;
@@ -3302,6 +3309,7 @@
         }, err => {
           console.error('Cloud sync error', err);
           setSyncStatus('error');
+          if (err && err.code === 'permission-denied') setProbeTick(n => n + 1);
         });
       }, [user, householdId]);
 
@@ -3324,7 +3332,7 @@
             if (usable.length && !usable.some(x => x.id === activeHousehold)) switchHousehold(usable[0].id);
           });
         return () => { alive = false; };
-      }, [user]);
+      }, [user, probeTick]);
 
       const handleSignIn = async () => {
         if (!auth) { alert(t('signInError', { msg: 'Firebase not loaded' })); return; }
