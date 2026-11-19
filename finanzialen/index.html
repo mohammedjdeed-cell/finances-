@@ -189,12 +189,18 @@
     } catch (e) {
       console.warn("Firebase unavailable, running local-only.", e);
     }
-    const stateDocRef = () => db.collection('monthly_logs').doc('house_finanzen_state');
-
     const safeStorage = {
       get: (k, fb) => { try { return localStorage.getItem(k) || fb; } catch(e) { return fb; } },
       set: (k, v) => { try { localStorage.setItem(k, v); } catch(e) {} }
     };
+
+    // Households: each one is its own Firestore document. Who may open which is decided only by
+    // the Firestore rules (no email addresses in this file); the app shows the ones you can open.
+    const HOUSEHOLD_IDS = ['house_finanzen_state', 'household_2', 'household_3'];
+    let activeHousehold = (() => { const v = safeStorage.get('budget_household', HOUSEHOLD_IDS[0]); return HOUSEHOLD_IDS.includes(v) ? v : HOUSEHOLD_IDS[0]; })();
+    const stateDocRef = () => db.collection('monthly_logs').doc(activeHousehold);
+    // Device cache per household (the first keeps its old key).
+    const cacheKey = (base) => activeHousehold === HOUSEHOLD_IDS[0] ? base : `${base}:${activeHousehold}`;
 
     const YEARS = [2026, 2027, 2028];
     const TYPES = ['incomes', 'expenses'];
@@ -535,6 +541,14 @@
         "Möbel Vormieter", "Rückzahlung Schwester", "Sonstiges"
       ]
     };
+
+    // A new household starts with neutral items and names, ready to be renamed.
+    const FRESH_CATEGORIES = {
+      incomes: ["Gehalt", "Sonstiges"],
+      expenses: ["Miete", "Strom ⚡", "Internet & Handy", "Rundfunkbeitrag", "Lebensmittel 🍞", "Hausrat 🛋️",
+        "Restaurant & Cafe 🍔", "Transport & Tickets", "Kleidung", "Geschenke", "Sonstiges"]
+    };
+    const freshHousehold = () => normalizeState({ categories: FRESH_CATEGORIES, members: { me: 'Ich', partner: 'Partner' }, name: '' });
 
     const DEFAULT_ONE_TIME = {
       "Kaution": true,
@@ -938,6 +952,16 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        householdLabel: "Haushalt",
+        householdUnnamed: "Haushalt ohne Namen",
+        householdNew: "Neuen Haushalt anlegen",
+        hhWelcome: "Willkommen im neuen Haushalt",
+        hhWelcomeText: "Dieser Haushalt ist leer und völlig getrennt von anderen. Gib ihm einen Namen und tragt eure Namen ein – Posten und Gruppen könnt ihr danach im Monat anpassen.",
+        hhNamePh: "Name des Haushalts",
+        hhMePh: "Dein Name",
+        hhPartnerPh: "Name Partner/in",
+        hhWelcomeHint: "Startkapital und Startmonat stellst du in den Einstellungen (⚙) ein.",
+        hhDone: "Fertig",
         loanMoneyTitle: "Im Kontostand",
         loanCountedIn: "{{amount}} als Einnahme in {{month}} („{{item}}“) gezählt.",
         loanCountedOut: "{{amount}} als Ausgabe in {{month}} („{{item}}“) gezählt.",
@@ -1557,6 +1581,16 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        householdLabel: "Household",
+        householdUnnamed: "Unnamed household",
+        householdNew: "Start a new household",
+        hhWelcome: "Welcome to your new household",
+        hhWelcomeText: "This household is empty and completely separate from any other. Give it a name and enter your names – items and groups can be adjusted afterwards in Month.",
+        hhNamePh: "Household name",
+        hhMePh: "Your name",
+        hhPartnerPh: "Partner's name",
+        hhWelcomeHint: "Set the starting balance and month in Settings (⚙).",
+        hhDone: "Done",
         loanMoneyTitle: "In your balance",
         loanCountedIn: "{{amount}} counted as income in {{month}} (\"{{item}}\").",
         loanCountedOut: "{{amount}} counted as an expense in {{month}} (\"{{item}}\").",
@@ -2176,6 +2210,16 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        householdLabel: "المنزل",
+        householdUnnamed: "منزل بلا اسم",
+        householdNew: "إنشاء منزل جديد",
+        hhWelcome: "أهلًا بكم في منزلكم الجديد",
+        hhWelcomeText: "هذا المنزل فارغ ومنفصل تمامًا عن غيره. أعطه اسمًا وأدخلوا أسماءكم – ويمكن تعديل البنود والمجموعات لاحقًا في الشهر.",
+        hhNamePh: "اسم المنزل",
+        hhMePh: "اسمك",
+        hhPartnerPh: "اسم الشريك",
+        hhWelcomeHint: "حدّد الرصيد الابتدائي وشهر البداية في الإعدادات (⚙).",
+        hhDone: "تم",
         loanMoneyTitle: "في الرصيد",
         loanCountedIn: "{{amount}} محسوب كدخل في {{month}} (\"{{item}}\").",
         loanCountedOut: "{{amount}} محسوب كمصروف في {{month}} (\"{{item}}\").",
@@ -2488,11 +2532,12 @@
     const BACKUP_DAYS = 14;
     const saveDailyBackup = async (snapshot) => {
       try {
-        const list = (await IDB.get('backups')) || [];
+        const key = cacheKey('backups');
+        const list = (await IDB.get(key)) || [];
         const day = todayISO();
         if (list.length && list[list.length - 1].day === day) return;
         list.push({ day, ts: Date.now(), data: snapshot });
-        await IDB.set('backups', list.slice(-BACKUP_DAYS));
+        await IDB.set(key, list.slice(-BACKUP_DAYS));
       } catch (e) { console.warn('Backup failed', e); }
     };
 
@@ -2589,6 +2634,7 @@
           })),
         // Day the salary arrives (15–31). With it, the budget month runs from payday to the day before.
         payday: Number.isInteger(raw?.payday) && raw.payday >= 15 && raw.payday <= 31 ? raw.payday : null,
+        name: typeof raw?.name === 'string' ? raw.name.slice(0, 60) : '',
         // Money health: which groups are wants, and the share of income to save first.
         health: {
           wants: raw?.health?.wants && typeof raw.health.wants === 'object' ? Object.fromEntries(Object.entries(raw.health.wants).map(([k, v]) => [k, !!v])) : {},
@@ -2961,7 +3007,7 @@
 
     function MainApp() {
       const { t, lang, changeLanguage } = useTranslation();
-      const [data, setData] = useState(() => normalizeState(null));
+      const [data, setData] = useState(() => activeHousehold === HOUSEHOLD_IDS[0] ? normalizeState(null) : freshHousehold());
       const dataRef = useRef(data);
 
       const initialDate = useMemo(() => getCurrentInitialDate(), []);
@@ -3039,7 +3085,7 @@
       useEffect(() => { safeStorage.set('budget_due_scope', dueScope); }, [dueScope]);
       const [backups, setBackups] = useState([]);
       useEffect(() => {
-        if (isBurgerOpen) IDB.get('backups').then(list => setBackups((list || []).slice().reverse()));
+        if (isBurgerOpen) IDB.get(cacheKey('backups')).then(list => setBackups((list || []).slice().reverse()));
       }, [isBurgerOpen]);
       const [txWhoFilter, setTxWhoFilter] = useState('all');
       const [balanceInput, setBalanceInput] = useState("");
@@ -3104,6 +3150,26 @@
         setData(next);
       };
 
+      const [householdId, setHouseholdId] = useState(activeHousehold);
+      useEffect(() => { try { document.title = data.name || t('title'); } catch (e) {} }, [data.name, lang]);
+      const [households, setHouseholds] = useState([]);
+      // Save what's pending in the current household, then load the other one (device cache first).
+      const switchHousehold = (id) => {
+        if (id === activeHousehold) return;
+        if (saveTimerRef.current) flushSave();
+        undoRef.current = null;
+        activeHousehold = id;
+        safeStorage.set('budget_household', id);
+        remoteLoadedRef.current = false;
+        localEditedRef.current = false;
+        applyState(id === HOUSEHOLD_IDS[0] ? normalizeState(null) : freshHousehold());
+        IDB.get(cacheKey('app_state')).then(cached => {
+          if (cached && activeHousehold === id && !remoteLoadedRef.current && !localEditedRef.current) applyState(normalizeState(cached));
+        });
+        setHouseholdId(id);
+        setIsBurgerOpen(false);
+      };
+
       const flushSave = () => {
         clearTimeout(saveTimerRef.current);
         saveTimerRef.current = null;
@@ -3119,7 +3185,7 @@
         } else {
           setSyncStatus('local');
         }
-        IDB.set('app_state', snapshot);
+        IDB.set(cacheKey('app_state'), snapshot);
         saveDailyBackup(snapshot);
       };
 
@@ -3173,7 +3239,7 @@
 
       // Local cache: shown first, but never allowed to overwrite newer remote data or fresh edits.
       useEffect(() => {
-        IDB.get('app_state').then(cached => {
+        IDB.get(cacheKey('app_state')).then(cached => {
           if (cached && !remoteLoadedRef.current && !localEditedRef.current) applyState(normalizeState(cached));
         });
       }, []);
@@ -3207,17 +3273,40 @@
           if (doc.metadata.hasPendingWrites || saveTimerRef.current) return;
           if (!doc.exists) {
             // Seed the cloud from this device only once the server confirms the doc is really empty.
-            if (!doc.metadata.fromCache) flushSave();
+            if (!doc.metadata.fromCache) {
+              if (activeHousehold !== HOUSEHOLD_IDS[0] && !localEditedRef.current) applyState(freshHousehold());
+              flushSave();
+            }
             return;
           }
           remoteLoadedRef.current = true;
           const next = normalizeState(doc.data().payload);
           applyState(next);
-          IDB.set('app_state', next);
+          IDB.set(cacheKey('app_state'), next);
         }, err => {
           console.error('Cloud sync error', err);
           setSyncStatus('error');
         });
+      }, [user, householdId]);
+
+      // Which households this account may open (decided by the Firestore rules).
+      useEffect(() => {
+        if (!db || !user) { setHouseholds([]); return; }
+        let alive = true;
+        Promise.all(HOUSEHOLD_IDS.map(id => db.collection('monthly_logs').doc(id).get({ source: 'server' })
+          .then(doc => ({ id, exists: doc.exists, name: doc.exists ? (doc.data().payload?.name || '') : '' }))
+          .catch(() => null)))
+          .then(list => {
+            if (!alive) return;
+            const open = list.filter(Boolean);
+            // Existing households, plus one empty slot to start a new household in.
+            const existing = open.filter(x => x.exists);
+            const slot = open.find(x => !x.exists);
+            setHouseholds(slot ? [...existing, slot] : existing);
+            const usable = existing.length ? existing : open;
+            if (usable.length && !usable.some(x => x.id === activeHousehold)) switchHousehold(usable[0].id);
+          });
+        return () => { alive = false; };
       }, [user]);
 
       const handleSignIn = async () => {
@@ -6187,6 +6276,25 @@
         return (
           <div className="grid gap-4 lg:gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-start">
             <div className="space-y-4 min-w-0">
+              {householdId !== HOUSEHOLD_IDS[0] && !dismissed['hh_' + householdId] && (
+                <section className="rounded-2xl border border-notion-blue/40 bg-notion-blue/5 p-4 space-y-3">
+                  <div className="text-[14px] font-semibold text-primary">👋 {t('hhWelcome')}</div>
+                  <p className="text-[12px] text-secondary leading-relaxed">{t('hhWelcomeText')}</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <input data-free defaultValue={data.name} placeholder={t('hhNamePh')} onBlur={(e) => { const v = e.target.value.trim(); if (v) mutate(d => { d.name = v.slice(0, 60); }); }}
+                      className="bg-surface border border-subtle rounded-lg px-2.5 py-2 text-[13px] text-primary outline-none focus:border-strong" />
+                    {['me', 'partner'].map(w => (
+                      <input data-free key={w} defaultValue={data.members[w]} placeholder={t(w === 'me' ? 'hhMePh' : 'hhPartnerPh')}
+                        onBlur={(e) => { const v = e.target.value.trim(); if (v) mutate(d => { d.members[w] = v; }); }}
+                        className="bg-surface border border-subtle rounded-lg px-2.5 py-2 text-[13px] text-primary outline-none focus:border-strong" />
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[11px] text-tertiary">{t('hhWelcomeHint')}</p>
+                    <button onClick={() => dismiss('hh_' + householdId)} className="shrink-0 px-3 py-1.5 rounded-lg bg-primary text-surface text-[12px] font-semibold">{t('hhDone')}</button>
+                  </div>
+                </section>
+              )}
               <section className="rounded-2xl border border-subtle bg-surface p-5 space-y-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -6757,7 +6865,7 @@
             <div className="h-16 px-5 flex items-center gap-2.5">
               <img src="icon-192.png" alt="" className="w-8 h-8 rounded-lg" />
               <div className="min-w-0">
-                <div className="text-[14px] font-semibold text-primary truncate">{t('title')}</div>
+                <div className="text-[14px] font-semibold text-primary truncate">{data.name || t('title')}</div>
                 <div className={`text-[11px] truncate ${syncStatus === 'error' ? 'text-notion-red' : 'text-tertiary'}`}>{syncLabel}</div>
               </div>
             </div>
@@ -6786,7 +6894,7 @@
             <header className="sticky top-0 z-30 bg-app/85 backdrop-blur-xl border-b border-subtle" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
               <div className="max-w-[1280px] mx-auto h-14 px-4 lg:px-8 flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="lg:hidden text-[10px] text-tertiary leading-none mb-0.5 truncate">{t('title')}</div>
+                  <div className="lg:hidden text-[10px] text-tertiary leading-none mb-0.5 truncate">{data.name || t('title')}</div>
                   <h1 className="text-[17px] lg:text-[20px] font-semibold tracking-tight text-primary truncate">{viewTitle}</h1>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -8018,6 +8126,25 @@
                   </div>
 
                   <div className="space-y-1.5">
+                    <label className="text-[10px] text-secondary block">{t('householdLabel')}</label>
+                    {households.length > 1 && (
+                      <div className="space-y-1">
+                        {households.map(h => (
+                          <button key={h.id} onClick={() => switchHousehold(h.id)} aria-pressed={h.id === householdId}
+                            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded border text-start ${h.id === householdId ? 'border-strong bg-subtle text-primary font-semibold' : 'border-subtle text-secondary hover:text-primary'}`}>
+                            <i className={`fa-solid ${h.exists ? 'fa-house' : 'fa-plus'} text-[10px] w-3`}></i>
+                            <span className="flex-1 truncate">{h.id === householdId ? (data.name || (h.id === HOUSEHOLD_IDS[0] ? t('title') : t('householdUnnamed'))) : h.exists ? (h.name || (h.id === HOUSEHOLD_IDS[0] ? t('title') : t('householdUnnamed'))) : t('householdNew')}</span>
+                            {h.id === householdId && <i className="fa-solid fa-check text-[10px]"></i>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <input value={data.name} onChange={(e) => { const v = e.target.value; mutate(d => { d.name = v.slice(0, 60); }); }}
+                      placeholder={t('title')} aria-label={t('householdLabel')}
+                      className="w-full bg-subtle border border-subtle rounded px-2 py-1.5 text-primary outline-none focus:border-strong" />
+                  </div>
+
+                  <div className="space-y-1.5">
                     <label className="text-[10px] text-secondary block">{t('membersLabel')}</label>
                     <div className="grid grid-cols-2 gap-1.5">
                       {['me', 'partner'].map(w => (
@@ -8144,7 +8271,7 @@
                   <button
                     onClick={() => {
                       if (confirm(t('confirmClear'))) {
-                        replaceState(normalizeState(null));
+                        replaceState(activeHousehold === HOUSEHOLD_IDS[0] ? normalizeState(null) : freshHousehold());
                         setIsBurgerOpen(false);
                       }
                     }}
