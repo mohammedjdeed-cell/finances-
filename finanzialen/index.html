@@ -960,6 +960,8 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        noAccessTitle: "Noch kein Haushalt für dieses Konto",
+        noAccessText: "{{email}} ist für keinen Haushalt freigeschaltet. Die angezeigten Namen sind nur Platzhalter. Bitte den Besitzer, diese Adresse in den Firebase-Regeln einzutragen, dann die App neu öffnen.",
         householdLabel: "Haushalt",
         householdUnnamed: "Haushalt ohne Namen",
         householdNew: "Neuen Haushalt anlegen",
@@ -1589,6 +1591,8 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        noAccessTitle: "No household for this account yet",
+        noAccessText: "{{email}} isn't allowed into any household yet. The names you see are only placeholders. Ask the owner to add this address to the Firebase rules, then reopen the app.",
         householdLabel: "Household",
         householdUnnamed: "Unnamed household",
         householdNew: "Start a new household",
@@ -2218,6 +2222,8 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        noAccessTitle: "لا يوجد منزل لهذا الحساب بعد",
+        noAccessText: "{{email}} غير مسموح له بدخول أي منزل بعد. الأسماء الظاهرة مجرد أمثلة. اطلب من المالك إضافة هذا العنوان في قواعد Firebase ثم أعد فتح التطبيق.",
         householdLabel: "المنزل",
         householdUnnamed: "منزل بلا اسم",
         householdNew: "إنشاء منزل جديد",
@@ -3161,6 +3167,8 @@
       const [householdId, setHouseholdId] = useState(activeHousehold);
       useEffect(() => { try { document.title = data.name || t('title'); } catch (e) {} }, [data.name, lang]);
       const [households, setHouseholds] = useState([]);
+      // Signed in, but the Firestore rules don't open any household for this account.
+      const [noAccess, setNoAccess] = useState(false);
       // Save what's pending in the current household, then load the other one (device cache first).
       const switchHousehold = (id) => {
         if (id === activeHousehold) return;
@@ -3299,7 +3307,7 @@
 
       // Which households this account may open (decided by the Firestore rules).
       useEffect(() => {
-        if (!db || !user) { setHouseholds([]); return; }
+        if (!db || !user) { setHouseholds([]); setNoAccess(false); return; }
         let alive = true;
         Promise.all(HOUSEHOLD_IDS.map(id => db.collection('monthly_logs').doc(id).get({ source: 'server' })
           .then(doc => ({ id, exists: doc.exists, name: doc.exists ? (doc.data().payload?.name || '') : '' }))
@@ -3307,6 +3315,7 @@
           .then(list => {
             if (!alive) return;
             const open = list.filter(Boolean);
+            setNoAccess(open.length === 0 && navigator.onLine !== false);
             // Existing households, plus one empty slot to start a new household in.
             const existing = open.filter(x => x.exists);
             const slot = open.find(x => !x.exists);
@@ -6284,6 +6293,13 @@
         return (
           <div className="grid gap-4 lg:gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-start">
             <div className="space-y-4 min-w-0">
+              {noAccess && (
+                <section className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 space-y-2">
+                  <div className="text-[14px] font-semibold text-primary"><i className="fa-solid fa-lock me-2 text-amber-500"></i>{t('noAccessTitle')}</div>
+                  <p className="text-[12px] text-secondary leading-relaxed">{t('noAccessText', { email: user?.email || '' })}</p>
+                  <button onClick={handleSignOut} className="px-3 py-1.5 rounded-lg bg-surface border border-subtle text-[12px] text-primary">{t('signOut')}</button>
+                </section>
+              )}
               {householdId !== HOUSEHOLD_IDS[0] && !dismissed['hh_' + householdId] && (
                 <section className="rounded-2xl border border-notion-blue/40 bg-notion-blue/5 p-4 space-y-3">
                   <div className="text-[14px] font-semibold text-primary">👋 {t('hhWelcome')}</div>
