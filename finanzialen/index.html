@@ -960,6 +960,24 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        forecastTitleAll: "Stand am Monatsende: Verlauf & Ausblick",
+        forecastNext: "Bald",
+        forecastAll: "Alle",
+        abTitle: "Nach den Rechnungen",
+        abThis: "Dieser",
+        abNext: "Nächster",
+        abOnDay: "Am {{day}}. {{month}} übrig",
+        abFree: "Frei nach allen Rechnungen",
+        abStart: "Stand am Monatsanfang",
+        abIncome: "Einnahmen im Monat",
+        abBills: "Rechnungen & feste Kosten",
+        abVariable: "Ziele für Variables (Lebensmittel …)",
+        abAfterVariable: "Bleibt zum Sparen",
+        abLateIncome: "Kommt erst nach dem {{day}}.: {{list}}.",
+        abShowList: "Alle {{n}} Rechnungen anzeigen",
+        abHideList: "Liste ausblenden",
+        abUndated: "{{n}} Rechnungen ohne Datum sind vorsichtshalber schon bis zum {{day}}. eingerechnet.",
+        abHint: "Stand am Monatsanfang = erwarteter Stand Ende des Vormonats. „Am {{day}}.“ = Stand + Einnahmen, die bis dahin kommen − Rechnungen, die bis dahin fällig sind (ohne Datum zählt mit). „Frei“ = Stand + alle Einnahmen − alle Rechnungen und festen Kosten des Monats; davon gehen noch Lebensmittel & Co. ab, der Rest kann gespart werden. Das Fälligkeitsdatum stellst du beim Posten ein.",
         noAccessTitle: "Noch kein Haushalt für dieses Konto",
         noAccessText: "{{email}} ist für keinen Haushalt freigeschaltet. Die angezeigten Namen sind nur Platzhalter. Bitte den Besitzer, diese Adresse in den Firebase-Regeln einzutragen, dann die App neu öffnen.",
         householdLabel: "Haushalt",
@@ -1591,6 +1609,24 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        forecastTitleAll: "Month-end balance: history & outlook",
+        forecastNext: "Next",
+        forecastAll: "All",
+        abTitle: "After the bills",
+        abThis: "This",
+        abNext: "Next",
+        abOnDay: "Left on {{month}} {{day}}",
+        abFree: "Free after all bills",
+        abStart: "Balance at month start",
+        abIncome: "Income this month",
+        abBills: "Bills & fixed costs",
+        abVariable: "Targets for variable (groceries …)",
+        abAfterVariable: "Left to save",
+        abLateIncome: "Arrives after day {{day}}: {{list}}.",
+        abShowList: "Show all {{n}} bills",
+        abHideList: "Hide list",
+        abUndated: "{{n}} bills without a date are already counted by day {{day}}, to be safe.",
+        abHint: "Balance at month start = expected balance at the end of the month before. \"Left on day {{day}}\" = balance + income arriving by then − bills due by then (bills without a date count too). \"Free\" = balance + all income − all bills and fixed costs of the month; groceries and other variable spending still come out of it, the rest can be saved. Set the due day on each item.",
         noAccessTitle: "No household for this account yet",
         noAccessText: "{{email}} isn't allowed into any household yet. The names you see are only placeholders. Ask the owner to add this address to the Firebase rules, then reopen the app.",
         householdLabel: "Household",
@@ -2222,6 +2258,24 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        forecastTitleAll: "رصيد آخر الشهر: السابق والقادم",
+        forecastNext: "القادم",
+        forecastAll: "الكل",
+        abTitle: "بعد دفع الفواتير",
+        abThis: "هذا",
+        abNext: "القادم",
+        abOnDay: "المتبقي في {{day}} {{month}}",
+        abFree: "الحر بعد كل الفواتير",
+        abStart: "الرصيد أول الشهر",
+        abIncome: "دخل الشهر",
+        abBills: "الفواتير والتكاليف الثابتة",
+        abVariable: "أهداف المتغيرات (طعام …)",
+        abAfterVariable: "يبقى للادخار",
+        abLateIncome: "يصل بعد يوم {{day}}: {{list}}.",
+        abShowList: "عرض كل الفواتير ({{n}})",
+        abHideList: "إخفاء القائمة",
+        abUndated: "{{n}} فواتير بلا تاريخ محسوبة احتياطًا حتى يوم {{day}}.",
+        abHint: "الرصيد أول الشهر = الرصيد المتوقع آخر الشهر السابق. \"المتبقي في يوم {{day}}\" = الرصيد + الدخل الواصل حتى ذلك اليوم − الفواتير المستحقة حتى ذلك اليوم (وتُحسب الفواتير بلا تاريخ). \"الحر\" = الرصيد + كل الدخل − كل فواتير الشهر وتكاليفه الثابتة؛ ومنه تُدفع المصاريف المتغيرة والباقي للادخار. حدّد يوم الاستحقاق لكل بند.",
         noAccessTitle: "لا يوجد منزل لهذا الحساب بعد",
         noAccessText: "{{email}} غير مسموح له بدخول أي منزل بعد. الأسماء الظاهرة مجرد أمثلة. اطلب من المالك إضافة هذا العنوان في قواعد Firebase ثم أعد فتح التطبيق.",
         householdLabel: "المنزل",
@@ -3672,6 +3726,13 @@
         if (nowIdx === -1) return [];
         return forwardTimeline.slice(nowIdx, nowIdx + 12).filter(r => r.endProjectedBalance != null);
       }, [forwardTimeline, nowIdx]);
+      // Outlook can also show the months behind you (real month-end balances).
+      const [forecastRange, setForecastRangeState] = useState(() => safeStorage.get('budget_forecast_range', 'next'));
+      const setForecastRange = (v) => { setForecastRangeState(v); safeStorage.set('budget_forecast_range', v); };
+      const forecastShown = useMemo(() => {
+        if (forecastRange !== 'all' || nowIdx === -1) return forecast;
+        return forwardTimeline.slice(0, nowIdx + 12).filter(r => r.endProjectedBalance != null);
+      }, [forecast, forecastRange, forwardTimeline, nowIdx]);
 
       // Irregular costs (quarterly, yearly) and future one-time payments, as a monthly amount to put aside.
       const setAsides = useMemo(() => {
@@ -5719,34 +5780,132 @@
         }, t('tidyDone', { n: moves.length }));
       };
 
+      // ---- After the bills: what's left of a month once its fixed bills are paid ----
+      const [abWhich, setAbWhich] = useState('next');
+      const afterBills = useMemo(() => {
+        if (nowIdx === -1) return null;
+        const idx = abWhich === 'next' ? nowIdx + 1 : nowIdx;
+        const row = forwardTimeline[idx];
+        if (!row || row.startBal == null) return null;
+        const { year: yr, month: m } = row;
+        const dayOf = (type, cat) => { const d = getMeta(type, cat).payDay; return Number.isInteger(d) ? d : null; };
+        const incomes = data.categories.incomes.map(cat => {
+          const n = getNode('incomes', cat, yr, m);
+          return { cat, v: expectedIncome(n), day: dayOf('incomes', cat), done: n.actual > 0 };
+        }).filter(x => x.v > 0);
+        // Bills: everything with a known amount, i.e. all items outside the variable (receipt) groups.
+        const bills = data.categories.expenses.filter(cat => !isReceiptItem(cat)).map(cat => {
+          const n = getNode('expenses', cat, yr, m);
+          return { cat, v: knownAmount(n), day: dayOf('expenses', cat), done: n.actual > 0 };
+        }).filter(x => x.v > 0).sort((a, b) => (a.day ?? 99) - (b.day ?? 99));
+        const sum = (list) => list.reduce((s2, x) => s2 + x.v, 0);
+        const inAll = sum(incomes), billsAll = sum(bills);
+        // Variable spending as the month's own numbers expect it (its target, or more if already spent).
+        const variable = Math.max(0, row.projectedEx - billsAll);
+        const free = row.startBal + inAll - billsAll;
+        // First days: income that has arrived by then, bills due by then (bills without a date counted too, to be safe).
+        const EARLY = 5;
+        const inEarly = sum(incomes.filter(x => x.day != null && x.day <= EARLY));
+        const billsEarly = sum(bills.filter(x => x.day == null || x.day <= EARLY));
+        return { yr, m, start: row.startBal, incomes, bills, inAll, billsAll, free, variable, afterVariable: free - variable,
+          early: EARLY, inEarly, billsEarly, onDay5: row.startBal + inEarly - billsEarly,
+          lateIn: incomes.filter(x => x.day != null && x.day > EARLY), undated: bills.filter(x => x.day == null).length };
+      }, [forwardTimeline, nowIdx, abWhich, data]);
+      const [abList, setAbList] = useState(false);
+      const renderAfterBills = () => {
+        const a = afterBills;
+        if (!a) return null;
+        const month = `${formatMonth(a.m, lang)} ${a.yr}`;
+        const tone = (v) => v < 0 ? 'text-notion-red' : 'text-primary';
+        const row = (label, v, sign, cls) => (
+          <div className="flex items-center justify-between gap-3 text-[12px]">
+            <span className="text-secondary">{label}</span>
+            <span className={`font-mono ${cls || 'text-primary'}`}>{sign}{fmt(v)}</span>
+          </div>
+        );
+        return panel({ id: 'afterBills', icon: 'fa-file-invoice-dollar', title: t('abTitle'), sub: month,
+          right: <Segmented size="sm" options={[['now', t('abThis')], ['next', t('abNext')]]} value={abWhich} onChange={setAbWhich} /> }, (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-xl bg-subtle/70 px-3 py-2.5 min-w-0">
+                <div className="text-[11px] text-secondary">{t('abOnDay', { day: a.early, month: formatMonth(a.m, lang) })}</div>
+                <div className={`mt-0.5 text-[18px] font-semibold font-mono ${tone(a.onDay5)}`}>{fmt(a.onDay5)}</div>
+              </div>
+              <div className="rounded-xl bg-subtle/70 px-3 py-2.5 min-w-0">
+                <div className="text-[11px] text-secondary">{t('abFree')}</div>
+                <div className={`mt-0.5 text-[18px] font-semibold font-mono ${a.free < 0 ? 'text-notion-red' : 'text-notion-green'}`}>{fmt(a.free)}</div>
+              </div>
+            </div>
+            <div className="space-y-1.5 rounded-xl border border-subtle p-3">
+              {row(t('abStart'), a.start, '', tone(a.start))}
+              {row(t('abIncome'), a.inAll, '+ ', 'text-notion-green')}
+              {row(t('abBills'), a.billsAll, '− ', 'text-notion-red')}
+              <div className="border-t border-subtle pt-1.5">{row(t('abFree'), a.free, '= ', `font-semibold ${a.free < 0 ? 'text-notion-red' : 'text-primary'}`)}</div>
+              {a.variable > 0 && row(t('abVariable'), a.variable, '− ', 'text-secondary')}
+              {a.variable > 0 && row(t('abAfterVariable'), a.afterVariable, '= ', `font-semibold ${a.afterVariable < 0 ? 'text-notion-red' : 'text-notion-green'}`)}
+            </div>
+            {a.lateIn.length > 0 && (
+              <p className="text-[11px] text-secondary">
+                {t('abLateIncome', { list: a.lateIn.map(x => `${x.cat} (${x.day}.)`).join(', '), day: a.early })}
+              </p>
+            )}
+            <button onClick={() => setAbList(v => !v)} className="text-[12px] text-notion-blue hover:underline">
+              <i className={`fa-solid fa-chevron-down text-[9px] me-1.5 transition-transform ${abList ? 'rotate-180' : ''}`}></i>
+              {abList ? t('abHideList') : t('abShowList', { n: a.bills.length })}
+            </button>
+            {abList && (
+              <div className="space-y-1">
+                {a.bills.map(x => (
+                  <div key={x.cat} className="flex items-center gap-2 text-[12px]">
+                    <span className={`w-9 shrink-0 text-[11px] font-mono ${x.day == null ? 'text-tertiary' : x.day <= a.early ? 'text-primary' : 'text-secondary'}`}>{x.day == null ? '–' : `${x.day}.`}</span>
+                    <span className="flex-1 truncate text-primary">{x.cat}</span>
+                    {x.done && <i className="fa-solid fa-check text-[10px] text-notion-green"></i>}
+                    <span className="font-mono text-secondary">{fmt(x.v)}</span>
+                  </div>
+                ))}
+                {a.undated > 0 && <p className="text-[11px] text-tertiary pt-1">{t('abUndated', { n: a.undated, day: a.early })}</p>}
+              </div>
+            )}
+            <div className="text-[11px]"><Hint label={t('howCalc')} text={t('abHint', { day: a.early })} /></div>
+          </div>
+        ));
+      };
+
       const renderForecast = () => (
         <>
-                        {forecast.length > 1 && (() => {
-                          const vals = forecast.map(r => r.endProjectedBalance);
+                        {forecastShown.length > 1 && (() => {
+                          const rows = forecastShown;
+                          const vals = rows.map(r => r.endProjectedBalance);
                           const lo = Math.min(0, ...vals), hi = Math.max(0, ...vals);
                           const range = hi - lo || 1;
-                          const H = 90, W = 300, pad = 4, bw = (W - pad * 2) / forecast.length;
+                          const H = 90, W = 300, pad = 4, bw = (W - pad * 2) / rows.length;
                           const y = (v) => pad + (hi - v) / range * (H - pad * 2);
-                          const low = forecast.reduce((a, b) => b.endProjectedBalance < a.endProjectedBalance ? b : a);
-                          const labelSize = forecast.length > 8 ? 8.5 : 10;
+                          const low = forecast.length ? forecast.reduce((a, b) => b.endProjectedBalance < a.endProjectedBalance ? b : a) : rows[0];
+                          const labelSize = rows.length > 14 ? 7 : rows.length > 8 ? 8.5 : 10;
+                          const nowKey = forecast[0]?.key;
                           // Where a regular income stops, mark the first month without it.
                           const endMarks = incomeEndings.groups
-                            .map(g => ({ ...g, i: forecast.findIndex(r => r.year === g.from.yr && r.month === g.from.m) }))
+                            .map(g => ({ ...g, i: rows.findIndex(r => r.year === g.from.yr && r.month === g.from.m) }))
                             .filter(g => g.i > 0);
                           return (
                             <div className={`rounded-2xl border border-subtle bg-surface p-4 space-y-2`}>
-                              <span className="text-[13px] font-semibold text-primary">{t('forecastTitle')}</span>
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[13px] font-semibold text-primary">{t(forecastRange === 'all' ? 'forecastTitleAll' : 'forecastTitle')}</span>
+                                <Segmented size="sm" options={[['next', t('forecastNext')], ['all', t('forecastAll')]]} value={forecastRange} onChange={setForecastRange} />
+                              </div>
                               <svg viewBox={`0 0 ${W} ${H + 16}`} className="w-full h-auto" role="img" aria-label={t('forecastTitle')}>
                                 <line x1="0" x2={W} y1={y(0)} y2={y(0)} stroke="currentColor" className="text-tertiary" strokeWidth="1" strokeDasharray="3 3" />
-                                {forecast.map((r, i) => {
+                                {rows.map((r, i) => {
                                   const v = r.endProjectedBalance;
+                                  const isPastBar = monthStatus(r.year, r.month) === 'past';
                                   const top = Math.min(y(v), y(0)), h = Math.max(1.5, Math.abs(y(v) - y(0)));
                                   return (
                                     <g key={r.key}>
                                       <rect x={pad + i * bw + bw * 0.18} y={top} width={bw * 0.64} height={h} rx="3"
-                                        fill={v < 0 ? '#e03e3e' : r === low ? '#cb912f' : '#0f7b6c'} opacity={r === low ? 1 : 0.75} />
+                                        fill={v < 0 ? '#e03e3e' : r === low ? '#cb912f' : isPastBar ? '#64748b' : '#0f7b6c'} opacity={r === low || r.key === nowKey ? 1 : 0.75} />
+                                      {r.key === nowKey && forecastRange === 'all' && <rect x={pad + i * bw + bw * 0.1} y={1} width={bw * 0.8} height={H - 2} rx="4" fill="none" stroke="currentColor" className="text-tertiary" strokeWidth="0.8" strokeDasharray="2 2" />}
                                       <text x={pad + i * bw + bw / 2} y={H + 13} textAnchor="middle" fontSize={labelSize} fill="currentColor" className="text-tertiary">
-                                        {lang === 'ar' ? ALL_MONTHS.indexOf(r.month) + 1 : formatMonth(r.month, lang)}
+                                        {lang === 'ar' ? ALL_MONTHS.indexOf(r.month) + 1 : (rows.length > 14 ? formatMonth(r.month, lang).slice(0, 1) : formatMonth(r.month, lang))}
                                       </text>
                                     </g>
                                   );
@@ -6422,6 +6581,7 @@
             <div className="space-y-4 min-w-0">
               {renderIncomeEnd(true)}
               {renderDue()}
+              {renderAfterBills()}
               <div className="lg:hidden">{renderForecast()}</div>
               {renderHealthLink()}
             </div>
