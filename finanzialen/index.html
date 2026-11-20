@@ -960,6 +960,17 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        abSpendUntil: "Zum Ausgeben bis zum {{day}}. {{month}}",
+        abSpendMonth: "Zum Ausgeben in diesem Monat",
+        abPerDay: "≈ {{amount}} pro Tag für {{n}} Tage (vom {{from}}. bis {{to}}.)",
+        abNothing: "Nach den Rechnungen bleibt bis zum nächsten Geldeingang nichts übrig.",
+        abLowest: "Tiefster Stand ({{day}}. {{month}})",
+        abLateIn: "Ab dem {{day}}. kommt rein",
+        abEnd: "Ende {{month}} (vor Variablem)",
+        abFits: "Eure Ziele für Lebensmittel & Co. ({{month}}/Monat) brauchen für den {{from}}.–{{to}}. etwa {{amount}} – das passt.",
+        abTight: "Achtung: Eure Ziele für Lebensmittel & Co. brauchen für den {{from}}.–{{to}}. etwa {{amount}} – mehr als verfügbar.",
+        abUndated2: "Ohne Datum: {{b}} Rechnungen zählen ab dem 1., {{i}} Einnahmen erst am Monatsende – vorsichtshalber. Trage das Fälligkeitsdatum beim Posten ein.",
+        abHint2: "Die Linie ist euer Stand Tag für Tag, nur mit Einnahmen und Rechnungen (ohne Lebensmittel & Co.). Der tiefste Punkt ab heute ist das Geld, das ihr bis zum nächsten Geldeingang für Variables ausgeben könnt, ohne ins Minus zu gehen. Stand am Monatsanfang = erwarteter Stand Ende des Vormonats.",
         forecastTitleAll: "Stand am Monatsende: Verlauf & Ausblick",
         forecastNext: "Vorschau",
         forecastAll: "Alle",
@@ -976,6 +987,7 @@
         abLateIncome: "Kommt erst nach dem {{day}}.: {{list}}.",
         abShowList: "Alle {{n}} Rechnungen anzeigen",
         abHideList: "Liste ausblenden",
+        abShowList2: "Alle {{n}} Ein- und Ausgänge anzeigen",
         abUndated: "{{n}} Rechnungen ohne Datum sind vorsichtshalber schon bis zum {{day}}. eingerechnet.",
         abHint: "Stand am Monatsanfang = erwarteter Stand Ende des Vormonats. „Am {{day}}.“ = Stand + Einnahmen, die bis dahin kommen − Rechnungen, die bis dahin fällig sind (ohne Datum zählt mit). „Frei“ = Stand + alle Einnahmen − alle Rechnungen und festen Kosten des Monats; davon gehen noch Lebensmittel & Co. ab, der Rest kann gespart werden. Das Fälligkeitsdatum stellst du beim Posten ein.",
         noAccessTitle: "Noch kein Haushalt für dieses Konto",
@@ -1609,6 +1621,17 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        abSpendUntil: "To spend until {{month}} {{day}}",
+        abSpendMonth: "To spend this month",
+        abPerDay: "≈ {{amount}} a day for {{n}} days (day {{from}} to {{to}})",
+        abNothing: "After the bills there is nothing left until the next money comes in.",
+        abLowest: "Lowest point ({{month}} {{day}})",
+        abLateIn: "Coming in from day {{day}}",
+        abEnd: "End of {{month}} (before variable)",
+        abFits: "Your targets for groceries etc. ({{month}}/month) need about {{amount}} for day {{from}}–{{to}} – that fits.",
+        abTight: "Careful: your targets for groceries etc. need about {{amount}} for day {{from}}–{{to}} – more than is available.",
+        abUndated2: "Without a date: {{b}} bills count from day 1 and {{i}} incomes only at month end, to be safe. Set the due day on the item.",
+        abHint2: "The line is your balance day by day with only income and bills (no groceries etc.). Its lowest point from today on is what you can spend on variable things before the next money arrives without going below zero. Balance at month start = expected balance at the end of the month before.",
         forecastTitleAll: "Month-end balance: history & outlook",
         forecastNext: "Next",
         forecastAll: "All",
@@ -1625,6 +1648,7 @@
         abLateIncome: "Arrives after day {{day}}: {{list}}.",
         abShowList: "Show all {{n}} bills",
         abHideList: "Hide list",
+        abShowList2: "Show all {{n}} payments in and out",
         abUndated: "{{n}} bills without a date are already counted by day {{day}}, to be safe.",
         abHint: "Balance at month start = expected balance at the end of the month before. \"Left on day {{day}}\" = balance + income arriving by then − bills due by then (bills without a date count too). \"Free\" = balance + all income − all bills and fixed costs of the month; groceries and other variable spending still come out of it, the rest can be saved. Set the due day on each item.",
         noAccessTitle: "No household for this account yet",
@@ -2258,6 +2282,17 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        abSpendUntil: "للصرف حتى {{day}} {{month}}",
+        abSpendMonth: "للصرف هذا الشهر",
+        abPerDay: "≈ {{amount}} يوميًا لمدة {{n}} يومًا (من {{from}} إلى {{to}})",
+        abNothing: "بعد الفواتير لا يبقى شيء حتى وصول المال التالي.",
+        abLowest: "أدنى نقطة ({{day}} {{month}})",
+        abLateIn: "يصل من يوم {{day}}",
+        abEnd: "آخر {{month}} (قبل المتغيرات)",
+        abFits: "أهدافكم للطعام وغيره ({{month}}/شهر) تحتاج نحو {{amount}} للأيام {{from}}–{{to}} – وهذا يكفي.",
+        abTight: "انتبه: أهدافكم للطعام وغيره تحتاج نحو {{amount}} للأيام {{from}}–{{to}} – أكثر من المتاح.",
+        abUndated2: "بلا تاريخ: {{b}} فواتير تُحسب من اليوم 1 و{{i}} دخل في آخر الشهر فقط، احتياطًا. حدّد يوم الاستحقاق للبند.",
+        abHint2: "الخط هو رصيدكم يومًا بيوم بالدخل والفواتير فقط (دون الطعام وغيره). أدنى نقطة من اليوم فصاعدًا هي ما يمكن صرفه على المتغيرات قبل وصول المال التالي دون النزول تحت الصفر. الرصيد أول الشهر = الرصيد المتوقع آخر الشهر السابق.",
         forecastTitleAll: "رصيد آخر الشهر: السابق والقادم",
         forecastNext: "القادم",
         forecastAll: "الكل",
@@ -2274,6 +2309,7 @@
         abLateIncome: "يصل بعد يوم {{day}}: {{list}}.",
         abShowList: "عرض كل الفواتير ({{n}})",
         abHideList: "إخفاء القائمة",
+        abShowList2: "عرض كل الحركات ({{n}})",
         abUndated: "{{n}} فواتير بلا تاريخ محسوبة احتياطًا حتى يوم {{day}}.",
         abHint: "الرصيد أول الشهر = الرصيد المتوقع آخر الشهر السابق. \"المتبقي في يوم {{day}}\" = الرصيد + الدخل الواصل حتى ذلك اليوم − الفواتير المستحقة حتى ذلك اليوم (وتُحسب الفواتير بلا تاريخ). \"الحر\" = الرصيد + كل الدخل − كل فواتير الشهر وتكاليفه الثابتة؛ ومنه تُدفع المصاريف المتغيرة والباقي للادخار. حدّد يوم الاستحقاق لكل بند.",
         noAccessTitle: "لا يوجد منزل لهذا الحساب بعد",
@@ -5788,34 +5824,51 @@
         const row = forwardTimeline[idx];
         if (!row || row.startBal == null) return null;
         const { year: yr, month: m } = row;
-        const dayOf = (type, cat) => { const d = getMeta(type, cat).payDay; return Number.isInteger(d) ? d : null; };
+        const days = getDaysInMonth(yr, m);
+        const today = abWhich === 'next' ? 1 : new Date().getDate();
+        const dayOf = (type, cat) => { const d = getMeta(type, cat).payDay; return Number.isInteger(d) ? Math.min(d, days) : null; };
+        // Income without a date counts at the month's end, bills without a date on day 1 – both on the safe side.
         const incomes = data.categories.incomes.map(cat => {
-          const n = getNode('incomes', cat, yr, m);
-          return { cat, v: expectedIncome(n), day: dayOf('incomes', cat), done: n.actual > 0 };
+          const n = getNode('incomes', cat, yr, m), d = dayOf('incomes', cat);
+          return { cat, v: expectedIncome(n), day: d ?? (n.actual > 0 && abWhich !== 'next' ? 1 : days), dated: d != null, done: n.actual > 0 };
         }).filter(x => x.v > 0);
-        // Bills: everything with a known amount, i.e. all items outside the variable (receipt) groups.
         const bills = data.categories.expenses.filter(cat => !isReceiptItem(cat)).map(cat => {
-          const n = getNode('expenses', cat, yr, m);
-          return { cat, v: knownAmount(n), day: dayOf('expenses', cat), done: n.actual > 0 };
-        }).filter(x => x.v > 0).sort((a, b) => (a.day ?? 99) - (b.day ?? 99));
+          const n = getNode('expenses', cat, yr, m), d = dayOf('expenses', cat);
+          return { cat, v: knownAmount(n), day: d ?? 1, dated: d != null, done: n.actual > 0 };
+        }).filter(x => x.v > 0).sort((p1, p2) => p1.day - p2.day);
+        // Day-by-day balance before any day-to-day (variable) spending.
+        const bal = [];
+        let run = row.startBal;
+        for (let d = 1; d <= days; d++) {
+          incomes.forEach(x => { if (x.day === d) run += x.v; });
+          bills.forEach(x => { if (x.day === d) run -= x.v; });
+          bal.push(run);
+        }
+        // The main payday: the biggest income still to come after the first days (small extras don't end the stretch).
+        const fromDay = Math.max(today, 5 > days ? days : 5);
+        const later = incomes.filter(x => x.day > fromDay);
+        const nextIn = later.length ? later.reduce((best, x) => x.v > best.v ? x : best) : null;
+        const untilDay = nextIn ? nextIn.day : days;
+        // Lowest point between now and that payday: what can be spent before the big money arrives.
+        let lowDay = today;
+        for (let d = today; d <= Math.max(today, nextIn ? untilDay - 1 : days); d++) if (bal[d - 1] <= bal[lowDay - 1]) lowDay = d;
+        const incomeAfter = incomes.filter(x => x.day >= untilDay && nextIn);
+        const spendable = bal[lowDay - 1];
+        const spanDays = Math.max(1, untilDay - fromDay);
         const sum = (list) => list.reduce((s2, x) => s2 + x.v, 0);
-        const inAll = sum(incomes), billsAll = sum(bills);
-        // Variable spending as the month's own numbers expect it (its target, or more if already spent).
+        const billsAll = sum(bills);
         const variable = Math.max(0, row.projectedEx - billsAll);
-        const free = row.startBal + inAll - billsAll;
-        // First days: income that has arrived by then, bills due by then (bills without a date counted too, to be safe).
-        const EARLY = 5;
-        const inEarly = sum(incomes.filter(x => x.day != null && x.day <= EARLY));
-        const billsEarly = sum(bills.filter(x => x.day == null || x.day <= EARLY));
-        return { yr, m, start: row.startBal, incomes, bills, inAll, billsAll, free, variable, afterVariable: free - variable,
-          early: EARLY, inEarly, billsEarly, onDay5: row.startBal + inEarly - billsEarly,
-          lateIn: incomes.filter(x => x.day != null && x.day > EARLY), undated: bills.filter(x => x.day == null).length };
+        const variableSpan = variable * spanDays / days;
+        return { yr, m, days, today, start: row.startBal, incomes, bills, bal, lowDay, spendable, nextIn, untilDay, fromDay, spanDays,
+          perDay: spendable / spanDays, onDay5: bal[Math.min(5, days) - 1], inLate: sum(incomeAfter), end: bal[days - 1],
+          variable, variableSpan, afterVariable: row.endProjectedBalance,
+          undatedBills: bills.filter(x => !x.dated).length, undatedIn: incomes.filter(x => !x.dated && !x.done).length };
       }, [forwardTimeline, nowIdx, abWhich, data]);
       const [abList, setAbList] = useState(false);
       const renderAfterBills = () => {
         const a = afterBills;
         if (!a) return null;
-        const month = `${formatMonth(a.m, lang)} ${a.yr}`;
+        const mon = formatMonth(a.m, lang);
         const tone = (v) => v < 0 ? 'text-notion-red' : 'text-primary';
         const row = (label, v, sign, cls) => (
           <div className="flex items-center justify-between gap-3 text-[12px]">
@@ -5823,50 +5876,62 @@
             <span className={`font-mono ${cls || 'text-primary'}`}>{sign}{fmt(v)}</span>
           </div>
         );
-        return panel({ id: 'afterBills', icon: 'fa-file-invoice-dollar', title: t('abTitle'), sub: month,
+        // Small step chart of the month: bills pull it down, income lifts it.
+        const W = 300, H = 70, lo = Math.min(0, ...a.bal), hi = Math.max(1, ...a.bal, a.start);
+        const X = (d) => 4 + (d - 1) / Math.max(1, a.days - 1) * (W - 8);
+        const Y = (v) => 6 + (hi - v) / (hi - lo || 1) * (H - 12);
+        const path = a.bal.map((v, i) => `${i === 0 ? 'M' : 'L'} ${X(i + 1)} ${Y(i === 0 ? a.start : a.bal[i - 1])} L ${X(i + 1)} ${Y(v)}`).join(' ');
+        const fits = a.spendable >= a.variableSpan;
+        return panel({ id: 'afterBills', icon: 'fa-file-invoice-dollar', title: t('abTitle'), sub: `${mon} ${a.yr}`,
           right: <Segmented size="sm" options={[['now', t('abThis')], ['next', t('abNext')]]} value={abWhich} onChange={setAbWhich} /> }, (
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-xl bg-subtle/70 px-3 py-2.5 min-w-0">
-                <div className="text-[11px] text-secondary">{t('abOnDay', { day: a.early, month: formatMonth(a.m, lang) })}</div>
-                <div className={`mt-0.5 text-[18px] font-semibold font-mono ${tone(a.onDay5)}`}>{fmt(a.onDay5)}</div>
-              </div>
-              <div className="rounded-xl bg-subtle/70 px-3 py-2.5 min-w-0">
-                <div className="text-[11px] text-secondary">{t('abFree')}</div>
-                <div className={`mt-0.5 text-[18px] font-semibold font-mono ${a.free < 0 ? 'text-notion-red' : 'text-notion-green'}`}>{fmt(a.free)}</div>
+            <div className="rounded-xl bg-subtle/70 px-3.5 py-3">
+              <div className="text-[11px] text-secondary">{a.nextIn ? t('abSpendUntil', { day: a.untilDay, month: mon }) : t('abSpendMonth')}</div>
+              <div className={`mt-0.5 text-[26px] leading-tight font-semibold font-mono ${a.spendable < 0 ? 'text-notion-red' : 'text-notion-green'}`}>{fmt(a.spendable)}</div>
+              <div className="text-[11px] text-secondary mt-1">
+                {a.spendable > 0 ? t('abPerDay', { amount: fmt(a.perDay), n: a.spanDays, from: a.fromDay, to: a.untilDay }) : t('abNothing')}
               </div>
             </div>
+            <svg viewBox={`0 0 ${W} ${H + 12}`} className="w-full h-auto" role="img" aria-label={t('abTitle')}>
+              <line x1="0" x2={W} y1={Y(0)} y2={Y(0)} stroke="currentColor" className="text-tertiary" strokeWidth="0.7" strokeDasharray="3 3" />
+              <rect x={X(a.fromDay)} y="0" width={Math.max(0, X(a.untilDay) - X(a.fromDay))} height={H} fill="#10b981" opacity="0.08" />
+              <path d={path} fill="none" stroke="#3b82f6" strokeWidth="1.8" strokeLinejoin="round" />
+              <circle cx={X(a.lowDay)} cy={Y(a.spendable)} r="3.5" fill={a.spendable < 0 ? '#ef4444' : '#f59e0b'} />
+              {a.nextIn && <circle cx={X(a.untilDay)} cy={Y(a.bal[a.untilDay - 1])} r="3" fill="#10b981" />}
+              {[1, 5, 10, 15, 20, 25, a.days].map(d => (
+                <text key={d} x={X(d)} y={H + 10} textAnchor={d === 1 ? 'start' : d === a.days ? 'end' : 'middle'} fontSize="8.5" fill="currentColor" className="text-tertiary">{d}.</text>
+              ))}
+            </svg>
             <div className="space-y-1.5 rounded-xl border border-subtle p-3">
               {row(t('abStart'), a.start, '', tone(a.start))}
-              {row(t('abIncome'), a.inAll, '+ ', 'text-notion-green')}
-              {row(t('abBills'), a.billsAll, '− ', 'text-notion-red')}
-              <div className="border-t border-subtle pt-1.5">{row(t('abFree'), a.free, '= ', `font-semibold ${a.free < 0 ? 'text-notion-red' : 'text-primary'}`)}</div>
-              {a.variable > 0 && row(t('abVariable'), a.variable, '− ', 'text-secondary')}
-              {a.variable > 0 && row(t('abAfterVariable'), a.afterVariable, '= ', `font-semibold ${a.afterVariable < 0 ? 'text-notion-red' : 'text-notion-green'}`)}
+              {row(t('abOnDay', { day: Math.min(5, a.days), month: mon }), a.onDay5, '', tone(a.onDay5))}
+              {row(t('abLowest', { day: a.lowDay, month: mon }), a.spendable, '', `font-semibold ${tone(a.spendable)}`)}
+              {a.inLate > 0 && row(t('abLateIn', { day: a.untilDay }), a.inLate, '+ ', 'text-notion-green')}
+              <div className="border-t border-subtle pt-1.5">{row(t('abEnd', { month: mon }), a.end, '', `font-semibold ${tone(a.end)}`)}</div>
             </div>
-            {a.lateIn.length > 0 && (
-              <p className="text-[11px] text-secondary">
-                {t('abLateIncome', { list: a.lateIn.map(x => `${x.cat} (${x.day}.)`).join(', '), day: a.early })}
+            {a.variable > 0 && (
+              <p className={`text-[11px] ${fits ? 'text-secondary' : 'text-notion-red'}`}>
+                {t(fits ? 'abFits' : 'abTight', { amount: fmt(a.variableSpan), from: a.fromDay, to: a.untilDay, month: fmt(a.variable) })}
               </p>
             )}
             <button onClick={() => setAbList(v => !v)} className="text-[12px] text-notion-blue hover:underline">
               <i className={`fa-solid fa-chevron-down text-[9px] me-1.5 transition-transform ${abList ? 'rotate-180' : ''}`}></i>
-              {abList ? t('abHideList') : t('abShowList', { n: a.bills.length })}
+              {abList ? t('abHideList') : t('abShowList2', { n: a.bills.length + a.incomes.length })}
             </button>
             {abList && (
               <div className="space-y-1">
-                {a.bills.map(x => (
-                  <div key={x.cat} className="flex items-center gap-2 text-[12px]">
-                    <span className={`w-9 shrink-0 text-[11px] font-mono ${x.day == null ? 'text-tertiary' : x.day <= a.early ? 'text-primary' : 'text-secondary'}`}>{x.day == null ? '–' : `${x.day}.`}</span>
+                {[...a.incomes.map(x => ({ ...x, inc: true })), ...a.bills].sort((p1, p2) => p1.day - p2.day || (p2.inc ? 1 : 0) - (p1.inc ? 1 : 0)).map(x => (
+                  <div key={(x.inc ? 'i' : 'b') + x.cat} className="flex items-center gap-2 text-[12px]">
+                    <span className={`w-9 shrink-0 text-[11px] font-mono ${x.dated ? 'text-secondary' : 'text-tertiary'}`}>{x.dated ? `${x.day}.` : '–'}</span>
                     <span className="flex-1 truncate text-primary">{x.cat}</span>
                     {x.done && <i className="fa-solid fa-check text-[10px] text-notion-green"></i>}
-                    <span className="font-mono text-secondary">{fmt(x.v)}</span>
+                    <span className={`font-mono ${x.inc ? 'text-notion-green' : 'text-secondary'}`}>{x.inc ? '+ ' : '− '}{fmt(x.v)}</span>
                   </div>
                 ))}
-                {a.undated > 0 && <p className="text-[11px] text-tertiary pt-1">{t('abUndated', { n: a.undated, day: a.early })}</p>}
+                {(a.undatedBills > 0 || a.undatedIn > 0) && <p className="text-[11px] text-tertiary pt-1">{t('abUndated2', { b: a.undatedBills, i: a.undatedIn })}</p>}
               </div>
             )}
-            <div className="text-[11px]"><Hint label={t('howCalc')} text={t('abHint', { day: a.early })} /></div>
+            <div className="text-[11px]"><Hint label={t('howCalc')} text={t('abHint2')} /></div>
           </div>
         ));
       };
