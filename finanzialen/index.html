@@ -960,6 +960,9 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        abRealBal: "Echter Kontostand (Konten, geprüft {{date}})",
+        abRealDiff: "Laut Einträgen wären es {{amount}}. Die Konten unter Mehr → Konten aktuell halten, dann stimmt diese Zahl.",
+        abNoReal: "Trage unter Mehr → Konten eure echten Kontostände ein – dann rechnet diese Karte vom echten Stand aus.",
         abNowBal: "Stand jetzt (laut Einträgen)",
         abFitsNow: "Für Lebensmittel & Co. sind in diesem Monat noch {{month}} eingeplant; für den {{from}}.–{{to}}. etwa {{amount}} – das passt.",
         abTightNow: "Achtung: Für Lebensmittel & Co. sind noch {{month}} eingeplant; für den {{from}}.–{{to}}. wären das etwa {{amount}} – mehr als verfügbar.",
@@ -1624,6 +1627,9 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        abRealBal: "Real balance (accounts, checked {{date}})",
+        abRealDiff: "Your entries say {{amount}}. Keep the balances under More → Accounts up to date and this number stays exact.",
+        abNoReal: "Enter your real balances under More → Accounts and this card will start from them.",
         abNowBal: "Balance now (per entries)",
         abFitsNow: "Groceries etc. still have {{month}} planned this month; for day {{from}}–{{to}} that is about {{amount}} – that fits.",
         abTightNow: "Careful: groceries etc. still have {{month}} planned; for day {{from}}–{{to}} that would be about {{amount}} – more than is available.",
@@ -2288,6 +2294,9 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        abRealBal: "الرصيد الحقيقي (الحسابات، تم التحقق {{date}})",
+        abRealDiff: "حسب الإدخالات: {{amount}}. حدّث الأرصدة في المزيد ← الحسابات ليبقى هذا الرقم دقيقًا.",
+        abNoReal: "أدخل أرصدتكم الحقيقية في المزيد ← الحسابات لتبدأ هذه البطاقة منها.",
         abNowBal: "الرصيد الآن (حسب الإدخالات)",
         abFitsNow: "ما زال مخططًا للطعام وغيره {{month}} هذا الشهر؛ للأيام {{from}}–{{to}} نحو {{amount}} – وهذا يكفي.",
         abTightNow: "انتبه: ما زال مخططًا للطعام وغيره {{month}}؛ للأيام {{from}}–{{to}} نحو {{amount}} – أكثر من المتاح.",
@@ -5839,7 +5848,11 @@
         const isNow = abWhich !== 'next';
         // This month starts from the balance right now (everything received and spent so far, groceries included);
         // only what is still to come is added. Next month starts from this month's expected end.
-        const start = isNow ? row.startBal + row.actualIn - row.actualEx : row.startBal;
+        const entriesNow = row.startBal + row.actualIn - row.actualEx;
+        // Your real account balances win when they were checked this month.
+        const checked = data.accounts.map(x => x.updated).filter(Boolean).sort().pop() || null;
+        const realNow = isNow && checked && checked.slice(0, 7) === todayISO().slice(0, 7) ? accountsTotal : null;
+        const start = isNow ? (realNow ?? entriesNow) : row.startBal;
         // Income without a date (or overdue) counts at the month's end, bills without a date (or overdue) right away – both on the safe side.
         const incomes = data.categories.incomes.map(cat => {
           const n = getNode('incomes', cat, yr, m), d = dayOf('incomes', cat);
@@ -5880,11 +5893,11 @@
         const variable = isNow ? Math.max(0, row.projectedEx - row.actualEx - sum(bills.filter(x => !x.done)))
           : Math.max(0, row.projectedEx - billsAll);
         const variableSpan = variable * spanDays / Math.max(1, days - today + 1);
-        return { yr, m, days, today, isNow, start, incomes, bills, bal, lowDay, spendable, nextIn, untilDay, fromDay, spanDays,
+        return { yr, m, days, today, isNow, start, realNow, entriesNow, checked, incomes, bills, bal, lowDay, spendable, nextIn, untilDay, fromDay, spanDays,
           perDay: spendable / spanDays, onDay5: bal[Math.min(5, days) - 1], inLate: sum(incomeAfter), end: bal[days - 1],
           variable, variableSpan, afterVariable: row.endProjectedBalance,
           undatedBills: bills.filter(x => !x.dated).length, undatedIn: incomes.filter(x => !x.dated && !x.done).length };
-      }, [forwardTimeline, nowIdx, abWhich, data]);
+      }, [forwardTimeline, nowIdx, abWhich, data, accountsTotal]);
       const [abList, setAbList] = useState(false);
       const renderAfterBills = () => {
         const a = afterBills;
@@ -5925,7 +5938,13 @@
               ))}
             </svg>
             <div className="space-y-1.5 rounded-xl border border-subtle p-3">
-              {row(t(a.isNow ? 'abNowBal' : 'abStart'), a.start, '', tone(a.start))}
+              {row(a.realNow != null ? t('abRealBal', { date: a.checked.slice(8, 10) + '.' + a.checked.slice(5, 7) + '.' }) : t(a.isNow ? 'abNowBal' : 'abStart'), a.start, '', tone(a.start))}
+              {a.realNow != null && Math.abs(a.realNow - a.entriesNow) >= 1 && (
+                <div className="text-[11px] text-tertiary">{t('abRealDiff', { amount: fmt(a.entriesNow) })}</div>
+              )}
+              {a.isNow && a.realNow == null && (
+                <div className="text-[11px] text-tertiary">{t('abNoReal')}</div>
+              )}
               {a.today <= 5 && row(t('abOnDay', { day: Math.min(5, a.days), month: mon }), a.onDay5, '', tone(a.onDay5))}
               {row(t('abLowest', { day: a.lowDay, month: mon }), a.spendable, '', `font-semibold ${tone(a.spendable)}`)}
               {a.inLate > 0 && row(t('abLateIn', { day: a.untilDay }), a.inLate, '+ ', 'text-notion-green')}
