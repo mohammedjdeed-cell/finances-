@@ -794,6 +794,7 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        calNothingDay: "Keine Zahlungen an diesem Tag",
         otAdd: "Über „Buchen“ eintragen",
         calKind_earlier: "Früher eingetragen",
         calKind_loan: "Darlehen",
@@ -1578,6 +1579,7 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        calNothingDay: "No payments on this day",
         otAdd: "Add through \"Add\"",
         calKind_earlier: "Entered earlier",
         calKind_loan: "Loan",
@@ -2362,6 +2364,7 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        calNothingDay: "لا مدفوعات في هذا اليوم",
         otAdd: "التسجيل عبر «تسجيل»",
         calKind_earlier: "مُدخل سابقًا",
         calKind_loan: "دين",
@@ -7657,134 +7660,81 @@
               className="w-full py-2 rounded-xl border border-dashed border-strong text-[12px] text-notion-blue">{t('calAddHere')}</button>
           </div>
         );
+        // A compact calendar widget: a small month on one side, the chosen day on the other.
+        const dayIso2 = sel || todayIso;
+        const dSel = new Date(dayIso2 + 'T12:00');
+        const od = c.byDay[+dayIso2.slice(8, 10)] || { list: [], out: 0, inc: 0, due: 0, dueIn: 0 };
+        const mini = (e) => (
+          <div key={e.key} className={`cw-item ${e.planned ? 'cw-item-due' : ''}`}>
+            {e.type === 'transfer'
+              ? <span className="cw-ico cw-ico-tr"><i className="fa-solid fa-right-left"></i></span>
+              : <ItemIcon spec={iconFor(e.type, e.cat)} tint={tintFor(e.type, e.cat)} size={22} />}
+            <span className="cw-name">{e.type === 'transfer' ? `${accName(e.from)} → ${accName(e.to)}` : e.cat}{e.planned ? <em> · {kindLabel(e)}</em> : null}</span>
+            <span className={`cw-amt ${e.type === 'incomes' ? 'cw-pos' : ''}`}>{e.type === 'incomes' ? '+' : e.type === 'transfer' ? '' : '−'}{fmtCents(e.amount)}</span>
+            {e.txId && <button onClick={() => deleteTx(e.txId)} aria-label={t('deleteCategoryBtn')} className="cw-x"><i className="fa-solid fa-xmark"></i></button>}
+            {e.trId && <button onClick={() => deleteTransfer(e.trId)} aria-label={t('deleteCategoryBtn')} className="cw-x"><i className="fa-solid fa-xmark"></i></button>}
+          </div>
+        );
         const body = (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <Segmented size="sm" options={[['month', t('calModeMonth')], ['day', t('calModeDay')]]} value={calMode} onChange={setCalMode} />
-              <span className="text-[11px] text-tertiary">{formatMonth(c.m, lang)} {c.yr}</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              {[[t('calPaid'), c.out, 'text-primary', 'fa-arrow-up-from-bracket'], [t('calGot'), c.inc, 'text-notion-green', 'fa-arrow-down'], [t('calStillDue'), c.due, 'text-amber-500', 'fa-hourglass-half']].map(([l, v, cls, ic]) => (
-                <div key={l} className="rounded-xl bg-subtle/70 px-2.5 py-2 min-w-0">
-                  <div className="text-[10.5px] text-secondary truncate"><i className={`fa-solid ${ic} me-1 text-[9px] opacity-70`}></i>{l}</div>
-                  <div className={`text-[16px] font-bold font-mono truncate ${cls}`}>{fmt(v)}</div>
+          <div className="cw-wrap">
+            <div className="cw">
+              <div className="cw-month">
+                <div className="cw-head">
+                  {weekdays.map((w, i) => <span key={i} className={i === 6 ? 'cw-sun' : ''}>{w}</span>)}
                 </div>
-              ))}
-            </div>
-
-            {calMode === 'month' && (
-              <>
-                <div className="cal-wrap"><div className="cal-grid text-center">
-                  {weekdays.map((w, i) => <div key={i} className="text-[10px] font-semibold text-tertiary py-0.5">{w}</div>)}
-                  {Array.from({ length: c.lead }, (_, i) => <div key={'b' + i}></div>)}
+                <div className="cw-grid">
+                  {Array.from({ length: c.lead }, (_, i) => <span key={'b' + i}></span>)}
                   {Array.from({ length: c.days }, (_, i) => {
                     const dd = i + 1, iso = c.prefix + pad2(dd), o = c.byDay[dd];
-                    const heat = o.out > 0 ? 0.10 + 0.40 * Math.sqrt(o.out / c.maxOut) : 0;
-                    const isToday = iso === todayIso, isSel = iso === sel;
-                    // The day's payments, biggest first: their logos make a day recognisable at a glance.
-                    const paid = o.list.filter(e => e.type === 'expenses' && !e.planned).sort((x, y) => y.amount - x.amount);
-                    const fill = o.out > 0 ? Math.max(14, Math.round(Math.sqrt(o.out / c.maxOut) * 100)) : 0;
-                    const pastDay = iso < todayIso;
-                    const tip = o.list.map(e => `${e.type === 'incomes' ? '+' : e.planned ? '⏳' : '−'} ${e.cat || t('calKind_transfer')} ${fmtCents(e.amount)}`).join('\n');
+                    const sunday = (c.lead + i) % 7 === 6;
+                    const isToday = iso === todayIso, isSel = iso === dayIso2 && !isToday;
                     return (
-                      <button key={iso} type="button" title={tip || undefined} onClick={() => setCalDay(iso)} onDoubleClick={() => { setCalDay(iso); setCalMode('day'); }}
-                        className={`cal-cell cell-in ${isSel ? 'cal-sel' : ''} ${o.due > 0 ? 'cal-due' : ''} ${!pastDay || o.list.length ? '' : 'cal-quiet'}`}
-                        style={{ animationDelay: `${i * 12}ms` }}>
-                        {fill > 0 && <span className="cal-fill" style={{ height: `${fill}%`, animationDelay: `${120 + i * 12}ms` }}></span>}
-                        <span className="cal-top">
-                          <span className={isToday ? 'cal-today' : 'cal-num'}>{dd}</span>
-                          {(o.inc > 0 || o.dueIn > 0) && <span className={`cal-in ${o.inc > 0 ? '' : 'cal-in-open'}`} title={`+ ${fmtCents(o.inc || o.dueIn)}`}></span>}
-                        </span>
-                        <span className={`cal-amt ${o.out > 0 ? '' : o.due > 0 ? 'cal-amt-due' : o.inc > 0 ? 'cal-amt-in' : ''}`}>
-                          {o.out > 0 ? short(o.out) : o.due > 0 ? short(o.due) : o.inc > 0 ? `+${short(o.inc)}` : ''}
-                        </span>
-                        <span className="cal-icons">
-                          {paid.slice(0, 3).map(e => <ItemIcon key={e.key} spec={iconFor('expenses', e.cat)} tint={tintFor('expenses', e.cat)} size={18} />)}
-                          {paid.length > 3 && <span className="cal-more">+{paid.length - 3}</span>}
-                        </span>
-                        <span className="cal-dots">
-                          {paid.slice(0, 3).map(e => <span key={e.key} style={{ background: tintFor('expenses', e.cat) }}></span>)}
+                      <button key={iso} type="button" onClick={() => setCalDay(iso)} aria-pressed={iso === dayIso2}
+                        title={o.list.map(e => `${e.type === 'incomes' ? '+' : '−'} ${e.cat || ''} ${fmtCents(e.amount)}`).join('\n') || undefined}
+                        className={`cw-day ${sunday ? 'cw-sun' : ''} ${isToday ? 'cw-today' : ''} ${isSel ? 'cw-sel' : ''}`}>
+                        <span className="cw-n">{dd}</span>
+                        <span className="cw-dots">
+                          {o.out > 0 && <i className="cw-d-paid"></i>}
+                          {o.due > 0 && <i className="cw-d-due"></i>}
+                          {(o.inc > 0 || o.dueIn > 0) && <i className="cw-d-in"></i>}
                         </span>
                       </button>
                     );
                   })}
-                </div></div>
-                <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10.5px] text-tertiary">
-                  <span className="flex items-center gap-1"><span className="rounded" style={{ width: 10, height: 10, background: 'rgba(59,130,246,.5)' }}></span>{t('calLegPaid')}</span>
-                  <span className="flex items-center gap-1"><span className="rounded border border-dashed border-amber-500" style={{ width: 10, height: 10 }}></span>{t('calLegDue')}</span>
-                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-notion-green"></span>{t('calLegIn')}</span>
-                  <span className="flex items-center gap-1"><span className="flex gap-0.5"><span className="w-1.5 h-1.5 rounded-full" style={{ background: '#3b82f6' }}></span><span className="w-1.5 h-1.5 rounded-full" style={{ background: '#ec4899' }}></span></span>{t('calLegShops')}</span>
-                  <span className="flex items-center gap-1"><i className="fa-solid fa-hand-pointer text-[9px]"></i>{t('calLegTap')}</span>
                 </div>
-                {sel && selDay && (
-                  <div className="space-y-2 pt-2 border-t border-subtle">
-                    <div className="flex items-center justify-between gap-2">
-                      <button onClick={() => setCalMode('day')} className="text-[14px] font-semibold text-primary hover:underline text-start">{new Date(sel + 'T12:00').toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' })}</button>
-                      {dayTotals(selDay)}
-                    </div>
-                    {dayList(sel, selDay)}
+              </div>
+              <div className="cw-daypane">
+                <div className="cw-dayhead">
+                  <div>
+                    <div className="cw-date">{dSel.toLocaleDateString(loc, { day: 'numeric', month: 'short' }).toUpperCase()}</div>
+                    <div className="cw-wd">{dSel.toLocaleDateString(loc, { weekday: 'long' })}</div>
                   </div>
-                )}
-              </>
-            )}
-
-            {calMode === 'day' && (() => {
-              const o = c.byDay[+dayIso.slice(8, 10)] || { list: [], out: 0, inc: 0, due: 0, dueIn: 0 };
-              const dt = new Date(dayIso + 'T12:00');
-              // A week strip around the chosen day.
-              const week = Array.from({ length: 7 }, (_, k) => { const x = new Date(dt); x.setDate(dt.getDate() - ((dt.getDay() + 6) % 7) + k); return x; });
-              let touchX = null;
-              return (
-                <div className="space-y-3" onTouchStart={(e) => { touchX = e.touches[0].clientX; }}
-                  onTouchEnd={(e) => { if (touchX == null) return; const dx = e.changedTouches[0].clientX - touchX; touchX = null; if (Math.abs(dx) > 50) stepDay((dx < 0) === (lang !== 'ar') ? 1 : -1); }}>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => stepDay(-1)} aria-label="prev" className="w-9 h-9 rounded-full bg-subtle text-secondary hover:text-primary"><i className="fa-solid fa-chevron-left rtl:rotate-180 text-xs"></i></button>
-                    <div className="flex-1 text-center">
-                      <div className="text-[12px] text-secondary">{dt.toLocaleDateString(loc, { weekday: 'long' })}</div>
-                      <div className="text-[22px] font-bold text-primary leading-tight">{dt.toLocaleDateString(loc, { day: 'numeric', month: 'long' })}</div>
-                    </div>
-                    <button onClick={() => stepDay(1)} aria-label="next" className="w-9 h-9 rounded-full bg-subtle text-secondary hover:text-primary"><i className="fa-solid fa-chevron-right rtl:rotate-180 text-xs"></i></button>
-                  </div>
-                  <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
-                    {week.map(x => {
-                      const iso = `${x.getFullYear()}-${pad2(x.getMonth() + 1)}-${pad2(x.getDate())}`;
-                      const inMon = iso.startsWith(c.prefix);
-                      const od = inMon ? c.byDay[x.getDate()] : null;
-                      const on = iso === dayIso;
-                      return (
-                        <button key={iso} onClick={() => { const pos = dateToMonth(iso); if (!pos) return; setCalDay(iso); if (!inMon) { setSelectedYear(pos.yr); setSelectedMonth(pos.m); } }}
-                          className={`rounded-xl py-1.5 flex flex-col items-center gap-0.5 transition ${on ? 'bg-notion-blue text-white' : 'bg-subtle/60 text-secondary'}`}>
-                          <span className="text-[10px]">{new Intl.DateTimeFormat(loc, { weekday: 'narrow' }).format(x)}</span>
-                          <span className="text-[15px] font-semibold leading-none">{x.getDate()}</span>
-                          <span className={`text-[9px] font-mono leading-none ${on ? 'text-white/90' : 'text-tertiary'}`}>{od && od.out > 0 ? short(od.out) : od && od.due > 0 ? short(od.due) : '·'}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {dayTotals(o)}
-                  {dayList(dayIso, o)}
+                  <button type="button" className="cw-add" aria-label={t('calAddHere')} title={t('calAddHere')}
+                    onClick={() => { setB({ date: dayIso2 }); if (view !== 'book') setView('book'); else try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {} }}>
+                    <i className="fa-solid fa-plus"></i>
+                  </button>
                 </div>
-              );
-            })()}
-
+                <div className="cw-list" key={dayIso2}>
+                  {od.list.length === 0 ? <p className="cw-empty">{t('calNothingDay')}</p> : od.list.map(mini)}
+                </div>
+              </div>
+            </div>
+            <div className="cw-sum">
+              <span><i className="cw-d-paid"></i>{t('calPaid')} <b>{fmt(c.out)}</b></span>
+              <span><i className="cw-d-in"></i>{t('calGot')} <b>{fmt(c.inc)}</b></span>
+              <span><i className="cw-d-due"></i>{t('calStillDue')} <b>{fmt(c.due)}</b></span>
+            </div>
             {c.undated.length > 0 && (
-              <details className="pt-1 border-t border-subtle">
-                <summary className="cursor-pointer text-[12px] text-secondary py-2">{t('calUndated', { n: c.undated.length, amount: fmt(c.undated.filter(e => e.type === 'expenses').reduce((s2, e) => s2 + e.amount, 0)) })}</summary>
-                <div className="space-y-1.5">{c.undated.map(row)}</div>
-                <p className="text-[11px] text-tertiary pt-2">{t('calUndatedHint')}</p>
+              <details className="cw-undated">
+                <summary>{t('calUndated', { n: c.undated.length, amount: fmt(c.undated.filter(e => e.type === 'expenses').reduce((s2, e) => s2 + e.amount, 0)) })}</summary>
+                <div className="cw-list">{c.undated.map(mini)}</div>
+                <p className="cw-empty">{t('calUndatedHint')}</p>
               </details>
             )}
           </div>
         );
         if (inMonth) return panel({ id: 'monthCal', icon: 'fa-calendar-days', title: t('calTitle'), defaultCollapsed: true, sub: `${t('calPaid')} ${fmt(c.out)} · ${t('calStillDue')} ${fmt(c.due)}` }, body);
-        return (
-          <div className="space-y-4 min-w-0">
-            <section className="rounded-2xl border border-subtle bg-surface p-4 space-y-3">
-              <div className="text-[14px] font-semibold text-primary">{t('calTitle')} · {formatMonth(c.m, lang)} {c.yr}</div>
-              {body}
-            </section>
-          </div>
-        );
+        return <div className="min-w-0">{body}</div>;
       };
 
       const renderBook = () => {
