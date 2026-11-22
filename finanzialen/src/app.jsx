@@ -6632,6 +6632,18 @@
         ['more', 'fa-grip', t('navMore')]
       ];
       const viewTitle = (NAV.find(n => n[0] === view) || NAV[0])[2];
+      // Large title area (phones): the small title in the bar appears once the big one has scrolled away.
+      const [scrolled, setScrolled] = useState(false);
+      useEffect(() => {
+        const on = () => setScrolled(window.scrollY > 72);
+        on(); window.addEventListener('scroll', on, { passive: true });
+        return () => window.removeEventListener('scroll', on);
+      }, []);
+      const heroSub = (() => {
+        if (view === 'overview' || view === 'month' || view === 'book' || view === 'activity') return `${formatMonth(selectedMonth, lang)} ${selectedYear} · ${data.name || t('title')}`;
+        if (view === 'plan') return `${selectedYear} · ${data.name || t('title')}`;
+        return data.name || t('title');
+      })();
       const showMonthNav = view === 'overview' || view === 'month' || view === 'activity' || view === 'book';
       const syncColor = syncStatus === 'error' ? 'text-notion-red' : user ? 'text-notion-green' : 'text-tertiary';
       const nowPos = TIMELINE[nowIdx];
@@ -8469,11 +8481,10 @@
 
           <div className="lg:ps-[232px]">
             {/* TOP BAR */}
-            <header className="sticky top-0 z-30 bg-app/85 backdrop-blur-xl border-b border-subtle" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+            <header className={`oneui-bar sticky top-0 z-30 transition-colors ${scrolled ? 'is-scrolled' : ''}`} style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
               <div className="max-w-[1280px] mx-auto h-14 px-4 lg:px-8 flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="lg:hidden text-[10px] text-tertiary leading-none mb-0.5 truncate">{data.name || t('title')}</div>
-                  <h1 className="select-none text-[13px] font-medium text-secondary lg:text-[20px] lg:font-semibold lg:text-primary tracking-tight truncate">{viewTitle}</h1>
+                  <h1 className={`oneui-smalltitle select-none text-[17px] font-semibold text-primary lg:text-[20px] tracking-tight truncate ${scrolled ? 'is-on' : ''}`}>{viewTitle}</h1>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   {showMonthNav && monthNav}
@@ -8494,6 +8505,10 @@
               className={`${editMode ? '' : 'locked'} ${anim === 'next' ? 'slide-next' : anim === 'prev' ? 'slide-prev' : 'view-enter'} max-w-[1280px] mx-auto px-4 lg:px-8 pt-4 lg:pt-6 pb-36 lg:pb-12`}
               onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
               style={view === 'month' ? { touchAction: 'pan-y' } : undefined}>
+              <div className="oneui-hero lg:hidden" aria-hidden={scrolled}>
+                <div className="oneui-hero-title">{viewTitle}</div>
+                <div className="oneui-hero-sub">{heroSub}</div>
+              </div>
               {view === 'overview' && MB && renderOverview()}
               {view === 'month' && MB && renderMonth()}
               {view === 'book' && renderBook()}
@@ -8505,8 +8520,8 @@
           </div>
 
           {/* TAB BAR (phone) */}
-          <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-surface/90 backdrop-blur-xl border-t border-subtle" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-            <div className="grid grid-cols-5 h-16">
+          <nav className="oneui-tabs lg:hidden fixed inset-x-0 z-40" style={{ bottom: 'calc(10px + env(safe-area-inset-bottom, 0px))' }}>
+            <div className="oneui-tabs-in grid grid-cols-5 h-16">
               {NAV.filter(([id]) => id !== 'health' && id !== 'activity').map(([id, icon, label]) => id === 'book' ? (
                 <button key={id} onClick={() => setView(id)} aria-current={view === id ? 'page' : undefined}
                   className="relative flex flex-col items-center justify-center gap-1 text-[10px] font-medium text-primary">

@@ -78,6 +78,24 @@
     body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; letter-spacing: -0.005em; }
     h1, h2, h3, .font-semibold, .font-bold { letter-spacing: -0.015em; }
     [dir="rtl"] body, [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] .font-semibold, [dir="rtl"] .font-bold { letter-spacing: 0; }
+    /* One UI–style layer: big title area for one-handed reach, soft borderless cards, floating tab bar. */
+    .oneui-hero { height: clamp(116px, 21vh, 200px); display: flex; flex-direction: column; justify-content: flex-end; padding: 0 6px 18px; }
+    .oneui-hero-title { font-size: clamp(30px, 8.6vw, 38px); font-weight: 650; letter-spacing: -0.03em; line-height: 1.05; color: rgb(var(--text-primary)); }
+    .oneui-hero-sub { margin-top: 6px; font-size: 13px; color: rgb(var(--text-secondary)); }
+    [dir="rtl"] .oneui-hero-title { letter-spacing: 0; }
+    .oneui-bar { background: transparent; border-bottom: 1px solid transparent; }
+    .oneui-bar.is-scrolled { background: rgb(var(--bg-app) / .82); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); border-bottom-color: rgb(var(--border-subtle)); }
+    @media (max-width: 1023px) { .oneui-smalltitle { opacity: 0; transform: translateY(6px); transition: opacity .2s ease, transform .2s ease; } .oneui-smalltitle.is-on { opacity: 1; transform: none; } }
+    @media (min-width: 1024px) { .oneui-bar { background: rgb(var(--bg-app) / .82); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); } }
+    main section.rounded-2xl, main .rounded-2xl.border-subtle { border-radius: 26px !important; }
+    main section.rounded-2xl.border-subtle, main .rounded-2xl.border.border-subtle { border-color: transparent !important; }
+    main section.rounded-2xl.bg-surface { box-shadow: 0 1px 2px rgba(15,23,42,.04); }
+    [data-theme="dark"] main section.rounded-2xl.bg-surface { box-shadow: none; }
+    .oneui-tabs { padding: 0 12px; }
+    .oneui-tabs-in { border-radius: 30px; background: rgb(var(--bg-surface) / .88); -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px);
+      box-shadow: 0 10px 30px -12px rgba(15,23,42,.35), 0 0 0 1px rgb(var(--border-subtle)); }
+    .oneui-tabs-in button span.w-12.h-12 { margin-top: -18px; }
+    aside.fixed { border-inline-end-color: transparent !important; }
     /* Calendar widget: a small month beside the chosen day, like a phone home-screen widget. Sized by its own width. */
     .cw-wrap { container: cw / inline-size; display: grid; gap: 12px; }
     .cw { display: grid; grid-template-columns: 1fr; gap: 14px; padding: 16px; border-radius: 26px;
@@ -134,24 +152,24 @@
     main.locked select:not([data-free]) { appearance: none; -webkit-appearance: none; }
     main.locked [data-edit] { opacity: .3; }
     :root {
-      --bg-app: 245 246 248;
+      --bg-app: 243 243 247;
       --bg-surface: 255 255 255;
-      --bg-surface-elevated: 250 251 252;
-      --bg-subtle: 240 242 245;
-      --border-subtle: 229 231 236;
-      --border-strong: 208 212 220;
+      --bg-surface-elevated: 252 252 254;
+      --bg-subtle: 238 239 244;
+      --border-subtle: 232 233 238;
+      --border-strong: 208 211 220;
       --text-primary: 17 20 28;
       --text-secondary: 98 105 120;
       --text-tertiary: 146 152 166;
     }
 
     [data-theme="dark"] {
-      --bg-app: 12 13 16;
-      --bg-surface: 21 23 28;
-      --bg-surface-elevated: 26 29 35;
-      --bg-subtle: 33 36 43;
-      --border-subtle: 39 43 51;
-      --border-strong: 58 63 74;
+      --bg-app: 0 0 0;
+      --bg-surface: 23 23 26;
+      --bg-surface-elevated: 30 30 34;
+      --bg-subtle: 38 38 43;
+      --border-subtle: 40 40 46;
+      --border-strong: 62 62 70;
       --text-primary: 236 238 242;
       --text-secondary: 150 157 171;
       --text-tertiary: 104 111 125;
@@ -218,7 +236,7 @@
   <div id="root"></div>
 
   <!-- APP:BEGIN – built from src/app.jsx by build.mjs, do not edit here -->
-  <script src="app.js?v=1e5220323f" defer></script>
+  <script src="app.js?v=90c3428859" defer></script>
   <!-- APP:END -->
   <script>
     if ('serviceWorker' in navigator) {
