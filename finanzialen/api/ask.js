@@ -143,6 +143,46 @@ async function readReceipt(body, res) {
   });
 }
 
+const TIPS_PROMPT = `You are a calm, practical money coach inside a household budgeting app used by a family in Germany.
+You get a short summary of their current month as JSON. Give 3 to 5 suggestions that help them right now: warnings when a group runs over its target or money gets tight before payday, concrete ideas to save or plan (with euro amounts from the data), and one encouraging note when something goes well.
+Rules: use only numbers that are in the data; each title at most 6 words; each text at most 2 short sentences; no generic advice that ignores the data; write in the language given as "lang" (de = German, en = English, ar = Arabic).`;
+
+// AI suggestions: month summary in, a few short tips out.
+async function giveTips(body, res) {
+  const summary = typeof body.summary === "string" && body.summary.length < 40_000 ? body.summary : null;
+  const lang = ["de", "en", "ar"].includes(body.lang) ? body.lang : "de";
+  if (!summary) return fail(res, 400, "bad_request");
+  const schema = {
+    type: "object", additionalProperties: false, required: ["tips"],
+    properties: {
+      tips: {
+        type: "array",
+        items: {
+          type: "object", additionalProperties: false, required: ["kind", "title", "text"],
+          properties: { kind: { type: "string", enum: ["warning", "idea", "good"] }, title: { type: "string" }, text: { type: "string" } },
+        },
+      },
+    },
+  };
+  const response = await anthropic.messages.create({
+    model: pickModel(),
+    max_tokens: 1500,
+    output_config: { effort: "low", format: { type: "json_schema", schema } },
+    system: TIPS_PROMPT,
+    messages: [{ role: "user", content: `lang: ${lang}\n\nSummary:\n${summary}` }],
+  });
+  if (response.stop_reason === "refusal") return fail(res, 422, "refused");
+  const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+  let r;
+  try { r = JSON.parse(text); } catch { return fail(res, 502, "api_error"); }
+  const tips = (r.tips || []).slice(0, 5).map((x) => ({
+    kind: ["warning", "idea", "good"].includes(x.kind) ? x.kind : "idea",
+    title: String(x.title || "").slice(0, 80),
+    text: String(x.text || "").slice(0, 400),
+  })).filter((x) => x.title || x.text);
+  return res.status(200).json({ tips });
+}
+
 const fail = (res, status, error) => res.status(status).json({ error });
 
 export default async function handler(req, res) {
@@ -165,6 +205,17 @@ export default async function handler(req, res) {
     .split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
   const email = String(claims.email || "").toLowerCase();
   if (!claims.email_verified || !allowed.includes(email)) return fail(res, 403, "not_allowed");
+
+  if (req.body?.mode === "tips") {
+    try {
+      return await giveTips(req.body, res);
+    } catch (error) {
+      if (error instanceof Anthropic.AuthenticationError) return fail(res, 500, "bad_api_key");
+      if (error instanceof Anthropic.RateLimitError) return fail(res, 429, "rate_limited");
+      console.error(error);
+      return fail(res, 502, "api_error");
+    }
+  }
 
   if (req.body?.mode === "receipt") {
     try {

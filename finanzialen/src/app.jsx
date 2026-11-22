@@ -794,6 +794,19 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        tipsTitle: "KI-Vorschläge",
+        tipsSub: "Persönliche Tipps zu diesem Monat",
+        tipsFrom: "Stand {{when}}",
+        tipsGet: "Vorschläge holen",
+        tipsRefresh: "Neu",
+        tipsIntro: "Die KI schaut sich euren aktuellen Monat an (Ziele, Rechnungen, Kontostand, Sparquote) und gibt 3–5 kurze, konkrete Tipps. Nur auf Knopfdruck – jede Abfrage kostet ein paar Cent API-Guthaben.",
+        tipsOtherLang: "Diese Tipps sind in einer anderen Sprache – „Neu“ holt sie in der aktuellen.",
+        calModeMonth: "Monat",
+        calModeDay: "Tag",
+        calLegGroups: "Farbe = Gruppe",
+        edTabDetails: "Angaben",
+        edTabPeriod: "Beträge & Zeitraum",
+        actEditAll: "Bearbeiten",
         starterBtn: "Startpaket Familie",
         starterDone: "Startpaket hinzugefügt: Einnahmen, Rechnungen, Kinder und Läden",
         starterHint: "Fügt typische Einnahmen (2× Sperrkonto, Kindergeld), Rechnungen, Kinder-Posten und Läden hinzu – nur was noch fehlt.",
@@ -1560,6 +1573,19 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        tipsTitle: "AI suggestions",
+        tipsSub: "Personal tips for this month",
+        tipsFrom: "As of {{when}}",
+        tipsGet: "Get suggestions",
+        tipsRefresh: "Refresh",
+        tipsIntro: "The AI looks at your current month (targets, bills, balance, savings rate) and gives 3–5 short, concrete tips. Only when you tap – each request costs a few cents of API credit.",
+        tipsOtherLang: "These tips are in another language – \"Refresh\" gets them in the current one.",
+        calModeMonth: "Month",
+        calModeDay: "Day",
+        calLegGroups: "colour = group",
+        edTabDetails: "Details",
+        edTabPeriod: "Amounts & period",
+        actEditAll: "Edit",
         starterBtn: "Family starter kit",
         starterDone: "Starter kit added: incomes, bills, children and shops",
         starterHint: "Adds typical incomes (2× blocked account, Kindergeld), bills, children items and shops – only what is missing.",
@@ -2326,6 +2352,19 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        tipsTitle: "اقتراحات الذكاء الاصطناعي",
+        tipsSub: "نصائح شخصية لهذا الشهر",
+        tipsFrom: "بتاريخ {{when}}",
+        tipsGet: "احصل على اقتراحات",
+        tipsRefresh: "تحديث",
+        tipsIntro: "يطّلع الذكاء الاصطناعي على شهركم الحالي (الأهداف والفواتير والرصيد ونسبة الادخار) ويعطي 3–5 نصائح قصيرة وعملية. فقط عند الضغط – كل طلب يكلّف بضعة سنتات من رصيد API.",
+        tipsOtherLang: "هذه النصائح بلغة أخرى – «تحديث» يجلبها باللغة الحالية.",
+        calModeMonth: "شهر",
+        calModeDay: "يوم",
+        calLegGroups: "اللون = المجموعة",
+        edTabDetails: "التفاصيل",
+        edTabPeriod: "المبالغ والفترة",
+        actEditAll: "تعديل",
         starterBtn: "الحزمة الأساسية للعائلة",
         starterDone: "أُضيفت الحزمة الأساسية: الدخل والفواتير والأطفال والمحلات",
         starterHint: "تضيف الدخل المعتاد (حسابان مجمّدان، Kindergeld) والفواتير وبنود الأطفال والمحلات – فقط ما ينقص.",
@@ -3474,6 +3513,7 @@
       const [newBulletText, setNewBulletText] = useState("");
 
       const [recurringModal, setRecurringModal] = useState(null);
+      const [editTab, setEditTab] = useState('details');
       const [recurringForm, setRecurringForm] = useState({ field: 'budget', amount: 0, from: '', until: '', every: 1, clearOutside: false });
 
       const [quickAddModal, setQuickAddModal] = useState(null);
@@ -4252,8 +4292,9 @@
       };
 
       const handleExecuteRecurring = () => {
-        if (!recurringModal) return;
-        const { type, cat } = recurringModal;
+        const target = recurringModal || activeEditCat;
+        if (!target) return;
+        const { type, cat } = target;
         const { field, amount, from, until, clearOutside } = recurringForm;
         const every = parseInt(recurringForm.every) || 1;
         const [fromIdx, untilIdx] = rangeIndexes(from, until);
@@ -4276,7 +4317,7 @@
         setRecurringModal(null);
       };
 
-      const handleOpenEditCategory = (type, cat) => {
+      const handleOpenEditCategory = (type, cat, tab = 'details') => {
         const meta = getMeta(type, cat);
         setActiveEditCat({ type, cat });
         setEditCatForm({
@@ -4290,6 +4331,10 @@
           notes: [...getNotes(type, cat)]
         });
         setNewBulletText("");
+        // The same dialog also sets amounts for a period (tab "Amounts & period").
+        const node = getNode(type, cat, selectedYear, selectedMonth);
+        setRecurringForm({ field: 'budget', amount: node.budget || node.actual, from: timelineKey(selectedYear, selectedMonth), until: LAST_KEY, every: 1, clearOutside: false });
+        setEditTab(tab);
       };
 
       const handleSaveCategoryChanges = () => {
@@ -4508,6 +4553,8 @@
       }));
       const setB = (patch) => setBk(prev => ({ ...prev, ...patch, err: '' }));
       const [calDay, setCalDay] = useState(null);
+      const [calMode, setCalModeState] = useState(() => safeStorage.get('budget_cal_mode', 'month') === 'day' ? 'day' : 'month');
+      const setCalMode = (v) => { setCalModeState(v); safeStorage.set('budget_cal_mode', v); };
       const [infoLang, setInfoLang] = useState(null);
       // Items used most often come first.
       const bkUsage = useMemo(() => {
@@ -5717,16 +5764,13 @@
                   </div>
                 )}
                 <div className="flex flex-wrap gap-1.5 text-[11px]">
-                  {!isVar && (
-                    <button onClick={() => handleOpenRecurring(type, cat)} className="px-2 py-1 rounded border border-subtle bg-surface text-secondary hover:text-primary">
-                      🔁 {t('actPeriod')}
-                    </button>
-                  )}
-                  <button onClick={() => handleOpenEditCategory(type, cat)} className="px-2 py-1 rounded border border-subtle bg-surface text-secondary hover:text-primary">
-                    ✎ {t('actEdit')}
+                  <button onClick={() => handleOpenEditCategory(type, cat)}
+                    className="px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 active:scale-95 transition"
+                    style={{ background: tintFor(type, cat) + '22', color: tintFor(type, cat), border: `1px solid ${tintFor(type, cat)}55` }}>
+                    <i className="fa-solid fa-sliders text-[10px]"></i>{t('actEditAll')}
                   </button>
-                  <button onClick={() => setSmartDeleteModal({ type, cat })} className="px-2 py-1 rounded border border-subtle bg-surface text-secondary hover:text-notion-red">
-                    🗑 {t('deleteCategoryBtn')}
+                  <button onClick={() => setSmartDeleteModal({ type, cat })} className="px-3 py-1.5 rounded-lg border border-red-500/30 bg-red-500/10 text-notion-red flex items-center gap-1.5 active:scale-95 transition">
+                    <i className="fa-solid fa-trash-can text-[10px]"></i>{t('deleteCategoryBtn')}
                   </button>
                 </div>
               </div>
@@ -7051,6 +7095,82 @@
         ));
       };
 
+      // ---- AI suggestions: a short month summary goes to Claude, a few tips come back ----
+      const tipsKey = `budget_ai_tips_${activeHousehold}`;
+      const [aiTips, setAiTips] = useState(() => { try { return JSON.parse(safeStorage.get(tipsKey, 'null')); } catch (e) { return null; } });
+      const [tipsBusy, setTipsBusy] = useState(false);
+      const buildTipsSummary = () => {
+        const pos = TIMELINE[Math.max(0, nowIdx)];
+        const row = forwardTimeline[Math.max(0, nowIdx)];
+        const groups = data.groups.map(g => {
+          const cats = data.categories.expenses.filter(c => getMeta('expenses', c).bracket === g.id);
+          const spent = cats.reduce((sum, c) => sum + getNode('expenses', c, pos.yr, pos.m).actual, 0);
+          const plan = g.kind === 'variable' ? getTarget(g.id, pos.yr, pos.m) : cats.reduce((sum, c) => sum + getNode('expenses', c, pos.yr, pos.m).budget, 0);
+          return { group: groupName(g), kind: g.kind, plan: round2(plan), spent: round2(spent) };
+        }).filter(x => x.plan || x.spent);
+        const a = afterBills;
+        return JSON.stringify({
+          today: todayISO(), month: `${pos.m} ${pos.yr}`, dayOfMonth: new Date().getDate(),
+          household: { members: [data.members.me, data.members.partner] },
+          balanceStart: row?.startBal, receivedSoFar: row?.actualIn, spentSoFar: row?.actualEx, expectedIncome: row?.projectedIn, expectedSpending: row?.projectedEx, expectedEndBalance: row?.endProjectedBalance,
+          realAccountsTotal: data.accounts.some(x => x.updated) ? accountsTotal : null,
+          groups,
+          toSpendUntilPayday: a && a.isNow ? { amount: round2(a.spendable), until: a.untilDay, perDay: round2(a.perDay) } : null,
+          openBills: data.categories.expenses.filter(c => !isReceiptItem(c)).map(c => ({ c, n: getNode('expenses', c, pos.yr, pos.m), d: getMeta('expenses', c).payDay })).filter(x => x.n.budget > 0 && x.n.actual === 0).map(x => ({ name: x.c, amount: x.n.budget, day: x.d || null })),
+          emergencyFundMonths: health?.months != null ? Math.round(health.months * 10) / 10 : null,
+          savingsRateLastMonths: health ? health.rates.filter(r => !r.now && r.rate != null).map(r => ({ month: r.m, rate: Math.round(r.rate * 100) })) : [],
+          debts: (data.ious || []).filter(i => !i.settled).map(i => ({ person: i.person, amount: i.amount, type: i.type })),
+          wishlistWaiting: (data.wishlist || []).filter(w => w.status === 'wait').map(w => ({ name: w.name, amount: w.amount })),
+          dataIssues: dataIssues.map(x => x.text)
+        });
+      };
+      const fetchTips = async () => {
+        if (!auth?.currentUser) { showToast(t('askNeedSignIn')); return; }
+        setTipsBusy(true);
+        try {
+          const token = await auth.currentUser.getIdToken();
+          const resp = await fetch('/api/ask', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ mode: 'tips', lang, summary: buildTipsSummary() }) });
+          const r = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            const key = { not_configured: 'askErrSetup', bad_api_key: 'askErrSetup', not_allowed: 'askErrNotAllowed', not_signed_in: 'askNeedSignIn', rate_limited: 'askErrBusy' }[r.error] || 'askErrGeneric';
+            showToast(t(key)); return;
+          }
+          const v = { at: new Date().toISOString(), lang, tips: r.tips || [] };
+          setAiTips(v); safeStorage.set(tipsKey, JSON.stringify(v));
+        } catch (e) {
+          console.error(e);
+          showToast(t(navigator.onLine ? 'askErrGeneric' : 'askErrOffline'));
+        } finally { setTipsBusy(false); }
+      };
+      const renderAiTips = () => {
+        const tips = aiTips?.tips || [];
+        const style = { warning: ['fa-triangle-exclamation', 'text-amber-500', 'bg-amber-500/10 border-amber-500/30'], idea: ['fa-lightbulb', 'text-notion-blue', 'bg-notion-blue/10 border-notion-blue/30'], good: ['fa-circle-check', 'text-notion-green', 'bg-emerald-500/10 border-emerald-500/30'] };
+        const when = aiTips?.at ? new Date(aiTips.at).toLocaleString(lang === 'en' ? 'en-US' : lang === 'ar' ? 'ar-SY-u-nu-latn' : 'de-DE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : null;
+        return panel({ id: 'aiTips', icon: 'fa-wand-magic-sparkles', title: t('tipsTitle'), sub: when ? t('tipsFrom', { when }) : t('tipsSub'),
+          right: <button onClick={fetchTips} disabled={tipsBusy} className="px-3 py-1.5 rounded-full bg-primary text-surface text-[11px] font-semibold disabled:opacity-60">
+            {tipsBusy ? <><i className="fa-solid fa-spinner fa-spin me-1"></i>{t('askThinking')}</> : tips.length ? t('tipsRefresh') : t('tipsGet')}
+          </button> }, (
+          <div className="space-y-2">
+            {!tips.length && !tipsBusy && <p className="text-[12px] text-secondary leading-relaxed">{t('tipsIntro')}</p>}
+            {tipsBusy && !tips.length && [0, 1, 2].map(i => <div key={i} className="h-14 rounded-xl bg-subtle/70 animate-pulse"></div>)}
+            {tips.map((x, i) => {
+              const [ic, col, box] = style[x.kind] || style.idea;
+              return (
+                <div key={i} className={`pop-in flex gap-2.5 rounded-xl border px-3 py-2.5 ${box}`} style={{ animationDelay: `${i * 60}ms` }}>
+                  <i className={`fa-solid ${ic} ${col} text-[14px] mt-1`}></i>
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-semibold text-primary">{x.title}</div>
+                    <div className="text-[12.5px] text-secondary leading-snug">{x.text}</div>
+                  </div>
+                </div>
+              );
+            })}
+            {aiTips && aiTips.lang !== lang && tips.length > 0 && <p className="text-[11px] text-tertiary">{t('tipsOtherLang')}</p>}
+          </div>
+        ));
+      };
+
       const renderDataCheck = () => {
         if (!dataIssues.length) return null;
         return panel({ id: 'dataCheck', icon: 'fa-stethoscope', title: t('dcTitle'), sub: t('dcSub', { n: dataIssues.length }), tone: dataIssues.some(x => !x.soft) ? 'warn' : undefined }, (
@@ -7110,6 +7230,7 @@
             <div className="lg:hidden space-y-4">{renderHealth(['fa-chart-pie', 'fa-calendar-days', 'fa-hand-holding-dollar'])}</div>
           </div>
           <div className="space-y-4 min-w-0">
+            {renderAiTips()}
             {renderDataCheck()}
             {renderWishlist()}
             <div className="hidden lg:block space-y-4">{renderHealth(['fa-chart-pie', 'fa-hand-holding-dollar', 'fa-calendar-days'])}</div>
@@ -7117,7 +7238,7 @@
         </div>
       );
 
-      const OV_DEFAULT = ['review', 'afterBills', 'due', 'dataCheck', 'meters', 'incomeEnd', 'forecast', 'healthLink'];
+      const OV_DEFAULT = ['review', 'afterBills', 'aiTips', 'due', 'dataCheck', 'meters', 'incomeEnd', 'forecast', 'healthLink'];
       const [ovOrder, setOvOrderState] = useState(() => {
         try { const v = JSON.parse(safeStorage.get('budget_ov_order', 'null')); if (Array.isArray(v)) return [...v.filter(k => OV_DEFAULT.includes(k)), ...OV_DEFAULT.filter(k => !v.includes(k))]; } catch (e) {}
         return OV_DEFAULT;
@@ -7126,7 +7247,7 @@
       const setOvOrder = (v) => { setOvOrderState(v); safeStorage.set('budget_ov_order', JSON.stringify(v)); };
       const setOvHidden = (v) => { setOvHiddenState(v); safeStorage.set('budget_ov_hidden', JSON.stringify(v)); };
       const [arrangeOpen, setArrangeOpen] = useState(false);
-      const OV_NAMES = { review: 'ovN_review', afterBills: 'abTitle', due: 'dueTitle', dataCheck: 'dcTitle', meters: 'thisMonth', incomeEnd: 'incomeEndTitle', forecast: 'forecastTitle', healthLink: 'healthTitle' };
+      const OV_NAMES = { review: 'ovN_review', aiTips: 'tipsTitle', afterBills: 'abTitle', due: 'dueTitle', dataCheck: 'dcTitle', meters: 'thisMonth', incomeEnd: 'incomeEndTitle', forecast: 'forecastTitle', healthLink: 'healthTitle' };
 
       const renderOverview = () => {
         const { cm, carriedLabel, lines, availableNow, beforeStart, isPast, meters } = MB;
@@ -7150,7 +7271,7 @@
         ];
         // Cards below the balance, in the order chosen under "Arrange cards".
         const cards = {
-          review: () => renderReview(), afterBills: () => renderAfterBills(), due: () => renderDue(), dataCheck: () => renderDataCheck(),
+          review: () => renderReview(), aiTips: () => renderAiTips(), afterBills: () => renderAfterBills(), due: () => renderDue(), dataCheck: () => renderDataCheck(),
           meters: () => panel({ id: 'meters', icon: 'fa-gauge-high', title: t('thisMonth') }, (
                 <div className="space-y-3.5">
                   {meters.map(mt => (
@@ -7431,52 +7552,142 @@
             {e.txId && <button onClick={() => deleteTx(e.txId)} aria-label={t('deleteCategoryBtn')} className="w-7 h-7 rounded-full text-tertiary hover:text-notion-red"><i className="fa-solid fa-xmark text-xs"></i></button>}
           </div>
         );
+        // Colour of a day: the groups that money went to, as a little stacked bar.
+        const segs = (o) => {
+          const by = {};
+          o.list.forEach(e => {
+            if (e.planned || e.type !== 'expenses') return;
+            const col = tintFor('expenses', e.cat);
+            by[col] = (by[col] || 0) + e.amount;
+          });
+          const tot = Object.values(by).reduce((x, y) => x + y, 0) || 1;
+          return Object.entries(by).sort((x, y) => y[1] - x[1]).map(([col, v]) => ({ col, w: v / tot * 100 }));
+        };
+        const dayIso = sel || todayIso;
+        const stepDay = (delta) => {
+          const dt = new Date(dayIso + 'T12:00'); dt.setDate(dt.getDate() + delta);
+          const iso = `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`;
+          const pos = dateToMonth(iso);
+          if (!pos) return;
+          setCalDay(iso);
+          if (pos.yr !== selectedYear || pos.m !== selectedMonth) { setSelectedYear(pos.yr); setSelectedMonth(pos.m); }
+        };
+        const dayTotals = (o) => (
+          <div className="flex flex-wrap gap-1.5 text-[12px] font-mono">
+            {o.inc > 0 && <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-notion-green">+ {fmtCents(o.inc)}</span>}
+            {o.out > 0 && <span className="px-2 py-0.5 rounded-full bg-subtle text-primary">− {fmtCents(o.out)}</span>}
+            {o.due > 0 && <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">{t('calDue')} {fmtCents(o.due)}</span>}
+          </div>
+        );
+        const dayList = (iso, o) => (
+          <div key={iso} className="pop-in space-y-2">
+            {o.list.length === 0 && <p className="text-[12px] text-tertiary py-2">{t('calDayEmpty')}</p>}
+            {o.list.map(row)}
+            <button onClick={() => { setB({ date: iso }); if (view !== 'book') setView('book'); else try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {} }}
+              className="w-full py-2 rounded-xl border border-dashed border-strong text-[12px] text-notion-blue">{t('calAddHere')}</button>
+          </div>
+        );
         const body = (
           <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <Segmented size="sm" options={[['month', t('calModeMonth')], ['day', t('calModeDay')]]} value={calMode} onChange={setCalMode} />
+              <span className="text-[11px] text-tertiary">{formatMonth(c.m, lang)} {c.yr}</span>
+            </div>
             <div className="grid grid-cols-3 gap-2">
-              {[[t('calPaid'), c.out, 'text-primary'], [t('calGot'), c.inc, 'text-notion-green'], [t('calStillDue'), c.due, 'text-amber-500']].map(([l, v, cls]) => (
+              {[[t('calPaid'), c.out, 'text-primary', 'fa-arrow-up-from-bracket'], [t('calGot'), c.inc, 'text-notion-green', 'fa-arrow-down'], [t('calStillDue'), c.due, 'text-amber-500', 'fa-hourglass-half']].map(([l, v, cls, ic]) => (
                 <div key={l} className="rounded-xl bg-subtle/70 px-2.5 py-2 min-w-0">
-                  <div className="text-[10.5px] text-secondary truncate">{l}</div>
-                  <div className={`text-[13px] font-semibold font-mono truncate ${cls}`}>{fmt(v)}</div>
+                  <div className="text-[10.5px] text-secondary truncate"><i className={`fa-solid ${ic} me-1 text-[9px] opacity-70`}></i>{l}</div>
+                  <div className={`text-[16px] font-bold font-mono truncate ${cls}`}>{fmt(v)}</div>
                 </div>
               ))}
             </div>
-            <div className="grid gap-1 text-center" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
-              {weekdays.map((w, i) => <div key={i} className="text-[10px] font-semibold text-tertiary py-0.5">{w}</div>)}
-              {Array.from({ length: c.lead }, (_, i) => <div key={'b' + i}></div>)}
-              {Array.from({ length: c.days }, (_, i) => {
-                const dd = i + 1, iso = c.prefix + pad2(dd), o = c.byDay[dd];
-                const heat = o.out > 0 ? 0.12 + 0.55 * Math.sqrt(o.out / c.maxOut) : 0;
-                const isToday = iso === todayIso, isSel = iso === sel;
-                return (
-                  <button key={iso} type="button" onClick={() => setCalDay(iso)}
-                    className={`cell-in relative rounded-xl flex flex-col items-center justify-center gap-0.5 transition active:scale-95 ${isSel ? 'ring-2 ring-notion-blue' : isToday ? 'ring-1 ring-strong' : ''} ${o.due > 0 || o.dueIn > 0 ? 'outline-dashed outline-1 outline-amber-500/70 -outline-offset-2' : ''}`}
-                    style={{ aspectRatio: '1 / 1', animationDelay: `${i * 12}ms`, background: heat ? `rgba(59,130,246,${heat})` : 'rgb(var(--bg-subtle) / 0.5)' }}>
-                    <span className={`text-[12px] leading-none ${isToday ? 'font-bold text-primary' : 'text-secondary'}`}>{dd}</span>
-                    {o.out > 0 && <span className="text-[9.5px] leading-none font-mono font-semibold text-primary">{short(o.out)}</span>}
-                    {o.out === 0 && o.due > 0 && <span className="text-[9px] leading-none font-mono text-amber-500">{short(o.due)}</span>}
-                    {(o.inc > 0 || o.dueIn > 0) && <span className={`absolute top-1 end-1 w-1.5 h-1.5 rounded-full ${o.inc > 0 ? 'bg-notion-green' : 'border border-notion-green'}`}></span>}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10.5px] text-tertiary">
-              <span className="flex items-center gap-1"><span className="rounded" style={{ width: 10, height: 10, background: 'rgba(59,130,246,.55)' }}></span>{t('calLegPaid')}</span>
-              <span className="flex items-center gap-1"><span className="rounded border border-dashed border-amber-500" style={{ width: 10, height: 10 }}></span>{t('calLegDue')}</span>
-              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-notion-green"></span>{t('calLegIn')}</span>
-            </div>
-            {sel && selDay && (
-              <div key={sel} className="pop-in space-y-2 pt-1 border-t border-subtle">
-                <div className="flex items-baseline justify-between gap-2 pt-2">
-                  <span className="text-[13px] font-semibold text-primary">{new Date(sel + 'T12:00').toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-                  <span className="text-[12px] font-mono text-secondary">{[selDay.inc > 0 ? `+ ${fmt(selDay.inc)}` : '', selDay.out > 0 ? `− ${fmt(selDay.out)}` : ''].filter(Boolean).join('  ')}</span>
+
+            {calMode === 'month' && (
+              <>
+                <div className="grid gap-1 sm:gap-1.5 text-center" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
+                  {weekdays.map((w, i) => <div key={i} className="text-[10px] font-semibold text-tertiary py-0.5">{w}</div>)}
+                  {Array.from({ length: c.lead }, (_, i) => <div key={'b' + i}></div>)}
+                  {Array.from({ length: c.days }, (_, i) => {
+                    const dd = i + 1, iso = c.prefix + pad2(dd), o = c.byDay[dd];
+                    const heat = o.out > 0 ? 0.10 + 0.40 * Math.sqrt(o.out / c.maxOut) : 0;
+                    const isToday = iso === todayIso, isSel = iso === sel;
+                    const bars = segs(o);
+                    const pastDay = iso < todayIso;
+                    return (
+                      <button key={iso} type="button" onClick={() => setCalDay(iso)} onDoubleClick={() => { setCalDay(iso); setCalMode('day'); }}
+                        className={`cal-cell cell-in relative rounded-xl sm:rounded-2xl flex flex-col items-stretch justify-between p-1 sm:p-1.5 overflow-hidden transition active:scale-95 hover:ring-1 hover:ring-strong ${isSel ? 'ring-2 ring-notion-blue' : ''} ${o.due > 0 ? 'outline-dashed outline-1 outline-amber-500/70 -outline-offset-2' : ''}`}
+                        style={{ animationDelay: `${i * 10}ms`, background: heat ? `rgba(59,130,246,${heat})` : 'rgb(var(--bg-subtle) / 0.55)', opacity: !pastDay || o.list.length ? 1 : 0.75 }}>
+                        <span className="flex items-center justify-between">
+                          <span className={`leading-none ${isToday ? 'w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-notion-blue text-white grid place-items-center font-bold' : 'text-secondary'}`} style={{ fontSize: 'clamp(10px, 2.6vw, 13px)' }}>{dd}</span>
+                          {(o.inc > 0 || o.dueIn > 0) && <span className={`w-2 h-2 rounded-full ${o.inc > 0 ? 'bg-notion-green' : 'border border-notion-green'}`}></span>}
+                        </span>
+                        <span className="leading-none font-mono font-bold text-primary" style={{ fontSize: 'clamp(11px, 3.4vw, 19px)' }}>
+                          {o.out > 0 ? short(o.out) : o.due > 0 ? <span className="text-amber-500 font-semibold">{short(o.due)}</span> : o.inc > 0 ? <span className="text-notion-green">+{short(o.inc)}</span> : ''}
+                        </span>
+                        <span className="flex h-1 sm:h-1.5 rounded-full overflow-hidden bg-transparent">
+                          {bars.map((b2, k) => <span key={k} style={{ width: `${b2.w}%`, background: b2.col }}></span>)}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
-                {selDay.list.length === 0 && <p className="text-[12px] text-tertiary">{t('calDayEmpty')}</p>}
-                {selDay.list.map(row)}
-                <button onClick={() => { setB({ date: sel }); if (view !== 'book') setView('book'); else try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {} }}
-                  className="text-[12px] text-notion-blue hover:underline">{t('calAddHere')}</button>
-              </div>
+                <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10.5px] text-tertiary">
+                  <span className="flex items-center gap-1"><span className="rounded" style={{ width: 10, height: 10, background: 'rgba(59,130,246,.5)' }}></span>{t('calLegPaid')}</span>
+                  <span className="flex items-center gap-1"><span className="rounded border border-dashed border-amber-500" style={{ width: 10, height: 10 }}></span>{t('calLegDue')}</span>
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-notion-green"></span>{t('calLegIn')}</span>
+                  <span className="flex items-center gap-1"><span className="rounded-full" style={{ width: 14, height: 4, background: 'linear-gradient(90deg,#3b82f6,#ec4899,#f59e0b)' }}></span>{t('calLegGroups')}</span>
+                </div>
+                {sel && selDay && (
+                  <div className="space-y-2 pt-2 border-t border-subtle">
+                    <div className="flex items-center justify-between gap-2">
+                      <button onClick={() => setCalMode('day')} className="text-[14px] font-semibold text-primary hover:underline text-start">{new Date(sel + 'T12:00').toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' })}</button>
+                      {dayTotals(selDay)}
+                    </div>
+                    {dayList(sel, selDay)}
+                  </div>
+                )}
+              </>
             )}
+
+            {calMode === 'day' && (() => {
+              const o = c.byDay[+dayIso.slice(8, 10)] || { list: [], out: 0, inc: 0, due: 0, dueIn: 0 };
+              const dt = new Date(dayIso + 'T12:00');
+              // A week strip around the chosen day.
+              const week = Array.from({ length: 7 }, (_, k) => { const x = new Date(dt); x.setDate(dt.getDate() - ((dt.getDay() + 6) % 7) + k); return x; });
+              let touchX = null;
+              return (
+                <div className="space-y-3" onTouchStart={(e) => { touchX = e.touches[0].clientX; }}
+                  onTouchEnd={(e) => { if (touchX == null) return; const dx = e.changedTouches[0].clientX - touchX; touchX = null; if (Math.abs(dx) > 50) stepDay((dx < 0) === (lang !== 'ar') ? 1 : -1); }}>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => stepDay(-1)} aria-label="prev" className="w-9 h-9 rounded-full bg-subtle text-secondary hover:text-primary"><i className="fa-solid fa-chevron-left rtl:rotate-180 text-xs"></i></button>
+                    <div className="flex-1 text-center">
+                      <div className="text-[12px] text-secondary">{dt.toLocaleDateString(loc, { weekday: 'long' })}</div>
+                      <div className="text-[22px] font-bold text-primary leading-tight">{dt.toLocaleDateString(loc, { day: 'numeric', month: 'long' })}</div>
+                    </div>
+                    <button onClick={() => stepDay(1)} aria-label="next" className="w-9 h-9 rounded-full bg-subtle text-secondary hover:text-primary"><i className="fa-solid fa-chevron-right rtl:rotate-180 text-xs"></i></button>
+                  </div>
+                  <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
+                    {week.map(x => {
+                      const iso = `${x.getFullYear()}-${pad2(x.getMonth() + 1)}-${pad2(x.getDate())}`;
+                      const inMon = iso.startsWith(c.prefix);
+                      const od = inMon ? c.byDay[x.getDate()] : null;
+                      const on = iso === dayIso;
+                      return (
+                        <button key={iso} onClick={() => { const pos = dateToMonth(iso); if (!pos) return; setCalDay(iso); if (!inMon) { setSelectedYear(pos.yr); setSelectedMonth(pos.m); } }}
+                          className={`rounded-xl py-1.5 flex flex-col items-center gap-0.5 transition ${on ? 'bg-notion-blue text-white' : 'bg-subtle/60 text-secondary'}`}>
+                          <span className="text-[10px]">{new Intl.DateTimeFormat(loc, { weekday: 'narrow' }).format(x)}</span>
+                          <span className="text-[15px] font-semibold leading-none">{x.getDate()}</span>
+                          <span className={`text-[9px] font-mono leading-none ${on ? 'text-white/90' : 'text-tertiary'}`}>{od && od.out > 0 ? short(od.out) : od && od.due > 0 ? short(od.due) : '·'}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {dayTotals(o)}
+                  {dayList(dayIso, o)}
+                </div>
+              );
+            })()}
+
             {c.undated.length > 0 && (
               <details className="pt-1 border-t border-subtle">
                 <summary className="cursor-pointer text-[12px] text-secondary py-2">{t('calUndated', { n: c.undated.length, amount: fmt(c.undated.filter(e => e.type === 'expenses').reduce((s2, e) => s2 + e.amount, 0)) })}</summary>
@@ -9219,6 +9430,83 @@
           {/* EDIT MODAL */}
           {activeEditCat && (
             <Modal onClose={() => setActiveEditCat(null)} title={t('editorTitle')}>
+              {(() => {
+                const { type: et, cat: ec } = activeEditCat;
+                const tint = tintFor(et, ec);
+                const g = et === 'expenses' ? data.groups.find(x => x.id === getMeta('expenses', ec).bracket) : null;
+                const n = getNode(et, ec, selectedYear, selectedMonth);
+                return (
+                  <div className="rounded-2xl p-3 flex items-center gap-3" style={{ background: tint + '1f', border: `1px solid ${tint}55` }}>
+                    <ItemIcon spec={iconFor(et, ec)} tint={tint} size={40} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[15px] font-semibold text-primary truncate">{ec}</div>
+                      <div className="text-[11px] truncate" style={{ color: tint }}>{g ? groupName(g) : t('incomesHeader')} · {formatMonth(selectedMonth, lang)} {selectedYear}</div>
+                    </div>
+                    <div className="text-end shrink-0">
+                      <div className="text-[10px] text-secondary">{t('planLabel')}</div>
+                      <div className="font-mono text-[14px] font-semibold text-primary">{fmtCents(n.budget)}</div>
+                    </div>
+                  </div>
+                );
+              })()}
+              <Segmented full options={[['details', t('edTabDetails')], ['period', t('edTabPeriod')]]} value={editTab} onChange={setEditTab} />
+              {editTab === 'period' && (
+                <div className="space-y-3 pop-in">
+              <div>
+                <label className="text-[10px] text-secondary font-medium block mb-1">{t('replicateFieldLabel')}</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[['budget', 'replicateBudgetOption'], ['actual', 'replicateActualOption']].map(([field, label]) => (
+                    <button
+                      key={field}
+                      type="button"
+                      onClick={() => setRecurringForm(p => ({ ...p, field }))}
+                      className={`p-1.5 rounded border text-xs ${recurringForm.field === field ? 'border-primary bg-subtle font-semibold text-primary' : 'border-subtle text-secondary'}`}
+                    >
+                      {t(label)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] text-secondary font-medium block mb-1">{t('replicateAmountLabel')}</label>
+                <MoneyInput
+                  value={recurringForm.amount}
+                  hideZero={false}
+                  onChange={(val) => setRecurringForm(p => ({ ...p, amount: val }))}
+                  inputClass="text-primary font-semibold"
+                />
+              </div>
+
+              {renderPeriod(
+                recurringForm.from,
+                recurringForm.until,
+                (key, value) => setRecurringForm(p => ({ ...p, [key]: value })),
+                false,
+                recurringForm.every
+              )}
+
+              {recurringForm.field === 'budget' && (
+                <label className="flex items-start justify-between gap-2 p-2 rounded bg-subtle/50 border border-subtle cursor-pointer">
+                  <div>
+                    <span className="font-medium text-primary block text-[11px]">{t('clearOutside')}</span>
+                    <span className="text-[10px] text-tertiary">{t('clearOutsideHint')}</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={recurringForm.clearOutside}
+                    onChange={(e) => setRecurringForm(p => ({ ...p, clearOutside: e.target.checked }))}
+                    className="w-4 h-4 rounded mt-0.5 shrink-0"
+                  />
+                </label>
+              )}
+
+                  <button onClick={() => { handleExecuteRecurring(); setActiveEditCat(null); }} className="w-full py-2 bg-primary text-surface font-semibold rounded">
+                    {t('replicateActionBtn')}
+                  </button>
+                </div>
+              )}
+              <div className={editTab === 'details' ? 'space-y-3 pop-in' : 'hidden'}>
               <div>
                 <label className="text-[10px] text-secondary font-medium block mb-1">{t('posten')}</label>
                 <input
@@ -9353,6 +9641,7 @@
                 <button onClick={handleSaveCategoryChanges} className="w-full bg-primary text-surface font-semibold py-1.5 rounded">
                   {t('saveClose')}
                 </button>
+              </div>
               </div>
             </Modal>
           )}

@@ -75,6 +75,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
+    .cal-cell { aspect-ratio: 1 / 1; }
+    @media (min-width: 1024px) { .cal-cell { aspect-ratio: 16 / 10; } }
     input[type=search]::-webkit-search-cancel-button, input[type=search]::-webkit-search-decoration { -webkit-appearance: none; display: none; }
     /* View mode: fields on the pages show their values but can't be changed by a stray tap while scrolling. */
     main.locked input:not([data-free]), main.locked select:not([data-free]), main.locked textarea:not([data-free]),
@@ -169,7 +171,7 @@
   <div id="root"></div>
 
   <!-- APP:BEGIN – built from src/app.jsx by build.mjs, do not edit here -->
-  <script src="app.js?v=717fdcfff3" defer></script>
+  <script src="app.js?v=80b09d99a4" defer></script>
   <!-- APP:END -->
   <script>
     if ('serviceWorker' in navigator) {
