@@ -3604,6 +3604,7 @@
     function ItemIcon({ spec, tint = '#64748b', size = 28 }) {
       const box = { width: size, height: size, minWidth: size };
       const [failed, setFailed] = useState(false);
+      const [alt, setAlt] = useState(false);
       const logo = spec && spec.kind === 'brand' && spec.logo && !failed && !brokenLogos.has(spec.logo) ? spec.logo : null;
       const markBroken = () => { brokenLogos.add(logo); setFailed(true); };
       if (logo && logo.startsWith('si:')) {
@@ -3619,7 +3620,10 @@
       if (logo && logo.startsWith('web:')) {
         return (
           <span aria-hidden="true" className="inline-flex items-center justify-center rounded-[9px] bg-white overflow-hidden shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]" style={box}>
-            <img src={siteIcon(logo.slice(4))} alt="" onError={markBroken} style={{ width: size * 0.72, height: size * 0.72, objectFit: 'contain' }} />
+            <img src={alt ? `https://icons.duckduckgo.com/ip3/${encodeURIComponent(logo.slice(4))}.ico` : siteIcon(logo.slice(4))} alt=""
+              onError={() => alt ? markBroken() : setAlt(true)}
+              onLoad={(e) => { if (e.currentTarget.naturalWidth <= 16) { if (alt) markBroken(); else setAlt(true); } }}
+              style={{ width: size * 0.72, height: size * 0.72, objectFit: 'contain' }} />
           </span>
         );
       }
