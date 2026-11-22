@@ -218,6 +218,24 @@
       -webkit-appearance: none; margin: 0;
     }
     input[type="number"] { -moz-appearance: textfield; }
+    /* Modern scrolling: thin floating scrollbars, smooth jumps, no scroll chaining out of sheets,
+       and cards that ease in as they scroll into view (browsers that support scroll timelines). */
+    html { scroll-behavior: smooth; scroll-padding-top: 72px; overscroll-behavior-y: none; }
+    * { scrollbar-width: thin; scrollbar-color: rgb(var(--text-tertiary) / .35) transparent; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgb(var(--text-tertiary) / .3); border-radius: 999px; border: 1px solid transparent; background-clip: padding-box; }
+    ::-webkit-scrollbar-thumb:hover { background-color: rgb(var(--text-tertiary) / .6); }
+    ::-webkit-scrollbar-corner { background: transparent; }
+    [role=dialog], .overflow-y-auto, .overflow-auto { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+    .overflow-x-auto { scroll-snap-type: x proximity; overscroll-behavior-x: contain; }
+    .overflow-x-auto > * { scroll-snap-align: start; }
+    @supports (animation-timeline: view()) {
+      @media (prefers-reduced-motion: no-preference) {
+        main section { animation: card-in linear both; animation-timeline: view(); animation-range: entry 0% entry 35%; }
+        @keyframes card-in { from { opacity: .25; transform: translateY(18px) scale(.985); } to { opacity: 1; transform: none; } }
+      }
+    }
     .scrollbar-none::-webkit-scrollbar { display: none; }
     .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 
@@ -236,7 +254,7 @@
   <div id="root"></div>
 
   <!-- APP:BEGIN – built from src/app.jsx by build.mjs, do not edit here -->
-  <script src="app.js?v=9ab2ff78c0" defer></script>
+  <script src="app.js?v=ea3b3d8be5" defer></script>
   <!-- APP:END -->
   <script>
     if ('serviceWorker' in navigator) {

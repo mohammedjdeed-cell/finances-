@@ -3513,13 +3513,6 @@
       // Sections of the app: overview, month, activity, plan, more.
       const VIEWS = ['overview', 'month', 'book', 'activity', 'plan', 'health', 'more'];
       // View mode (default): page fields are locked; tap the pencil in the header to edit.
-      const [editMode, setEditModeState] = useState(false);
-      const setEditMode = (on) => { haptic(8); setEditModeState(on); showToast(on ? t('editOnToast') : t('editOffToast')); };
-      useEffect(() => {
-        const lock = () => { if (document.visibilityState === 'hidden') setEditModeState(false); };
-        document.addEventListener('visibilitychange', lock);
-        return () => document.removeEventListener('visibilitychange', lock);
-      }, []);
       const [view, setViewState] = useState(() => {
         // Icon shortcuts open the app with ?view=book (etc.).
         try { const q = new URLSearchParams(location.search).get('view'); if (VIEWS.includes(q)) { history.replaceState(null, '', location.pathname); return q; } } catch (e) {}
@@ -8564,11 +8557,6 @@
                 <div className="flex items-center gap-1 shrink-0">
                   {showMonthNav && monthNav}
                   {view === 'plan' && <Segmented size="sm" options={YEARS.map(y => [y, String(y)])} value={selectedYear} onChange={selectYear} />}
-                  <button onClick={() => setEditMode(!editMode)} aria-pressed={editMode} title={editMode ? t('editDone') : t('editStart')}
-                    className={`h-8 rounded-full flex items-center gap-1.5 transition-colors ${editMode ? 'px-3 bg-notion-blue text-white' : 'w-8 lg:w-auto lg:px-3 justify-center text-secondary hover:bg-subtle'}`}>
-                    <i className={`fa-solid ${editMode ? 'fa-check' : 'fa-pen'} text-[11px]`}></i>
-                    <span className={`text-[12px] font-medium ${editMode ? '' : 'hidden lg:inline'}`}>{editMode ? t('editDone') : t('editStart')}</span>
-                  </button>
                   <button onClick={() => setIsBurgerOpen(true)} aria-label={syncLabel} title={syncLabel} className={`lg:hidden w-8 h-8 rounded-full hover:bg-subtle ${syncColor}`}>
                     <i className={`fa-solid ${syncIcon} text-xs`}></i>
                   </button>
@@ -8577,7 +8565,7 @@
             </header>
 
             <main key={view + (showMonthNav ? `|${curIdx}` : '')}
-              className={`${editMode ? '' : 'locked'} ${anim === 'next' ? 'slide-next' : anim === 'prev' ? 'slide-prev' : 'view-enter'} max-w-[1280px] mx-auto px-4 lg:px-8 pt-4 lg:pt-6 pb-36 lg:pb-12`}
+              className={`${anim === 'next' ? 'slide-next' : anim === 'prev' ? 'slide-prev' : 'view-enter'} max-w-[1280px] mx-auto px-4 lg:px-8 pt-4 lg:pt-6 pb-36 lg:pb-12`}
               onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
               style={view === 'month' ? { touchAction: 'pan-y' } : undefined}>
               <div className="oneui-hero lg:hidden" aria-hidden={scrolled}>
