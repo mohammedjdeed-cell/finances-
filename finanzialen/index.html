@@ -14,7 +14,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Readex+Pro:wght@300..700&display=swap">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -26,9 +26,9 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Inter', '"IBM Plex Sans Arabic"', 'ui-sans-serif', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Helvetica', '"Apple Color Emoji"', 'Arial', 'sans-serif'],
+            sans: ['Geist', '"Readex Pro"', 'ui-sans-serif', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Helvetica', '"Apple Color Emoji"', 'Arial', 'sans-serif'],
             // Numbers use the same typeface with tabular figures (see .font-mono), not a code font.
-            mono: ['Inter', '"IBM Plex Sans Arabic"', 'ui-sans-serif', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif']
+            mono: ['Geist', '"Readex Pro"', 'ui-sans-serif', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif']
           },
           borderRadius: { DEFAULT: '0.5rem', md: '0.625rem', lg: '0.875rem', xl: '1.125rem', '2xl': '1.375rem' },
           colors: {
@@ -75,6 +75,9 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
+    body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; letter-spacing: -0.005em; }
+    h1, h2, h3, .font-semibold, .font-bold { letter-spacing: -0.015em; }
+    [dir="rtl"] body, [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] .font-semibold, [dir="rtl"] .font-bold { letter-spacing: 0; }
     /* Calendar: sized by its own width (container queries), so it fits a phone, a side column or a full page. */
     .cal-wrap { container: cal / inline-size; }
     .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: clamp(3px, 0.9cqw, 8px); }
@@ -96,7 +99,7 @@
       width: clamp(17px, 3cqw, 26px); height: clamp(17px, 3cqw, 26px); display: grid; place-items: center; animation: todayPulse 2.4s ease-out infinite; }
     .cal-in { width: clamp(5px, 1cqw, 9px); height: clamp(5px, 1cqw, 9px); border-radius: 999px; background: rgb(16 185 129); }
     .cal-in-open { background: transparent; box-shadow: inset 0 0 0 1.5px rgb(16 185 129); }
-    .cal-amt { align-self: center; justify-self: center; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums;
+    .cal-amt { align-self: center; justify-self: center; font-family: 'Geist', 'Readex Pro', ui-sans-serif, sans-serif; font-variant-numeric: tabular-nums;
       font-weight: 800; letter-spacing: -.02em; line-height: 1; font-size: clamp(11px, 2.7cqw, 24px); white-space: nowrap; }
     .cal-amt-due { color: rgb(217 119 6); font-weight: 700; }
     .cal-amt-in { color: rgb(16 185 129); }
@@ -202,7 +205,7 @@
   <div id="root"></div>
 
   <!-- APP:BEGIN – built from src/app.jsx by build.mjs, do not edit here -->
-  <script src="app.js?v=a668be49f5" defer></script>
+  <script src="app.js?v=803c54a067" defer></script>
   <!-- APP:END -->
   <script>
     if ('serviceWorker' in navigator) {

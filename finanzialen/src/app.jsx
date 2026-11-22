@@ -7712,7 +7712,7 @@
             )}
           </div>
         );
-        if (inMonth) return panel({ id: 'monthCal', icon: 'fa-calendar-days', title: t('calTitle'), sub: `${t('calPaid')} ${fmt(c.out)} · ${t('calStillDue')} ${fmt(c.due)}` }, body);
+        if (inMonth) return panel({ id: 'monthCal', icon: 'fa-calendar-days', title: t('calTitle'), defaultCollapsed: true, sub: `${t('calPaid')} ${fmt(c.out)} · ${t('calStillDue')} ${fmt(c.due)}` }, body);
         return (
           <div className="space-y-4 min-w-0">
             <section className="rounded-2xl border border-subtle bg-surface p-4 space-y-3">
