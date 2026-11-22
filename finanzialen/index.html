@@ -3206,15 +3206,62 @@
       ["Optiker", 'health'], ["Fielmann", 'health', "fielmann.de"], ["Sparkasse", 'fees', "sparkasse.de"], ["Volksbank", 'fees', "vr.de"],
       ["Revolut", 'fees', "revolut.com"], ["Wise", 'fees', "wise.com"], ["N26", 'fees', "n26.com"], ["ING", 'fees', "ing.de"],
       ["Commerzbank", 'fees', "commerzbank.de"], ["Deutsche Bank", 'fees', "deutsche-bank.de"], ["Postbank", 'fees', "postbank.de"], ["Western Union", 'fees', "westernunion.com"],
-      ["Ria", 'fees', "riamoneytransfer.com"]
+      ["Ria", 'fees', "riamoneytransfer.com"],
+      // Everyday life in NRW beyond shops: childcare, offices, car, leisure, pets, health – and incomes.
+      ["Kita-Beitrag", 'kids|family|education|oneoff', null, ["kita", "keta", "kindergarten", "kiga", "kindertagesstätte", "روضة"]], ["Kita Essensgeld", 'kids|family|education|oneoff', null, ["kita", "keta", "mittagessen"]], ["Tagesmutter", 'kids|family|education|oneoff', null, ["tagespflege", "kinderbetreuung"]],
+      ["OGS", 'kids|family|education|oneoff', null, ["offene ganztagsschule", "ganztag"]], ["Schulessen", 'kids|family|education|oneoff', null, ["mensa", "mittagessen schule"]], ["Schulbedarf", 'kids|family|education|oneoff', null, ["schulsachen", "hefte", "ranzen"]],
+      ["Klassenfahrt", 'kids|family|education|oneoff', null, ["ausflug schule"]], ["Babysitter", 'kids|family|education|oneoff', null, []], ["Windeln", 'kids|family|education|oneoff', null, ["pampers", "diapers"]],
+      ["Babynahrung", 'kids|family|education|oneoff', null, ["hipp", "milupa", "aptamil"]], ["Kinderkleidung", 'kids|family|education|oneoff', null, []], ["Spielzeug", 'kids|family|education|oneoff', null, ["toys", "spielwaren"]],
+      ["Smyths Toys", 'kids|family|education|oneoff', "smythstoys.com", ["spielwaren"]], ["myToys", 'kids|family|education|oneoff', "mytoys.de", []], ["BabyOne", 'kids|family|education|oneoff', "babyone.de", ["baby"]],
+      ["Kinderarzt", 'kids|family|education|oneoff', null, ["pädiater"]], ["Musikschule", 'kids|family|education|oneoff', null, []], ["Schwimmkurs", 'kids|family|education|oneoff', null, []],
+      ["Bürgeramt", 'oneoff|bills', null, ["ausweis", "pass", "meldebescheinigung"]], ["Ausländerbehörde", 'oneoff|bills', null, ["aufenthaltstitel", "visum", "eat"]], ["Standesamt", 'oneoff|bills', null, ["urkunde", "heirat"]],
+      ["Führerschein", 'oneoff|bills', null, ["fahrschule"]], ["Übersetzung", 'oneoff|bills', null, ["übersetzer", "beglaubigung"]], ["Notar", 'oneoff|bills', null, []],
+      ["Anwalt", 'oneoff|bills', null, ["rechtsanwalt"]], ["Steuerberater", 'oneoff|bills', null, ["lohnsteuerhilfe"]], ["Umzug", 'oneoff|bills', null, ["umzugskarton", "transporter"]],
+      ["Handwerker", 'oneoff|bills', null, []], ["Schlüsseldienst", 'oneoff|bills', null, []], ["Copyshop", 'oneoff|bills', null, ["kopien", "drucken"]],
+      ["Passfotos", 'oneoff|bills', null, ["foto"]], ["Nebenkosten", 'bills|housing', null, ["betriebskosten", "nachzahlung"]], ["Hausgeld", 'bills|housing', null, []],
+      ["Wasser", 'bills|housing', null, ["stadtwerke wasser"]], ["Müllgebühren", 'bills|housing', null, ["abfall"]], ["Kfz-Steuer", 'bills|housing', null, ["auto steuer"]],
+      ["GEZ", 'bills|housing', null, ["rundfunk", "ard zdf"]], ["Parken", 'transport', null, ["parkhaus", "parkticket", "contipark"]], ["Waschanlage", 'transport', null, ["autowäsche"]],
+      ["Werkstatt", 'transport', null, ["reparatur", "tüv"]], ["A.T.U", 'transport', "atu.de", ["reifen"]], ["ADAC", 'transport', "adac.de", []],
+      ["TÜV", 'transport', null, ["hu", "dekra"]], ["Fahrrad", 'transport', null, ["fahrradladen", "rad"]], ["Ryanair", 'transport', "ryanair.com", ["flug"]],
+      ["Eurowings", 'transport', "eurowings.com", ["flug"]], ["Lufthansa", 'transport', "lufthansa.com", ["flug"]], ["Turkish Airlines", 'transport', "turkishairlines.com", ["flug"]],
+      ["Pegasus", 'transport', "flypgs.com", ["flug"]], ["FlixTrain", 'transport', "flixtrain.de", []], ["BlaBlaCar", 'transport', "blablacar.de", []],
+      ["Sixt", 'transport', "sixt.de", ["mietwagen"]], ["Share Now", 'transport', "share-now.com", ["carsharing"]], ["Miles", 'transport', "miles-mobility.com", ["carsharing"]],
+      ["Booking.com", 'leisure', "booking.com", ["hotel"]], ["Airbnb", 'leisure', "airbnb.de", ["urlaub"]], ["Hotel", 'leisure', null, []],
+      ["Phantasialand", 'leisure', "phantasialand.de", ["freizeitpark"]], ["Movie Park", 'leisure', "movieparkgermany.de", ["freizeitpark"]], ["Zoo", 'leisure', null, ["tierpark"]],
+      ["Schwimmbad", 'leisure', null, ["hallenbad", "freibad"]], ["Museum", 'leisure', null, []], ["Bowling", 'leisure', null, []],
+      ["Shisha Bar", 'leisure', null, ["shisha"]], ["Kiosk", 'leisure', null, ["trinkhalle", "büdchen"]], ["Lotto", 'leisure', null, ["lottoannahme"]],
+      ["Friseur", 'leisure', null, ["barbier", "barber", "haare"]], ["Geschenke", 'leisure', null, ["geschenk"]], ["Blumen", 'leisure', null, ["blumenladen"]],
+      ["Spende", 'leisure', null, ["zakat", "sadaqa", "donation"]], ["Moschee", 'leisure', null, ["mosque"]], ["Kirche", 'leisure', null, []],
+      ["Verein", 'leisure', null, ["mitgliedsbeitrag", "sportverein"]], ["Steam", 'leisure', "steampowered.com", ["games"]], ["Galeria", 'leisure', "galeria.de", ["kaufhof", "karstadt"]],
+      ["Peek & Cloppenburg", 'leisure', "peek-cloppenburg.de", []], ["Douglas", 'leisure', "douglas.de", ["parfüm"]], ["Bijou Brigitte", 'leisure', "bijou-brigitte.com", []],
+      ["Fressnapf", 'household', "fressnapf.de", ["tierfutter"]], ["Das Futterhaus", 'household', "futterhaus.de", ["tierfutter"]], ["Zooplus", 'household', "zooplus.de", ["tierfutter"]],
+      ["Tierarzt", 'household', null, ["vet"]], ["Waschsalon", 'household', null, ["wäsche"]], ["Reinigung", 'household', null, ["textilreinigung"]],
+      ["Schneiderei", 'household', null, ["änderung"]], ["Schuster", 'household', null, ["schuhreparatur"]], ["Handyreparatur", 'household', null, ["display"]],
+      ["Cyberport", 'household', "cyberport.de", []], ["notebooksbilliger", 'household', "notebooksbilliger.de", []], ["Galaxus", 'household', "galaxus.de", []],
+      ["Mister Spex", 'household', "misterspex.de", ["brille"]], ["Apollo Optik", 'household', "apollo.de", ["brille"]], ["Dänisches Bettenlager", 'household', "jysk.de", ["jysk"]],
+      ["Hammer", 'household', "hammer-zuhause.de", ["heimtex"]], ["Möbel Höffner", 'household', "hoeffner.de", []], ["Matratze", 'household', null, []],
+      ["Haushaltsgeräte", 'household', null, ["waschmaschine", "kühlschrank"]], ["Physiotherapie", 'health|groceries', null, ["physio", "krankengymnastik"]], ["Krankenhaus", 'health|groceries', null, ["zuzahlung"]],
+      ["Hausarzt", 'health|groceries', null, ["arzt"]], ["Frauenarzt", 'health|groceries', null, ["gynäkologe"]], ["Hebamme", 'health|groceries', null, []],
+      ["Medikamente", 'health|groceries', null, ["rezept", "zuzahlung"]], ["Gehalt", 'income', null, ["lohn", "salary", "راتب"]], ["Kindergeld", 'income', null, ["familienkasse"]],
+      ["Elterngeld", 'income', null, []], ["Kinderzuschlag", 'income', null, ["kiz"]], ["Wohngeld", 'income', null, []],
+      ["Bürgergeld", 'income', null, ["jobcenter"]], ["BAföG", 'income', null, ["bafög"]], ["Minijob", 'income', null, ["520", "nebenjob"]],
+      ["Werkstudent", 'income', null, []], ["Arbeitslosengeld", 'income', null, ["alg", "agentur für arbeit"]], ["Krankengeld", 'income', null, []],
+      ["Mutterschaftsgeld", 'income', null, []], ["Steuererstattung", 'income', null, ["finanzamt", "steuer zurück"]], ["Rückerstattung", 'income', null, ["erstattung", "refund"]],
+      ["Pfand", 'income', null, ["leergut"]], ["Verkauf Kleinanzeigen", 'income', null, ["kleinanzeigen", "vinted"]], ["Geschenk erhalten", 'income', null, ["geld geschenk"]],
+      ["Sperrkonto", 'income', null, ["fintiba", "expatrio", "coracle"]], ["Stipendium", 'income', null, ["daad"]], ["Zinsen", 'income', null, ["interest"]]
     ];
-    const merchantMatch = (q, have) => {
+    // Entries: [name, group (alternatives split by |, the first one the household has wins), website for the logo, other words people type].
+    const merchantMatch = (q, have, type = 'expenses') => {
       const n = q.trim().toLowerCase();
       if (!n) return [];
       const known = new Set(have.map(x => x.toLowerCase()));
-      return MERCHANTS.filter(([name]) => !known.has(name.toLowerCase()) && name.toLowerCase().includes(n))
-        .sort((a, b) => (b[0].toLowerCase().startsWith(n) ? 1 : 0) - (a[0].toLowerCase().startsWith(n) ? 1 : 0) || a[0].localeCompare(b[0]));
+      const words = (e) => [e[0], ...(e[3] || [])].map(w => w.toLowerCase());
+      const starts = (e) => words(e).some(w => w.startsWith(n)) ? 1 : 0;
+      return MERCHANTS.filter(e => (type === 'incomes') === (e[1] === 'income') && !known.has(e[0].toLowerCase()) && words(e).some(w => w.includes(n)))
+        .sort((a, b) => starts(b) - starts(a) || a[0].localeCompare(b[0]));
     };
+    const resolveGroup = (groups, gid) => (gid || '').split('|').map(id => groups.find(g => g.id === id)).find(Boolean)
+      || groups.find(g => g.kind === 'variable') || groups[0];
     const autoIcon = (name) => {
       const n = String(name || '');
       const b = BRANDS.find(([re]) => re.test(n));
@@ -7194,23 +7241,23 @@
                     <span className="text-[11px] text-secondary">{t('bkNew')}</span>
                   </button>
                 </div>
-                {q && type === 'expenses' && (() => {
-                  const sugg = merchantMatch(bk.q, data.categories.expenses).slice(0, 12);
+                {q && (() => {
+                  const sugg = merchantMatch(bk.q, data.categories[type], type).slice(0, 14);
                   if (!sugg.length) return null;
                   return (
                     <div className="space-y-1.5 pop-in">
                       <div className="text-[11px] text-tertiary">{t('bkSuggest')}</div>
                       <div className="flex flex-wrap gap-1.5">
                         {sugg.map(([name, gid, dom]) => {
-                          const g = data.groups.find(x => x.id === gid) || data.groups.find(x => x.kind === 'variable') || data.groups[0];
+                          const g = resolveGroup(data.groups, gid);
                           const spec = autoIcon(name) || (dom ? { kind: 'brand', text: name.slice(0, 2), bg: '#334155', fg: '#FFFFFF', logo: 'web:' + dom } : null) || { kind: 'symbol', icon: GROUP_ICONS[g.id] || 'fa-tag' };
                           const on = bk.cat === '__new' && bk.newName === name;
                           return (
                             <button key={name} type="button" onClick={() => setB({ cat: '__new', newName: name, newGroup: g.id })}
                               className={`flex items-center gap-2 ps-1.5 pe-3 py-1 rounded-full border transition active:scale-95 ${on ? 'border-notion-blue bg-notion-blue/10' : 'border-subtle bg-subtle/50 hover:bg-subtle'}`}>
-                              <ItemIcon spec={spec} tint={GROUP_HEX[g.color] || '#64748b'} size={22} />
+                              <ItemIcon spec={spec} tint={type === 'incomes' ? '#10b981' : GROUP_HEX[g.color] || '#64748b'} size={22} />
                               <span className="text-[12px] text-primary">{name}</span>
-                              <span className="text-[10px] text-tertiary">{groupName(g)}</span>
+                              <span className="text-[10px] text-tertiary">{type === 'incomes' ? t('bkIn') : groupName(g)}</span>
                             </button>
                           );
                         })}
