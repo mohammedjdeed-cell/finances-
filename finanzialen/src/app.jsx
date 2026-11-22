@@ -812,6 +812,8 @@
         itemEntries: "Einträge in diesem Monat ({{n}})",
         itemNoEntries: "Noch nichts eingetragen.",
         edPlanCard: "Plan & Wiederholung",
+        shopAllItems: "Alle Posten …",
+        shopNewItem: "Neuer Posten",
         shopWhat: "Was hast du bei {{shop}} gekauft?",
         shopKeep: "Oder nichts antippen – dann bleibt es bei „{{shop}}“.",
         shopBoughtAt: "Bei {{shop}} gekauft → {{item}}",
@@ -1641,6 +1643,8 @@
         itemEntries: "Entries this month ({{n}})",
         itemNoEntries: "Nothing entered yet.",
         edPlanCard: "Plan & repeat",
+        shopAllItems: "All items…",
+        shopNewItem: "New item",
         shopWhat: "What did you buy at {{shop}}?",
         shopKeep: "Or tap nothing – then it stays as “{{shop}}”.",
         shopBoughtAt: "Bought at {{shop}} → {{item}}",
@@ -2470,6 +2474,8 @@
         itemEntries: "إدخالات هذا الشهر ({{n}})",
         itemNoEntries: "لا شيء مسجل بعد.",
         edPlanCard: "الخطة والتكرار",
+        shopAllItems: "كل البنود …",
+        shopNewItem: "بند جديد",
         shopWhat: "ماذا اشتريت من {{shop}}؟",
         shopKeep: "أو لا تختر شيئًا – فيبقى تحت „{{shop}}“.",
         shopBoughtAt: "اشتُري من {{shop}} ← {{item}}",
@@ -8286,6 +8292,13 @@
                   const shopName = bk.shop || (bk.cat === '__new' ? (MULTI_SHOP_RE.test(bk.newName) ? bk.newName.trim() : '') : bk.cat && MULTI_SHOP_RE.test(bk.cat) ? bk.cat : '');
                   if (!shopName) return null;
                   if (bk.shop) {
+                    if (bk.cat === '__new') return (
+                      <div className="pop-in flex items-center gap-2 rounded-xl bg-notion-blue/10 border border-notion-blue/30 px-3 py-2 text-[12.5px]">
+                        <ItemIcon spec={autoIcon(bk.shop) || { kind: 'symbol', icon: 'fa-store' }} size={22} />
+                        <span className="flex-1 min-w-0 text-primary truncate">{t('shopBoughtAt', { shop: bk.shop, item: bk.newName || t('bkNew') })}</span>
+                        <button type="button" onClick={() => setB({ shop: '' })} aria-label={t('closeBtn')} className="w-6 h-6 rounded-full text-tertiary hover:text-primary"><i className="fa-solid fa-xmark text-[11px]"></i></button>
+                      </div>
+                    );
                     return (
                       <div className="pop-in flex items-center gap-2 rounded-xl bg-notion-blue/10 border border-notion-blue/30 px-3 py-2 text-[12.5px]">
                         <ItemIcon spec={autoIcon(bk.shop) || { kind: 'symbol', icon: 'fa-store' }} size={22} />
@@ -8294,10 +8307,13 @@
                       </div>
                     );
                   }
-                  const ideas = data.categories.expenses
-                    .filter(c => !MULTI_SHOP_RE.test(c) && autoIcon(c)?.kind !== 'brand' && data.groups.find(g => g.id === getMeta('expenses', c).bracket)?.kind !== 'fixed')
-                    .sort((a2, b2) => (bkUsage['expenses|' + b2] || 0) - (bkUsage['expenses|' + a2] || 0)).slice(0, 8);
-                  if (!ideas.length) return null;
+                  // Things, not shops: no brand logo, no market/bakery, not a fixed bill.
+                  const isShop = (c) => MULTI_SHOP_RE.test(c) || autoIcon(c)?.kind === 'brand' || /markt|market|bäcker|baecker|bakery|metzger|kiosk|apotheke|drogerie/i.test(c)
+                    || MERCHANTS.some(e => e[0].toLowerCase() === c.toLowerCase() && e[1].startsWith('groceries'));
+                  const things = data.categories.expenses
+                    .filter(c => c !== bk.cat && !isShop(c) && data.groups.find(g => g.id === getMeta('expenses', c).bracket)?.kind !== 'fixed')
+                    .sort((a2, b2) => (bkUsage['expenses|' + b2] || 0) - (bkUsage['expenses|' + a2] || 0));
+                  const ideas = things.slice(0, 8);
                   return (
                     <div className="pop-in rounded-xl border border-notion-blue/30 bg-notion-blue/5 p-3 space-y-2">
                       <div className="text-[13px] font-semibold text-primary"><i className="fa-solid fa-bag-shopping text-notion-blue me-1.5"></i>{t('shopWhat', { shop: shopName })}</div>
@@ -8309,6 +8325,17 @@
                             <span className="text-[12px] text-primary">{c}</span>
                           </button>
                         ))}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <select data-free value="" onChange={(e) => { const v = e.target.value; if (v === '__new') setB({ cat: '__new', newName: '', shop: shopName }); else if (v) setB({ cat: v, shop: shopName, newName: '' }); }}
+                          style={{ flex: '1 1 0', minWidth: 0, width: 'auto' }} className="bg-surface border border-subtle rounded-full px-3 py-1.5 text-[12px] text-primary">
+                          <option value="">{t('shopAllItems')}</option>
+                          {data.groups.map(g => {
+                            const list = data.categories.expenses.filter(c => c !== bk.cat && getMeta('expenses', c).bracket === g.id);
+                            return list.length ? <optgroup key={g.id} label={groupName(g)}>{list.map(c => <option key={c} value={c}>{c}</option>)}</optgroup> : null;
+                          })}
+                          <option value="__new">+ {t('shopNewItem')}</option>
+                        </select>
                       </div>
                       <div className="text-[11px] text-tertiary">{t('shopKeep', { shop: shopName })}</div>
                     </div>
