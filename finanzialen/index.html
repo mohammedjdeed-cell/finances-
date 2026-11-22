@@ -76,6 +76,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
+    input[type=search]::-webkit-search-cancel-button, input[type=search]::-webkit-search-decoration { -webkit-appearance: none; display: none; }
     /* View mode: fields on the pages show their values but can't be changed by a stray tap while scrolling. */
     main.locked input:not([data-free]), main.locked select:not([data-free]), main.locked textarea:not([data-free]),
     main.locked .money-input, main.locked [data-edit] { pointer-events: none; }
@@ -964,6 +965,8 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        bkSearchBig: "Laden oder Posten suchen – z. B. Netto, Kita, DHL",
+        bkFound: "{{n}} eigene Posten gefunden",
         bkOther: "Andere",
         bkMoreSugg: "+ {{n}} weitere",
         bkSuggest: "Neu anlegen – tippen zum Auswählen:",
@@ -1677,6 +1680,8 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        bkSearchBig: "Search a shop or item – e.g. Netto, Kita, DHL",
+        bkFound: "{{n}} of your items found",
         bkOther: "Other",
         bkMoreSugg: "+ {{n}} more",
         bkSuggest: "Create new – tap to pick:",
@@ -2390,6 +2395,8 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        bkSearchBig: "ابحث عن محل أو بند – مثل Netto أو Kita أو DHL",
+        bkFound: "وُجد {{n}} من بنودك",
         bkOther: "تاريخ آخر",
         bkMoreSugg: "+ {{n}} أخرى",
         bkSuggest: "إنشاء جديد – اضغط للاختيار:",
@@ -7236,11 +7243,23 @@
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  {label(type === 'incomes' ? t('bkWhereIn') : t('bkWhere'))}
-                  <input data-free value={bk.q} onChange={(e) => setB({ q: e.target.value, moreSugg: false })} placeholder={t('bkSearch')}
-                    className="w-36 bg-subtle border border-subtle rounded-full px-3 py-1 text-[12px] text-primary outline-none focus:border-strong" />
+                {label(type === 'incomes' ? t('bkWhereIn') : t('bkWhere'))}
+                {/* Big search field: full width, easy to reach with the thumb, with a clear button. */}
+                <div className={`flex items-center gap-2.5 rounded-2xl border-2 px-3.5 transition-colors ${bk.q ? 'border-notion-blue bg-notion-blue/5' : 'border-subtle bg-subtle/60 focus-within:border-notion-blue'}`} style={{ height: 50 }}>
+                  <i className={`fa-solid fa-magnifying-glass text-[15px] ${bk.q ? 'text-notion-blue' : 'text-tertiary'}`}></i>
+                  <input data-free type="search" enterKeyHint="search" autoComplete="off" value={bk.q}
+                    onChange={(e) => setB({ q: e.target.value, moreSugg: false })}
+                    onFocus={(e) => { const el = e.currentTarget.parentElement; setTimeout(() => { try { const top = el.getBoundingClientRect().top + window.scrollY - 76; window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' }); } catch (err) {} }, 250); }}
+                    placeholder={t('bkSearchBig')}
+                    className="flex-1 min-w-0 bg-transparent outline-none text-[16px] text-primary placeholder:text-tertiary" />
+                  {bk.q && (
+                    <button type="button" onClick={() => setB({ q: '', moreSugg: false })} aria-label={t('closeBtn')}
+                      className="pop-in w-8 h-8 shrink-0 rounded-full bg-subtle text-secondary hover:text-primary flex items-center justify-center active:scale-90">
+                      <i className="fa-solid fa-xmark text-[13px]"></i>
+                    </button>
+                  )}
                 </div>
+                {q && <div className="text-[11px] text-tertiary">{t('bkFound', { n: filtered.length })}</div>}
                 <div className={`grid grid-cols-3 sm:grid-cols-4 gap-1.5 ${bk.err === 'cat' ? 'rounded-xl ring-2 ring-red-500/40 p-1' : ''}`}>
                   {shown.map(c => {
                     const on = bk.cat === c;
