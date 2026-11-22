@@ -794,6 +794,9 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        otAdd: "Über „Buchen“ eintragen",
+        calKind_earlier: "Früher eingetragen",
+        calKind_loan: "Darlehen",
         calLegShops: "Läden & Gruppen",
         calLegTap: "Doppeltipp = Tagesansicht",
         tipsTitle: "KI-Vorschläge",
@@ -1575,6 +1578,9 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        otAdd: "Add through \"Add\"",
+        calKind_earlier: "Entered earlier",
+        calKind_loan: "Loan",
         calLegShops: "shops & groups",
         calLegTap: "double-tap = day view",
         tipsTitle: "AI suggestions",
@@ -2356,6 +2362,9 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        otAdd: "التسجيل عبر «تسجيل»",
+        calKind_earlier: "مُدخل سابقًا",
+        calKind_loan: "دين",
         calLegShops: "المحلات والمجموعات",
         calLegTap: "نقرتان = عرض اليوم",
         tipsTitle: "اقتراحات الذكاء الاصطناعي",
@@ -3070,9 +3079,33 @@
           id: x.id, date: x.date, type: x.type, cat: x.cat, amount: x.amount,
           who: WHO.includes(x.who) ? x.who : null,
           note: typeof x.note === 'string' ? x.note : '',
-          source: x.source === 'import' ? 'import' : 'manual',
-          account: typeof x.account === 'string' ? x.account : null
+          source: ['import', 'legacy', 'tick', 'loan'].includes(x.source) ? x.source : 'manual',
+          account: typeof x.account === 'string' ? x.account : null,
+          undated: !!x.undated
         }));
+
+      // Engine 5: every real amount is an entry. Amounts typed straight into a month before
+      // this became entries once ("from before", without a day when the item has no due day),
+      // with ids that are the same on every device, so two phones migrating agree.
+      if (raw?.engine !== 5) {
+        const sums = {};
+        state.tx.forEach(x => { const p = dateToMonth(x.date); if (p) { const k = `${x.type}|${x.cat}|${p.yr}|${p.m}`; sums[k] = (sums[k] || 0) + x.amount; } });
+        const hash = (str) => { let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
+        TYPES.forEach(type => state.categories[type].forEach(cat => {
+          const pd = state.meta[type]?.[cat]?.payDay;
+          YEARS.forEach(yr => getMonthsForYear(yr).forEach(m => {
+            const node = state.values[yr]?.[type]?.[cat]?.[m];
+            if (!node) return;
+            const rest = Math.round((node.actual - (sums[`${type}|${cat}|${yr}|${m}`] || 0)) * 100) / 100;
+            if (rest <= 0.005) return;
+            const days = getDaysInMonth(yr, m);
+            const day = Number.isInteger(pd) ? Math.min(Math.max(pd, 1), days) : 1;
+            state.tx.push({ id: `lg_${yr}_${m}_${type[0]}_${hash(cat)}`, date: `${yr}-${pad2(ALL_MONTHS.indexOf(m) + 1)}-${pad2(day)}`,
+              type, cat, amount: rest, who: null, note: '', source: 'legacy', account: null, undated: !Number.isInteger(pd) });
+          }));
+        }));
+      }
+      state.engine = 5;
 
       // Moving to groups: the plans of variable items add up to their group's target.
       if (needsGroups) {
@@ -3867,10 +3900,38 @@
         }
       };
 
+      // The one tunnel: a month's real amount only changes through entries. Raising it adds an entry,
+      // lowering it trims the newest entries. node.actual always equals the sum of the entries.
+      const setActualTx = (d, type, cat, yr, m, target, source = 'manual') => {
+        const byCat = d.values[yr][type][cat] || (d.values[yr][type][cat] = {});
+        const node = byCat[m] || (byCat[m] = emptyNode());
+        target = Math.round(Math.max(0, parseFloat(target) || 0) * 100) / 100;
+        let diff = Math.round((target - node.actual) * 100) / 100;
+        const prefix = `${yr}-${pad2(ALL_MONTHS.indexOf(m) + 1)}-`;
+        if (diff > 0.005) {
+          const pd = (d.meta[type][cat] || {}).payDay;
+          const days = getDaysInMonth(yr, m);
+          const status = monthStatus(yr, m);
+          const today = new Date().getDate();
+          const day = Number.isInteger(pd) ? Math.min(Math.max(pd, 1), days) : status === 'current' ? today : 1;
+          d.tx.push({ id: newTxId(), date: prefix + pad2(day), type, cat, amount: diff, who: null, note: '', source, account: null,
+            undated: !Number.isInteger(pd) && status !== 'current' });
+        } else if (diff < -0.005) {
+          const mine = d.tx.filter(x => x.type === type && x.cat === cat && x.date.startsWith(prefix));
+          while (diff < -0.005 && mine.length) {
+            const last = mine.pop();
+            if (last.amount <= -diff + 0.005) { diff = Math.round((diff + last.amount) * 100) / 100; d.tx = d.tx.filter(x => x.id !== last.id); }
+            else { last.amount = Math.round((last.amount + diff) * 100) / 100; diff = 0; }
+          }
+        }
+        node.actual = target;
+      };
+
       const updateNode = (type, cat, yr, m, field, val) => {
         mutate(d => {
           const byCat = d.values[yr][type][cat] || (d.values[yr][type][cat] = {});
           const node = byCat[m] || (byCat[m] = emptyNode());
+          if (field === 'actual') { setActualTx(d, type, cat, yr, m, val, 'tick'); return; }
           if (field === 'asOfDate') {
             const n = parseInt(val);
             node.asOfDate = isNaN(n) ? null : Math.min(getDaysInMonth(yr, m), Math.max(1, n));
@@ -4317,7 +4378,8 @@
             if (!inside && !clearOutside) return;
             const byCat = d.values[yr][type][cat] || (d.values[yr][type][cat] = {});
             const node = byCat[m] || (byCat[m] = emptyNode());
-            node[field] = paymentMonth ? value : 0;
+            if (field === 'actual') setActualTx(d, type, cat, yr, m, paymentMonth ? value : 0, 'tick');
+            else node[field] = paymentMonth ? value : 0;
           });
         });
         setRecurringModal(null);
@@ -4454,6 +4516,7 @@
               dst.budget += src.budget;
               dst.actual += src.actual;
             });
+            d.tx.forEach(x => { if (x.type === type && x.cat === cat) x.cat = fallback; });
 
             const srcNotes = d.notes[type][cat];
             if (srcNotes) {
@@ -4915,8 +4978,9 @@
         if (type === 'expenses' && group?.kind === 'variable' && !meta?.oneTime) return false;
         const node = d.values[pos.yr][type][cat]?.[pos.m];
         if (!node || !(node.actual > 0)) return false;
+        // Ticked by hand = only tick (or older typed) entries behind it, no real receipts or bank lines.
         return !d.tx.some(x => {
-          if (x.type !== type || x.cat !== cat) return false;
+          if (x.type !== type || x.cat !== cat || x.source === 'tick' || x.source === 'legacy') return false;
           const p = dateToMonth(x.date);
           return p && p.yr === pos.yr && p.m === pos.m;
         });
@@ -4953,7 +5017,7 @@
             // A bill ticked as paid by hand (no entries behind it) is replaced by the bank payment, not added to.
             if (isTickedByHand(d, type, cat, r.date)) {
               const pos = dateToMonth(r.date);
-              d.values[pos.yr][type][cat][pos.m].actual = 0;
+              setActualTx(d, type, cat, pos.yr, pos.m, 0);
             }
             const tx = { id: newTxId(), date: r.date, type, cat, amount, who: r.who || account, note: r.desc, source: 'import' };
             d.tx.push(tx);
@@ -4966,6 +5030,14 @@
       };
 
       // Paid / received toggle: ticking copies the plan, unticking clears the amount.
+      // Real amounts are added in one place: the Add tab, prefilled for this item and month.
+      const addFor = (type, cat) => {
+        const status = monthStatus(selectedYear, selectedMonth);
+        const date = status === 'current' ? todayISO() : `${selectedYear}-${pad2(ALL_MONTHS.indexOf(selectedMonth) + 1)}-${pad2(Math.min(Number.isInteger(getMeta(type, cat).payDay) ? getMeta(type, cat).payDay : 1, getDaysInMonth(selectedYear, selectedMonth)))}`;
+        setB({ type, cat, date, q: '', amount: '' });
+        setView('book');
+      };
+
       const toggleDone = (type, cat) => {
         haptic(10);
         const node = getNode(type, cat, selectedYear, selectedMonth);
@@ -5294,7 +5366,7 @@
         if (!b || !b.cat || !d.values[b.yr]) return;
         const v = amount ?? b.amount;
         const n = loanNode(d, b.type, b.cat, b.yr, b.m);
-        n.actual = round2(Math.max(0, n.actual + sign * v));
+        setActualTx(d, b.type, b.cat, b.yr, b.m, Math.max(0, n.actual + sign * v), 'loan');
         n.budget = round2(Math.max(0, n.budget + sign * v));
       };
       const bookLoanInto = (d, iou, pos) => {
@@ -5391,7 +5463,7 @@
 
           ensure('incomes', incName, { bracket: 'variable_in', mode: 'variable', oneTime: true, payDay: null });
           const inNode = d.values[selectedYear].incomes[incName][selectedMonth];
-          inNode.actual = incAmt;
+          setActualTx(d, 'incomes', incName, selectedYear, selectedMonth, incAmt, 'loan');
           inNode.budget = incAmt;
 
           const oneoffGroup = d.groups.find(g => g.kind === 'oneoff') || d.groups.find(g => g.kind === 'fixed') || d.groups[0];
@@ -5682,7 +5754,7 @@
             <div className="grid grid-cols-[28px_30px_minmax(0,1fr)_auto] items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-subtle/60">
               {isVar ? (
                 <button
-                  onClick={() => { setAddingTo(addingTo === key ? null : key); setAddAmount(""); }}
+                  onClick={() => addFor(type, cat)}
                   aria-label={t('addReceiptTo', { name: cat })}
                   className="w-7 h-7 rounded-md border border-subtle bg-surface-elevated text-secondary hover:text-primary hover:border-strong text-base leading-none"
                 >
@@ -5746,17 +5818,15 @@
                       />
                     </label>
                   )}
-                  <label className="block">
+                  <div className="block">
                     <span className="text-[10px] text-secondary block mb-0.5">
                       {isVar ? t('spentTotalLabel', { month: formatMonth(selectedMonth, lang) }) : type === 'incomes' ? t('receivedLabel') : t('paidLabel')}
                     </span>
-                    <MoneyInput
-                      value={node.actual}
-                      onChange={(v) => updateNode(type, cat, selectedYear, selectedMonth, 'actual', v)}
-                      className="bg-surface"
-                      inputClass={type === 'incomes' ? 'text-notion-green font-semibold' : 'text-primary font-semibold'}
-                    />
-                  </label>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`flex-1 rounded px-2 py-1 bg-surface/60 text-end font-mono text-xs font-semibold ${type === 'incomes' ? 'text-notion-green' : 'text-primary'}`}>{fmtCents(node.actual)}</span>
+                      <button onClick={() => addFor(type, cat)} title={t('otAdd')} aria-label={t('otAdd')} className="w-7 h-7 rounded-lg bg-notion-blue text-white shrink-0"><i className="fa-solid fa-plus text-[11px]"></i></button>
+                    </div>
+                  </div>
                 </div>
                 {notes.length > 0 && (
                   <ul className="text-[11px] text-secondary space-y-0.5 ps-1">
@@ -6044,13 +6114,7 @@
                     items.map(item => (
                       <div key={item.cat} className="flex items-center justify-between gap-2 p-1.5 rounded bg-subtle">
                         <span className="font-medium text-primary truncate">{item.cat}</span>
-                        <MoneyInput
-                          value={item.actual}
-                          hideZero={false}
-                          onChange={(val) => updateNode(type, item.cat, selectedYear, selectedMonth, 'actual', val)}
-                          className="w-28 bg-surface py-0.5 shrink-0"
-                          inputClass={`${color} font-semibold`}
-                        />
+                        <span className={`w-28 text-end font-mono font-semibold shrink-0 ${color}`}>{fmtCents(item.actual)}</span>
                       </div>
                     ))
                   )}
@@ -7022,11 +7086,9 @@
         });
         const unbooked = (data.ious || []).filter(i => !i.settled && loanMoneyState(i) === 'unknown');
         if (unbooked.length) out.push({ id: 'loanmoney', icon: 'fa-hand-holding-dollar', text: t('dcLoanMoney', { n: unbooked.length }), actions: [[t('dcReview'), () => setView('more')]] });
-        const txSum = {};
         const prefix = `${pos.yr}-${pad2(ALL_MONTHS.indexOf(pos.m) + 1)}-`;
-        (data.tx || []).filter(x => x.date.startsWith(prefix) && x.type === 'expenses').forEach(x => { txSum[x.cat] = (txSum[x.cat] || 0) + x.amount; });
-        const undatedSpend = data.categories.expenses.filter(c => isReceiptItem(c)).map(c => getNode('expenses', c, pos.yr, pos.m).actual - (txSum[c] || 0)).filter(v => v > 0.005);
-        if (undatedSpend.length) out.push({ id: 'nodate' + pos.m, icon: 'fa-receipt', soft: true, text: t('dcNoDate', { n: undatedSpend.length, amount: fmt(undatedSpend.reduce((a, b) => a + b, 0)) }),
+        const undatedSpend = (data.tx || []).filter(x => x.undated && x.type === 'expenses' && x.date.startsWith(prefix)).map(x => x.amount);
+        if (undatedSpend.length) out.push({ id: 'nodate' + pos.m, icon: 'fa-receipt', soft: true, text: t('dcNoDate', { n: undatedSpend.length, amount: fmt(undatedSpend.reduce((a2, b2) => a2 + b2, 0)) }),
           actions: [[t('dcOpenAdd'), () => setView('book')]] });
         return out.filter(x => !dismissed['dc_' + x.id]);
       })();
@@ -7270,7 +7332,7 @@
             ]
           : lines;
         const quick = [
-          ['fa-plus', t('quickReceipt'), () => setView('book')],
+          ['fa-heart-pulse', t('healthTitle'), () => setView('health')],
           ['fa-file-import', t('quickImport'), openImport],
           ['fa-wand-magic-sparkles', t('quickAsk'), () => { setAskError(''); setAskModal(true); }],
           ['fa-clock-rotate-left', t('quickHistory'), () => { setActivityTab('history'); setView('activity'); }]
@@ -7492,7 +7554,9 @@
         const txSum = {};
         (data.tx || []).filter(x => x.date.startsWith(prefix)).forEach(x => {
           txSum[x.type + '|' + x.cat] = (txSum[x.type + '|' + x.cat] || 0) + x.amount;
-          push(+x.date.slice(8, 10), { key: x.id, txId: x.id, type: x.type, cat: x.cat, amount: x.amount, note: x.note, who: x.who, account: x.account, kind: 'receipt' });
+          const e = { key: x.id, txId: x.id, type: x.type, cat: x.cat, amount: x.amount, note: x.note, who: x.who, account: x.account,
+            kind: x.source === 'tick' ? (x.type === 'incomes' ? 'income' : 'bill') : x.source === 'legacy' ? 'earlier' : x.source === 'loan' ? 'loan' : 'receipt' };
+          if (x.undated) undated.push(e); else push(+x.date.slice(8, 10), e);
         });
         (data.transfers || []).filter(x => x.date.startsWith(prefix)).forEach(x => {
           push(+x.date.slice(8, 10), { key: x.id, trId: x.id, type: 'transfer', cat: '', amount: x.amount, note: x.note, from: x.from, to: x.to, kind: 'transfer' });
@@ -7730,7 +7794,9 @@
         const q = bk.q.trim().toLowerCase();
         const matchRank = (c) => { const n = c.toLowerCase(); return n === q ? 3 : n.startsWith(q) ? 2 : n.split(/[\s/()&-]+/).some(w => w.startsWith(q)) ? 1 : 0; };
         const filtered = q ? items.filter(c => c.toLowerCase().includes(q)).sort((a, b) => matchRank(b) - matchRank(a)) : items;
-        const shown = q || bk.all ? filtered : filtered.slice(0, 11);
+        let shown = q || bk.all ? filtered : filtered.slice(0, 11);
+        // An item picked from elsewhere (e.g. "+" in Month) is always visible and selected.
+        if (bk.cat && bk.cat !== '__new' && !shown.includes(bk.cat) && items.includes(bk.cat)) shown = [bk.cat, ...shown.slice(0, 10)];
         const isoOf = (dt) => `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`;
         const yesterday = (() => { const dt = new Date(); dt.setDate(dt.getDate() - 1); return isoOf(dt); })();
         const chip = (on) => `px-3 py-1.5 rounded-full text-[12px] border transition ${on ? 'border-notion-blue bg-notion-blue/10 text-primary font-semibold' : 'border-subtle bg-subtle/60 text-secondary hover:text-primary'}`;
@@ -8444,11 +8510,6 @@
                 </button>
               ))}
             </nav>
-            <div className="px-3 mt-5">
-              <button onClick={() => setView('book')} className="w-full h-9 rounded-lg bg-primary text-surface text-[13px] font-semibold flex items-center justify-center gap-2">
-                <i className="fa-solid fa-plus text-xs"></i>{t('addReceiptShort')}
-              </button>
-            </div>
             <div className="mt-auto p-3 flex items-center gap-1 border-t border-subtle">
               <button onClick={() => setIsBurgerOpen(true)} title={syncLabel} aria-label={syncLabel} className={`w-9 h-9 rounded-lg hover:bg-subtle ${syncColor}`}><i className={`fa-solid ${syncIcon} text-xs`}></i></button>
               <button onClick={() => changeLanguage({ de: 'en', en: 'ar', ar: 'de' }[lang])} title="Deutsch · English · العربية" className="h-9 px-2.5 rounded-lg hover:bg-subtle text-[12px] font-semibold text-secondary">{lang.toUpperCase()}</button>
@@ -8492,16 +8553,6 @@
               {view === 'more' && renderMore()}
             </main>
           </div>
-
-          {/* ADD BUTTON (phone) */}
-          {(view === 'overview' || view === 'month' || view === 'activity') && (
-            <button onClick={() => view === 'month' && monthPane === 'incomes' ? handleOpenQuickAdd('incomes') : setView('book')}
-              aria-label={view === 'month' && monthPane === 'incomes' ? t('incomesHeader') : t('addReceipt')}
-              className="lg:hidden fixed z-40 end-4 w-14 h-14 rounded-full bg-primary text-surface shadow-xl flex items-center justify-center active:scale-95 transition-transform"
-              style={{ bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
-              <i className="fa-solid fa-plus text-lg"></i>
-            </button>
-          )}
 
           {/* TAB BAR (phone) */}
           <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-surface/90 backdrop-blur-xl border-t border-subtle" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
@@ -9178,7 +9229,7 @@
                                 className={`h-7 px-2 rounded-lg text-[11px] font-medium ${paid ? 'bg-notion-green text-white' : 'border border-strong text-secondary'}`}>
                                 {paid ? `✓ ${t('loanPaid')}` : t('loanPlan')}
                               </button>
-                              <button type="button" aria-label={t('iouDelete')} onClick={() => mutate(d => { const node = d.values[yr][rt][cat]?.[m]; if (node) { node.budget = 0; node.actual = 0; } })}
+                              <button type="button" aria-label={t('iouDelete')} onClick={() => mutate(d => { const node = d.values[yr][rt][cat]?.[m]; if (node) { node.budget = 0; setActualTx(d, rt, cat, yr, m, 0); } })}
                                 className="w-7 h-7 rounded-full text-tertiary hover:text-notion-red"><i className="fa-solid fa-xmark text-[11px]"></i></button>
                             </div>
                           );
@@ -9470,7 +9521,7 @@
               <div>
                 <label className="text-[10px] text-secondary font-medium block mb-1">{t('replicateFieldLabel')}</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {[['budget', 'replicateBudgetOption'], ['actual', 'replicateActualOption']].map(([field, label]) => (
+                  {[['budget', 'replicateBudgetOption']].map(([field, label]) => (
                     <button
                       key={field}
                       type="button"
@@ -9672,7 +9723,7 @@
               <div>
                 <label className="text-[10px] text-secondary font-medium block mb-1">{t('replicateFieldLabel')}</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {[['budget', 'replicateBudgetOption'], ['actual', 'replicateActualOption']].map(([field, label]) => (
+                  {[['budget', 'replicateBudgetOption']].map(([field, label]) => (
                     <button
                       key={field}
                       type="button"
