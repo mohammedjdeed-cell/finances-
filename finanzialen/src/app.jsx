@@ -794,6 +794,8 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        calLegShops: "Läden & Gruppen",
+        calLegTap: "Doppeltipp = Tagesansicht",
         tipsTitle: "KI-Vorschläge",
         tipsSub: "Persönliche Tipps zu diesem Monat",
         tipsFrom: "Stand {{when}}",
@@ -1573,6 +1575,8 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        calLegShops: "shops & groups",
+        calLegTap: "double-tap = day view",
         tipsTitle: "AI suggestions",
         tipsSub: "Personal tips for this month",
         tipsFrom: "As of {{when}}",
@@ -2352,6 +2356,8 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        calLegShops: "المحلات والمجموعات",
+        calLegTap: "نقرتان = عرض اليوم",
         tipsTitle: "اقتراحات الذكاء الاصطناعي",
         tipsSub: "نصائح شخصية لهذا الشهر",
         tipsFrom: "بتاريخ {{when}}",
@@ -7604,38 +7610,47 @@
 
             {calMode === 'month' && (
               <>
-                <div className="grid gap-1 sm:gap-1.5 text-center" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
+                <div className="cal-wrap"><div className="cal-grid text-center">
                   {weekdays.map((w, i) => <div key={i} className="text-[10px] font-semibold text-tertiary py-0.5">{w}</div>)}
                   {Array.from({ length: c.lead }, (_, i) => <div key={'b' + i}></div>)}
                   {Array.from({ length: c.days }, (_, i) => {
                     const dd = i + 1, iso = c.prefix + pad2(dd), o = c.byDay[dd];
                     const heat = o.out > 0 ? 0.10 + 0.40 * Math.sqrt(o.out / c.maxOut) : 0;
                     const isToday = iso === todayIso, isSel = iso === sel;
-                    const bars = segs(o);
+                    // The day's payments, biggest first: their logos make a day recognisable at a glance.
+                    const paid = o.list.filter(e => e.type === 'expenses' && !e.planned).sort((x, y) => y.amount - x.amount);
+                    const fill = o.out > 0 ? Math.max(14, Math.round(Math.sqrt(o.out / c.maxOut) * 100)) : 0;
                     const pastDay = iso < todayIso;
+                    const tip = o.list.map(e => `${e.type === 'incomes' ? '+' : e.planned ? '⏳' : '−'} ${e.cat || t('calKind_transfer')} ${fmtCents(e.amount)}`).join('\n');
                     return (
-                      <button key={iso} type="button" onClick={() => setCalDay(iso)} onDoubleClick={() => { setCalDay(iso); setCalMode('day'); }}
-                        className={`cal-cell cell-in relative rounded-xl sm:rounded-2xl flex flex-col items-stretch justify-between p-1 sm:p-1.5 overflow-hidden transition active:scale-95 hover:ring-1 hover:ring-strong ${isSel ? 'ring-2 ring-notion-blue' : ''} ${o.due > 0 ? 'outline-dashed outline-1 outline-amber-500/70 -outline-offset-2' : ''}`}
-                        style={{ animationDelay: `${i * 10}ms`, background: heat ? `rgba(59,130,246,${heat})` : 'rgb(var(--bg-subtle) / 0.55)', opacity: !pastDay || o.list.length ? 1 : 0.75 }}>
-                        <span className="flex items-center justify-between">
-                          <span className={`leading-none ${isToday ? 'w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-notion-blue text-white grid place-items-center font-bold' : 'text-secondary'}`} style={{ fontSize: 'clamp(10px, 2.6vw, 13px)' }}>{dd}</span>
-                          {(o.inc > 0 || o.dueIn > 0) && <span className={`w-2 h-2 rounded-full ${o.inc > 0 ? 'bg-notion-green' : 'border border-notion-green'}`}></span>}
+                      <button key={iso} type="button" title={tip || undefined} onClick={() => setCalDay(iso)} onDoubleClick={() => { setCalDay(iso); setCalMode('day'); }}
+                        className={`cal-cell cell-in ${isSel ? 'cal-sel' : ''} ${o.due > 0 ? 'cal-due' : ''} ${!pastDay || o.list.length ? '' : 'cal-quiet'}`}
+                        style={{ animationDelay: `${i * 12}ms` }}>
+                        {fill > 0 && <span className="cal-fill" style={{ height: `${fill}%`, animationDelay: `${120 + i * 12}ms` }}></span>}
+                        <span className="cal-top">
+                          <span className={isToday ? 'cal-today' : 'cal-num'}>{dd}</span>
+                          {(o.inc > 0 || o.dueIn > 0) && <span className={`cal-in ${o.inc > 0 ? '' : 'cal-in-open'}`} title={`+ ${fmtCents(o.inc || o.dueIn)}`}></span>}
                         </span>
-                        <span className="leading-none font-mono font-bold text-primary" style={{ fontSize: 'clamp(11px, 3.4vw, 19px)' }}>
-                          {o.out > 0 ? short(o.out) : o.due > 0 ? <span className="text-amber-500 font-semibold">{short(o.due)}</span> : o.inc > 0 ? <span className="text-notion-green">+{short(o.inc)}</span> : ''}
+                        <span className={`cal-amt ${o.out > 0 ? '' : o.due > 0 ? 'cal-amt-due' : o.inc > 0 ? 'cal-amt-in' : ''}`}>
+                          {o.out > 0 ? short(o.out) : o.due > 0 ? short(o.due) : o.inc > 0 ? `+${short(o.inc)}` : ''}
                         </span>
-                        <span className="flex h-1 sm:h-1.5 rounded-full overflow-hidden bg-transparent">
-                          {bars.map((b2, k) => <span key={k} style={{ width: `${b2.w}%`, background: b2.col }}></span>)}
+                        <span className="cal-icons">
+                          {paid.slice(0, 3).map(e => <ItemIcon key={e.key} spec={iconFor('expenses', e.cat)} tint={tintFor('expenses', e.cat)} size={18} />)}
+                          {paid.length > 3 && <span className="cal-more">+{paid.length - 3}</span>}
+                        </span>
+                        <span className="cal-dots">
+                          {paid.slice(0, 3).map(e => <span key={e.key} style={{ background: tintFor('expenses', e.cat) }}></span>)}
                         </span>
                       </button>
                     );
                   })}
-                </div>
+                </div></div>
                 <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10.5px] text-tertiary">
                   <span className="flex items-center gap-1"><span className="rounded" style={{ width: 10, height: 10, background: 'rgba(59,130,246,.5)' }}></span>{t('calLegPaid')}</span>
                   <span className="flex items-center gap-1"><span className="rounded border border-dashed border-amber-500" style={{ width: 10, height: 10 }}></span>{t('calLegDue')}</span>
                   <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-notion-green"></span>{t('calLegIn')}</span>
-                  <span className="flex items-center gap-1"><span className="rounded-full" style={{ width: 14, height: 4, background: 'linear-gradient(90deg,#3b82f6,#ec4899,#f59e0b)' }}></span>{t('calLegGroups')}</span>
+                  <span className="flex items-center gap-1"><span className="flex gap-0.5"><span className="w-1.5 h-1.5 rounded-full" style={{ background: '#3b82f6' }}></span><span className="w-1.5 h-1.5 rounded-full" style={{ background: '#ec4899' }}></span></span>{t('calLegShops')}</span>
+                  <span className="flex items-center gap-1"><i className="fa-solid fa-hand-pointer text-[9px]"></i>{t('calLegTap')}</span>
                 </div>
                 {sel && selDay && (
                   <div className="space-y-2 pt-2 border-t border-subtle">
