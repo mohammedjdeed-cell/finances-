@@ -812,6 +812,12 @@
         itemEntries: "Einträge in diesem Monat ({{n}})",
         itemNoEntries: "Noch nichts eingetragen.",
         edPlanCard: "Plan & Wiederholung",
+        entryItemSettings: "Posten bearbeiten",
+        entryCreate: "„{{name}}“ anlegen",
+        entryMoveAll: "Auch die {{n}} anderen Einträge über {{amount}} aus „{{from}}“ verschieben (z. B. frühere Monate)",
+        motionLabel: "Animationen",
+        motionOn: "An",
+        motionOff: "Aus",
         shopAllItems: "Alle Posten …",
         shopNewItem: "Neuer Posten",
         shopWhat: "Was hast du bei {{shop}} gekauft?",
@@ -1643,6 +1649,12 @@
         itemEntries: "Entries this month ({{n}})",
         itemNoEntries: "Nothing entered yet.",
         edPlanCard: "Plan & repeat",
+        entryItemSettings: "Edit item",
+        entryCreate: "Create “{{name}}”",
+        entryMoveAll: "Also move the {{n}} other {{amount}} entries from “{{from}}” (e.g. earlier months)",
+        motionLabel: "Animations",
+        motionOn: "On",
+        motionOff: "Off",
         shopAllItems: "All items…",
         shopNewItem: "New item",
         shopWhat: "What did you buy at {{shop}}?",
@@ -2474,6 +2486,12 @@
         itemEntries: "إدخالات هذا الشهر ({{n}})",
         itemNoEntries: "لا شيء مسجل بعد.",
         edPlanCard: "الخطة والتكرار",
+        entryItemSettings: "تعديل البند",
+        entryCreate: "إنشاء „{{name}}“",
+        entryMoveAll: "انقل أيضًا الإدخالات الـ{{n}} الأخرى بقيمة {{amount}} من „{{from}}“ (مثل الأشهر السابقة)",
+        motionLabel: "الحركة والتأثيرات",
+        motionOn: "تشغيل",
+        motionOff: "إيقاف",
         shopAllItems: "كل البنود …",
         shopNewItem: "بند جديد",
         shopWhat: "ماذا اشتريت من {{shop}}؟",
@@ -3330,7 +3348,7 @@
       const [shown, setShown] = useState(value);
       const fromRef = useRef(value);
       useEffect(() => {
-        const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const reduce = document.documentElement.dataset.motion === 'off';
         const from = fromRef.current;
         if (typeof value !== 'number' || typeof from !== 'number' || reduce || from === value) {
           fromRef.current = value; setShown(value); return;
@@ -3705,6 +3723,8 @@
       const [hideZeroes, setHideZeroes] = useState(() => safeStorage.get('budget_hide_zeroes', 'true') === 'true');
       const [isBurgerOpen, setIsBurgerOpen] = useState(false);
       const [theme, setTheme] = useState(() => safeStorage.get('budget_app_theme', 'dark'));
+      const [motion, setMotionState] = useState(() => safeStorage.get('budget_motion', 'on') === 'off' ? 'off' : 'on');
+      const setMotion = (v) => { setMotionState(v); safeStorage.set('budget_motion', v); if (v === 'off') document.documentElement.dataset.motion = 'off'; else delete document.documentElement.dataset.motion; };
       const [systemDark, setSystemDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
       const resolvedTheme = theme === 'system' ? (systemDark ? 'dark' : 'light') : theme;
 
@@ -5347,18 +5367,35 @@
       const openEntry = (id) => {
         const x = (data.tx || []).find(e => e.id === id);
         if (!x) return;
-        setEntrySheet({ id: x.id, type: x.type, cat: x.cat, amount: String(x.amount).replace('.', lang === 'en' ? '.' : ','), date: x.date,
+        setEntrySheet({ origCat: x.cat, origAmount: x.amount, pick: false, q: '', newName: '', newGroup: '', moveAll: false, id: x.id, type: x.type, cat: x.cat, amount: String(x.amount).replace('.', lang === 'en' ? '.' : ','), date: x.date,
           who: x.who || 'joint', note: x.note || '', account: x.account || '', source: x.source, undated: !!x.undated });
+      };
+      // Entries that look like the same purchase (same item, same amount): moved together when asked.
+      const sameEntries = (f) => (data.tx || []).filter(x => x.id !== f.id && x.type === f.type && x.cat === f.origCat && Math.abs(x.amount - f.origAmount) < 0.005);
+      const createItemIn = (d, type, cat, gid) => {
+        const dir = MERCHANTS.find(([nm]) => nm.toLowerCase() === cat.toLowerCase());
+        if (dir && dir[2] && !autoIcon(cat) && !d.icons[cat]) d.icons[cat] = merchantLogoFor(dir[0]);
+        d.categories[type].push(cat);
+        d.meta[type][cat] = type === 'expenses' ? metaForGroup(d.groups, gid, null, false)
+          : { bracket: d.brackets.incomes[d.brackets.incomes.length - 1].id, mode: 'variable', oneTime: false, payDay: null };
+        TIMELINE.forEach(({ yr, m }) => { const byCat = d.values[yr][type][cat] || (d.values[yr][type][cat] = {}); if (!byCat[m]) byCat[m] = emptyNode(); });
       };
       const saveEntry = () => {
         const f = entrySheet;
         const amount = parseAmount(f.amount);
         if (amount === null || !dateToMonth(f.date)) return;
+        const isNew = f.cat === '__new';
+        const newName = (f.newName || '').trim().slice(0, 60);
+        if (isNew && !newName) return;
+        const cat = isNew ? (data.categories[f.type].find(c => c.toLowerCase() === newName.toLowerCase()) || newName) : f.cat;
+        const others = f.moveAll && cat !== f.origCat ? sameEntries(f).map(x => x.id) : [];
         mutateWithUndo(d => {
           const cur = d.tx.find(x => x.id === f.id);
           if (!cur) return;
+          if (!d.categories[f.type].includes(cat)) createItemIn(d, f.type, cat, f.newGroup || (data.groups.find(g => g.kind === 'variable') || data.groups[0]).id);
+          others.forEach(id => { const o = d.tx.find(x => x.id === id); if (o) { applyTx(d, o, -1); o.cat = cat; applyTx(d, o, +1); } });
           applyTx(d, cur, -1);
-          Object.assign(cur, { amount, date: f.date, cat: f.cat, who: f.who, note: f.note.trim(), account: f.account || null,
+          Object.assign(cur, { amount, date: f.date, cat, who: f.who, note: f.note.trim(), account: f.account || null,
             undated: f.undated && f.date === cur.date, source: cur.source === 'legacy' || cur.source === 'tick' ? 'manual' : cur.source });
           applyTx(d, cur, +1);
         }, t('entrySaved'));
@@ -9444,7 +9481,7 @@
                     <button onClick={() => goMonth(TIMELINE[idx - 1])} disabled={idx <= 0} aria-label="prev" className="w-8 h-8 rounded-full bg-surface/70 text-secondary disabled:opacity-30"><i className="fa-solid fa-chevron-left rtl:rotate-180 text-xs"></i></button>
                     <div className="text-center">
                       <div className="text-[12px]" style={{ color: tint }}>{g ? groupName(g) : t('incomesHeader')} · {formatMonth(selectedMonth, lang)} {selectedYear}</div>
-                      <div className={`text-[32px] font-bold leading-tight font-mono ${type === 'incomes' ? 'text-notion-green' : 'text-primary'}`}>{fmtCents(n.actual)}</div>
+                      <div className={`text-[32px] font-bold leading-tight font-mono ${type === 'incomes' ? 'text-notion-green' : 'text-primary'}`}><AnimatedNumber value={n.actual} format={fmtCents} /></div>
                       <div className="text-[12px] text-secondary">{plan > 0 ? (shop ? t('itemGroupOf', { spent: fmt(groupSpent), target: fmt(plan), group: groupName(g) }) : t('itemOfPlan', { plan: fmtCents(plan) })) : t('itemNoPlan')}</div>
                     </div>
                     <button onClick={() => goMonth(TIMELINE[idx + 1])} disabled={idx >= TIMELINE.length - 1} aria-label="next" className="w-8 h-8 rounded-full bg-surface/70 text-secondary disabled:opacity-30"><i className="fa-solid fa-chevron-right rtl:rotate-180 text-xs"></i></button>
@@ -9476,7 +9513,7 @@
                     <i className="fa-solid fa-sliders"></i>{t('itemSettings')}
                   </button>
                 </div>
-                <div className="space-y-2">
+                <div key={`${selectedYear}${selectedMonth}`} className="space-y-2 stagger">
                   <div className="text-[11px] font-semibold uppercase tracking-wide text-tertiary">{t('itemEntries', { n: entries.length })}</div>
                   {entries.length === 0 && <p className="text-[13px] text-secondary py-3 text-center">{t('itemNoEntries')}</p>}
                   {entries.map(x => (
@@ -9505,18 +9542,88 @@
             const chip = (on) => `px-3 py-1.5 rounded-full text-[12px] border transition ${on ? 'border-notion-blue bg-notion-blue/10 text-primary font-semibold' : 'border-subtle bg-subtle/60 text-secondary'}`;
             const ok = parseAmount(f.amount) !== null;
             return (
-              <Modal size="max-w-md" onClose={() => setEntrySheet(null)} title={<><ItemIcon spec={iconFor(f.type, f.cat)} tint={tintFor(f.type, f.cat)} size={22} /><span>{t('entryTitle')}</span></>}>
+              <Modal size="max-w-md" onClose={() => setEntrySheet(null)} title={<><ItemIcon spec={f.cat === '__new' ? (autoIcon(f.newName) || { kind: 'symbol', icon: 'fa-plus' }) : iconFor(f.type, f.cat)} tint={tintFor(f.type, f.cat)} size={22} /><span>{t('entryTitle')}</span></>}>
                 <div className="flex items-baseline gap-2 rounded-2xl px-4 py-3 bg-subtle/60">
                   <input data-free value={f.amount} onChange={(e) => set({ amount: e.target.value })} inputMode="decimal" aria-label={t('bkAmount')}
                     className={`flex-1 min-w-0 bg-transparent outline-none text-[34px] leading-none font-semibold font-mono ${f.type === 'incomes' ? 'text-notion-green' : 'text-primary'}`} />
                   <span className="text-[20px] text-tertiary font-mono">€</span>
                 </div>
-                <label className="block space-y-1">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-tertiary">{f.type === 'incomes' ? t('bkWhereIn') : t('bkWhere')}</span>
-                  <select data-free value={f.cat} onChange={(e) => set({ cat: e.target.value })} className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2 text-[13px] text-primary">
-                    {data.categories[f.type].map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </label>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-tertiary">{f.type === 'incomes' ? t('bkWhereIn') : t('bkWhere')}</span>
+                    {f.cat !== '__new' && (
+                      <button type="button" onClick={() => { const c = f.cat, ty = f.type; setEntrySheet(null); setItemSheet(null); handleOpenEditCategory(ty, c); }}
+                        className="text-[11.5px] text-notion-blue hover:underline"><i className="fa-solid fa-sliders me-1 text-[10px]"></i>{t('entryItemSettings')}</button>
+                    )}
+                  </div>
+                  <button type="button" onClick={() => set({ pick: !f.pick })}
+                    className={`w-full flex items-center gap-2.5 rounded-xl px-3 py-2 border transition ${f.pick ? 'border-notion-blue bg-notion-blue/5' : 'border-subtle bg-subtle/60'}`}>
+                    {f.cat === '__new'
+                      ? (autoIcon(f.newName) ? <ItemIcon spec={autoIcon(f.newName)} size={28} /> : <span className="w-[28px] h-[28px] rounded-[9px] bg-notion-blue/15 text-notion-blue flex items-center justify-center"><i className="fa-solid fa-plus text-xs"></i></span>)
+                      : <ItemIcon spec={iconFor(f.type, f.cat)} tint={tintFor(f.type, f.cat)} size={28} />}
+                    <span className="flex-1 min-w-0 text-start text-[13.5px] text-primary truncate">{f.cat === '__new' ? (f.newName || t('shopNewItem')) : f.cat}</span>
+                    <i className={`fa-solid fa-chevron-down text-[10px] text-tertiary transition-transform ${f.pick ? 'rotate-180' : ''}`}></i>
+                  </button>
+                  {f.pick && (() => {
+                    const ql = f.q.trim().toLowerCase();
+                    const list = data.categories[f.type].filter(c => !ql || c.toLowerCase().includes(ql))
+                      .sort((a2, b2) => (bkUsage[f.type + '|' + b2] || 0) - (bkUsage[f.type + '|' + a2] || 0)).slice(0, ql ? 24 : 12);
+                    const sugg = ql.length >= 2 ? merchantMatch(f.q, data.categories[f.type], f.type).slice(0, 4) : [];
+                    const exact = data.categories[f.type].some(c => c.toLowerCase() === ql);
+                    return (
+                      <div className="pop-in rounded-xl border border-subtle bg-surface p-2 space-y-2">
+                        <input data-free type="search" autoFocus value={f.q} onChange={(e) => set({ q: e.target.value })} placeholder={t('bkSearchBig')}
+                          className="w-full bg-subtle border border-subtle rounded-lg px-3 py-2 text-[13px] text-primary outline-none focus:border-notion-blue" />
+                        <div className="grid grid-cols-3 gap-1.5 max-h-[220px] overflow-y-auto stagger">
+                          {list.map(c => (
+                            <button key={c} type="button" onClick={() => set({ cat: c, pick: false, q: '' })}
+                              className={`flex flex-col items-center gap-1 rounded-xl px-1 py-2 border ${f.cat === c ? 'border-notion-blue bg-notion-blue/10' : 'border-transparent bg-subtle/50 hover:bg-subtle'}`}>
+                              <ItemIcon spec={iconFor(f.type, c)} tint={tintFor(f.type, c)} size={26} />
+                              <span className="w-full text-center text-[10.5px] leading-tight truncate text-secondary">{c}</span>
+                            </button>
+                          ))}
+                        </div>
+                        {(sugg.length > 0 || (ql && !exact)) && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {sugg.map(([name, gid]) => (
+                              <button key={name} type="button" onClick={() => set({ cat: '__new', newName: name, newGroup: resolveGroup(data.groups, gid).id, pick: false, q: '' })}
+                                className="flex items-center gap-1.5 ps-1 pe-2.5 py-1 rounded-full border border-subtle bg-subtle/50 hover:border-notion-blue">
+                                <ItemIcon spec={autoIcon(name) || { kind: 'symbol', icon: GROUP_ICONS[resolveGroup(data.groups, gid).id] || 'fa-tag' }} size={20} />
+                                <span className="text-[12px] text-primary">+ {name}</span>
+                              </button>
+                            ))}
+                            {ql && !exact && !sugg.some(([name]) => name.toLowerCase() === ql) && (
+                              <button type="button" onClick={() => set({ cat: '__new', newName: f.q.trim(), pick: false, q: '' })}
+                                className="px-3 py-1 rounded-full border border-dashed border-strong text-[12px] text-notion-blue">+ {t('entryCreate', { name: f.q.trim() })}</button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                  {f.cat === '__new' && (
+                    <div className="pop-in grid grid-cols-1 gap-2">
+                      <input data-free value={f.newName} onChange={(e) => set({ newName: e.target.value })} placeholder={t('bkNewName')}
+                        className="bg-subtle border border-subtle rounded-lg px-2.5 py-2 text-[13px] text-primary outline-none focus:border-strong" />
+                      {f.type === 'expenses' && (
+                        <select data-free value={f.newGroup || (data.groups.find(g => g.kind === 'variable') || data.groups[0]).id} onChange={(e) => set({ newGroup: e.target.value })}
+                          className="bg-subtle border border-subtle rounded-lg px-2 py-2 text-[13px] text-primary">
+                          {data.groups.map(g => <option key={g.id} value={g.id}>{groupName(g)}</option>)}
+                        </select>
+                      )}
+                    </div>
+                  )}
+                  {f.cat !== f.origCat && (() => {
+                    const n = sameEntries(f).length;
+                    if (!n) return null;
+                    return (
+                      <label className="pop-in flex items-start gap-2.5 rounded-xl bg-notion-blue/5 border border-notion-blue/30 p-2.5 cursor-pointer">
+                        <input data-free type="checkbox" checked={!!f.moveAll} onChange={(e) => set({ moveAll: e.target.checked })} className="mt-0.5 w-4 h-4" />
+                        <span className="text-[12px] text-primary leading-snug">{t('entryMoveAll', { n, amount: fmtCents(f.origAmount), from: f.origCat })}</span>
+                      </label>
+                    );
+                  })()}
+                </div>
                 <div className="space-y-1">
                   <span className="text-[11px] font-semibold uppercase tracking-wide text-tertiary">{t('bkWhen')}</span>
                   <div className="flex items-center gap-2">
@@ -10489,6 +10596,17 @@
                       {['light', 'dark', 'system'].map(m => (
                         <button key={m} onClick={() => setTheme(m)} className={`py-1 rounded text-[10px] font-medium ${theme === m ? 'bg-surface text-primary shadow-sm font-semibold' : 'text-secondary'}`}>
                           {t(`theme${m.charAt(0).toUpperCase() + m.slice(1)}`)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-secondary block mb-1">{t('motionLabel')}</label>
+                    <div className="grid grid-cols-2 gap-1 bg-subtle p-0.5 rounded border border-subtle">
+                      {['on', 'off'].map(m => (
+                        <button key={m} onClick={() => setMotion(m)} className={`py-1 rounded text-[10px] font-medium ${motion === m ? 'bg-surface text-primary shadow-sm font-semibold' : 'text-secondary'}`}>
+                          {t(m === 'on' ? 'motionOn' : 'motionOff')}
                         </button>
                       ))}
                     </div>

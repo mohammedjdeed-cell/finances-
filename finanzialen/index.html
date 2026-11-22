@@ -18,6 +18,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
+    try { if (localStorage.getItem('budget_motion') === 'off') document.documentElement.dataset.motion = 'off'; } catch (e) {}
     // Theme tokens live in CSS variables (RGB triplets) so Tailwind classes like
     // bg-primary, text-surface and bg-subtle/50 actually exist and support opacity.
     const cssVar = (name) => `rgb(var(${name}) / <alpha-value>)`;
@@ -141,7 +142,7 @@
     .cw-undated { padding: 0 6px; font-size: 12px; color: rgb(var(--text-secondary)); }
     .cw-undated summary { cursor: pointer; padding: 4px 0 8px; }
     @keyframes cwIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-    @media (prefers-reduced-motion: reduce) { .cw-list { animation: none; } }
+    html[data-motion=off] .cw-list { animation: none; }
     input[type=search]::-webkit-search-cancel-button, input[type=search]::-webkit-search-decoration { -webkit-appearance: none; display: none; }
     /* View mode: fields on the pages show their values but can't be changed by a stray tap while scrolling. */
     main.locked input:not([data-free]), main.locked select:not([data-free]), main.locked textarea:not([data-free]),
@@ -176,30 +177,44 @@
     }
     .font-mono { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
     .tnum { font-variant-numeric: tabular-nums; }
-    @media (prefers-reduced-motion: no-preference) {
-      .view-enter { animation: viewIn .22s cubic-bezier(.2,.8,.2,1); }
-      .slide-next { animation: slideNext .26s cubic-bezier(.2,.8,.2,1); }
-      .slide-prev { animation: slidePrev .26s cubic-bezier(.2,.8,.2,1); }
-      [dir="rtl"] .slide-next { animation-name: slidePrev; }
-      [dir="rtl"] .slide-prev { animation-name: slideNext; }
-      .sheet-in { animation: sheetUp .28s cubic-bezier(.2,.9,.25,1); }
-      .backdrop-in { animation: fadeIn .2s ease-out; }
-      .pop-in { animation: popIn .16s ease-out; }
-      .cell-in { animation: cellIn .32s cubic-bezier(.2,.8,.2,1) both; }
-      .saved-pulse { animation: savedPulse .5s ease-out; }
-      @keyframes cellIn { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
-      @keyframes savedPulse { 0% { transform: scale(1); } 40% { transform: scale(1.04); box-shadow: 0 0 0 6px rgba(16,185,129,.35); } 100% { transform: scale(1); box-shadow: none; } }
-      @media (min-width: 640px) { .sheet-in { animation: popIn .18s ease-out; } }
-      @keyframes viewIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-      @keyframes slideNext { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
-      @keyframes slidePrev { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
-      @keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
-      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-      @keyframes popIn { from { opacity: 0; transform: scale(.97) translateY(4px); } to { opacity: 1; transform: none; } }
-      /* Pressed buttons give way a little, like a native control. */
-      button { transition: transform .12s ease, background-color .15s ease, color .15s ease, box-shadow .15s ease; }
-      button:active:not(:disabled) { transform: scale(.97); }
-    }
+    /* Motion: on by default (the app's own switch in the menu turns it off, html[data-motion=off]). */
+    html:not([data-motion=off]) .view-enter { animation: viewIn .38s cubic-bezier(.2,.8,.2,1); }
+    html:not([data-motion=off]) .slide-next { animation: slideNext .4s cubic-bezier(.2,.8,.2,1); }
+    html:not([data-motion=off]) .slide-prev { animation: slidePrev .4s cubic-bezier(.2,.8,.2,1); }
+    html:not([data-motion=off])[dir="rtl"] .slide-next, html:not([data-motion=off]) [dir="rtl"] .slide-next { animation-name: slidePrev; }
+    html:not([data-motion=off])[dir="rtl"] .slide-prev, html:not([data-motion=off]) [dir="rtl"] .slide-prev { animation-name: slideNext; }
+    /* Cards on a page rise in one after another. */
+    html:not([data-motion=off]) main > div > section, html:not([data-motion=off]) main > section, html:not([data-motion=off]) .stagger > * { animation: riseIn .5s cubic-bezier(.2,.8,.2,1) both; }
+    html:not([data-motion=off]) main > div > section:nth-child(2), html:not([data-motion=off]) main > section:nth-child(2), html:not([data-motion=off]) .stagger > :nth-child(2) { animation-delay: .04s; }
+    html:not([data-motion=off]) main > div > section:nth-child(3), html:not([data-motion=off]) main > section:nth-child(3), html:not([data-motion=off]) .stagger > :nth-child(3) { animation-delay: .08s; }
+    html:not([data-motion=off]) main > div > section:nth-child(4), html:not([data-motion=off]) main > section:nth-child(4), html:not([data-motion=off]) .stagger > :nth-child(4) { animation-delay: .12s; }
+    html:not([data-motion=off]) main > div > section:nth-child(5), html:not([data-motion=off]) main > section:nth-child(5), html:not([data-motion=off]) .stagger > :nth-child(5) { animation-delay: .16s; }
+    html:not([data-motion=off]) main > div > section:nth-child(n+6), html:not([data-motion=off]) main > section:nth-child(n+6), html:not([data-motion=off]) .stagger > :nth-child(n+6) { animation-delay: .2s; }
+    /* Sheets spring up from the bottom (slight overshoot); on wide screens they zoom in. */
+    html:not([data-motion=off]) .sheet-in { animation: sheetUp .46s cubic-bezier(.2,1.15,.35,1); }
+    html:not([data-motion=off]) .backdrop-in { animation: fadeIn .3s ease-out; }
+    html:not([data-motion=off]) .pop-in { animation: popIn .26s cubic-bezier(.2,1.2,.4,1); }
+    html:not([data-motion=off]) .cell-in { animation: cellIn .32s cubic-bezier(.2,.8,.2,1) both; }
+    html:not([data-motion=off]) .saved-pulse { animation: savedPulse .6s ease-out; }
+    @media (min-width: 640px) { html:not([data-motion=off]) .sheet-in { animation: zoomIn .32s cubic-bezier(.2,1.15,.35,1); } }
+    /* Toasts slide up, rows light up when pressed, the tab bar pill glides. */
+    html:not([data-motion=off]) [role=status] { animation: toastIn .4s cubic-bezier(.2,1.2,.4,1); }
+    html:not([data-motion=off]) button { transition: transform .18s cubic-bezier(.2,1.4,.4,1), background-color .2s ease, color .2s ease, box-shadow .2s ease, border-color .2s ease, opacity .2s ease; }
+    html:not([data-motion=off]) button:active:not(:disabled) { transform: scale(.95); transition-duration: .08s; }
+    html:not([data-motion=off]) .oneui-tabs-in button span:first-child { transition: background-color .3s ease, transform .35s cubic-bezier(.2,1.4,.4,1), width .3s ease; }
+    html:not([data-motion=off]) .icon-bounce { animation: iconBounce .5s cubic-bezier(.2,1.6,.4,1); }
+    @keyframes cellIn { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
+    @keyframes savedPulse { 0% { transform: scale(1); } 35% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(16,185,129,.35); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    @keyframes viewIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @keyframes slideNext { from { opacity: 0; transform: translateX(48px); } to { opacity: 1; transform: none; } }
+    @keyframes slidePrev { from { opacity: 0; transform: translateX(-48px); } to { opacity: 1; transform: none; } }
+    @keyframes riseIn { from { opacity: 0; transform: translateY(18px) scale(.98); } to { opacity: 1; transform: none; } }
+    @keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
+    @keyframes zoomIn { from { opacity: 0; transform: scale(.92) translateY(10px); } to { opacity: 1; transform: none; } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes popIn { from { opacity: 0; transform: scale(.94) translateY(6px); } to { opacity: 1; transform: none; } }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(24px) scale(.96); } to { opacity: 1; transform: none; } }
+    @keyframes iconBounce { 0% { transform: scale(.6); } 60% { transform: scale(1.12); } 100% { transform: none; } }
     .fold { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .24s cubic-bezier(.2,.8,.2,1); }
     .fold.closed { grid-template-rows: 0fr; }
     .fold > div { overflow: hidden; min-height: 0; }
@@ -231,8 +246,8 @@
     .overflow-x-auto { scroll-snap-type: x proximity; overscroll-behavior-x: contain; }
     .overflow-x-auto > * { scroll-snap-align: start; }
     @supports (animation-timeline: view()) {
-      @media (prefers-reduced-motion: no-preference) {
-        main section { animation: card-in linear both; animation-timeline: view(); animation-range: entry 0% entry 35%; }
+      @media all {
+        html:not([data-motion=off]) main section { animation: card-in linear both; animation-timeline: view(); animation-range: entry 0% entry 35%; }
         @keyframes card-in { from { opacity: .25; transform: translateY(18px) scale(.985); } to { opacity: 1; transform: none; } }
       }
     }
@@ -254,7 +269,7 @@
   <div id="root"></div>
 
   <!-- APP:BEGIN – built from src/app.jsx by build.mjs, do not edit here -->
-  <script src="app.js?v=23e7cb5c0d" defer></script>
+  <script src="app.js?v=a86a8c19db" defer></script>
   <!-- APP:END -->
   <script>
     if ('serviceWorker' in navigator) {
