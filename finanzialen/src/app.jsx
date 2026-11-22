@@ -809,6 +809,17 @@
         itemEntries: "Einträge in diesem Monat ({{n}})",
         itemNoEntries: "Noch nichts eingetragen.",
         edPlanCard: "Plan & Wiederholung",
+        schNow: "Aktuell:",
+        schFrom: "ab {{month}}",
+        schFirst: "erste Zahlung {{amount}}",
+        schEveryMonth: "dann {{amount}} jeden Monat",
+        schEveryN: "dann {{amount}} alle {{n}} Monate",
+        schOpenEnd: "ohne Ende",
+        schUntil: "bis {{month}}",
+        schOdd: "{{n}} Monat(e) mit anderem Betrag – bleiben, solange du hier nichts änderst.",
+        schFirstToggle: "Erste Zahlung ist anders",
+        schFirstLabel: "Erste Zahlung (€)",
+        schThenLabel: "Danach jeweils (€)",
         calNothingDay: "Keine Zahlungen an diesem Tag",
         otAdd: "Über „Buchen“ eintragen",
         calKind_earlier: "Früher eingetragen",
@@ -1609,6 +1620,17 @@
         itemEntries: "Entries this month ({{n}})",
         itemNoEntries: "Nothing entered yet.",
         edPlanCard: "Plan & repeat",
+        schNow: "Now:",
+        schFrom: "from {{month}}",
+        schFirst: "first payment {{amount}}",
+        schEveryMonth: "then {{amount}} every month",
+        schEveryN: "then {{amount}} every {{n}} months",
+        schOpenEnd: "no end",
+        schUntil: "until {{month}}",
+        schOdd: "{{n}} month(s) with a different amount – kept as long as you change nothing here.",
+        schFirstToggle: "First payment is different",
+        schFirstLabel: "First payment (€)",
+        schThenLabel: "After that, each (€)",
         calNothingDay: "No payments on this day",
         otAdd: "Add through \"Add\"",
         calKind_earlier: "Entered earlier",
@@ -2409,6 +2431,17 @@
         itemEntries: "إدخالات هذا الشهر ({{n}})",
         itemNoEntries: "لا شيء مسجل بعد.",
         edPlanCard: "الخطة والتكرار",
+        schNow: "حاليًا:",
+        schFrom: "من {{month}}",
+        schFirst: "الدفعة الأولى {{amount}}",
+        schEveryMonth: "ثم {{amount}} كل شهر",
+        schEveryN: "ثم {{amount}} كل {{n}} أشهر",
+        schOpenEnd: "بلا نهاية",
+        schUntil: "حتى {{month}}",
+        schOdd: "{{n}} شهر بمبلغ مختلف – يبقى كما هو ما لم تغيّر شيئًا هنا.",
+        schFirstToggle: "الدفعة الأولى مختلفة",
+        schFirstLabel: "الدفعة الأولى (€)",
+        schThenLabel: "بعدها كل مرة (€)",
         calNothingDay: "لا مدفوعات في هذا اليوم",
         otAdd: "التسجيل عبر «تسجيل»",
         calKind_earlier: "مُدخل سابقًا",
@@ -3234,7 +3267,13 @@
       'fa-language', 'fa-shield-halved', 'fa-umbrella', 'fa-plug', 'fa-laptop', 'fa-mask', 'fa-file-lines', 'fa-file-invoice', 'fa-repeat',
       'fa-piggy-bank', 'fa-hand-holding-dollar', 'fa-building-columns', 'fa-briefcase', 'fa-coins', 'fa-people-roof', 'fa-baby', 'fa-paw',
       'fa-scissors', 'fa-spray-can-sparkles', 'fa-soap', 'fa-broom', 'fa-screwdriver-wrench', 'fa-box', 'fa-envelope', 'fa-cloud',
-      'fa-robot', 'fa-credit-card', 'fa-receipt', 'fa-tag', 'fa-store', 'fa-seedling', 'fa-hospital', 'fa-ellipsis'];
+      'fa-robot', 'fa-credit-card', 'fa-receipt', 'fa-tag', 'fa-store', 'fa-seedling', 'fa-hospital',
+      'fa-cookie-bite', 'fa-ice-cream', 'fa-wine-bottle', 'fa-bottle-water', 'fa-fish', 'fa-carrot', 'fa-egg', 'fa-cheese', 'fa-lemon',
+      'fa-bag-shopping', 'fa-wallet', 'fa-gem', 'fa-ring', 'fa-mosque', 'fa-hand-holding-heart', 'fa-children', 'fa-child', 'fa-school',
+      'fa-stethoscope', 'fa-syringe', 'fa-hand-holding-medical', 'fa-car-side', 'fa-taxi', 'fa-motorcycle', 'fa-square-parking', 'fa-truck',
+      'fa-truck-fast', 'fa-box-open', 'fa-house-chimney', 'fa-building', 'fa-hotel', 'fa-suitcase', 'fa-ticket', 'fa-hammer', 'fa-paint-roller',
+      'fa-lightbulb', 'fa-trash-can', 'fa-sim-card', 'fa-satellite-dish', 'fa-headphones', 'fa-camera', 'fa-print', 'fa-futbol',
+      'fa-person-swimming', 'fa-ellipsis'];
     // Shops and services: short label in the brand's colours (no logos are loaded from anywhere).
     const BRANDS = [
       [/netto/i, 'N', '#FFE500', '#E2001A', 'si:netto'], [/edeka/i, 'E', '#1C4E9B', '#FFE500', 'si:edeka'], [/lidl/i, 'L', '#0050AA', '#FFF000', 'si:lidl'],
@@ -3271,7 +3310,11 @@
       [/sister|schwester|loan|darlehen|repayment|rückzahlung|schuld/i, 'fa-hand-holding-dollar'], [/sperrkonto|allowance|blocked/i, 'fa-building-columns'],
       [/arbeit|gehalt|lohn|salary|job/i, 'fa-briefcase'], [/side income|nebenein|bonus|petty/i, 'fa-coins'], [/mother|mutter|family|familie|eltern/i, 'fa-people-roof'],
       [/friseur|haircut|barber/i, 'fa-scissors'], [/kosmetik|beauty|parfum/i, 'fa-spray-can-sparkles'], [/haustier|pet\b|katze|hund/i, 'fa-paw'],
-      [/baby|kind|kita/i, 'fa-baby'], [/reise|urlaub|travel|flug/i, 'fa-plane'], [/abo\b|subscription/i, 'fa-repeat'], [/sonstig|other|misc/i, 'fa-ellipsis']
+      [/baby|kind|kita/i, 'fa-baby'], [/kuchen|cake|torte|konditor/i, 'fa-cake-candles'], [/kiosk|büdchen/i, 'fa-store'],
+      [/paket|parcel|post\b|versand/i, 'fa-box'], [/spende|zakat|sadaqa|donation/i, 'fa-hand-holding-heart'], [/moschee|mosque/i, 'fa-mosque'],
+      [/taxi|uber\b|bolt\b/i, 'fa-taxi'], [/parken|parking|parkhaus/i, 'fa-square-parking'], [/hotel|unterkunft/i, 'fa-hotel'],
+      [/eis\b|ice\s*cream|gelato/i, 'fa-ice-cream'], [/getränk|drinks?\b|wasser\s*kiste/i, 'fa-bottle-water'], [/fisch|fish/i, 'fa-fish'],
+      [/schmuck|jewel/i, 'fa-gem'], [/müll|trash|abfall/i, 'fa-trash-can'], [/werkzeug|baumarkt|tools?\b|renovier/i, 'fa-hammer'], [/reise|urlaub|travel|flug/i, 'fa-plane'], [/abo\b|subscription/i, 'fa-repeat'], [/sonstig|other|misc/i, 'fa-ellipsis']
     ];
     const GROUP_ICONS = { kids: 'fa-children', housing: 'fa-house', bills: 'fa-file-invoice', subs: 'fa-repeat', insurance: 'fa-shield-halved', groceries: 'fa-basket-shopping',
       household: 'fa-couch', leisure: 'fa-champagne-glasses', oneoff: 'fa-tag', transport: 'fa-train-subway', health: 'fa-heart-pulse',
@@ -3286,7 +3329,8 @@
       ["nahkauf", 'groceries', "nahkauf.de"], ["Denns BioMarkt", 'groceries', "denns-biomarkt.de"], ["Alnatura", 'groceries', "alnatura.de"], ["basic Bio", 'groceries', "basicbio.de"],
       ["Trinkgut", 'groceries', "trinkgut.de"], ["Getränke Hoffmann", 'groceries', "getraenke-hoffmann.de"], ["Fristo", 'groceries', "fristo.de"], ["Mix Markt", 'groceries', "mixmarkt.eu"],
       ["Asia Markt", 'groceries'], ["Türkischer Markt", 'groceries'], ["Wochenmarkt", 'groceries'], ["Bäckerei", 'groceries'],
-      ["Metzgerei", 'groceries'], ["Kamps", 'groceries', "kamps.de"], ["BackWerk", 'groceries', "back-werk.de"], ["Rewe Lieferservice", 'groceries', "shop.rewe.de"],
+      ["Metzgerei", 'groceries'], ["Bäckerei Sommer", 'groceries', "baeckerei-sommer.de", ["sommer", "sommer bäckerei", "sommer backerei", "baeckerei sommer"]],
+      ["Bäckerei Büsch", 'groceries', "baeckerei-buesch.de", ["büsch", "busch", "buesch", "busch bäckerei", "backerei busch"]], ["Malzers", 'groceries', "malzers.de", ["malzers backstube"]], ["Kamps", 'groceries', "kamps.de"], ["BackWerk", 'groceries', "back-werk.de"], ["Rewe Lieferservice", 'groceries', "shop.rewe.de"],
       ["Picnic", 'groceries', "picnic.app"], ["Flink", 'groceries', "goflink.com"], ["Knuspr", 'groceries', "knuspr.de"], ["HelloFresh", 'groceries', "hellofresh.de"],
       ["Too Good To Go", 'groceries', "toogoodtogo.com"], ["dm", 'groceries', "dm.de"], ["Rossmann", 'groceries', "rossmann.de"], ["Müller", 'groceries', "mueller.de"],
       ["Apotheke", 'groceries'], ["DocMorris", 'groceries', "docmorris.de"], ["Shop Apotheke", 'groceries', "shop-apotheke.com"], ["Action", 'household', "action.com"],
@@ -3325,7 +3369,7 @@
       ["E.ON", 'bills', "eon.de"], ["RWE", 'bills', "rwe.com"], ["EnBW", 'bills', "enbw.com"], ["Vattenfall", 'bills', "vattenfall.de"],
       ["Tibber", 'bills', "tibber.com"], ["Octopus Energy", 'bills', "octopusenergy.de"], ["AOK", 'insurance', "aok.de"], ["TK Techniker", 'insurance', "tk.de"],
       ["Barmer", 'insurance', "barmer.de"], ["DAK", 'insurance', "dak.de"], ["IKK", 'insurance', "ikk-classic.de"], ["HUK-Coburg", 'insurance', "huk.de"],
-      ["Allianz", 'insurance', "allianz.de"], ["AXA", 'insurance', "axa.de"], ["ERGO", 'insurance', "ergo.de"], ["Check24", 'insurance', "check24.de"],
+      ["Allianz", 'insurance', "allianz.de"], ["Die Haftpflichtkasse", 'insurance', "haftpflichtkasse.de", ["haftpflichtkasse", "haftpflicht kasse"]], ["AXA", 'insurance', "axa.de"], ["ERGO", 'insurance', "ergo.de"], ["Check24", 'insurance', "check24.de"],
       ["Care Concept", 'insurance', "care-concept.de"], ["McFit", 'health', "mcfit.com"], ["FitX", 'health', "fitx.de"], ["Fitness First", 'health', "fitnessfirst.de"],
       ["clever fit", 'health', "clever-fit.com"], ["Urban Sports Club", 'health', "urbansportsclub.com"], ["Arzt", 'health'], ["Zahnarzt", 'health'],
       ["Optiker", 'health'], ["Fielmann", 'health', "fielmann.de"], ["Sparkasse", 'fees', "sparkasse.de"], ["Volksbank", 'fees', "vr.de"],
@@ -3390,10 +3434,28 @@
     };
     const resolveGroup = (groups, gid) => (gid || '').split('|').map(id => groups.find(g => g.id === id)).find(Boolean)
       || groups.find(g => g.kind === 'variable') || groups[0];
+    // Every shop in the directory that has a website: its name or an alias as a whole word gives its logo
+    // (falls back to its initials when the logo can't load). Longest names first, so "Rewe City" beats "Rewe".
+    const MERCHANT_LOGOS = (() => {
+      const esc = (w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const list = [];
+      MERCHANTS.forEach(e => { if (!e[2]) return; [e[0], ...(e[3] || [])].forEach(w => { if (w.length >= 3) list.push([w, e]); }); });
+      list.sort((a, b) => b[0].length - a[0].length);
+      return list.map(([w, e]) => [new RegExp(`(^|[^\\p{L}\\p{N}])${esc(w)}($|[^\\p{L}\\p{N}])`, 'iu'), e]);
+    })();
+    const merchantLogoFor = (n) => {
+      const hit = MERCHANT_LOGOS.find(([re]) => re.test(n));
+      if (!hit) return null;
+      const e = hit[1];
+      const text = e[0].replace(/^(bäckerei|die|der|das)\s+/i, '').split(/[\s-]+/).map(x => x[0]).join('').slice(0, 2).toUpperCase();
+      return { kind: 'brand', text, bg: '#334155', fg: '#FFFFFF', logo: 'web:' + e[2] };
+    };
     const autoIcon = (name) => {
       const n = String(name || '');
       const b = BRANDS.find(([re]) => re.test(n));
       if (b) return { kind: 'brand', text: b[1], bg: b[2], fg: b[3], ...(b[4] ? { logo: b[4] } : {}) };
+      const m = merchantLogoFor(n);
+      if (m) return m;
       const k = KEYWORD_ICONS.find(([re]) => re.test(n));
       return k ? { kind: 'symbol', icon: k[1] } : null;
     };
@@ -4411,6 +4473,7 @@
         const [fromIdx, untilIdx] = rangeIndexes(from, until);
         if (fromIdx === -1) return;
         const value = parseFloat(amount) || 0;
+        const firstValue = recurringForm.firstOn ? (parseFloat(recurringForm.firstAmount) || 0) : null;
 
         mutate(d => {
           TIMELINE.forEach(({ yr, m }, idx) => {
@@ -4423,10 +4486,30 @@
             const byCat = d.values[yr][type][cat] || (d.values[yr][type][cat] = {});
             const node = byCat[m] || (byCat[m] = emptyNode());
             if (field === 'actual') setActualTx(d, type, cat, yr, m, paymentMonth ? value : 0, 'tick');
-            else node[field] = paymentMonth ? value : 0;
+            else node[field] = paymentMonth ? (idx === fromIdx && firstValue !== null ? firstValue : value) : 0;
           });
         });
         setRecurringModal(null);
+      };
+
+      // The plan as it really is across all months: first planned month, the usual amount and rhythm,
+      // a different first payment, and the last planned month (or "open end").
+      const detectSchedule = (type, cat) => {
+        const pts = [];
+        TIMELINE.forEach(({ yr, m }, idx) => { const b = data.values[yr]?.[type]?.[cat]?.[m]?.budget || 0; if (b > 0) pts.push({ idx, b }); });
+        if (!pts.length) return null;
+        const mode = (arr) => { const c = new Map(); arr.forEach(v => c.set(v, (c.get(v) || 0) + 1)); return [...c.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0][0]; };
+        const gaps = pts.slice(1).map((p, i) => p.idx - pts[i].idx);
+        const every = gaps.length ? mode(gaps) : 1;
+        const rest = pts.length > 1 ? pts.slice(1).map(p => p.b) : pts.map(p => p.b);
+        const regular = mode(rest);
+        const first = pts[0].b;
+        const last = pts[pts.length - 1].idx;
+        const openEnd = last + every > TIMELINE.length - 1;
+        const P = (i) => TIMELINE[i];
+        return { fromIdx: pts[0].idx, lastIdx: last, every, regular, first, firstDiffers: Math.abs(first - regular) > 0.004 && pts.length > 1,
+          from: timelineKey(P(pts[0].idx).yr, P(pts[0].idx).m), until: openEnd ? LAST_KEY : timelineKey(P(last).yr, P(last).m), openEnd,
+          odd: pts.slice(1).filter(p => Math.abs(p.b - regular) > 0.004).length };
       };
 
       const handleOpenEditCategory = (type, cat, tab = 'details') => {
@@ -4445,7 +4528,10 @@
         setNewBulletText("");
         // The same dialog also sets amounts for a period (tab "Amounts & period").
         const node = getNode(type, cat, selectedYear, selectedMonth);
-        setRecurringForm({ field: 'budget', amount: node.budget || node.actual, from: timelineKey(selectedYear, selectedMonth), until: LAST_KEY, every: 1, clearOutside: false });
+        const sch = detectSchedule(type, cat);
+        setRecurringForm(sch
+          ? { field: 'budget', amount: sch.regular, firstAmount: sch.firstDiffers ? sch.first : '', firstOn: sch.firstDiffers, from: sch.from, until: sch.until, every: sch.every, clearOutside: false, sch }
+          : { field: 'budget', amount: node.budget || node.actual, firstAmount: '', firstOn: false, from: timelineKey(selectedYear, selectedMonth), until: LAST_KEY, every: 1, clearOutside: false, sch: null });
         setEditTab(tab);
       };
 
@@ -5936,7 +6022,9 @@
         const hex = GROUP_HEX[g.color] || GROUP_HEX.gray;
         const open = isGroupOpen(g.id);
         const isVar = g.kind === 'variable';
-        const hasAmount = (i) => i.node.budget > 0 || i.node.actual > 0;
+        // Shops count only when something was spent this month (an old plan amount on a shop means nothing);
+        // bills count when planned or paid.
+        const hasAmount = (i) => isVar ? i.node.actual > 0 : (i.node.budget > 0 || i.node.actual > 0);
         // Only items with a plan or an amount this month are shown; the rest is one tap away.
         const revealed = !!showEmpty[g.id];
         const emptyItems = gv.items.filter(i => !hasAmount(i) && !i.once);
@@ -9805,8 +9893,32 @@
               {!editIsShop && (
                 <div className="rounded-2xl bg-subtle/60 p-3 space-y-3">
                   <div className="text-[12px] font-semibold text-primary"><i className="fa-solid fa-repeat me-1.5 text-[10px] text-secondary"></i>{t('edPlanCard')}</div>
+                  {recurringForm.sch && (() => {
+                    const sc = recurringForm.sch;
+                    const lbl = (i) => `${formatMonth(TIMELINE[i].m, lang)} ${TIMELINE[i].yr}`;
+                    return (
+                      <div className="rounded-xl bg-surface/70 px-3 py-2 text-[12px] text-secondary leading-relaxed">
+                        <span className="text-primary font-medium">{t('schNow')}</span>{' '}
+                        {t('schFrom', { month: lbl(sc.fromIdx) })}
+                        {sc.firstDiffers && <> · {t('schFirst', { amount: fmtCents(sc.first) })}</>}
+                        {' · '}{t(sc.every === 1 ? 'schEveryMonth' : 'schEveryN', { amount: fmtCents(sc.regular), n: sc.every })}
+                        {' · '}{sc.openEnd ? t('schOpenEnd') : t('schUntil', { month: lbl(sc.lastIdx) })}
+                        {sc.odd > 0 && <span className="block text-[11px] text-tertiary">{t('schOdd', { n: sc.odd })}</span>}
+                      </div>
+                    );
+                  })()}
+              <label className="flex items-center justify-between gap-2 cursor-pointer">
+                <span className="text-[11px] text-primary">{t('schFirstToggle')}</span>
+                <input type="checkbox" checked={!!recurringForm.firstOn} onChange={(e) => setRecurringForm(p => ({ ...p, firstOn: e.target.checked, firstAmount: p.firstAmount === '' ? p.amount : p.firstAmount, dirty: true }))} className="w-4 h-4 rounded" />
+              </label>
+              {recurringForm.firstOn && (
+                <div>
+                  <label className="text-[10px] text-secondary font-medium block mb-1">{t('schFirstLabel')}</label>
+                  <MoneyInput value={recurringForm.firstAmount} hideZero={false} onChange={(val) => setRecurringForm(p => ({ ...p, firstAmount: val, dirty: true }))} inputClass="text-primary font-semibold" />
+                </div>
+              )}
               <div>
-                <label className="text-[10px] text-secondary font-medium block mb-1">{t('replicateAmountLabel')}</label>
+                <label className="text-[10px] text-secondary font-medium block mb-1">{recurringForm.firstOn ? t('schThenLabel') : t('replicateAmountLabel')}</label>
                 <MoneyInput
                   value={recurringForm.amount}
                   hideZero={false}
