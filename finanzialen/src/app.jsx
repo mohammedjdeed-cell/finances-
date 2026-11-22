@@ -794,6 +794,21 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        entrySaved: "Eintrag gespeichert",
+        entryTitle: "Eintrag bearbeiten",
+        itemFromBank: "Bank",
+        itemGroupOf: "{{group}}: {{spent}} von {{target}}",
+        itemOfPlan: "von {{plan}} geplant",
+        itemNoPlan: "Kein Plan für diesen Monat",
+        itemAdd: "Eintragen",
+        itemPaid: "Bezahlt",
+        itemReceived: "Erhalten",
+        itemMarkPaid: "Als bezahlt",
+        itemMarkReceived: "Als erhalten",
+        itemSettings: "Einstellungen",
+        itemEntries: "Einträge in diesem Monat ({{n}})",
+        itemNoEntries: "Noch nichts eingetragen.",
+        edPlanCard: "Plan & Wiederholung",
         calNothingDay: "Keine Zahlungen an diesem Tag",
         otAdd: "Über „Buchen“ eintragen",
         calKind_earlier: "Früher eingetragen",
@@ -1579,6 +1594,21 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        entrySaved: "Entry saved",
+        entryTitle: "Edit entry",
+        itemFromBank: "Bank",
+        itemGroupOf: "{{group}}: {{spent}} of {{target}}",
+        itemOfPlan: "of {{plan}} planned",
+        itemNoPlan: "No plan for this month",
+        itemAdd: "Add",
+        itemPaid: "Paid",
+        itemReceived: "Received",
+        itemMarkPaid: "Mark paid",
+        itemMarkReceived: "Mark received",
+        itemSettings: "Settings",
+        itemEntries: "Entries this month ({{n}})",
+        itemNoEntries: "Nothing entered yet.",
+        edPlanCard: "Plan & repeat",
         calNothingDay: "No payments on this day",
         otAdd: "Add through \"Add\"",
         calKind_earlier: "Entered earlier",
@@ -2364,6 +2394,21 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        entrySaved: "حُفظ الإدخال",
+        entryTitle: "تعديل الإدخال",
+        itemFromBank: "البنك",
+        itemGroupOf: "{{group}}: {{spent}} من {{target}}",
+        itemOfPlan: "من {{plan}} مخطط",
+        itemNoPlan: "لا خطة لهذا الشهر",
+        itemAdd: "تسجيل",
+        itemPaid: "مدفوع",
+        itemReceived: "مستلم",
+        itemMarkPaid: "تعليم كمدفوع",
+        itemMarkReceived: "تعليم كمستلم",
+        itemSettings: "الإعدادات",
+        itemEntries: "إدخالات هذا الشهر ({{n}})",
+        itemNoEntries: "لا شيء مسجل بعد.",
+        edPlanCard: "الخطة والتكرار",
         calNothingDay: "لا مدفوعات في هذا اليوم",
         otAdd: "التسجيل عبر «تسجيل»",
         calKind_earlier: "مُدخل سابقًا",
@@ -3556,6 +3601,9 @@
 
       const [recurringModal, setRecurringModal] = useState(null);
       const [editTab, setEditTab] = useState('details');
+      // Item page (one item's month: its entries as cards) and the entry editor.
+      const [itemSheet, setItemSheet] = useState(null);
+      const [entrySheet, setEntrySheet] = useState(null);
       const [recurringForm, setRecurringForm] = useState({ field: 'budget', amount: 0, from: '', until: '', every: 1, clearOutside: false });
 
       const [quickAddModal, setQuickAddModal] = useState(null);
@@ -4408,6 +4456,9 @@
         setEditTab(tab);
       };
 
+      // Shops and other day-to-day items have no plan, due day or period: only name, icon, group and notes.
+      const editIsShop = !!activeEditCat && activeEditCat.type === 'expenses' && data.groups.find(g => g.id === editCatForm.bracket)?.kind === 'variable' && !editCatForm.isOneTime;
+
       const handleSaveCategoryChanges = () => {
         if (!activeEditCat) return;
         const { type, cat: oldName } = activeEditCat;
@@ -5039,6 +5090,28 @@
         const date = status === 'current' ? todayISO() : `${selectedYear}-${pad2(ALL_MONTHS.indexOf(selectedMonth) + 1)}-${pad2(Math.min(Number.isInteger(getMeta(type, cat).payDay) ? getMeta(type, cat).payDay : 1, getDaysInMonth(selectedYear, selectedMonth)))}`;
         setB({ type, cat, date, q: '', amount: '' });
         setView('book');
+      };
+
+      const showItem = (type, cat) => { haptic(6); setItemSheet({ type, cat }); };
+      const openEntry = (id) => {
+        const x = (data.tx || []).find(e => e.id === id);
+        if (!x) return;
+        setEntrySheet({ id: x.id, type: x.type, cat: x.cat, amount: String(x.amount).replace('.', lang === 'en' ? '.' : ','), date: x.date,
+          who: x.who || 'joint', note: x.note || '', account: x.account || '', source: x.source, undated: !!x.undated });
+      };
+      const saveEntry = () => {
+        const f = entrySheet;
+        const amount = parseAmount(f.amount);
+        if (amount === null || !dateToMonth(f.date)) return;
+        mutateWithUndo(d => {
+          const cur = d.tx.find(x => x.id === f.id);
+          if (!cur) return;
+          applyTx(d, cur, -1);
+          Object.assign(cur, { amount, date: f.date, cat: f.cat, who: f.who, note: f.note.trim(), account: f.account || null,
+            undated: f.undated && f.date === cur.date, source: cur.source === 'legacy' || cur.source === 'tick' ? 'manual' : cur.source });
+          applyTx(d, cur, +1);
+        }, t('entrySaved'));
+        setEntrySheet(null);
       };
 
       const toggleDone = (type, cat) => {
@@ -5778,14 +5851,14 @@
               <button onClick={() => handleOpenEditCategory(type, cat)} aria-label={t('iconLabel')} className="rounded-[9px]">
                 <ItemIcon spec={iconFor(type, cat)} tint={tintFor(type, cat)} size={30} />
               </button>
-              <button onClick={toggleOpen} aria-expanded={isOpen} className="text-start min-w-0">
+              <button onClick={() => showItem(type, cat)} className="text-start min-w-0">
                 <span className={`block truncate text-xs font-medium ${done ? 'text-secondary' : 'text-primary'}`}>{cat}</span>
                 <span className="block truncate text-[10px] text-tertiary">
                   {sub}{notes.length > 0 ? `${sub ? ' · ' : ''}✎ ${notes.length}` : ''}
                 </span>
               </button>
               <button
-                onClick={toggleOpen}
+                onClick={() => showItem(type, cat)}
                 className={`font-mono text-xs text-end ${done ? 'text-tertiary' : type === 'incomes' ? 'text-notion-green' : 'text-primary'}`}
               >
                 {fmtCents(shown)}
@@ -7677,7 +7750,9 @@
         const dSel = new Date(dayIso2 + 'T12:00');
         const od = c.byDay[+dayIso2.slice(8, 10)] || { list: [], out: 0, inc: 0, due: 0, dueIn: 0 };
         const mini = (e) => (
-          <div key={e.key} className={`cw-item ${e.planned ? 'cw-item-due' : ''}`}>
+          <div key={e.key} role="button" tabIndex={0} className={`cw-item ${e.planned ? 'cw-item-due' : ''}`}
+            onClick={(ev) => { if (ev.target.closest('.cw-x')) return; if (e.txId) openEntry(e.txId); else if (e.cat && e.type !== 'transfer') showItem(e.type, e.cat); }}
+            onKeyDown={(ev) => { if (ev.key === 'Enter') { if (e.txId) openEntry(e.txId); else if (e.cat && e.type !== 'transfer') showItem(e.type, e.cat); } }}>
             {e.type === 'transfer'
               ? <span className="cw-ico cw-ico-tr"><i className="fa-solid fa-right-left"></i></span>
               : <ItemIcon spec={iconFor(e.type, e.cat)} tint={tintFor(e.type, e.cat)} size={22} />}
@@ -8996,6 +9071,134 @@
             );
           })()}
 
+          {itemSheet && (() => {
+            const { type, cat } = itemSheet;
+            if (!data.categories[type].includes(cat)) return null;
+            const tint = tintFor(type, cat);
+            const meta = getMeta(type, cat);
+            const g = type === 'expenses' ? data.groups.find(x => x.id === meta.bracket) : null;
+            const shop = type === 'expenses' && g?.kind === 'variable' && !meta.oneTime;
+            const n = getNode(type, cat, selectedYear, selectedMonth);
+            const plan = shop ? getTarget(g.id, selectedYear, selectedMonth) : n.budget;
+            const groupSpent = shop ? data.categories.expenses.filter(c => getMeta('expenses', c).bracket === g.id).reduce((sum, c) => sum + getNode('expenses', c, selectedYear, selectedMonth).actual, 0) : n.actual;
+            const loc = lang === 'en' ? 'en-US' : lang === 'ar' ? 'ar-SY-u-nu-latn' : 'de-DE';
+            const prefix = `${selectedYear}-${pad2(ALL_MONTHS.indexOf(selectedMonth) + 1)}-`;
+            const entries = (data.tx || []).filter(x => x.type === type && x.cat === cat && x.date.startsWith(prefix)).sort((a, b) => b.date.localeCompare(a.date));
+            const idx = timelineIndex(selectedYear, selectedMonth);
+            const hist = TIMELINE.slice(Math.max(0, idx - 5), idx + 1).map(p => ({ ...p, v: getNode(type, cat, p.yr, p.m).actual }));
+            const hmax = Math.max(1, ...hist.map(h => h.v));
+            const kind = (x) => x.source === 'tick' ? t(type === 'incomes' ? 'calKind_income' : 'calKind_bill') : x.source === 'legacy' ? t('calKind_earlier') : x.source === 'loan' ? t('calKind_loan') : x.source === 'import' ? t('itemFromBank') : '';
+            const accName = (id) => data.accounts.find(a => a.id === id)?.name || '';
+            return (
+              <Modal size="max-w-lg" onClose={() => setItemSheet(null)} title={<><ItemIcon spec={iconFor(type, cat)} tint={tint} size={22} /><span className="truncate">{cat}</span></>}>
+                <div className="rounded-3xl p-4 space-y-3" style={{ background: `linear-gradient(135deg, ${tint}26, ${tint}0d)` }}>
+                  <div className="flex items-center justify-between gap-2">
+                    <button onClick={() => goMonth(TIMELINE[idx - 1])} disabled={idx <= 0} aria-label="prev" className="w-8 h-8 rounded-full bg-surface/70 text-secondary disabled:opacity-30"><i className="fa-solid fa-chevron-left rtl:rotate-180 text-xs"></i></button>
+                    <div className="text-center">
+                      <div className="text-[12px]" style={{ color: tint }}>{g ? groupName(g) : t('incomesHeader')} · {formatMonth(selectedMonth, lang)} {selectedYear}</div>
+                      <div className={`text-[32px] font-bold leading-tight font-mono ${type === 'incomes' ? 'text-notion-green' : 'text-primary'}`}>{fmtCents(n.actual)}</div>
+                      <div className="text-[12px] text-secondary">{plan > 0 ? (shop ? t('itemGroupOf', { spent: fmt(groupSpent), target: fmt(plan), group: groupName(g) }) : t('itemOfPlan', { plan: fmtCents(plan) })) : t('itemNoPlan')}</div>
+                    </div>
+                    <button onClick={() => goMonth(TIMELINE[idx + 1])} disabled={idx >= TIMELINE.length - 1} aria-label="next" className="w-8 h-8 rounded-full bg-surface/70 text-secondary disabled:opacity-30"><i className="fa-solid fa-chevron-right rtl:rotate-180 text-xs"></i></button>
+                  </div>
+                  {plan > 0 && (
+                    <div className="h-2 rounded-full bg-surface/70 overflow-hidden">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(100, (shop ? groupSpent : n.actual) / plan * 100)}%`, background: (shop ? groupSpent : n.actual) > plan + 0.5 ? '#ef4444' : tint }}></div>
+                    </div>
+                  )}
+                  <div className="flex items-end gap-1.5 h-14 pt-1">
+                    {hist.map(h => (
+                      <button key={`${h.yr}${h.m}`} onClick={() => goMonth({ yr: h.yr, m: h.m })} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                        <span className="w-full rounded-md transition-all" style={{ height: `${Math.max(4, h.v / hmax * 100)}%`, background: h.yr === selectedYear && h.m === selectedMonth ? tint : tint + '55' }}></span>
+                        <span className="text-[9.5px] text-secondary">{formatMonth(h.m, lang)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className={`grid ${shop ? 'grid-cols-2' : 'grid-cols-3'} gap-2`}>
+                  <button onClick={() => { setItemSheet(null); addFor(type, cat); }} className="py-2.5 rounded-2xl bg-notion-blue text-white text-[12px] font-semibold flex flex-col items-center gap-1">
+                    <i className="fa-solid fa-plus"></i>{t('itemAdd')}
+                  </button>
+                  {!shop ? (
+                    <button onClick={() => toggleDone(type, cat)} className={`py-2.5 rounded-2xl text-[12px] font-semibold flex flex-col items-center gap-1 ${n.actual > 0 ? 'bg-emerald-500/15 text-notion-green' : 'bg-subtle text-primary'}`}>
+                      <i className="fa-solid fa-check"></i>{n.actual > 0 ? t(type === 'incomes' ? 'itemReceived' : 'itemPaid') : t(type === 'incomes' ? 'itemMarkReceived' : 'itemMarkPaid')}
+                    </button>
+                  ) : null}
+                  <button onClick={() => { setItemSheet(null); handleOpenEditCategory(type, cat); }} className="py-2.5 rounded-2xl bg-subtle text-primary text-[12px] font-semibold flex flex-col items-center gap-1">
+                    <i className="fa-solid fa-sliders"></i>{t('itemSettings')}
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-tertiary">{t('itemEntries', { n: entries.length })}</div>
+                  {entries.length === 0 && <p className="text-[13px] text-secondary py-3 text-center">{t('itemNoEntries')}</p>}
+                  {entries.map(x => (
+                    <button key={x.id} onClick={() => openEntry(x.id)} className="w-full text-start flex items-center gap-3 rounded-2xl bg-subtle/60 hover:bg-subtle px-3 py-2.5 active:scale-[.99] transition">
+                      <span className="w-11 shrink-0 text-center rounded-xl bg-surface py-1">
+                        <span className="block text-[16px] font-bold leading-none text-primary">{x.undated ? '–' : +x.date.slice(8, 10)}</span>
+                        <span className="block text-[9.5px] text-secondary">{x.undated ? '' : new Date(x.date + 'T12:00').toLocaleDateString(loc, { weekday: 'short' })}</span>
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-[13px] text-primary truncate">{x.note || kind(x) || cat}</span>
+                        <span className="block text-[11px] text-tertiary truncate">{[x.who ? whoLabel(x.who) : '', accName(x.account), x.note ? kind(x) : ''].filter(Boolean).join(' · ')}</span>
+                      </span>
+                      <span className={`font-mono text-[14px] font-semibold ${type === 'incomes' ? 'text-notion-green' : 'text-primary'}`}>{type === 'incomes' ? '+' : '−'}{fmtCents(x.amount)}</span>
+                      <i className="fa-solid fa-chevron-right rtl:rotate-180 text-[10px] text-tertiary"></i>
+                    </button>
+                  ))}
+                </div>
+              </Modal>
+            );
+          })()}
+
+          {entrySheet && (() => {
+            const f = entrySheet;
+            const set = (patch) => setEntrySheet(prev => ({ ...prev, ...patch }));
+            const loc = lang === 'en' ? 'en-US' : lang === 'ar' ? 'ar-SY-u-nu-latn' : 'de-DE';
+            const chip = (on) => `px-3 py-1.5 rounded-full text-[12px] border transition ${on ? 'border-notion-blue bg-notion-blue/10 text-primary font-semibold' : 'border-subtle bg-subtle/60 text-secondary'}`;
+            const ok = parseAmount(f.amount) !== null;
+            return (
+              <Modal size="max-w-md" onClose={() => setEntrySheet(null)} title={<><ItemIcon spec={iconFor(f.type, f.cat)} tint={tintFor(f.type, f.cat)} size={22} /><span>{t('entryTitle')}</span></>}>
+                <div className="flex items-baseline gap-2 rounded-2xl px-4 py-3 bg-subtle/60">
+                  <input data-free value={f.amount} onChange={(e) => set({ amount: e.target.value })} inputMode="decimal" aria-label={t('bkAmount')}
+                    className={`flex-1 min-w-0 bg-transparent outline-none text-[34px] leading-none font-semibold font-mono ${f.type === 'incomes' ? 'text-notion-green' : 'text-primary'}`} />
+                  <span className="text-[20px] text-tertiary font-mono">€</span>
+                </div>
+                <label className="block space-y-1">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-tertiary">{f.type === 'incomes' ? t('bkWhereIn') : t('bkWhere')}</span>
+                  <select data-free value={f.cat} onChange={(e) => set({ cat: e.target.value })} className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2 text-[13px] text-primary">
+                    {data.categories[f.type].map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </label>
+                <div className="space-y-1">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-tertiary">{t('bkWhen')}</span>
+                  <div className="flex items-center gap-2">
+                    <input data-free type="date" value={f.date} onChange={(e) => e.target.value && set({ date: e.target.value, undated: false })} className="flex-1 bg-subtle border border-subtle rounded-xl px-3 py-2 text-[13px] text-primary" />
+                    <span className="text-[12px] text-secondary">{new Date(f.date + 'T12:00').toLocaleDateString(loc, { weekday: 'long' })}</span>
+                  </div>
+                </div>
+                {data.accounts.length > 0 && (
+                  <div className="space-y-1">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-tertiary">{t('bkAccount')}</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      <button type="button" onClick={() => set({ account: '' })} className={chip(!f.account)}>{t('bkNoAccount')}</button>
+                      {data.accounts.map(a => <button key={a.id} type="button" onClick={() => set({ account: a.id })} className={chip(f.account === a.id)}>{a.name}</button>)}
+                    </div>
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-tertiary">{t('bkWho')}</span>
+                  <div className="flex flex-wrap gap-1.5">{WHO.map(w => <button key={w} type="button" onClick={() => set({ who: w })} className={chip(f.who === w)}>{whoLabel(w)}</button>)}</div>
+                </div>
+                <input data-free value={f.note} onChange={(e) => set({ note: e.target.value })} placeholder={t('bkNote')}
+                  className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2.5 text-[13px] text-primary outline-none" />
+                <div className="flex gap-2 pt-1">
+                  <button onClick={() => { deleteTx(f.id); setEntrySheet(null); }} className="px-4 py-2.5 rounded-xl bg-red-500/10 text-notion-red text-[13px] font-semibold"><i className="fa-solid fa-trash-can me-1.5"></i>{t('deleteCategoryBtn')}</button>
+                  <button onClick={saveEntry} disabled={!ok} className="flex-1 py-2.5 rounded-xl bg-notion-blue text-white text-[13px] font-semibold disabled:opacity-40">{t('bkSave')}</button>
+                </div>
+              </Modal>
+            );
+          })()}
+
           {arrangeOpen && (
             <Modal size="max-w-sm" onClose={() => setArrangeOpen(false)} title={<><i className="fa-solid fa-sliders"></i><span>{t('ovArrange')}</span></>}>
               <p className="text-[12px] text-secondary">{t('ovArrangeHint')}</p>
@@ -9480,64 +9683,7 @@
                   </div>
                 );
               })()}
-              <Segmented full options={[['details', t('edTabDetails')], ['period', t('edTabPeriod')]]} value={editTab} onChange={setEditTab} />
-              {editTab === 'period' && (
-                <div className="space-y-3 pop-in">
-              <div>
-                <label className="text-[10px] text-secondary font-medium block mb-1">{t('replicateFieldLabel')}</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[['budget', 'replicateBudgetOption']].map(([field, label]) => (
-                    <button
-                      key={field}
-                      type="button"
-                      onClick={() => setRecurringForm(p => ({ ...p, field }))}
-                      className={`p-1.5 rounded border text-xs ${recurringForm.field === field ? 'border-primary bg-subtle font-semibold text-primary' : 'border-subtle text-secondary'}`}
-                    >
-                      {t(label)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[10px] text-secondary font-medium block mb-1">{t('replicateAmountLabel')}</label>
-                <MoneyInput
-                  value={recurringForm.amount}
-                  hideZero={false}
-                  onChange={(val) => setRecurringForm(p => ({ ...p, amount: val }))}
-                  inputClass="text-primary font-semibold"
-                />
-              </div>
-
-              {renderPeriod(
-                recurringForm.from,
-                recurringForm.until,
-                (key, value) => setRecurringForm(p => ({ ...p, [key]: value })),
-                false,
-                recurringForm.every
-              )}
-
-              {recurringForm.field === 'budget' && (
-                <label className="flex items-start justify-between gap-2 p-2 rounded bg-subtle/50 border border-subtle cursor-pointer">
-                  <div>
-                    <span className="font-medium text-primary block text-[11px]">{t('clearOutside')}</span>
-                    <span className="text-[10px] text-tertiary">{t('clearOutsideHint')}</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={recurringForm.clearOutside}
-                    onChange={(e) => setRecurringForm(p => ({ ...p, clearOutside: e.target.checked }))}
-                    className="w-4 h-4 rounded mt-0.5 shrink-0"
-                  />
-                </label>
-              )}
-
-                  <button onClick={() => { handleExecuteRecurring(); setActiveEditCat(null); }} className="w-full py-2 bg-primary text-surface font-semibold rounded">
-                    {t('replicateActionBtn')}
-                  </button>
-                </div>
-              )}
-              <div className={editTab === 'details' ? 'space-y-3 pop-in' : 'hidden'}>
+              <div className="space-y-3">
               <div>
                 <label className="text-[10px] text-secondary font-medium block mb-1">{t('posten')}</label>
                 <input
@@ -9587,7 +9733,7 @@
                 </select>
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
+              {!editIsShop && <div className="grid grid-cols-3 gap-2">
                 {activeEditCat.type === 'incomes' ? (
                 <div className="col-span-2">
                   <label className="text-[10px] text-secondary font-medium block mb-1">{t('modeLabel')}</label>
@@ -9614,9 +9760,9 @@
                     className="w-full bg-subtle border border-subtle rounded px-2 py-1 text-primary outline-none text-center font-mono"
                   />
                 </div>
-              </div>
+              </div>}
 
-              {(() => {
+              {!editIsShop && (() => {
                 const lockedOnce = activeEditCat.type === 'expenses' &&
                   data.groups.find(g => g.id === editCatForm.bracket)?.kind === 'oneoff';
                 return (
@@ -9668,8 +9814,47 @@
                 </div>
               </div>
 
+              {!editIsShop && (
+                <div className="rounded-2xl bg-subtle/60 p-3 space-y-3">
+                  <div className="text-[12px] font-semibold text-primary"><i className="fa-solid fa-repeat me-1.5 text-[10px] text-secondary"></i>{t('edPlanCard')}</div>
+              <div>
+                <label className="text-[10px] text-secondary font-medium block mb-1">{t('replicateAmountLabel')}</label>
+                <MoneyInput
+                  value={recurringForm.amount}
+                  hideZero={false}
+                  onChange={(val) => setRecurringForm(p => ({ ...p, amount: val, dirty: true }))}
+                  inputClass="text-primary font-semibold"
+                />
+              </div>
+
+              {renderPeriod(
+                recurringForm.from,
+                recurringForm.until,
+                (key, value) => setRecurringForm(p => ({ ...p, [key]: value, dirty: true })),
+                false,
+                recurringForm.every
+              )}
+
+              {recurringForm.field === 'budget' && (
+                <label className="flex items-start justify-between gap-2 p-2 rounded bg-subtle/50 border border-subtle cursor-pointer">
+                  <div>
+                    <span className="font-medium text-primary block text-[11px]">{t('clearOutside')}</span>
+                    <span className="text-[10px] text-tertiary">{t('clearOutsideHint')}</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={recurringForm.clearOutside}
+                    onChange={(e) => setRecurringForm(p => ({ ...p, clearOutside: e.target.checked, dirty: true }))}
+                    className="w-4 h-4 rounded mt-0.5 shrink-0"
+                  />
+                </label>
+              )}
+
+                </div>
+              )}
+
               <div className="pt-2 border-t border-subtle">
-                <button onClick={handleSaveCategoryChanges} className="w-full bg-primary text-surface font-semibold py-1.5 rounded">
+                <button onClick={() => { if (!editIsShop && recurringForm.dirty) handleExecuteRecurring(); handleSaveCategoryChanges(); }} className="w-full bg-primary text-surface font-semibold py-2 rounded-xl">
                   {t('saveClose')}
                 </button>
               </div>
