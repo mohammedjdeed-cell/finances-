@@ -964,6 +964,7 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        bkSuggest: "Neu anlegen – tippen zum Auswählen:",
         calPaid: "Bezahlt",
         calGot: "Bekommen",
         calStillDue: "Noch fällig",
@@ -1674,6 +1675,7 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        bkSuggest: "Create new – tap to pick:",
         calPaid: "Paid",
         calGot: "Received",
         calStillDue: "Still due",
@@ -2384,6 +2386,7 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        bkSuggest: "إنشاء جديد – اضغط للاختيار:",
         calPaid: "مدفوع",
         calGot: "مستلم",
         calStillDue: "مستحق بعد",
@@ -3149,6 +3152,69 @@
       household: 'fa-couch', leisure: 'fa-champagne-glasses', oneoff: 'fa-tag', transport: 'fa-train-subway', health: 'fa-heart-pulse',
       education: 'fa-graduation-cap', fees: 'fa-building-columns', family: 'fa-people-roof' };
     // Brand first (a shop name is most specific), then a keyword symbol; null when nothing matches.
+    // Shops, online stores and services common in Germany (NRW), offered when searching for an item.
+    const MERCHANTS = [
+      ["Aldi Nord", 'groceries', "aldi-nord.de"], ["Aldi Süd", 'groceries', "aldi-sued.de"], ["Lidl", 'groceries', "lidl.de"], ["Rewe", 'groceries', "rewe.de"],
+      ["Rewe City", 'groceries', "rewe.de"], ["Edeka", 'groceries', "edeka.de"], ["E center", 'groceries', "edeka.de"], ["Marktkauf", 'groceries', "marktkauf.de"],
+      ["Netto", 'groceries', "netto-online.de"], ["Penny", 'groceries', "penny.de"], ["Kaufland", 'groceries', "kaufland.de"], ["HIT", 'groceries', "hit.de"],
+      ["Combi", 'groceries', "combi.de"], ["Globus", 'groceries', "globus.de"], ["Norma", 'groceries', "norma-online.de"], ["K+K", 'groceries', "kuk.de"],
+      ["nahkauf", 'groceries', "nahkauf.de"], ["Denns BioMarkt", 'groceries', "denns-biomarkt.de"], ["Alnatura", 'groceries', "alnatura.de"], ["basic Bio", 'groceries', "basicbio.de"],
+      ["Trinkgut", 'groceries', "trinkgut.de"], ["Getränke Hoffmann", 'groceries', "getraenke-hoffmann.de"], ["Fristo", 'groceries', "fristo.de"], ["Mix Markt", 'groceries', "mixmarkt.eu"],
+      ["Asia Markt", 'groceries'], ["Türkischer Markt", 'groceries'], ["Wochenmarkt", 'groceries'], ["Bäckerei", 'groceries'],
+      ["Metzgerei", 'groceries'], ["Kamps", 'groceries', "kamps.de"], ["BackWerk", 'groceries', "back-werk.de"], ["Rewe Lieferservice", 'groceries', "shop.rewe.de"],
+      ["Picnic", 'groceries', "picnic.app"], ["Flink", 'groceries', "goflink.com"], ["Knuspr", 'groceries', "knuspr.de"], ["HelloFresh", 'groceries', "hellofresh.de"],
+      ["Too Good To Go", 'groceries', "toogoodtogo.com"], ["dm", 'groceries', "dm.de"], ["Rossmann", 'groceries', "rossmann.de"], ["Müller", 'groceries', "mueller.de"],
+      ["Apotheke", 'groceries'], ["DocMorris", 'groceries', "docmorris.de"], ["Shop Apotheke", 'groceries', "shop-apotheke.com"], ["Action", 'household', "action.com"],
+      ["TEDi", 'household', "tedi.com"], ["KiK", 'household', "kik.de"], ["Woolworth", 'household', "woolworth.de"], ["KODi", 'household', "kodi.de"],
+      ["Tchibo", 'household', "tchibo.de"], ["Depot", 'household', "depot-online.com"], ["Søstrene Grene", 'household', "sostrenegrene.com"], ["Mäc-Geiz", 'household', "maec-geiz.de"],
+      ["Thomas Philipps", 'household', "thomas-philipps.de"], ["NKD", 'household', "nkd.com"], ["Takko", 'household', "takko.com"], ["Ernsting's family", 'household', "ernstings-family.de"],
+      ["Primark", 'household', "primark.com"], ["H&M", 'household', "hm.com"], ["C&A", 'household', "c-and-a.com"], ["Zara", 'household', "zara.com"],
+      ["New Yorker", 'household', "newyorker.de"], ["Deichmann", 'household', "deichmann.com"], ["Snipes", 'household', "snipes.com"], ["TK Maxx", 'household', "tkmaxx.de"],
+      ["Decathlon", 'household', "decathlon.de"], ["Intersport", 'household', "intersport.de"], ["IKEA", 'household', "ikea.com"], ["Poco", 'household', "poco.de"],
+      ["Roller", 'household', "roller.de"], ["XXXLutz", 'household', "xxxlutz.de"], ["Höffner", 'household', "hoeffner.de"], ["porta", 'household', "porta.de"],
+      ["Möbel Boss", 'household', "moebel-boss.de"], ["JYSK", 'household', "jysk.de"], ["OBI", 'household', "obi.de"], ["Bauhaus", 'household', "bauhaus.info"],
+      ["Hornbach", 'household', "hornbach.de"], ["toom", 'household', "toom.de"], ["hagebaumarkt", 'household', "hagebau.de"], ["MediaMarkt", 'household', "mediamarkt.de"],
+      ["Saturn", 'household', "saturn.de"], ["expert", 'household', "expert.de"], ["Euronics", 'household', "euronics.de"], ["Conrad", 'household', "conrad.de"],
+      ["Apple Store", 'household', "apple.com"], ["Amazon", 'household', "amazon.de"], ["eBay", 'household', "ebay.de"], ["Kleinanzeigen", 'household', "kleinanzeigen.de"],
+      ["Zalando", 'household', "zalando.de"], ["Otto", 'household', "otto.de"], ["Temu", 'household', "temu.com"], ["Shein", 'household', "shein.com"],
+      ["AliExpress", 'household', "aliexpress.com"], ["About You", 'household', "aboutyou.de"], ["Vinted", 'household', "vinted.de"], ["Etsy", 'household', "etsy.com"],
+      ["PayPal", 'household', "paypal.com"], ["Klarna", 'household', "klarna.com"], ["DHL", 'household', "dhl.de"], ["Deutsche Post", 'household', "deutschepost.de"],
+      ["Hermes", 'household', "myhermes.de"], ["DPD", 'household', "dpd.com"], ["GLS", 'household', "gls-pakete.de"], ["UPS", 'household', "ups.com"],
+      ["McDonald's", 'leisure', "mcdonalds.de"], ["Burger King", 'leisure', "burgerking.de"], ["KFC", 'leisure', "kfc.de"], ["Subway", 'leisure', "subway.com"],
+      ["Domino's", 'leisure', "dominos.de"], ["Pizza Hut", 'leisure', "pizzahut.de"], ["Starbucks", 'leisure', "starbucks.de"], ["Dunkin'", 'leisure', "dunkin.de"],
+      ["Vapiano", 'leisure', "vapiano.de"], ["Nordsee", 'leisure', "nordsee.com"], ["Lieferando", 'leisure', "lieferando.de"], ["Wolt", 'leisure', "wolt.com"],
+      ["Uber Eats", 'leisure', "ubereats.com"], ["Dönerladen", 'leisure'], ["Restaurant", 'leisure'], ["Café", 'leisure'],
+      ["Kino", 'leisure'], ["CinemaxX", 'leisure', "cinemaxx.de"], ["UCI Kinowelt", 'leisure', "uci-kinowelt.de"], ["Eventim", 'leisure', "eventim.de"],
+      ["Thalia", 'leisure', "thalia.de"], ["Mayersche", 'leisure', "mayersche.de"], ["Deutsche Bahn", 'transport', "bahn.de"], ["Deutschlandticket", 'transport', "bahn.de"],
+      ["Rheinbahn", 'transport', "rheinbahn.de"], ["KVB", 'transport', "kvb.koeln"], ["Ruhrbahn", 'transport', "ruhrbahn.de"], ["BOGESTRA", 'transport', "bogestra.de"],
+      ["DSW21", 'transport', "dsw21.de"], ["VRR", 'transport', "vrr.de"], ["FlixBus", 'transport', "flixbus.de"], ["Uber", 'transport', "uber.com"],
+      ["Bolt", 'transport', "bolt.eu"], ["FreeNow", 'transport', "free-now.com"], ["Tier", 'transport', "tier.app"], ["Lime", 'transport', "li.me"],
+      ["Aral", 'transport', "aral.de"], ["Shell", 'transport', "shell.de"], ["Esso", 'transport', "esso.de"], ["JET", 'transport', "jet-tankstellen.de"],
+      ["TotalEnergies", 'transport', "totalenergies.de"], ["Netflix", 'subs', "netflix.com"], ["Spotify", 'subs', "spotify.com"], ["Disney+", 'subs', "disneyplus.com"],
+      ["Amazon Prime", 'subs', "amazon.de"], ["YouTube Premium", 'subs', "youtube.com"], ["Apple iCloud", 'subs', "apple.com"], ["Google One", 'subs', "one.google.com"],
+      ["DAZN", 'subs', "dazn.com"], ["Sky", 'subs', "sky.de"], ["WOW", 'subs', "wowtv.de"], ["Audible", 'subs', "audible.de"],
+      ["ChatGPT", 'subs', "openai.com"], ["Claude", 'subs', "claude.ai"], ["Microsoft 365", 'subs', "microsoft.com"], ["Adobe", 'subs', "adobe.com"],
+      ["PlayStation Plus", 'subs', "playstation.com"], ["Xbox Game Pass", 'subs', "xbox.com"], ["Telekom", 'bills', "telekom.de"], ["Vodafone", 'bills', "vodafone.de"],
+      ["O2", 'bills', "o2online.de"], ["1&1", 'bills', "1und1.de"], ["congstar", 'bills', "congstar.de"], ["Aldi Talk", 'bills', "alditalk.de"],
+      ["Lidl Connect", 'bills', "lidl-connect.de"], ["fraenk", 'bills', "fraenk.de"], ["Rundfunkbeitrag", 'bills', "rundfunkbeitrag.de"], ["Stadtwerke", 'bills'],
+      ["E.ON", 'bills', "eon.de"], ["RWE", 'bills', "rwe.com"], ["EnBW", 'bills', "enbw.com"], ["Vattenfall", 'bills', "vattenfall.de"],
+      ["Tibber", 'bills', "tibber.com"], ["Octopus Energy", 'bills', "octopusenergy.de"], ["AOK", 'insurance', "aok.de"], ["TK Techniker", 'insurance', "tk.de"],
+      ["Barmer", 'insurance', "barmer.de"], ["DAK", 'insurance', "dak.de"], ["IKK", 'insurance', "ikk-classic.de"], ["HUK-Coburg", 'insurance', "huk.de"],
+      ["Allianz", 'insurance', "allianz.de"], ["AXA", 'insurance', "axa.de"], ["ERGO", 'insurance', "ergo.de"], ["Check24", 'insurance', "check24.de"],
+      ["Care Concept", 'insurance', "care-concept.de"], ["McFit", 'health', "mcfit.com"], ["FitX", 'health', "fitx.de"], ["Fitness First", 'health', "fitnessfirst.de"],
+      ["clever fit", 'health', "clever-fit.com"], ["Urban Sports Club", 'health', "urbansportsclub.com"], ["Arzt", 'health'], ["Zahnarzt", 'health'],
+      ["Optiker", 'health'], ["Fielmann", 'health', "fielmann.de"], ["Sparkasse", 'fees', "sparkasse.de"], ["Volksbank", 'fees', "vr.de"],
+      ["Revolut", 'fees', "revolut.com"], ["Wise", 'fees', "wise.com"], ["N26", 'fees', "n26.com"], ["ING", 'fees', "ing.de"],
+      ["Commerzbank", 'fees', "commerzbank.de"], ["Deutsche Bank", 'fees', "deutsche-bank.de"], ["Postbank", 'fees', "postbank.de"], ["Western Union", 'fees', "westernunion.com"],
+      ["Ria", 'fees', "riamoneytransfer.com"]
+    ];
+    const merchantMatch = (q, have) => {
+      const n = q.trim().toLowerCase();
+      if (!n) return [];
+      const known = new Set(have.map(x => x.toLowerCase()));
+      return MERCHANTS.filter(([name]) => !known.has(name.toLowerCase()) && name.toLowerCase().includes(n))
+        .sort((a, b) => (b[0].toLowerCase().startsWith(n) ? 1 : 0) - (a[0].toLowerCase().startsWith(n) ? 1 : 0) || a[0].localeCompare(b[0]));
+    };
     const autoIcon = (name) => {
       const n = String(name || '');
       const b = BRANDS.find(([re]) => re.test(n));
@@ -4374,6 +4440,8 @@
         const tx = { id: newTxId(), date: bk.date, type, cat, amount, who: WHO.includes(bk.who) ? bk.who : null, note: bk.note.trim(), source: 'manual', account: bk.account || null };
         mutateWithUndo(d => {
           if (isNew) {
+            const dir = MERCHANTS.find(([nm]) => nm.toLowerCase() === cat.toLowerCase());
+            if (dir && dir[2] && !autoIcon(cat) && !d.icons[cat]) d.icons[cat] = { kind: 'brand', text: cat.replace(/[^A-Za-z0-9ÄÖÜäöü]/g, '').slice(0, 2), bg: '#334155', fg: '#FFFFFF', logo: 'web:' + dir[2] };
             d.categories[type].push(cat);
             d.meta[type][cat] = type === 'expenses' ? metaForGroup(d.groups, gid, null, false)
               : { bracket: d.brackets.incomes[d.brackets.incomes.length - 1].id, mode: 'variable', oneTime: false, payDay: null };
@@ -7126,6 +7194,30 @@
                     <span className="text-[11px] text-secondary">{t('bkNew')}</span>
                   </button>
                 </div>
+                {q && type === 'expenses' && (() => {
+                  const sugg = merchantMatch(bk.q, data.categories.expenses).slice(0, 12);
+                  if (!sugg.length) return null;
+                  return (
+                    <div className="space-y-1.5 pop-in">
+                      <div className="text-[11px] text-tertiary">{t('bkSuggest')}</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {sugg.map(([name, gid, dom]) => {
+                          const g = data.groups.find(x => x.id === gid) || data.groups.find(x => x.kind === 'variable') || data.groups[0];
+                          const spec = autoIcon(name) || (dom ? { kind: 'brand', text: name.slice(0, 2), bg: '#334155', fg: '#FFFFFF', logo: 'web:' + dom } : null) || { kind: 'symbol', icon: GROUP_ICONS[g.id] || 'fa-tag' };
+                          const on = bk.cat === '__new' && bk.newName === name;
+                          return (
+                            <button key={name} type="button" onClick={() => setB({ cat: '__new', newName: name, newGroup: g.id })}
+                              className={`flex items-center gap-2 ps-1.5 pe-3 py-1 rounded-full border transition active:scale-95 ${on ? 'border-notion-blue bg-notion-blue/10' : 'border-subtle bg-subtle/50 hover:bg-subtle'}`}>
+                              <ItemIcon spec={spec} tint={GROUP_HEX[g.color] || '#64748b'} size={22} />
+                              <span className="text-[12px] text-primary">{name}</span>
+                              <span className="text-[10px] text-tertiary">{groupName(g)}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
                 {!q && filtered.length > 11 && (
                   <button onClick={() => setB({ all: !bk.all })} className="text-[12px] text-notion-blue hover:underline">{bk.all ? t('bkLess') : t('bkAll', { n: filtered.length })}</button>
                 )}
@@ -7686,6 +7778,7 @@
             </div>
           </nav>
 
+          <datalist id="merchant-list">{MERCHANTS.map(([n]) => <option key={n} value={n} />)}</datalist>
           {toastMsg && (
             <div
               role="status"
@@ -8453,6 +8546,7 @@
                 <input
                   type="text"
                   value={quickAddForm.name}
+                  list="merchant-list"
                   onChange={(e) => setQuickAddForm(p => ({ ...p, name: e.target.value }))}
                   placeholder={t('quickAddNamePlaceholder')}
                   autoFocus
