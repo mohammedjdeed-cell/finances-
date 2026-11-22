@@ -809,6 +809,8 @@
         itemEntries: "Einträge in diesem Monat ({{n}})",
         itemNoEntries: "Noch nichts eingetragen.",
         edPlanCard: "Plan & Wiederholung",
+        logoSearch: "Logo suchen – z. B. DB, Rewe, Vodafone",
+        logoNone: "Kein Logo gefunden – nimm unten ein Symbol.",
         mergedToast: "„{{from}}“ ist jetzt Teil von „{{to}}“",
         dcSame: "„{{a}}“ und „{{b}}“ sehen nach demselben aus.",
         dcMergeInto: "In „{{name}}“ zusammenführen",
@@ -1626,6 +1628,8 @@
         itemEntries: "Entries this month ({{n}})",
         itemNoEntries: "Nothing entered yet.",
         edPlanCard: "Plan & repeat",
+        logoSearch: "Search a logo – e.g. DB, Rewe, Vodafone",
+        logoNone: "No logo found – pick a symbol below.",
         mergedToast: "“{{from}}” is now part of “{{to}}”",
         dcSame: "“{{a}}” and “{{b}}” look like the same thing.",
         dcMergeInto: "Merge into “{{name}}”",
@@ -2443,6 +2447,8 @@
         itemEntries: "إدخالات هذا الشهر ({{n}})",
         itemNoEntries: "لا شيء مسجل بعد.",
         edPlanCard: "الخطة والتكرار",
+        logoSearch: "ابحث عن شعار – مثل DB أو Rewe أو Vodafone",
+        logoNone: "لا يوجد شعار – اختر رمزًا من الأسفل.",
         mergedToast: "„{{from}}“ أصبح جزءًا من „{{to}}“",
         dcSame: "„{{a}}“ و„{{b}}“ يبدوان الشيء نفسه.",
         dcMergeInto: "دمج في „{{name}}“",
@@ -3468,6 +3474,20 @@
       const text = e[0].replace(/^(bäckerei|die|der|das)\s+/i, '').split(/[\s-]+/).map(x => x[0]).join('').slice(0, 2).toUpperCase();
       return { kind: 'brand', text, bg: '#334155', fg: '#FFFFFF', logo: 'web:' + e[2] };
     };
+    // Logos to choose from for a search text (brand badges first, then directory shops with a website).
+    const logoOptions = (q) => {
+      const n = String(q || '').trim();
+      if (n.length < 2) return [];
+      const out = [], seen = new Set();
+      const add = (label, spec) => { const k = spec.logo || spec.text + spec.bg; if (!seen.has(k)) { seen.add(k); out.push({ label, spec }); } };
+      BRANDS.forEach(b => { const mt = n.match(b[0]); if (mt) add(mt[0].trim().replace(/^\w/, c => c.toUpperCase()) || b[1], { kind: 'brand', text: b[1], bg: b[2], fg: b[3], ...(b[4] ? { logo: b[4] } : {}) }); });
+      const low = n.toLowerCase();
+      const hit = MERCHANT_LOGOS.find(([re]) => re.test(n));
+      if (hit) add(hit[1][0], merchantLogoFor(hit[1][0]));
+      MERCHANTS.filter(e => e[2] && [e[0], ...(e[3] || [])].some(w => w.toLowerCase().includes(low) || low.includes(w.toLowerCase()) && w.length >= 3))
+        .slice(0, 16).forEach(e => { const sp = merchantLogoFor(e[0]); if (sp) add(e[0], sp); });
+      return out.slice(0, 12);
+    };
     const autoIcon = (name) => {
       const n = String(name || '');
       const b = BRANDS.find(([re]) => re.test(n));
@@ -3676,6 +3696,7 @@
       const [editTab, setEditTab] = useState('details');
       // Item page (one item's month: its entries as cards) and the entry editor.
       const [itemSheet, setItemSheet] = useState(null);
+      const [iconQuery, setIconQuery] = useState('');
       const [entrySheet, setEntrySheet] = useState(null);
       const [recurringForm, setRecurringForm] = useState({ field: 'budget', amount: 0, from: '', until: '', every: 1, clearOutside: false });
 
@@ -4544,6 +4565,7 @@
           notes: [...getNotes(type, cat)]
         });
         setNewBulletText("");
+        setIconQuery('');
         // The same dialog also sets amounts for a period (tab "Amounts & period").
         const node = getNode(type, cat, selectedYear, selectedMonth);
         const sch = detectSchedule(type, cat);
@@ -9848,7 +9870,7 @@
               <div>
                 <label className="text-[10px] text-secondary font-medium block mb-1">{t('iconLabel')}</label>
                 <div className="flex items-center gap-2 mb-2">
-                  <ItemIcon spec={iconFor(activeEditCat.type, activeEditCat.cat)} tint={tintFor(activeEditCat.type, activeEditCat.cat)} size={36} />
+                  <ItemIcon spec={data.icons[activeEditCat.cat] || autoIcon(editCatForm.name) || iconFor(activeEditCat.type, activeEditCat.cat)} tint={tintFor(activeEditCat.type, activeEditCat.cat)} size={36} />
                   <button type="button" onClick={() => setItemIcon(activeEditCat.cat, null)} aria-pressed={!data.icons[activeEditCat.cat]}
                     className={`h-8 px-3 rounded-lg text-[11px] font-medium border ${!data.icons[activeEditCat.cat] ? 'border-primary text-primary' : 'border-subtle text-secondary'}`}>{t('iconAuto')}</button>
                   <button type="button" disabled={iconBusy} onClick={() => suggestIcons([activeEditCat.cat])}
@@ -9856,6 +9878,34 @@
                     {iconBusy ? t('askThinking') : `✨ ${t('iconAi')}`}
                   </button>
                 </div>
+                {(() => {
+                  const q = iconQuery.trim() || editCatForm.name;
+                  const opts = logoOptions(q);
+                  const cur = data.icons[activeEditCat.cat];
+                  return (
+                    <div className="mb-2 space-y-1.5">
+                      <div className="relative flex items-center">
+                        <i className="fa-solid fa-magnifying-glass absolute text-[11px] text-tertiary pointer-events-none" style={{ insetInlineStart: 12 }}></i>
+                        <input data-free type="search" value={iconQuery} onChange={(e) => setIconQuery(e.target.value)} placeholder={t('logoSearch')}
+                          style={{ paddingInlineStart: 32 }} className="w-full bg-subtle border border-subtle rounded-xl pe-3 py-2 text-[12.5px] text-primary outline-none focus:border-notion-blue" />
+                      </div>
+                      {opts.length > 0 ? (
+                        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                          {opts.map(o => {
+                            const sel = !!cur && cur.kind === 'brand' && (cur.logo ? cur.logo === o.spec.logo : cur.text === o.spec.text && cur.bg === o.spec.bg);
+                            return (
+                              <button key={o.label + (o.spec.logo || '')} type="button" onClick={() => setItemIcon(activeEditCat.cat, o.spec)} aria-pressed={sel}
+                                className={`shrink-0 w-16 flex flex-col items-center gap-1 rounded-xl py-1.5 border ${sel ? 'border-notion-blue bg-notion-blue/10' : 'border-transparent hover:bg-subtle'}`}>
+                                <ItemIcon spec={o.spec} size={32} />
+                                <span className="text-[10px] text-secondary w-full truncate px-1 text-center">{o.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : iconQuery.trim().length >= 2 && <p className="text-[11px] text-tertiary">{t('logoNone')}</p>}
+                    </div>
+                  );
+                })()}
                 <div className="grid grid-cols-8 gap-1 max-h-[132px] overflow-y-auto pe-1">
                   {ICON_CHOICES.map(ic => {
                     const sel = data.icons[activeEditCat.cat]?.icon === ic;
