@@ -460,6 +460,7 @@
           education: "Bildung & Prüfungen",
           fees: "Bank & Gebühren",
           family: "Familie & Freunde",
+          kids: "Kinder",
           housing: "Wohnen",
           bills: "Rechnungen & Kommunikation",
           subs: "Abos",
@@ -793,6 +794,9 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        starterBtn: "Startpaket Familie",
+        starterDone: "Startpaket hinzugefügt: Einnahmen, Rechnungen, Kinder und Läden",
+        starterHint: "Fügt typische Einnahmen (2× Sperrkonto, Kindergeld), Rechnungen, Kinder-Posten und Läden hinzu – nur was noch fehlt.",
         rcPhoto: "Bon fotografieren",
         rcHint: "Tipp: 📷 Bon fotografieren – die KI trägt Laden, Betrag und Datum ein.",
         rcBusy: "Bon wird gelesen …",
@@ -1222,6 +1226,7 @@
           education: "Education & exams",
           fees: "Banking & fees",
           family: "Family & friends",
+          kids: "Children",
           housing: "Housing",
           bills: "Bills & communication",
           subs: "Subscriptions",
@@ -1555,6 +1560,9 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        starterBtn: "Family starter kit",
+        starterDone: "Starter kit added: incomes, bills, children and shops",
+        starterHint: "Adds typical incomes (2× blocked account, Kindergeld), bills, children items and shops – only what is missing.",
         rcPhoto: "Photograph receipt",
         rcHint: "Tip: 📷 photograph a receipt – the AI fills in shop, amount and date.",
         rcBusy: "Reading the receipt …",
@@ -1984,6 +1992,7 @@
           education: "التعليم والامتحانات",
           fees: "البنوك والرسوم",
           family: "العائلة والأصدقاء",
+          kids: "الأطفال",
           housing: "السكن",
           bills: "الفواتير والاتصالات",
           subs: "الاشتراكات",
@@ -2317,6 +2326,9 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        starterBtn: "الحزمة الأساسية للعائلة",
+        starterDone: "أُضيفت الحزمة الأساسية: الدخل والفواتير والأطفال والمحلات",
+        starterHint: "تضيف الدخل المعتاد (حسابان مجمّدان، Kindergeld) والفواتير وبنود الأطفال والمحلات – فقط ما ينقص.",
         rcPhoto: "تصوير الفاتورة",
         rcHint: "نصيحة: 📷 صوّر الفاتورة – يملأ الذكاء الاصطناعي المحل والمبلغ والتاريخ.",
         rcBusy: "جارٍ قراءة الفاتورة …",
@@ -3135,7 +3147,7 @@
       [/friseur|haircut|barber/i, 'fa-scissors'], [/kosmetik|beauty|parfum/i, 'fa-spray-can-sparkles'], [/haustier|pet\b|katze|hund/i, 'fa-paw'],
       [/baby|kind|kita/i, 'fa-baby'], [/reise|urlaub|travel|flug/i, 'fa-plane'], [/abo\b|subscription/i, 'fa-repeat'], [/sonstig|other|misc/i, 'fa-ellipsis']
     ];
-    const GROUP_ICONS = { housing: 'fa-house', bills: 'fa-file-invoice', subs: 'fa-repeat', insurance: 'fa-shield-halved', groceries: 'fa-basket-shopping',
+    const GROUP_ICONS = { kids: 'fa-children', housing: 'fa-house', bills: 'fa-file-invoice', subs: 'fa-repeat', insurance: 'fa-shield-halved', groceries: 'fa-basket-shopping',
       household: 'fa-couch', leisure: 'fa-champagne-glasses', oneoff: 'fa-tag', transport: 'fa-train-subway', health: 'fa-heart-pulse',
       education: 'fa-graduation-cap', fees: 'fa-building-columns', family: 'fa-people-roof' };
     // Brand first (a shop name is most specific), then a keyword symbol; null when nothing matches.
@@ -3526,6 +3538,47 @@
         return () => document.removeEventListener('visibilitychange', again);
       }, []);
       // Save what's pending in the current household, then load the other one (device cache first).
+      // Starter kit for a family household: the usual incomes, bills and shops, added only where missing.
+      // Amounts are only set where they are known (Sperrkonto, Kindergeld); the rest is filled in by the family.
+      const STARTER = {
+        incomes: [['Sperrkonto 1', 1092, 1, 12], ['Sperrkonto 2', 1092, 1, 12], ['Kindergeld', 500, null, 0]],
+        expenses: [
+          ['housing', 'Miete', 1], ['housing', 'Nebenkosten', null],
+          ['bills', 'Strom ⚡', null], ['bills', 'Gas & Heizung', null], ['bills', 'Wasser', null], ['bills', 'Internet & Handy', null], ['bills', 'Rundfunkbeitrag', null], ['bills', 'Deutschlandticket', 1],
+          ['insurance', 'Haftpflicht', null], ['insurance', 'Hausratversicherung', null],
+          ['kids', 'Kita-Beitrag', null], ['kids', 'Kita Essensgeld', null], ['kids', 'Schulbedarf', null],
+          ['groceries', 'Lebensmittel 🍞', null], ['groceries', 'Netto', null], ['groceries', 'Lidl', null], ['groceries', 'Aldi', null], ['groceries', 'Rewe', null], ['groceries', 'dm', null], ['groceries', 'Rossmann', null], ['groceries', 'Windeln & Baby', null],
+          ['household', 'Hausrat 🛋️', null], ['household', 'Kleidung', null], ['household', 'Kinderkleidung', null], ['household', 'Spielzeug', null], ['household', 'Action', null], ['household', 'TEDi', null],
+          ['leisure', 'Essen gehen 🍔', null], ['leisure', 'Ausflüge', null], ['leisure', 'Geschenke', null],
+          ['oneoff', 'Sonstiges', null]
+        ]
+      };
+      const applyStarterKit = () => mutateWithUndo(d => {
+        const nowI = Math.max(0, nowIdx);
+        if (!d.groups.find(g => g.id === 'kids')) d.groups.splice(Math.max(0, d.groups.findIndex(g => g.id === 'groceries')), 0, { id: 'kids', kind: 'fixed', color: 'pink', name: null });
+        const ensureNode = (type, name, yr, m) => { const byCat = d.values[yr][type][name] || (d.values[yr][type][name] = {}); return byCat[m] || (byCat[m] = emptyNode()); };
+        const has = (type, name) => d.categories[type].some(c => c.toLowerCase() === name.toLowerCase());
+        const names = { 'Sperrkonto 1': `Sperrkonto ${d.members.me || '1'}`, 'Sperrkonto 2': `Sperrkonto ${d.members.partner || '2'}` };
+        STARTER.incomes.forEach(([key, amount, payDay, months]) => {
+          const name = names[key] || key;
+          if (has('incomes', name)) return;
+          d.categories.incomes.push(name);
+          d.meta.incomes[name] = { bracket: key === 'Kindergeld' ? 'fixed_in' : 'fixed_in', mode: 'fixed', oneTime: false, payDay, forNext: false };
+          TIMELINE.forEach(({ yr, m }, i) => {
+            const n = ensureNode('incomes', name, yr, m);
+            if (i >= nowI && (!months || i < nowI + months)) n.budget = amount;
+          });
+        });
+        STARTER.expenses.forEach(([gid, name, payDay]) => {
+          if (has('expenses', name)) return;
+          const g = d.groups.find(x => x.id === gid) || d.groups.find(x => x.kind === 'oneoff') || d.groups[0];
+          d.categories.expenses.push(name);
+          d.meta.expenses[name] = { ...metaForGroup(d.groups, g.id, null, false), payDay };
+          TIMELINE.forEach(({ yr, m }) => ensureNode('expenses', name, yr, m));
+        });
+        d.groups.forEach(g => { if (!d.targets[g.id]) d.targets[g.id] = {}; TIMELINE.forEach(({ yr, m }) => { (d.targets[g.id][yr] || (d.targets[g.id][yr] = {}))[m] ??= 0; }); });
+      }, t('starterDone'));
+
       const switchHousehold = (id) => {
         if (id === activeHousehold) return;
         if (saveTimerRef.current) flushSave();
@@ -7143,6 +7196,7 @@
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-[11px] text-tertiary">{t('hhWelcomeHint')}</p>
+                    <button onClick={applyStarterKit} className="shrink-0 px-3 py-1.5 rounded-lg bg-notion-blue text-white text-[12px] font-semibold">{t('starterBtn')}</button>
                     <button onClick={() => dismiss('hh_' + householdId)} className="shrink-0 px-3 py-1.5 rounded-lg bg-primary text-surface text-[12px] font-semibold">{t('hhDone')}</button>
                   </div>
                 </section>
@@ -9469,6 +9523,10 @@
                   </div>
 
                   <div className="space-y-1.5">
+                    <button onClick={applyStarterKit} title={t('starterHint')} className="w-full py-1.5 rounded border border-dashed border-strong text-secondary hover:text-primary">
+                      <i className="fa-solid fa-children me-1.5"></i>{t('starterBtn')}
+                    </button>
+                    <p className="text-[10px] text-tertiary">{t('starterHint')}</p>
                     <label className="text-[10px] text-secondary block">{t('membersLabel')}</label>
                     <div className="grid grid-cols-2 gap-1.5">
                       {['me', 'partner'].map(w => (
