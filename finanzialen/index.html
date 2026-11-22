@@ -964,6 +964,7 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        bkOther: "Andere",
         bkMoreSugg: "+ {{n}} weitere",
         bkSuggest: "Neu anlegen – tippen zum Auswählen:",
         calPaid: "Bezahlt",
@@ -1676,6 +1677,7 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        bkOther: "Other",
         bkMoreSugg: "+ {{n}} more",
         bkSuggest: "Create new – tap to pick:",
         calPaid: "Paid",
@@ -2388,6 +2390,7 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        bkOther: "تاريخ آخر",
         bkMoreSugg: "+ {{n}} أخرى",
         bkSuggest: "إنشاء جديد – اضغط للاختيار:",
         calPaid: "مدفوع",
@@ -2404,7 +2407,7 @@
         calLegIn: "دخل",
         calUndated: "بلا يوم هذا الشهر: {{n}} بنود · {{amount}}",
         calUndatedHint: "هذه البنود بلا يوم استحقاق. حدّد اليوم للبند (أو سجّل المشتريات عبر \"إضافة\") لتظهر في التقويم.",
-        navBook: "إضافة",
+        navBook: "تسجيل",
         bkOut: "مصروف",
         bkIn: "دخل",
         bkAmount: "المبلغ",
@@ -7337,12 +7340,35 @@
               </div>
 
               <div className="space-y-2">
-                {label(t('bkWhen'))}
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <button type="button" onClick={() => setB({ date: todayIso })} className={chip(bk.date === todayIso)}>{t('bkToday')}</button>
-                  <button type="button" onClick={() => setB({ date: yesterday })} className={chip(bk.date === yesterday)}>{t('bkYesterday')}</button>
-                  <input data-free type="date" value={bk.date} onChange={(e) => setB({ date: e.target.value })}
-                    className={`bg-subtle border rounded-full px-3 py-1 text-[12px] text-primary ${bk.date !== todayIso && bk.date !== yesterday ? 'border-notion-blue' : 'border-subtle'}`} />
+                <div className="flex items-baseline justify-between gap-2">
+                  {label(t('bkWhen'))}
+                  <span className="text-[12px] font-medium text-primary">{new Date(bk.date + 'T12:00').toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                </div>
+                {/* The last 7 days as tappable days, newest first; any other date through the calendar button. */}
+                <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
+                  {(() => {
+                    const older = (() => { const dt = new Date(); dt.setDate(dt.getDate() - 6); return bk.date < isoOf(dt) || bk.date > todayIso; })();
+                    return (
+                      <label className={`relative shrink-0 w-[54px] rounded-xl py-1.5 flex flex-col items-center justify-center gap-0.5 border cursor-pointer transition active:scale-95 ${older ? 'border-notion-blue bg-notion-blue text-white' : 'border-dashed border-strong text-secondary'}`}>
+                        <i className="fa-regular fa-calendar text-[14px]"></i>
+                        <span className="text-[9.5px] leading-none">{older ? new Intl.DateTimeFormat(loc, { day: 'numeric', month: 'short' }).format(new Date(bk.date + 'T12:00')) : t('bkOther')}</span>
+                        <input data-free type="date" value={bk.date} onChange={(e) => e.target.value && setB({ date: e.target.value })}
+                          onClick={(e) => { try { e.currentTarget.showPicker(); } catch (err) {} }}
+                          aria-label={t('bkOther')} className="absolute inset-0 opacity-0 cursor-pointer" />
+                      </label>
+                    );
+                  })()}
+                  {Array.from({ length: 7 }, (_, i) => {
+                    const dt = new Date(); dt.setDate(dt.getDate() - i);
+                    const iso = isoOf(dt), on = bk.date === iso;
+                    return (
+                      <button key={iso} type="button" onClick={() => setB({ date: iso })}
+                        className={`shrink-0 w-[54px] rounded-xl py-1.5 flex flex-col items-center gap-0.5 border transition active:scale-95 ${on ? 'border-notion-blue bg-notion-blue text-white' : 'border-subtle bg-subtle/60 text-secondary hover:text-primary'}`}>
+                        <span className="text-[9.5px] leading-none max-w-full truncate px-0.5">{i === 0 ? t('bkToday') : i === 1 ? t('bkYesterday') : new Intl.DateTimeFormat(loc, { weekday: 'short' }).format(dt)}</span>
+                        <span className="text-[16px] leading-none font-semibold">{dt.getDate()}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
