@@ -964,6 +964,7 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        bkMoreSugg: "+ {{n}} weitere",
         bkSuggest: "Neu anlegen – tippen zum Auswählen:",
         calPaid: "Bezahlt",
         calGot: "Bekommen",
@@ -1675,6 +1676,7 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        bkMoreSugg: "+ {{n}} more",
         bkSuggest: "Create new – tap to pick:",
         calPaid: "Paid",
         calGot: "Received",
@@ -2386,6 +2388,7 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        bkMoreSugg: "+ {{n}} أخرى",
         bkSuggest: "إنشاء جديد – اضغط للاختيار:",
         calPaid: "مدفوع",
         calGot: "مستلم",
@@ -4468,12 +4471,18 @@
       // Items used most often come first.
       const bkUsage = useMemo(() => {
         const u = {};
-        (data.tx || []).forEach(x => { const k = x.type + '|' + x.cat; u[k] = (u[k] || 0) + 3; });
+        // Your own entries count most, recent ones more than old ones.
+        const now = Date.now();
+        (data.tx || []).forEach(x => {
+          const k = x.type + '|' + x.cat;
+          const age = (now - new Date(x.date + 'T12:00').getTime()) / 864e5;
+          u[k] = (u[k] || 0) + (age <= 14 ? 6 : age <= 45 ? 4 : 2);
+        });
         // Shops and other day-to-day items first (bills are paid by standing order), then what was used lately.
         const recent = TIMELINE.slice(Math.max(0, nowIdx - 2), nowIdx + 1);
         TYPES.forEach(type => data.categories[type].forEach(cat => {
           const k = type + '|' + cat;
-          if (type === 'expenses' && isReceiptItem(cat)) u[k] = (u[k] || 0) + 6;
+          if (type === 'expenses' && isReceiptItem(cat)) u[k] = (u[k] || 0) + 4;
           recent.forEach(({ yr, m }) => { if ((data.values[yr]?.[type]?.[cat]?.[m]?.actual || 0) > 0) u[k] = (u[k] || 0) + 1; });
         }));
         return u;
@@ -6836,7 +6845,7 @@
         );
       };
       const renderHealthView = () => (
-        <div className="grid gap-4 lg:gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-start">
+        <div className="grid grid-cols-1 gap-4 lg:gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-start">
           <div className="space-y-4 min-w-0">
             {renderHealth(['fa-umbrella', 'fa-piggy-bank', 'fa-scale-balanced', 'fa-chart-line'])}
             <div className="lg:hidden space-y-4">{renderHealth(['fa-chart-pie', 'fa-calendar-days', 'fa-hand-holding-dollar'])}</div>
@@ -6869,7 +6878,7 @@
           ['fa-clock-rotate-left', t('quickHistory'), () => { setActivityTab('history'); setView('activity'); }]
         ];
         return (
-          <div className="grid gap-4 lg:gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-start">
+          <div className="grid grid-cols-1 gap-4 lg:gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-start">
             <div className="space-y-4 min-w-0">
               {noAccess && (
                 <section className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 space-y-2">
@@ -7201,7 +7210,8 @@
         const type = bk.type;
         const items = data.categories[type].slice().sort((a, b) => (bkUsage[type + '|' + b] || 0) - (bkUsage[type + '|' + a] || 0) || a.localeCompare(b));
         const q = bk.q.trim().toLowerCase();
-        const filtered = q ? items.filter(c => c.toLowerCase().includes(q)) : items;
+        const matchRank = (c) => { const n = c.toLowerCase(); return n === q ? 3 : n.startsWith(q) ? 2 : n.split(/[\s/()&-]+/).some(w => w.startsWith(q)) ? 1 : 0; };
+        const filtered = q ? items.filter(c => c.toLowerCase().includes(q)).sort((a, b) => matchRank(b) - matchRank(a)) : items;
         const shown = q || bk.all ? filtered : filtered.slice(0, 11);
         const isoOf = (dt) => `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`;
         const yesterday = (() => { const dt = new Date(); dt.setDate(dt.getDate() - 1); return isoOf(dt); })();
@@ -7212,8 +7222,8 @@
         const todayIso = todayISO();
 
         return (
-          <div className="grid gap-4 lg:gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-start">
-            <section className="rounded-2xl border border-subtle bg-surface p-4 space-y-4">
+          <div className="grid grid-cols-1 gap-4 lg:gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-start">
+            <section className="min-w-0 rounded-2xl border border-subtle bg-surface p-4 space-y-4">
               <Segmented full options={[['expenses', t('bkOut')], ['incomes', t('bkIn')]]} value={type} onChange={(v) => setB({ type: v, cat: null, q: '', all: false })} />
               <div className={`flex items-baseline gap-2 rounded-2xl px-4 py-3 ${bk.err === 'amount' ? 'bg-red-500/10' : 'bg-subtle/60'}`}>
                 <input data-free value={bk.amount} onChange={(e) => setB({ amount: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && saveBooking()}
@@ -7225,7 +7235,7 @@
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   {label(type === 'incomes' ? t('bkWhereIn') : t('bkWhere'))}
-                  <input data-free value={bk.q} onChange={(e) => setB({ q: e.target.value })} placeholder={t('bkSearch')}
+                  <input data-free value={bk.q} onChange={(e) => setB({ q: e.target.value, moreSugg: false })} placeholder={t('bkSearch')}
                     className="w-36 bg-subtle border border-subtle rounded-full px-3 py-1 text-[12px] text-primary outline-none focus:border-strong" />
                 </div>
                 <div className={`grid grid-cols-3 sm:grid-cols-4 gap-1.5 ${bk.err === 'cat' ? 'rounded-xl ring-2 ring-red-500/40 p-1' : ''}`}>
@@ -7245,8 +7255,20 @@
                     <span className="text-[11px] text-secondary">{t('bkNew')}</span>
                   </button>
                 </div>
-                {q && (() => {
-                  const sugg = merchantMatch(bk.q, data.categories[type], type).slice(0, 14);
+                {q.length >= 2 && (() => {
+                  // Groups this household spends in most rank their suggestions higher.
+                  const gUse = {};
+                  data.categories.expenses.forEach(c => { const gid = getMeta('expenses', c).bracket; gUse[gid] = (gUse[gid] || 0) + (bkUsage['expenses|' + c] || 0); });
+                  const score = (e) => {
+                    const n = e[0].toLowerCase();
+                    const m = n.startsWith(q) ? 30 : n.split(/[\s/()&-]+/).some(w => w.startsWith(q)) ? 20 : (e[3] || []).some(a => a.toLowerCase().startsWith(q)) ? 12 : 0;
+                    // Everyday shopping (supermarkets, drugstores) is what people add most.
+                    return m + Math.min(8, gUse[resolveGroup(data.groups, e[1]).id] || 0) + (e[1] === 'groceries' ? 4 : 0);
+                  };
+                  const all = merchantMatch(bk.q, data.categories[type], type).sort((a, b) => score(b) - score(a) || MERCHANTS.indexOf(a) - MERCHANTS.indexOf(b));
+                  // With your own items already matching, keep the extra ideas short.
+                  const limit = bk.moreSugg ? 20 : filtered.length ? 3 : 6;
+                  const sugg = all.slice(0, limit);
                   if (!sugg.length) return null;
                   return (
                     <div className="space-y-1.5 pop-in">
@@ -7265,6 +7287,9 @@
                             </button>
                           );
                         })}
+                        {all.length > sugg.length && (
+                          <button type="button" onClick={() => setB({ moreSugg: true })} className="px-3 py-1 rounded-full text-[12px] text-notion-blue hover:underline">{t('bkMoreSugg', { n: all.length - sugg.length })}</button>
+                        )}
                       </div>
                     </div>
                   );
@@ -7475,7 +7500,7 @@
                   </div>
                 )}
 
-          <div className="grid gap-4 lg:grid-cols-2 items-start">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 items-start">
             <div className="space-y-4 min-w-0">{renderForecast()}{renderIncomeEnd(false)}</div>
             <div className="space-y-4 min-w-0">
                           {setAsides.rows.length > 0 && (
@@ -7552,7 +7577,7 @@
 
       const ACCOUNT_KINDS = [['main', 'accountMain'], ['gateway', 'accountGateway'], ['cash', 'accountCash']];
       const renderMore = () => (
-        <div className="grid gap-4 lg:grid-cols-2 items-start">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 items-start">
           <div className="space-y-4 min-w-0">
             <div className="lg:hidden">{renderHealthLink()}</div>
             {panel({ id: 'accounts', icon: 'fa-building-columns', title: t('accountsTitle'), collapsible: false,
