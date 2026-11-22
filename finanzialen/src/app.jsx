@@ -1666,7 +1666,7 @@
         splitRest: "rest",
         splitAdd: "Another item",
         splitTooMuch: "The parts add up to the whole amount or more – nothing is left for the first item.",
-        logoSearch: "Search a logo – e.g. DB, Rewe, Vodafone",
+        logoSearch: "Search a logo or type a website – e.g. DB, goldsgym.de",
         logoNone: "No logo found – pick a symbol below.",
         mergedToast: "“{{from}}” is now part of “{{to}}”",
         dcSame: "“{{a}}” and “{{b}}” look like the same thing.",
@@ -3478,7 +3478,7 @@
       ["Tibber", 'bills', "tibber.com"], ["Octopus Energy", 'bills', "octopusenergy.de"], ["AOK", 'insurance', "aok.de"], ["TK Techniker", 'insurance', "tk.de"],
       ["Barmer", 'insurance', "barmer.de"], ["DAK", 'insurance', "dak.de"], ["IKK", 'insurance', "ikk-classic.de"], ["HUK-Coburg", 'insurance', "huk.de"],
       ["Allianz", 'insurance', "allianz.de"], ["Die Haftpflichtkasse", 'insurance', "haftpflichtkasse.de", ["haftpflichtkasse", "haftpflicht kasse"]], ["AXA", 'insurance', "axa.de"], ["ERGO", 'insurance', "ergo.de"], ["Check24", 'insurance', "check24.de"],
-      ["Care Concept", 'insurance', "care-concept.de"], ["McFit", 'health', "mcfit.com"], ["FitX", 'health', "fitx.de"], ["Fitness First", 'health', "fitnessfirst.de"],
+      ["Care Concept", 'insurance', "care-concept.de"], ["Gold's Gym", 'health|leisure', "goldsgym.de", ["golds gym", "gold's", "goldsgym"]], ["John Reed", 'health|leisure', "johnreed.fitness"], ["Kieser Training", 'health|leisure', "kieser.com", ["kieser"]], ["Mrs.Sporty", 'health|leisure', "mrssporty.de", ["mrs sporty"]], ["EasyFit", 'health|leisure', "easyfit.de", ["easy fit"]], ["Fit Star", 'health|leisure', "fit-star.de", ["fitstar"]], ["Holmes Place", 'health|leisure', "holmesplace.de"], ["Ai Fitness", 'health|leisure', "aifitness.de"], ["McFit", 'health', "mcfit.com"], ["FitX", 'health', "fitx.de"], ["Fitness First", 'health', "fitnessfirst.de"],
       ["clever fit", 'health', "clever-fit.com"], ["Urban Sports Club", 'health', "urbansportsclub.com"], ["Arzt", 'health'], ["Zahnarzt", 'health'],
       ["Optiker", 'health'], ["Fielmann", 'health', "fielmann.de"], ["Sparkasse", 'fees', "sparkasse.de"], ["Volksbank", 'fees', "vr.de"],
       ["Revolut", 'fees', "revolut.com"], ["Wise", 'fees', "wise.com"], ["N26", 'fees', "n26.com"], ["ING", 'fees', "ing.de"],
@@ -3573,6 +3573,8 @@
       if (hit) add(hit[1][0], merchantLogoFor(hit[1][0]));
       MERCHANTS.filter(e => e[2] && [e[0], ...(e[3] || [])].some(w => w.toLowerCase().includes(low) || low.includes(w.toLowerCase()) && w.length >= 3))
         .slice(0, 16).forEach(e => { const sp = merchantLogoFor(e[0]); if (sp) add(e[0], sp); });
+      const dom = n.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+      if (/^[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/.test(dom)) add(dom, { kind: 'brand', text: dom[0].toUpperCase(), bg: '#334155', fg: '#FFFFFF', logo: 'web:' + dom });
       return out.slice(0, 12);
     };
     const autoIcon = (name) => {
