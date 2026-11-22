@@ -812,6 +812,16 @@
         itemEntries: "Einträge in diesem Monat ({{n}})",
         itemNoEntries: "Noch nichts eingetragen.",
         edPlanCard: "Plan & Wiederholung",
+        selStart: "Auswählen",
+        selDone: "Fertig",
+        selMonth: "Dieser Monat ({{n}})",
+        selAllMonths: "Alle Monate ({{n}})",
+        selNotPlan: "Alle außer {{amount}} ({{n}})",
+        selNone: "Keine",
+        moveTo: "Verschieben nach … (Posten wählen oder neu tippen)",
+        moveBtn: "{{n}} verschieben",
+        moveNew: "Neuer Posten „{{name}}“ wird angelegt.",
+        movedToast: "{{n}} Einträge → {{to}}",
         entryItemSettings: "Posten bearbeiten",
         entryCreate: "„{{name}}“ anlegen",
         entryMoveAll: "Auch die {{n}} anderen Einträge über {{amount}} aus „{{from}}“ verschieben (z. B. frühere Monate)",
@@ -1649,6 +1659,16 @@
         itemEntries: "Entries this month ({{n}})",
         itemNoEntries: "Nothing entered yet.",
         edPlanCard: "Plan & repeat",
+        selStart: "Select",
+        selDone: "Done",
+        selMonth: "This month ({{n}})",
+        selAllMonths: "All months ({{n}})",
+        selNotPlan: "All except {{amount}} ({{n}})",
+        selNone: "None",
+        moveTo: "Move to… (pick an item or type a new one)",
+        moveBtn: "Move {{n}}",
+        moveNew: "A new item “{{name}}” will be created.",
+        movedToast: "{{n}} entries → {{to}}",
         entryItemSettings: "Edit item",
         entryCreate: "Create “{{name}}”",
         entryMoveAll: "Also move the {{n}} other {{amount}} entries from “{{from}}” (e.g. earlier months)",
@@ -2486,6 +2506,16 @@
         itemEntries: "إدخالات هذا الشهر ({{n}})",
         itemNoEntries: "لا شيء مسجل بعد.",
         edPlanCard: "الخطة والتكرار",
+        selStart: "تحديد",
+        selDone: "تم",
+        selMonth: "هذا الشهر ({{n}})",
+        selAllMonths: "كل الأشهر ({{n}})",
+        selNotPlan: "الكل عدا {{amount}} ({{n}})",
+        selNone: "لا شيء",
+        moveTo: "انقل إلى … (اختر بندًا أو اكتب جديدًا)",
+        moveBtn: "نقل {{n}}",
+        moveNew: "سيُنشأ بند جديد „{{name}}“.",
+        movedToast: "{{n}} إدخالات ← {{to}}",
         entryItemSettings: "تعديل البند",
         entryCreate: "إنشاء „{{name}}“",
         entryMoveAll: "انقل أيضًا الإدخالات الـ{{n}} الأخرى بقيمة {{amount}} من „{{from}}“ (مثل الأشهر السابقة)",
@@ -5370,6 +5400,16 @@
       };
 
       const showItem = (type, cat) => { haptic(6); setItemSheet({ type, cat }); };
+      // Move several entries to another (or a new) item at once.
+      const moveEntries = (type, ids, to, gid) => {
+        const name = (to || '').trim().slice(0, 60);
+        if (!name || !ids.length) return;
+        const cat = data.categories[type].find(c => c.toLowerCase() === name.toLowerCase()) || name;
+        mutateWithUndo(d => {
+          if (!d.categories[type].includes(cat)) createItemIn(d, type, cat, gid || (data.groups.find(g => g.kind === 'variable') || data.groups[0]).id);
+          ids.forEach(id => { const o = d.tx.find(x => x.id === id); if (o && o.cat !== cat) { applyTx(d, o, -1); o.cat = cat; applyTx(d, o, +1); } });
+        }, t('movedToast', { n: ids.length, to: cat }));
+      };
       const openEntry = (id) => {
         const x = (data.tx || []).find(e => e.id === id);
         if (!x) return;
@@ -9520,10 +9560,42 @@
                   </button>
                 </div>
                 <div key={`${selectedYear}${selectedMonth}`} className="space-y-2 stagger">
-                  <div className="text-[11px] font-semibold uppercase tracking-wide text-tertiary">{t('itemEntries', { n: entries.length })}</div>
+                  <div className="flex items-center justify-between">
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-tertiary">{t('itemEntries', { n: entries.length })}</div>
+                    {entries.length > 0 && (
+                      <button onClick={() => setItemSheet(p => ({ ...p, sel: p.sel ? null : [] }))} className="text-[12px] text-notion-blue font-medium">{itemSheet.sel ? t('selDone') : t('selStart')}</button>
+                    )}
+                  </div>
+                  {itemSheet.sel && (() => {
+                    const sel = itemSheet.sel;
+                    const allIds = (data.tx || []).filter(x => x.type === type && x.cat === cat).map(x => x.id);
+                    const monthIds = entries.map(x => x.id);
+                    const to = itemSheet.to || '';
+                    return (
+                      <div className="pop-in rounded-xl border border-notion-blue/30 bg-notion-blue/5 p-2.5 space-y-2">
+                        <div className="flex flex-wrap gap-1.5 text-[12px]">
+                          <button onClick={() => setItemSheet(p => ({ ...p, sel: monthIds }))} className="px-2.5 py-1 rounded-full border border-subtle bg-surface">{t('selMonth', { n: monthIds.length })}</button>
+                          <button onClick={() => setItemSheet(p => ({ ...p, sel: allIds }))} className="px-2.5 py-1 rounded-full border border-subtle bg-surface">{t('selAllMonths', { n: allIds.length })}</button>
+                          {(() => { const plan = n.budget; const notPlan = allIds.filter(id => { const x = data.tx.find(y => y.id === id); return x && Math.abs(x.amount - plan) > 0.004; });
+                            return plan > 0 && notPlan.length < allIds.length ? <button onClick={() => setItemSheet(p => ({ ...p, sel: notPlan }))} className="px-2.5 py-1 rounded-full border border-subtle bg-surface">{t('selNotPlan', { amount: fmtCents(plan), n: notPlan.length })}</button> : null; })()}
+                          {sel.length > 0 && <button onClick={() => setItemSheet(p => ({ ...p, sel: [] }))} className="px-2.5 py-1 text-tertiary">{t('selNone')}</button>}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input data-free list="move-targets" value={to} onChange={(e) => setItemSheet(p => ({ ...p, to: e.target.value }))} placeholder={t('moveTo')}
+                            style={{ flex: '1 1 0', minWidth: 0 }} className="bg-surface border border-subtle rounded-lg px-2.5 py-2 text-[12.5px] text-primary outline-none focus:border-notion-blue" />
+                          <datalist id="move-targets">{data.categories[type].filter(c => c !== cat).map(c => <option key={c} value={c} />)}</datalist>
+                          <button disabled={!sel.length || !to.trim() || to.trim() === cat} onClick={() => { moveEntries(type, sel, to, g && g.kind === 'variable' ? g.id : 'household'); setItemSheet(p => ({ ...p, sel: null, to: '' })); }}
+                            className="px-3 py-2 rounded-lg bg-notion-blue text-white text-[12.5px] font-semibold disabled:opacity-40 shrink-0">{t('moveBtn', { n: sel.length })}</button>
+                        </div>
+                        {to.trim() && !data.categories[type].some(c => c.toLowerCase() === to.trim().toLowerCase()) && <div className="text-[11px] text-tertiary">{t('moveNew', { name: to.trim() })}</div>}
+                      </div>
+                    );
+                  })()}
                   {entries.length === 0 && <p className="text-[13px] text-secondary py-3 text-center">{t('itemNoEntries')}</p>}
                   {entries.map(x => (
-                    <button key={x.id} onClick={() => openEntry(x.id)} className="w-full text-start flex items-center gap-3 rounded-2xl bg-subtle/60 hover:bg-subtle px-3 py-2.5 active:scale-[.99] transition">
+                    <button key={x.id} onClick={() => itemSheet.sel ? setItemSheet(p => ({ ...p, sel: p.sel.includes(x.id) ? p.sel.filter(i => i !== x.id) : [...p.sel, x.id] })) : openEntry(x.id)}
+                      className={`w-full text-start flex items-center gap-3 rounded-2xl px-3 py-2.5 active:scale-[.99] transition ${itemSheet.sel && itemSheet.sel.includes(x.id) ? 'bg-notion-blue/15 ring-1 ring-notion-blue' : 'bg-subtle/60 hover:bg-subtle'}`}>
+                      {itemSheet.sel && <i className={`fa-${itemSheet.sel.includes(x.id) ? 'solid fa-circle-check text-notion-blue' : 'regular fa-circle text-tertiary'} text-[18px] shrink-0`}></i>}
                       {(() => { const sh = x.note ? autoIcon(x.note.split(' · ')[0]) : null; return sh && sh.kind === 'brand'
                         ? <span className="relative shrink-0"><ItemIcon spec={sh} size={34} /></span>
                         : <span className="relative shrink-0"><ItemIcon spec={iconFor(type, cat)} tint={tint} size={34} /></span>; })()}
