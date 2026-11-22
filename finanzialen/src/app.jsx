@@ -809,6 +809,12 @@
         itemEntries: "Einträge in diesem Monat ({{n}})",
         itemNoEntries: "Noch nichts eingetragen.",
         edPlanCard: "Plan & Wiederholung",
+        mergedToast: "„{{from}}“ ist jetzt Teil von „{{to}}“",
+        dcSame: "„{{a}}“ und „{{b}}“ sehen nach demselben aus.",
+        dcMergeInto: "In „{{name}}“ zusammenführen",
+        mergeLabel: "Zusammenführen mit",
+        mergePick: "Posten wählen …",
+        mergeConfirm: "Alle Einträge, Pläne und Notizen von „{{from}}“ nach „{{to}}“ verschieben und „{{from}}“ entfernen?",
         schNow: "Aktuell:",
         schFrom: "ab {{month}}",
         schFirst: "erste Zahlung {{amount}}",
@@ -1620,6 +1626,12 @@
         itemEntries: "Entries this month ({{n}})",
         itemNoEntries: "Nothing entered yet.",
         edPlanCard: "Plan & repeat",
+        mergedToast: "“{{from}}” is now part of “{{to}}”",
+        dcSame: "“{{a}}” and “{{b}}” look like the same thing.",
+        dcMergeInto: "Merge into “{{name}}”",
+        mergeLabel: "Merge into",
+        mergePick: "Choose item…",
+        mergeConfirm: "Move all entries, plans and notes from “{{from}}” to “{{to}}” and remove “{{from}}”?",
         schNow: "Now:",
         schFrom: "from {{month}}",
         schFirst: "first payment {{amount}}",
@@ -2431,6 +2443,12 @@
         itemEntries: "إدخالات هذا الشهر ({{n}})",
         itemNoEntries: "لا شيء مسجل بعد.",
         edPlanCard: "الخطة والتكرار",
+        mergedToast: "„{{from}}“ أصبح جزءًا من „{{to}}“",
+        dcSame: "„{{a}}“ و„{{b}}“ يبدوان الشيء نفسه.",
+        dcMergeInto: "دمج في „{{name}}“",
+        mergeLabel: "دمج مع",
+        mergePick: "اختر بندًا …",
+        mergeConfirm: "نقل كل الإدخالات والخطط والملاحظات من „{{from}}“ إلى „{{to}}“ وحذف „{{from}}“؟",
         schNow: "حاليًا:",
         schFrom: "من {{month}}",
         schFirst: "الدفعة الأولى {{amount}}",
@@ -4612,6 +4630,58 @@
       };
 
       const findFallback = (type) => data.categories[type].find(c => FALLBACK_NAMES.includes(c)) || t('fallbackCategory');
+
+      // Merge one item into another: every entry, plan, note and import rule moves over; then the first item is gone.
+      const mergeItems = (type, from, to) => {
+        if (!from || !to || from === to) return;
+        mutateWithUndo(d => {
+          if (!d.categories[type].includes(from) || !d.categories[type].includes(to)) return;
+          TIMELINE.forEach(({ yr, m }) => {
+            const src = d.values[yr][type][from]?.[m];
+            if (!src) return;
+            const byCat = d.values[yr][type][to] || (d.values[yr][type][to] = {});
+            const dst = byCat[m] || (byCat[m] = emptyNode());
+            dst.budget += src.budget || 0;
+            dst.actual += src.actual || 0;
+          });
+          d.tx.forEach(x => { if (x.type === type && x.cat === from) { x.cat = to; if (!x.note && from) x.note = from; } });
+          const srcNotes = d.notes[type][from];
+          if (srcNotes) {
+            const dstNotes = d.notes[type][to] || (d.notes[type][to] = {});
+            Object.entries(srcNotes).forEach(([k, list]) => { dstNotes[k] = [...(dstNotes[k] || []), ...list]; });
+          }
+          Object.values(d.rules || {}).forEach(r => { if (r && r.type === type && r.cat === from) r.cat = to; });
+          (d.ious || []).forEach(i => { if (i.repayCat === from && (i.repayType || 'expenses') === type) i.repayCat = to; });
+          d.categories[type] = d.categories[type].filter(c => c !== from);
+          YEARS.forEach(yr => { delete d.values[yr][type][from]; });
+          delete d.meta[type][from];
+          delete d.notes[type][from];
+          if (d.icons) delete d.icons[from];
+        }, t('mergedToast', { from, to }));
+      };
+      // Items that look like the same thing (same brand/word, or words that mean the same in German/English).
+      const SAME_WORDS = [['hausrat', 'furniture', 'möbel', 'moebel', 'household', 'haushalt', 'einrichtung'], ['sonstig', 'sonstiges', 'other', 'others', 'misc', 'andere', 'diverses'],
+        ['kleidung', 'clothes', 'clothing', 'klamotten'], ['geschenk', 'geschenke', 'gift', 'gifts'], ['unterhaltung', 'entertainment', 'freizeit', 'fun'],
+        ['lebensmittel', 'groceries', 'grocery', 'food', 'einkauf'], ['essen', 'restaurant', 'eating', 'imbiss'], ['gesundheit', 'health', 'medical', 'medizin'],
+        ['haftpflicht', 'liability'], ['handy', 'mobile', 'phone'], ['savings', 'sparen', 'ersparnis', 'rücklage'], ['transport', 'tickets', 'ticket', 'öpnv'],
+        ['strom', 'electricity'], ['wasser', 'water'], ['gas', 'heizung', 'heißung', 'heating'], ['papier', 'paper', 'dokumente', 'documents', 'amt']];
+      const itemWords = (c) => c.toLowerCase().normalize('NFC').replace(/[^\p{L}\p{N}\s]/gu, ' ').split(/\s+/).filter(w => w.length >= 3);
+      const sameKey = (w) => { const i = SAME_WORDS.findIndex(list => list.some(x => w === x || (x.length >= 5 && w.startsWith(x)))); return i >= 0 ? 'g' + i : null; };
+      const lookAlikes = (type) => {
+        const cats = data.categories[type];
+        const info = cats.map(c => { const ws = itemWords(c); return { c, ws, keys: new Set(ws.map(sameKey).filter(Boolean)), first: ws[0] }; });
+        const pairs = [];
+        for (let i = 0; i < info.length; i++) for (let j = i + 1; j < info.length; j++) {
+          const a = info[i], b = info[j];
+          const byMeaning = [...a.keys].some(k => b.keys.has(k));
+          // One name is the other plus extra words ("amazon" / "amazon items").
+          const ja = a.ws.join(' '), jb = b.ws.join(' ');
+          const byBrand = ja.length >= 4 && jb.length >= 4 && (jb.startsWith(ja + ' ') || ja.startsWith(jb + ' '));
+          if (byMeaning || byBrand) pairs.push([a.c, b.c]);
+        }
+        return pairs;
+      };
+      const itemWeight = (type, cat) => (data.tx || []).filter(x => x.type === type && x.cat === cat).length;
 
       const executeSmartDelete = (type, cat, deleteScope) => {
         const currentIdx = timelineIndex(selectedYear, selectedMonth);
@@ -7259,6 +7329,11 @@
         const undatedSpend = (data.tx || []).filter(x => x.undated && x.type === 'expenses' && x.date.startsWith(prefix)).map(x => x.amount);
         if (undatedSpend.length) out.push({ id: 'nodate' + pos.m, icon: 'fa-receipt', soft: true, text: t('dcNoDate', { n: undatedSpend.length, amount: fmt(undatedSpend.reduce((a2, b2) => a2 + b2, 0)) }),
           actions: [[t('dcOpenAdd'), () => setView('book')]] });
+        ['expenses', 'incomes'].forEach(type => lookAlikes(type).forEach(([a, b]) => {
+          const [keep, drop] = itemWeight(type, a) >= itemWeight(type, b) ? [a, b] : [b, a];
+          out.push({ id: 'same|' + type + '|' + [a, b].sort().join('|'), icon: 'fa-object-group', soft: true, text: t('dcSame', { a: drop, b: keep }),
+            actions: [[t('dcMergeInto', { name: keep }), () => mergeItems(type, drop, keep)], [t('dcMergeInto', { name: drop }), () => mergeItems(type, keep, drop)]] });
+        }));
         return out.filter(x => !dismissed['dc_' + x.id]);
       })();
       // ---- Month-end review: how last month went against the plan ----
@@ -9953,6 +10028,20 @@
                 </div>
               )}
 
+              {data.categories[activeEditCat.type].length > 1 && (
+                <label className="flex items-center gap-2 rounded-xl bg-subtle/60 px-3 py-2">
+                  <i className="fa-solid fa-object-group text-[12px] text-secondary"></i>
+                  <span className="text-[12px] text-primary shrink-0">{t('mergeLabel')}</span>
+                  <select data-free value="" onChange={(e) => {
+                      const to = e.target.value; const { type, cat } = activeEditCat;
+                      if (to && window.confirm(t('mergeConfirm', { from: cat, to }))) { mergeItems(type, cat, to); setActiveEditCat(null); }
+                    }}
+                    className="flex-1 min-w-0 bg-surface border border-subtle rounded-lg px-2 py-1.5 text-[12px] text-primary">
+                    <option value="">{t('mergePick')}</option>
+                    {data.categories[activeEditCat.type].filter(c => c !== activeEditCat.cat).map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </label>
+              )}
               <div className="pt-2 border-t border-subtle">
                 <button onClick={() => { if (!editIsShop && recurringForm.dirty) handleExecuteRecurring(); handleSaveCategoryChanges(); }} className="w-full bg-primary text-surface font-semibold py-2 rounded-xl">
                   {t('saveClose')}
