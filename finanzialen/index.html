@@ -118,6 +118,10 @@
       .sheet-in { animation: sheetUp .28s cubic-bezier(.2,.9,.25,1); }
       .backdrop-in { animation: fadeIn .2s ease-out; }
       .pop-in { animation: popIn .16s ease-out; }
+      .cell-in { animation: cellIn .32s cubic-bezier(.2,.8,.2,1) both; }
+      .saved-pulse { animation: savedPulse .5s ease-out; }
+      @keyframes cellIn { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
+      @keyframes savedPulse { 0% { transform: scale(1); } 40% { transform: scale(1.04); box-shadow: 0 0 0 6px rgba(16,185,129,.35); } 100% { transform: scale(1); box-shadow: none; } }
       @media (min-width: 640px) { .sheet-in { animation: popIn .18s ease-out; } }
       @keyframes viewIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
       @keyframes slideNext { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
@@ -960,6 +964,35 @@
         accountName: "Name",
         accountsMatch: "Passt ✓",
         accountRemoved: "Konto entfernt",
+        navBook: "Buchen",
+        bkOut: "Ausgabe",
+        bkIn: "Einnahme",
+        bkAmount: "Betrag",
+        bkWhere: "Wofür?",
+        bkWhereIn: "Woher?",
+        bkSearch: "Suchen …",
+        bkNew: "Neu",
+        bkNewName: "Name, z. B. Rewe",
+        bkAll: "Alle {{n}} anzeigen",
+        bkLess: "Weniger anzeigen",
+        bkWhen: "Wann?",
+        bkToday: "Heute",
+        bkYesterday: "Gestern",
+        bkAccount: "Konto",
+        bkNoAccount: "Ohne",
+        bkWho: "Wer?",
+        bkNote: "Notiz (optional)",
+        bkSave: "Eintragen",
+        bkSaved: "{{amount}} · {{name}} · {{date}} eingetragen",
+        bkNeedAmount: "Bitte einen Betrag eingeben.",
+        bkNeedCat: "Bitte wählen, wofür – oder „Neu“ antippen.",
+        bkNeedDate: "Dieses Datum liegt außerhalb des Plans.",
+        calTitle: "Kalender",
+        calTotal: "{{amount}} · {{n}} Einträge",
+        calEmpty: "Noch nichts eingetragen in diesem Monat – alles, was du links einträgst, erscheint hier am richtigen Tag.",
+        calDayEmpty: "An diesem Tag nichts eingetragen.",
+        calAddHere: "+ An diesem Tag eintragen",
+        calNote: "Jeder Eintrag zählt beim gewählten Posten im Monat mit (wie ein Bon). Je dunkler ein Tag, desto mehr wurde ausgegeben; ein grüner Punkt heißt Einnahme. Beträge, die direkt im Monat eingetippt wurden, haben kein Datum und erscheinen nicht im Kalender.",
         abRealBal: "Echter Kontostand (Konten, geprüft {{date}})",
         abRealDiff: "Laut Einträgen wären es {{amount}}. Die Konten unter Mehr → Konten aktuell halten, dann stimmt diese Zahl.",
         abNoReal: "Trage unter Mehr → Konten eure echten Kontostände ein – dann rechnet diese Karte vom echten Stand aus.",
@@ -1627,6 +1660,35 @@
         accountName: "Name",
         accountsMatch: "Matches ✓",
         accountRemoved: "Account removed",
+        navBook: "Add",
+        bkOut: "Expense",
+        bkIn: "Income",
+        bkAmount: "Amount",
+        bkWhere: "What for?",
+        bkWhereIn: "From where?",
+        bkSearch: "Search …",
+        bkNew: "New",
+        bkNewName: "Name, e.g. Rewe",
+        bkAll: "Show all {{n}}",
+        bkLess: "Show less",
+        bkWhen: "When?",
+        bkToday: "Today",
+        bkYesterday: "Yesterday",
+        bkAccount: "Account",
+        bkNoAccount: "None",
+        bkWho: "Who?",
+        bkNote: "Note (optional)",
+        bkSave: "Save",
+        bkSaved: "Saved {{amount}} · {{name}} · {{date}}",
+        bkNeedAmount: "Please enter an amount.",
+        bkNeedCat: "Please choose what it was for – or tap \"New\".",
+        bkNeedDate: "This date is outside the plan.",
+        calTitle: "Calendar",
+        calTotal: "{{amount}} · {{n}} entries",
+        calEmpty: "Nothing entered this month yet – everything you add on the left shows up here on its day.",
+        calDayEmpty: "Nothing entered on this day.",
+        calAddHere: "+ Add on this day",
+        calNote: "Each entry counts towards its item in that month (like a receipt). The darker a day, the more was spent; a green dot means income. Amounts typed straight into Month have no date and don't appear in the calendar.",
         abRealBal: "Real balance (accounts, checked {{date}})",
         abRealDiff: "Your entries say {{amount}}. Keep the balances under More → Accounts up to date and this number stays exact.",
         abNoReal: "Enter your real balances under More → Accounts and this card will start from them.",
@@ -2294,6 +2356,35 @@
         accountName: "الاسم",
         accountsMatch: "مطابق ✓",
         accountRemoved: "حُذف الحساب",
+        navBook: "إضافة",
+        bkOut: "مصروف",
+        bkIn: "دخل",
+        bkAmount: "المبلغ",
+        bkWhere: "على ماذا؟",
+        bkWhereIn: "من أين؟",
+        bkSearch: "بحث …",
+        bkNew: "جديد",
+        bkNewName: "الاسم، مثل Rewe",
+        bkAll: "عرض الكل ({{n}})",
+        bkLess: "عرض أقل",
+        bkWhen: "متى؟",
+        bkToday: "اليوم",
+        bkYesterday: "أمس",
+        bkAccount: "الحساب",
+        bkNoAccount: "بدون",
+        bkWho: "من؟",
+        bkNote: "ملاحظة (اختياري)",
+        bkSave: "حفظ",
+        bkSaved: "حُفظ {{amount}} · {{name}} · {{date}}",
+        bkNeedAmount: "أدخل مبلغًا.",
+        bkNeedCat: "اختر على ماذا – أو اضغط \"جديد\".",
+        bkNeedDate: "هذا التاريخ خارج الخطة.",
+        calTitle: "التقويم",
+        calTotal: "{{amount}} · {{n}} إدخالات",
+        calEmpty: "لا شيء مسجل هذا الشهر بعد – كل ما تضيفه يظهر هنا في يومه.",
+        calDayEmpty: "لا شيء مسجل في هذا اليوم.",
+        calAddHere: "+ إضافة في هذا اليوم",
+        calNote: "كل إدخال يُحسب ضمن بنده في ذلك الشهر (مثل الفاتورة). كلما كان اليوم أغمق، كان الصرف أكثر؛ والنقطة الخضراء تعني دخلًا. المبالغ المكتوبة مباشرة في الشهر بلا تاريخ ولا تظهر في التقويم.",
         abRealBal: "الرصيد الحقيقي (الحسابات، تم التحقق {{date}})",
         abRealDiff: "حسب الإدخالات: {{amount}}. حدّث الأرصدة في المزيد ← الحسابات ليبقى هذا الرقم دقيقًا.",
         abNoReal: "أدخل أرصدتكم الحقيقية في المزيد ← الحسابات لتبدأ هذه البطاقة منها.",
@@ -2890,7 +2981,8 @@
           id: x.id, date: x.date, type: x.type, cat: x.cat, amount: x.amount,
           who: WHO.includes(x.who) ? x.who : null,
           note: typeof x.note === 'string' ? x.note : '',
-          source: x.source === 'import' ? 'import' : 'manual'
+          source: x.source === 'import' ? 'import' : 'manual',
+          account: typeof x.account === 'string' ? x.account : null
         }));
 
       // Moving to groups: the plans of variable items add up to their group's target.
@@ -3136,7 +3228,7 @@
       const [selectedYear, setSelectedYear] = useState(initialDate.year);
       const [selectedMonth, setSelectedMonth] = useState(initialDate.month);
       // Sections of the app: overview, month, activity, plan, more.
-      const VIEWS = ['overview', 'month', 'activity', 'plan', 'health', 'more'];
+      const VIEWS = ['overview', 'month', 'book', 'activity', 'plan', 'health', 'more'];
       // View mode (default): page fields are locked; tap the pencil in the header to edit.
       const [editMode, setEditModeState] = useState(false);
       const setEditMode = (on) => { haptic(8); setEditModeState(on); showToast(on ? t('editOnToast') : t('editOffToast')); };
@@ -4205,6 +4297,57 @@
           if (cur) applyTx(d, cur, -1);
           d.tx = d.tx.filter(x => x.id !== id);
         }, t('txDeleted', { amount: fmtCents(tx.amount), name: tx.cat }));
+      };
+
+      // ---- Book: one quick form for every purchase or income, and a calendar of the days ----
+      const [bk, setBk] = useState(() => ({
+        type: 'expenses', amount: '', cat: null, date: todayISO(), account: safeStorage.get('budget_last_account', ''),
+        who: lastWho, note: '', q: '', newName: '', newGroup: '', all: false, saved: 0, err: ''
+      }));
+      const setB = (patch) => setBk(prev => ({ ...prev, ...patch, err: '' }));
+      const [calDay, setCalDay] = useState(null);
+      // Items used most often come first.
+      const bkUsage = useMemo(() => {
+        const u = {};
+        (data.tx || []).forEach(x => { const k = x.type + '|' + x.cat; u[k] = (u[k] || 0) + 3; });
+        // Shops and other day-to-day items first (bills are paid by standing order), then what was used lately.
+        const recent = TIMELINE.slice(Math.max(0, nowIdx - 2), nowIdx + 1);
+        TYPES.forEach(type => data.categories[type].forEach(cat => {
+          const k = type + '|' + cat;
+          if (type === 'expenses' && isReceiptItem(cat)) u[k] = (u[k] || 0) + 6;
+          recent.forEach(({ yr, m }) => { if ((data.values[yr]?.[type]?.[cat]?.[m]?.actual || 0) > 0) u[k] = (u[k] || 0) + 1; });
+        }));
+        return u;
+      }, [data, nowIdx]);
+      const saveBooking = () => {
+        const amount = parseAmount(bk.amount);
+        if (amount === null) { setBk(prev => ({ ...prev, err: 'amount' })); return; }
+        if (!bk.cat || (bk.cat === '__new' && !bk.newName.trim())) { setBk(prev => ({ ...prev, err: 'cat' })); return; }
+        if (!dateToMonth(bk.date)) { setBk(prev => ({ ...prev, err: 'date' })); return; }
+        const type = bk.type;
+        let cat = bk.cat;
+        if (cat === '__new') cat = data.categories[type].find(c => c.toLowerCase() === bk.newName.trim().toLowerCase()) || bk.newName.trim().slice(0, 60);
+        const isNew = !data.categories[type].includes(cat);
+        const gid = bk.newGroup || (data.groups.find(g => g.kind === 'variable') || data.groups[0]).id;
+        const tx = { id: newTxId(), date: bk.date, type, cat, amount, who: WHO.includes(bk.who) ? bk.who : null, note: bk.note.trim(), source: 'manual', account: bk.account || null };
+        mutateWithUndo(d => {
+          if (isNew) {
+            d.categories[type].push(cat);
+            d.meta[type][cat] = type === 'expenses' ? metaForGroup(d.groups, gid, null, false)
+              : { bracket: d.brackets.incomes[d.brackets.incomes.length - 1].id, mode: 'variable', oneTime: false, payDay: null };
+            TIMELINE.forEach(({ yr, m }) => {
+              const byCat = d.values[yr][type][cat] || (d.values[yr][type][cat] = {});
+              if (!byCat[m]) byCat[m] = emptyNode();
+            });
+          }
+          d.tx.push(tx);
+          applyTx(d, tx, +1);
+        }, t('bkSaved', { amount: fmtCents(amount), name: cat, date: new Date(bk.date + 'T12:00').toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'ar' ? 'ar-SY-u-nu-latn' : 'de-DE', { day: 'numeric', month: 'short' }) }));
+        haptic(12);
+        setLastWho(bk.who);
+        safeStorage.set('budget_last_account', bk.account || '');
+        setCalDay(bk.date);
+        setBk(prev => ({ ...prev, amount: '', note: '', cat: isNew ? cat : prev.cat, newName: '', q: '', saved: prev.saved + 1, err: '' }));
       };
 
       const [editingTx, setEditingTx] = useState(null);
@@ -6072,13 +6215,14 @@
       const NAV = [
         ['overview', 'fa-house', t('navOverview')],
         ['month', 'fa-layer-group', t('navMonth')],
+        ['book', 'fa-plus', t('navBook')],
         ['activity', 'fa-receipt', t('navActivity')],
         ['plan', 'fa-chart-line', t('navPlan')],
         ['health', 'fa-heart-pulse', t('healthTitle')],
         ['more', 'fa-grip', t('navMore')]
       ];
       const viewTitle = (NAV.find(n => n[0] === view) || NAV[0])[2];
-      const showMonthNav = view === 'overview' || view === 'month' || view === 'activity';
+      const showMonthNav = view === 'overview' || view === 'month' || view === 'activity' || view === 'book';
       const syncColor = syncStatus === 'error' ? 'text-notion-red' : user ? 'text-notion-green' : 'text-tertiary';
       const nowPos = TIMELINE[nowIdx];
 
@@ -6558,7 +6702,7 @@
             ]
           : lines;
         const quick = [
-          ['fa-plus', t('quickReceipt'), openReceiptSheet],
+          ['fa-plus', t('quickReceipt'), () => setView('book')],
           ['fa-file-import', t('quickImport'), openImport],
           ['fa-wand-magic-sparkles', t('quickAsk'), () => { setAskError(''); setAskModal(true); }],
           ['fa-clock-rotate-left', t('quickHistory'), () => { setActivityTab('history'); setView('activity'); }]
@@ -6756,6 +6900,191 @@
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        );
+      };
+
+      const renderBook = () => {
+        const loc = lang === 'en' ? 'en-US' : lang === 'ar' ? 'ar-SY-u-nu-latn' : 'de-DE';
+        const type = bk.type;
+        const items = data.categories[type].slice().sort((a, b) => (bkUsage[type + '|' + b] || 0) - (bkUsage[type + '|' + a] || 0) || a.localeCompare(b));
+        const q = bk.q.trim().toLowerCase();
+        const filtered = q ? items.filter(c => c.toLowerCase().includes(q)) : items;
+        const shown = q || bk.all ? filtered : filtered.slice(0, 11);
+        const isoOf = (dt) => `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`;
+        const yesterday = (() => { const dt = new Date(); dt.setDate(dt.getDate() - 1); return isoOf(dt); })();
+        const chip = (on) => `px-3 py-1.5 rounded-full text-[12px] border transition ${on ? 'border-notion-blue bg-notion-blue/10 text-primary font-semibold' : 'border-subtle bg-subtle/60 text-secondary hover:text-primary'}`;
+        const label = (txt) => <div className="text-[11px] font-semibold uppercase tracking-wide text-tertiary">{txt}</div>;
+        const amountOk = parseAmount(bk.amount) !== null;
+
+        // Calendar of the month chosen in the header.
+        const mi = ALL_MONTHS.indexOf(selectedMonth);
+        const days = getDaysInMonth(selectedYear, selectedMonth);
+        const lead = (new Date(selectedYear, mi, 1).getDay() + 6) % 7;
+        const prefix = `${selectedYear}-${pad2(mi + 1)}-`;
+        const monthEntries = (data.tx || []).filter(x => x.date.startsWith(prefix));
+        const byDay = {};
+        monthEntries.forEach(x => {
+          const dd = +x.date.slice(8, 10);
+          const o = byDay[dd] || (byDay[dd] = { out: 0, inc: 0, n: 0 });
+          if (x.type === 'expenses') o.out += x.amount; else o.inc += x.amount;
+          o.n += 1;
+        });
+        const maxOut = Math.max(1, ...Object.values(byDay).map(o => o.out));
+        const totalOut = Object.values(byDay).reduce((sum, o) => sum + o.out, 0);
+        const weekdays = Array.from({ length: 7 }, (_, i) => new Intl.DateTimeFormat(loc, { weekday: 'narrow' }).format(new Date(2024, 0, 1 + i)));
+        const todayIso = todayISO();
+        const sel = calDay && calDay.startsWith(prefix) ? calDay : (todayIso.startsWith(prefix) ? todayIso : null);
+        const selEntries = sel ? monthEntries.filter(x => x.date === sel) : [];
+        const accName = (id) => data.accounts.find(a => a.id === id)?.name || '';
+        const short = (v) => v >= 1000 ? `${(v / 1000).toFixed(1).replace('.', lang === 'en' ? '.' : ',')}k` : String(Math.round(v));
+
+        return (
+          <div className="grid gap-4 lg:gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-start">
+            <section className="rounded-2xl border border-subtle bg-surface p-4 space-y-4">
+              <Segmented full options={[['expenses', t('bkOut')], ['incomes', t('bkIn')]]} value={type} onChange={(v) => setB({ type: v, cat: null, q: '', all: false })} />
+              <div className={`flex items-baseline gap-2 rounded-2xl px-4 py-3 ${bk.err === 'amount' ? 'bg-red-500/10' : 'bg-subtle/60'}`}>
+                <input data-free value={bk.amount} onChange={(e) => setB({ amount: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && saveBooking()}
+                  inputMode="decimal" placeholder="0,00" aria-label={t('bkAmount')}
+                  className={`flex-1 min-w-0 bg-transparent outline-none text-[38px] leading-none font-semibold font-mono ${type === 'incomes' ? 'text-notion-green' : 'text-primary'}`} />
+                <span className="text-[22px] text-tertiary font-mono">€</span>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  {label(type === 'incomes' ? t('bkWhereIn') : t('bkWhere'))}
+                  <input data-free value={bk.q} onChange={(e) => setB({ q: e.target.value })} placeholder={t('bkSearch')}
+                    className="w-36 bg-subtle border border-subtle rounded-full px-3 py-1 text-[12px] text-primary outline-none focus:border-strong" />
+                </div>
+                <div className={`grid grid-cols-3 sm:grid-cols-4 gap-1.5 ${bk.err === 'cat' ? 'rounded-xl ring-2 ring-red-500/40 p-1' : ''}`}>
+                  {shown.map(c => {
+                    const on = bk.cat === c;
+                    return (
+                      <button key={c} type="button" onClick={() => setB({ cat: c })}
+                        className={`flex flex-col items-center gap-1 rounded-xl px-1.5 py-2 border transition active:scale-95 ${on ? 'border-notion-blue bg-notion-blue/10' : 'border-transparent bg-subtle/50 hover:bg-subtle'}`}>
+                        <ItemIcon spec={iconFor(type, c)} tint={tintFor(type, c)} size={30} />
+                        <span className={`w-full text-center text-[11px] leading-tight truncate ${on ? 'text-primary font-semibold' : 'text-secondary'}`}>{c}</span>
+                      </button>
+                    );
+                  })}
+                  <button type="button" onClick={() => setB({ cat: '__new' })}
+                    className={`flex flex-col items-center gap-1 rounded-xl px-1.5 py-2 border border-dashed transition ${bk.cat === '__new' ? 'border-notion-blue bg-notion-blue/10' : 'border-strong'}`}>
+                    <span className="w-[30px] h-[30px] rounded-[9px] bg-subtle flex items-center justify-center text-secondary"><i className="fa-solid fa-plus text-xs"></i></span>
+                    <span className="text-[11px] text-secondary">{t('bkNew')}</span>
+                  </button>
+                </div>
+                {!q && filtered.length > 11 && (
+                  <button onClick={() => setB({ all: !bk.all })} className="text-[12px] text-notion-blue hover:underline">{bk.all ? t('bkLess') : t('bkAll', { n: filtered.length })}</button>
+                )}
+                {bk.cat === '__new' && (
+                  <div className="pop-in grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input data-free autoFocus value={bk.newName} onChange={(e) => setB({ newName: e.target.value })} placeholder={t('bkNewName')}
+                      className="bg-subtle border border-subtle rounded-lg px-2.5 py-2 text-[13px] text-primary outline-none focus:border-strong" />
+                    {type === 'expenses' && (
+                      <select data-free value={bk.newGroup || (data.groups.find(g => g.kind === 'variable') || data.groups[0]).id} onChange={(e) => setB({ newGroup: e.target.value })}
+                        className="bg-subtle border border-subtle rounded-lg px-2 py-2 text-[13px] text-primary">
+                        {data.groups.map(g => <option key={g.id} value={g.id}>{groupName(g)}</option>)}
+                      </select>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                {label(t('bkWhen'))}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button type="button" onClick={() => setB({ date: todayIso })} className={chip(bk.date === todayIso)}>{t('bkToday')}</button>
+                  <button type="button" onClick={() => setB({ date: yesterday })} className={chip(bk.date === yesterday)}>{t('bkYesterday')}</button>
+                  <input data-free type="date" value={bk.date} onChange={(e) => setB({ date: e.target.value })}
+                    className={`bg-subtle border rounded-full px-3 py-1 text-[12px] text-primary ${bk.date !== todayIso && bk.date !== yesterday ? 'border-notion-blue' : 'border-subtle'}`} />
+                </div>
+              </div>
+
+              {data.accounts.length > 0 && (
+                <div className="space-y-2">
+                  {label(t('bkAccount'))}
+                  <div className="flex flex-wrap gap-1.5">
+                    <button type="button" onClick={() => setB({ account: '' })} className={chip(!bk.account)}>{t('bkNoAccount')}</button>
+                    {data.accounts.map(a => (
+                      <button key={a.id} type="button" onClick={() => setB({ account: a.id })} className={chip(bk.account === a.id)}>
+                        <i className={`fa-solid ${a.kind === 'cash' ? 'fa-money-bill-wave' : 'fa-building-columns'} text-[10px] me-1.5 opacity-60`}></i>{a.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                {label(t('bkWho'))}
+                <div className="flex flex-wrap gap-1.5">
+                  {WHO.map(w => <button key={w} type="button" onClick={() => setB({ who: w })} className={chip(bk.who === w)}>{whoLabel(w)}</button>)}
+                </div>
+              </div>
+
+              <input data-free value={bk.note} onChange={(e) => setB({ note: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && saveBooking()} placeholder={t('bkNote')}
+                className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2.5 text-[13px] text-primary outline-none focus:border-strong" />
+
+              {bk.err && <p className="text-[12px] text-notion-red">{t(bk.err === 'amount' ? 'bkNeedAmount' : bk.err === 'cat' ? 'bkNeedCat' : 'bkNeedDate')}</p>}
+              <button key={bk.saved} onClick={saveBooking}
+                style={{ height: 48 }} className={`w-full rounded-2xl text-[15px] font-semibold flex items-center justify-center gap-2 transition ${bk.saved ? 'saved-pulse' : ''} ${amountOk && bk.cat ? 'bg-notion-blue text-white' : 'bg-subtle text-tertiary'}`}>
+                <i className="fa-solid fa-check"></i>{t('bkSave')}{amountOk ? ` · ${fmtCents(parseAmount(bk.amount))}` : ''}
+              </button>
+            </section>
+
+            <div className="space-y-4 min-w-0">
+              <section className="rounded-2xl border border-subtle bg-surface p-4 space-y-3">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-[14px] font-semibold text-primary">{t('calTitle')} · {formatMonth(selectedMonth, lang)} {selectedYear}</span>
+                  <span className="text-[12px] text-secondary font-mono">{monthEntries.length ? t('calTotal', { amount: fmt(totalOut), n: monthEntries.length }) : ''}</span>
+                </div>
+                <div className="grid gap-1 text-center" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
+                  {weekdays.map((w, i) => <div key={i} className="text-[10px] font-semibold text-tertiary py-0.5">{w}</div>)}
+                  {Array.from({ length: lead }, (_, i) => <div key={'b' + i}></div>)}
+                  {Array.from({ length: days }, (_, i) => {
+                    const dd = i + 1, iso = prefix + pad2(dd), o = byDay[dd];
+                    const heat = o && o.out > 0 ? 0.12 + 0.55 * (o.out / maxOut) : 0;
+                    const isToday = iso === todayIso, isSel = iso === sel;
+                    const future = iso > todayIso;
+                    return (
+                      <button key={iso} type="button" onClick={() => setCalDay(iso)}
+                        className={`cell-in relative rounded-xl flex flex-col items-center justify-center gap-0.5 transition active:scale-95 ${isSel ? 'ring-2 ring-notion-blue' : isToday ? 'ring-1 ring-strong' : ''} ${future ? 'opacity-50' : ''}`}
+                        style={{ aspectRatio: '1 / 1', animationDelay: `${i * 12}ms`, background: heat ? `rgba(59,130,246,${heat})` : 'rgb(var(--bg-subtle) / 0.5)' }}>
+                        <span className={`text-[12px] leading-none ${isToday ? 'font-bold text-primary' : 'text-secondary'}`}>{dd}</span>
+                        {o && o.out > 0 && <span className="text-[9.5px] leading-none font-mono font-semibold text-primary">{short(o.out)}</span>}
+                        {o && o.inc > 0 && <span className="absolute top-1 end-1 w-1.5 h-1.5 rounded-full bg-notion-green"></span>}
+                      </button>
+                    );
+                  })}
+                </div>
+                {!monthEntries.length && <p className="text-[12px] text-tertiary">{t('calEmpty')}</p>}
+                <div className="text-[11px]"><Hint label={t('howCalc')} text={t('calNote')} /></div>
+              </section>
+
+              {sel && (
+                <section key={sel} className="pop-in rounded-2xl border border-subtle bg-surface p-4 space-y-2.5">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-[14px] font-semibold text-primary">{new Date(sel + 'T12:00').toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+                    {selEntries.length > 0 && <span className="text-[13px] font-mono font-semibold text-primary">{fmtCents(selEntries.filter(x => x.type === 'expenses').reduce((sum, x) => sum + x.amount, 0))}</span>}
+                  </div>
+                  {selEntries.length === 0 && <p className="text-[12px] text-tertiary">{t('calDayEmpty')}</p>}
+                  {selEntries.map(x => (
+                    <div key={x.id} className="flex items-center gap-2.5 rounded-xl bg-subtle/50 ps-2 pe-1.5 py-1.5">
+                      <ItemIcon spec={iconFor(x.type, x.cat)} tint={tintFor(x.type, x.cat)} size={30} />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[13px] text-primary truncate">{x.cat}{x.note ? <span className="text-tertiary"> · {x.note}</span> : null}</div>
+                        <div className="text-[11px] text-tertiary truncate">{[x.who ? whoLabel(x.who) : '', accName(x.account)].filter(Boolean).join(' · ')}</div>
+                      </div>
+                      <span className={`font-mono text-[13px] font-semibold ${x.type === 'incomes' ? 'text-notion-green' : 'text-primary'}`}>{x.type === 'incomes' ? '+' : '−'} {fmtCents(x.amount)}</span>
+                      <button onClick={() => deleteTx(x.id)} aria-label={t('deleteCategoryBtn')} className="w-7 h-7 rounded-full text-tertiary hover:text-notion-red"><i className="fa-solid fa-xmark text-xs"></i></button>
+                    </div>
+                  ))}
+                  {sel !== bk.date && (
+                    <button onClick={() => { setB({ date: sel }); try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {} }}
+                      className="text-[12px] text-notion-blue hover:underline">{t('calAddHere')}</button>
+                  )}
+                </section>
+              )}
             </div>
           </div>
         );
@@ -7176,7 +7505,7 @@
               ))}
             </nav>
             <div className="px-3 mt-5">
-              <button onClick={openReceiptSheet} className="w-full h-9 rounded-lg bg-primary text-surface text-[13px] font-semibold flex items-center justify-center gap-2">
+              <button onClick={() => setView('book')} className="w-full h-9 rounded-lg bg-primary text-surface text-[13px] font-semibold flex items-center justify-center gap-2">
                 <i className="fa-solid fa-plus text-xs"></i>{t('addReceiptShort')}
               </button>
             </div>
@@ -7216,6 +7545,7 @@
               style={view === 'month' ? { touchAction: 'pan-y' } : undefined}>
               {view === 'overview' && MB && renderOverview()}
               {view === 'month' && MB && renderMonth()}
+              {view === 'book' && renderBook()}
               {view === 'activity' && renderActivity()}
               {view === 'plan' && renderPlan()}
               {view === 'health' && renderHealthView()}
@@ -7225,7 +7555,7 @@
 
           {/* ADD BUTTON (phone) */}
           {(view === 'overview' || view === 'month' || view === 'activity') && (
-            <button onClick={() => view === 'month' && monthPane === 'incomes' ? handleOpenQuickAdd('incomes') : openReceiptSheet()}
+            <button onClick={() => view === 'month' && monthPane === 'incomes' ? handleOpenQuickAdd('incomes') : setView('book')}
               aria-label={view === 'month' && monthPane === 'incomes' ? t('incomesHeader') : t('addReceipt')}
               className="lg:hidden fixed z-40 end-4 w-14 h-14 rounded-full bg-primary text-surface shadow-xl flex items-center justify-center active:scale-95 transition-transform"
               style={{ bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
@@ -7236,7 +7566,15 @@
           {/* TAB BAR (phone) */}
           <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-surface/90 backdrop-blur-xl border-t border-subtle" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
             <div className="grid grid-cols-5 h-16">
-              {NAV.filter(([id]) => id !== 'health').map(([id, icon, label]) => (
+              {NAV.filter(([id]) => id !== 'health' && id !== 'activity').map(([id, icon, label]) => id === 'book' ? (
+                <button key={id} onClick={() => setView(id)} aria-current={view === id ? 'page' : undefined}
+                  className="relative flex flex-col items-center justify-center gap-1 text-[10px] font-medium text-primary">
+                  <span className={`w-12 h-12 -mt-5 rounded-full flex items-center justify-center shadow-lg transition-transform active:scale-95 ${view === id ? 'bg-notion-blue text-white' : 'bg-primary text-surface'}`}>
+                    <i className="fa-solid fa-plus text-[18px]"></i>
+                  </span>
+                  <span>{label}</span>
+                </button>
+              ) : (
                 <button key={id} onClick={() => setView(id)} aria-current={view === id ? 'page' : undefined}
                   className={`relative flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition ${view === id ? 'text-primary' : 'text-tertiary hover:text-secondary'}`}>
                   <span className={`absolute top-0 h-[3px] w-8 rounded-b-full bg-notion-blue transition-transform duration-200 ${view === id ? 'scale-x-100' : 'scale-x-0'}`}></span>
