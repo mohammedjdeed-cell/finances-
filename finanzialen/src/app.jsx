@@ -9520,6 +9520,9 @@
                   {entries.length === 0 && <p className="text-[13px] text-secondary py-3 text-center">{t('itemNoEntries')}</p>}
                   {entries.map(x => (
                     <button key={x.id} onClick={() => openEntry(x.id)} className="w-full text-start flex items-center gap-3 rounded-2xl bg-subtle/60 hover:bg-subtle px-3 py-2.5 active:scale-[.99] transition">
+                      {(() => { const sh = x.note ? autoIcon(x.note.split(' · ')[0]) : null; return sh && sh.kind === 'brand'
+                        ? <span className="relative shrink-0"><ItemIcon spec={sh} size={34} /></span>
+                        : <span className="relative shrink-0"><ItemIcon spec={iconFor(type, cat)} tint={tint} size={34} /></span>; })()}
                       <span className="w-11 shrink-0 text-center rounded-xl bg-surface py-1">
                         <span className="block text-[16px] font-bold leading-none text-primary">{x.undated ? '–' : +x.date.slice(8, 10)}</span>
                         <span className="block text-[9.5px] text-secondary">{x.undated ? '' : new Date(x.date + 'T12:00').toLocaleDateString(loc, { weekday: 'short' })}</span>
