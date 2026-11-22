@@ -812,6 +812,15 @@
         itemEntries: "Einträge in diesem Monat ({{n}})",
         itemNoEntries: "Noch nichts eingetragen.",
         edPlanCard: "Plan & Wiederholung",
+        shopWhat: "Was hast du bei {{shop}} gekauft?",
+        shopKeep: "Oder nichts antippen – dann bleibt es bei „{{shop}}“.",
+        shopBoughtAt: "Bei {{shop}} gekauft → {{item}}",
+        splitBtn: "Auf mehrere Posten aufteilen",
+        splitTitle: "Aufteilen",
+        splitCancel: "Nicht aufteilen",
+        splitRest: "Rest",
+        splitAdd: "Weiterer Posten",
+        splitTooMuch: "Die Teile sind zusammen so hoch wie der Betrag oder höher – für den ersten Posten bleibt nichts.",
         logoSearch: "Logo suchen – z. B. DB, Rewe, Vodafone",
         logoNone: "Kein Logo gefunden – nimm unten ein Symbol.",
         mergedToast: "„{{from}}“ ist jetzt Teil von „{{to}}“",
@@ -1632,6 +1641,15 @@
         itemEntries: "Entries this month ({{n}})",
         itemNoEntries: "Nothing entered yet.",
         edPlanCard: "Plan & repeat",
+        shopWhat: "What did you buy at {{shop}}?",
+        shopKeep: "Or tap nothing – then it stays as “{{shop}}”.",
+        shopBoughtAt: "Bought at {{shop}} → {{item}}",
+        splitBtn: "Split across items",
+        splitTitle: "Split",
+        splitCancel: "Don't split",
+        splitRest: "rest",
+        splitAdd: "Another item",
+        splitTooMuch: "The parts add up to the whole amount or more – nothing is left for the first item.",
         logoSearch: "Search a logo – e.g. DB, Rewe, Vodafone",
         logoNone: "No logo found – pick a symbol below.",
         mergedToast: "“{{from}}” is now part of “{{to}}”",
@@ -2452,6 +2470,15 @@
         itemEntries: "إدخالات هذا الشهر ({{n}})",
         itemNoEntries: "لا شيء مسجل بعد.",
         edPlanCard: "الخطة والتكرار",
+        shopWhat: "ماذا اشتريت من {{shop}}؟",
+        shopKeep: "أو لا تختر شيئًا – فيبقى تحت „{{shop}}“.",
+        shopBoughtAt: "اشتُري من {{shop}} ← {{item}}",
+        splitBtn: "تقسيم على عدة بنود",
+        splitTitle: "تقسيم",
+        splitCancel: "بدون تقسيم",
+        splitRest: "الباقي",
+        splitAdd: "بند آخر",
+        splitTooMuch: "مجموع الأجزاء يساوي المبلغ أو أكثر – لا يبقى شيء للبند الأول.",
         logoSearch: "ابحث عن شعار – مثل DB أو Rewe أو Vodafone",
         logoNone: "لا يوجد شعار – اختر رمزًا من الأسفل.",
         mergedToast: "„{{from}}“ أصبح جزءًا من „{{to}}“",
@@ -2989,6 +3016,9 @@
     const CLOTHES_RE = /kleid|cloth|klamott|schuh|shoe|sneaker|jacke|jacket|mantel|hose\b|jeans|ملابس|ملبوسات|أحذية|احذية|حذاء/i;
     const isClothingItem = (name) => CLOTHES_RE.test(name) || MERCHANTS.some(e => e[1].startsWith('clothing') && e[2]
       && [e[0], ...(e[3] || [])].some(w => w.length >= 3 && new RegExp(`(^|[^\\p{L}\\p{N}])${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\p{L}\\p{N}])`, 'iu').test(name)));
+
+    // Shops that sell a bit of everything: the Add form asks what was bought there.
+    const MULTI_SHOP_RE = /amazon|\bamzn\b|ebay|temu|shein|aliexpress|kaufland|\blidl\b|\baldi\b|\botto\b|\baction\b|\btedi\b|woolworth|galeria|kaufhof|tk\s*maxx|kleinanzeigen|marktkauf|globus|thomas\s*philipps|primark|zalando|about\s*you|\bkik\b/i;
 
     const normalizeState = (raw) => {
       const isLegacy = !!raw && !raw.meta;
@@ -4876,7 +4906,7 @@
       // ---- Book: one quick form for every purchase or income, and a calendar of the days ----
       const [bk, setBk] = useState(() => ({
         type: 'expenses', amount: '', cat: null, date: todayISO(), account: safeStorage.get('budget_last_account', ''),
-        who: lastWho, note: '', q: '', newName: '', newGroup: '', all: false, saved: 0, err: ''
+        who: lastWho, note: '', q: '', newName: '', newGroup: '', all: false, saved: 0, err: '', shop: '', parts: []
       }));
       const setB = (patch) => setBk(prev => ({ ...prev, ...patch, err: '' }));
       const [calDay, setCalDay] = useState(null);
@@ -4994,7 +5024,17 @@
         if (cat === '__new') cat = data.categories[type].find(c => c.toLowerCase() === bk.newName.trim().toLowerCase()) || bk.newName.trim().slice(0, 60);
         const isNew = !data.categories[type].includes(cat);
         const gid = bk.newGroup || (data.groups.find(g => g.kind === 'variable') || data.groups[0]).id;
-        const tx = { id: newTxId(), date: bk.date, type, cat, amount, who: WHO.includes(bk.who) ? bk.who : null, note: bk.note.trim(), source: 'manual', account: bk.account || null };
+        // Split: the other parts go to their items, the rest stays on the main item.
+        const parts = type === 'expenses' ? (bk.parts || []).map(p => ({ cat: p.cat, amount: parseAmount(p.amount) })).filter(p => p.cat && p.amount > 0) : [];
+        const partSum = Math.round(parts.reduce((a2, p) => a2 + p.amount, 0) * 100) / 100;
+        if (parts.length && partSum >= amount - 0.004) { setBk(prev => ({ ...prev, err: 'split' })); return; }
+        const mainAmount = Math.round((amount - partSum) * 100) / 100;
+        // Bought at a shop that sells everything: the shop goes into the note.
+        const shop = (bk.shop || '').trim();
+        const note = [shop && !bk.note.toLowerCase().includes(shop.toLowerCase()) ? shop : '', bk.note.trim()].filter(Boolean).join(' · ');
+        const base = { date: bk.date, type, who: WHO.includes(bk.who) ? bk.who : null, note, source: 'manual', account: bk.account || null };
+        const tx = { id: newTxId(), cat, amount: mainAmount, ...base };
+        const partTx = parts.map((p, i) => ({ id: newTxId() + '_' + i, cat: p.cat, amount: p.amount, ...base }));
         mutateWithUndo(d => {
           if (isNew) {
             const dir = MERCHANTS.find(([nm]) => nm.toLowerCase() === cat.toLowerCase());
@@ -5009,12 +5049,13 @@
           }
           d.tx.push(tx);
           applyTx(d, tx, +1);
-        }, t('bkSaved', { amount: fmtCents(amount), name: cat, date: new Date(bk.date + 'T12:00').toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'ar' ? 'ar-SY-u-nu-latn' : 'de-DE', { day: 'numeric', month: 'short' }) }));
+          partTx.forEach(x => { if (d.categories[type].includes(x.cat)) { d.tx.push(x); applyTx(d, x, +1); } });
+        }, t('bkSaved', { amount: fmtCents(amount), name: parts.length ? [cat, ...parts.map(p => p.cat)].join(' + ') : cat, date: new Date(bk.date + 'T12:00').toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'ar' ? 'ar-SY-u-nu-latn' : 'de-DE', { day: 'numeric', month: 'short' }) }));
         haptic(12);
         setLastWho(bk.who);
         safeStorage.set('budget_last_account', bk.account || '');
         setCalDay(bk.date);
-        setBk(prev => ({ ...prev, amount: '', note: '', cat: isNew ? cat : prev.cat, newName: '', q: '', saved: prev.saved + 1, err: '' }));
+        setBk(prev => ({ ...prev, amount: '', note: '', cat: shop ? null : isNew ? cat : prev.cat, newName: '', q: '', saved: prev.saved + 1, err: '', shop: '', parts: [] }));
       };
 
       const [editingTx, setEditingTx] = useState(null);
@@ -8148,7 +8189,7 @@
                   {shown.map(c => {
                     const on = bk.cat === c;
                     return (
-                      <button key={c} type="button" onClick={() => setB({ cat: c })}
+                      <button key={c} type="button" onClick={() => setB({ cat: c, shop: '' })}
                         className={`flex flex-col items-center gap-1 rounded-xl px-1.5 py-2 border transition active:scale-95 ${on ? 'border-notion-blue bg-notion-blue/10' : 'border-transparent bg-subtle/50 hover:bg-subtle'}`}>
                         <ItemIcon spec={iconFor(type, c)} tint={tintFor(type, c)} size={30} />
                         <span className={`w-full text-center text-[11px] leading-tight truncate ${on ? 'text-primary font-semibold' : 'text-secondary'}`}>{c}</span>
@@ -8240,6 +8281,39 @@
                     )}
                   </div>
                 )}
+                {type === 'expenses' && (() => {
+                  // Shops that sell everything: ask what was bought, and keep the shop in the note.
+                  const shopName = bk.shop || (bk.cat === '__new' ? (MULTI_SHOP_RE.test(bk.newName) ? bk.newName.trim() : '') : bk.cat && MULTI_SHOP_RE.test(bk.cat) ? bk.cat : '');
+                  if (!shopName) return null;
+                  if (bk.shop) {
+                    return (
+                      <div className="pop-in flex items-center gap-2 rounded-xl bg-notion-blue/10 border border-notion-blue/30 px-3 py-2 text-[12.5px]">
+                        <ItemIcon spec={autoIcon(bk.shop) || { kind: 'symbol', icon: 'fa-store' }} size={22} />
+                        <span className="flex-1 min-w-0 text-primary truncate">{t('shopBoughtAt', { shop: bk.shop, item: bk.cat })}</span>
+                        <button type="button" onClick={() => setB({ shop: '' })} aria-label={t('closeBtn')} className="w-6 h-6 rounded-full text-tertiary hover:text-primary"><i className="fa-solid fa-xmark text-[11px]"></i></button>
+                      </div>
+                    );
+                  }
+                  const ideas = data.categories.expenses
+                    .filter(c => !MULTI_SHOP_RE.test(c) && autoIcon(c)?.kind !== 'brand' && data.groups.find(g => g.id === getMeta('expenses', c).bracket)?.kind !== 'fixed')
+                    .sort((a2, b2) => (bkUsage['expenses|' + b2] || 0) - (bkUsage['expenses|' + a2] || 0)).slice(0, 8);
+                  if (!ideas.length) return null;
+                  return (
+                    <div className="pop-in rounded-xl border border-notion-blue/30 bg-notion-blue/5 p-3 space-y-2">
+                      <div className="text-[13px] font-semibold text-primary"><i className="fa-solid fa-bag-shopping text-notion-blue me-1.5"></i>{t('shopWhat', { shop: shopName })}</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {ideas.map(c => (
+                          <button key={c} type="button" onClick={() => setB({ cat: c, shop: shopName, newName: '' })}
+                            className="flex items-center gap-1.5 ps-1 pe-2.5 py-1 rounded-full border border-subtle bg-surface hover:border-notion-blue active:scale-95 transition">
+                            <ItemIcon spec={iconFor('expenses', c)} tint={tintFor('expenses', c)} size={22} />
+                            <span className="text-[12px] text-primary">{c}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="text-[11px] text-tertiary">{t('shopKeep', { shop: shopName })}</div>
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="space-y-2">
@@ -8289,6 +8363,47 @@
                 </div>
               )}
 
+              {type === 'expenses' && bk.cat && (() => {
+                const parts = bk.parts || [];
+                const setPart = (i, patch) => setB({ parts: parts.map((p, j) => j === i ? { ...p, ...patch } : p) });
+                const mainName = bk.cat === '__new' ? (bk.newName || t('bkNew')) : bk.cat;
+                const total = parseAmount(bk.amount) || 0;
+                const rest = Math.round((total - parts.reduce((a2, p) => a2 + (parseAmount(p.amount) || 0), 0)) * 100) / 100;
+                if (!parts.length) return (
+                  <button type="button" onClick={() => setB({ parts: [{ cat: '', amount: '' }] })} className="text-[12.5px] text-notion-blue font-medium hover:underline">
+                    <i className="fa-solid fa-code-branch me-1.5 text-[11px]"></i>{t('splitBtn')}
+                  </button>
+                );
+                return (
+                  <div className={`pop-in rounded-xl bg-subtle/60 p-3 space-y-2 ${bk.err === 'split' ? 'ring-2 ring-red-500/40' : ''}`}>
+                    <div className="flex items-center justify-between text-[12px]">
+                      <span className="font-semibold text-primary"><i className="fa-solid fa-code-branch me-1.5 text-[11px] text-secondary"></i>{t('splitTitle')}</span>
+                      <button type="button" onClick={() => setB({ parts: [] })} className="text-tertiary hover:text-primary">{t('splitCancel')}</button>
+                    </div>
+                    <div className="flex items-center gap-2 text-[12.5px]">
+                      <span className="flex-1 min-w-0 truncate text-primary">{mainName}</span>
+                      <span className={`font-mono ${rest > 0 ? 'text-primary' : 'text-notion-red'}`}>{fmtCents(Math.max(0, rest))}</span>
+                      <span className="text-[10px] text-tertiary w-12">{t('splitRest')}</span>
+                    </div>
+                    {parts.map((p, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <select data-free value={p.cat} onChange={(e) => setPart(i, { cat: e.target.value })} style={{ flex: '1 1 0', minWidth: 0, width: 'auto' }}
+                          className="bg-surface border border-subtle rounded-lg px-2 py-1.5 text-[12.5px] text-primary">
+                          <option value="">{t('mergePick')}</option>
+                          {data.categories.expenses.filter(c => c !== bk.cat).map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                        <input data-free value={p.amount} onChange={(e) => setPart(i, { amount: e.target.value })} inputMode="decimal" placeholder="0,00" style={{ width: 88, flex: '0 0 88px' }}
+                          className="bg-surface border border-subtle rounded-lg px-2 py-1.5 text-[12.5px] text-end font-mono text-primary outline-none focus:border-notion-blue" />
+                        <button type="button" onClick={() => setB({ parts: parts.filter((_, j) => j !== i) })} aria-label={t('closeBtn')} className="w-6 h-6 shrink-0 rounded-full text-tertiary hover:text-notion-red"><i className="fa-solid fa-xmark text-[11px]"></i></button>
+                      </div>
+                    ))}
+                    {parts.length < 4 && (
+                      <button type="button" onClick={() => setB({ parts: [...parts, { cat: '', amount: '' }] })} className="text-[12px] text-notion-blue hover:underline">+ {t('splitAdd')}</button>
+                    )}
+                  </div>
+                );
+              })()}
+
               <div className={`space-y-2 ${type === 'transfer' ? 'hidden' : ''}`}>
                 {label(t('bkWho'))}
                 <div className="flex flex-wrap gap-1.5">
@@ -8332,7 +8447,7 @@
                   </div>
                 );
               })()}
-              {bk.err && <p className="text-[12px] text-notion-red">{t(bk.err === 'amount' ? 'bkNeedAmount' : bk.err === 'cat' ? 'bkNeedCat' : bk.err === 'accounts' ? 'trNeedAccounts' : 'bkNeedDate')}</p>}
+              {bk.err && <p className="text-[12px] text-notion-red">{t(bk.err === 'amount' ? 'bkNeedAmount' : bk.err === 'split' ? 'splitTooMuch' : bk.err === 'cat' ? 'bkNeedCat' : bk.err === 'accounts' ? 'trNeedAccounts' : 'bkNeedDate')}</p>}
               <button key={bk.saved} onClick={type === 'transfer' ? saveTransfer : saveBooking}
                 style={{ height: 48 }} className={`w-full rounded-2xl text-[15px] font-semibold flex items-center justify-center gap-2 transition ${bk.saved ? 'saved-pulse' : ''} ${amountOk && (type === 'transfer' ? bk.from && bk.to && bk.from !== bk.to : bk.cat) ? 'bg-notion-blue text-white' : 'bg-subtle text-tertiary'}`}>
                 <i className="fa-solid fa-check"></i>{t('bkSave')}{amountOk ? ` · ${fmtCents(parseAmount(bk.amount))}` : ''}
