@@ -272,7 +272,7 @@
     const GROUP_KINDS = ['fixed', 'variable', 'oneoff'];
     const GROUP_HEX = {
       blue: '#2383e2', teal: '#0f7b6c', purple: '#8a5cb5', brown: '#9f6b53',
-      amber: '#cb912f', orange: '#d9730d', pink: '#c14c8a', gray: '#787774'
+      amber: '#cb912f', orange: '#d9730d', pink: '#c14c8a', indigo: '#5b5bd6', gray: '#787774'
     };
     const GROUP_COLORS = Object.keys(GROUP_HEX);
     const DEFAULT_GROUPS = [
@@ -282,6 +282,7 @@
       { id: 'insurance', kind: 'fixed', color: 'brown', name: null },
       { id: 'groceries', kind: 'variable', color: 'amber', name: null },
       { id: 'household', kind: 'variable', color: 'orange', name: null },
+      { id: 'clothing', kind: 'variable', color: 'indigo', name: null },
       { id: 'leisure', kind: 'variable', color: 'pink', name: null },
       { id: 'oneoff', kind: 'oneoff', color: 'gray', name: null }
     ];
@@ -305,7 +306,8 @@
     // One-tap suggestions shown inside the built-in variable groups.
     const STORE_SUGGESTIONS = {
       groceries: ['Netto', 'Edeka', 'Lidl', 'Aldi', 'Rewe', 'Kaufland', 'Türkischer Markt', 'DM', 'Rossmann', 'Apotheke'],
-      household: ['IKEA', 'Action', 'Amazon', 'TEDi', 'Kleidung'],
+      household: ['IKEA', 'Action', 'Amazon', 'TEDi'],
+      clothing: ['Primark', 'H&M', 'C&A', 'Zara', 'Deichmann', 'KiK', 'Takko'],
       leisure: ['Restaurant', 'Café', 'Kino', 'Geschenke']
     };
     const REPEAT_OPTIONS = [1, 2, 3, 6, 12];
@@ -467,6 +469,7 @@
           insurance: "Versicherungen",
           groceries: "Lebensmittel & Drogerie",
           household: "Haushalt",
+          clothing: "Kleidung & Schuhe",
           leisure: "Freizeit & Essen gehen",
           oneoff: "Einmalig"
         },
@@ -1286,6 +1289,7 @@
           insurance: "Insurance",
           groceries: "Groceries & drugstore",
           household: "Household",
+          clothing: "Clothes & shoes",
           leisure: "Leisure & eating out",
           oneoff: "One-time"
         },
@@ -2105,6 +2109,7 @@
           insurance: "التأمين",
           groceries: "البقالة والصيدلية",
           household: "المنزل",
+          clothing: "ملابس وأحذية",
           leisure: "الترفيه والأكل خارجًا",
           oneoff: "مرة واحدة"
         },
@@ -2980,6 +2985,11 @@
       Version 1 kept metadata in flat name-keyed maps shared by incomes and expenses,
       so a name used on both sides ("Sonstiges") overwrote itself. It is migrated here.
     */
+    // Clothes and shoes: words in item or group names (German, English, Arabic).
+    const CLOTHES_RE = /kleid|cloth|klamott|schuh|shoe|sneaker|jacke|jacket|mantel|hose\b|jeans|ملابس|ملبوسات|أحذية|احذية|حذاء/i;
+    const isClothingItem = (name) => CLOTHES_RE.test(name) || MERCHANTS.some(e => e[1].startsWith('clothing') && e[2]
+      && [e[0], ...(e[3] || [])].some(w => w.length >= 3 && new RegExp(`(^|[^\\p{L}\\p{N}])${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\p{L}\\p{N}])`, 'iu').test(name)));
+
     const normalizeState = (raw) => {
       const isLegacy = !!raw && !raw.meta;
       const needsGroups = !Array.isArray(raw?.groups) || raw.groups.length === 0;
@@ -3212,6 +3222,26 @@
       }
       state.engine = 5;
 
+      // Clothes get their own group (once): add it unless one exists, and move clothing items into it.
+      // Their entries follow them, so all past months are re-sorted too.
+      if (!raw?.clothesV1 && !needsGroups) {
+        let cg = state.groups.find(g => g.id === 'clothing') || state.groups.find(g => g.kind !== 'fixed' && CLOTHES_RE.test(g.name || ''));
+        if (!cg) {
+          cg = { id: 'clothing', kind: 'variable', color: 'indigo', name: null };
+          const at = state.groups.findIndex(g => g.id === 'household');
+          state.groups.splice(at >= 0 ? at + 1 : state.groups.length, 0, cg);
+        }
+        state.categories.expenses.forEach(cat => {
+          const meta = state.meta.expenses[cat];
+          const g = state.groups.find(x => x.id === meta?.bracket);
+          if (!meta || meta.bracket === cg.id || (g && g.kind === 'fixed') || !isClothingItem(cat)) return;
+          state.meta.expenses[cat] = cg.kind === 'variable'
+            ? { ...metaForGroup(state.groups, cg.id, meta.payDay ?? null, false), once: false, oneTime: false }
+            : metaForGroup(state.groups, cg.id, meta.payDay ?? null, !!meta.once);
+        });
+      }
+      state.clothesV1 = true;
+
       // Moving to groups: the plans of variable items add up to their group's target.
       if (needsGroups) {
         state.categories.expenses.forEach(cat => {
@@ -3341,7 +3371,7 @@
       [/schmuck|jewel/i, 'fa-gem'], [/müll|trash|abfall/i, 'fa-trash-can'], [/werkzeug|baumarkt|tools?\b|renovier/i, 'fa-hammer'], [/reise|urlaub|travel|flug/i, 'fa-plane'], [/abo\b|subscription/i, 'fa-repeat'], [/sonstig|other|misc/i, 'fa-ellipsis']
     ];
     const GROUP_ICONS = { kids: 'fa-children', housing: 'fa-house', bills: 'fa-file-invoice', subs: 'fa-repeat', insurance: 'fa-shield-halved', groceries: 'fa-basket-shopping',
-      household: 'fa-couch', leisure: 'fa-champagne-glasses', oneoff: 'fa-tag', transport: 'fa-train-subway', health: 'fa-heart-pulse',
+      household: 'fa-couch', clothing: 'fa-shirt', leisure: 'fa-champagne-glasses', oneoff: 'fa-tag', transport: 'fa-train-subway', health: 'fa-heart-pulse',
       education: 'fa-graduation-cap', fees: 'fa-building-columns', family: 'fa-people-roof' };
     // Brand first (a shop name is most specific), then a keyword symbol; null when nothing matches.
     // Shops, online stores and services common in Germany (NRW), offered when searching for an item.
@@ -3358,11 +3388,11 @@
       ["Picnic", 'groceries', "picnic.app"], ["Flink", 'groceries', "goflink.com"], ["Knuspr", 'groceries', "knuspr.de"], ["HelloFresh", 'groceries', "hellofresh.de"],
       ["Too Good To Go", 'groceries', "toogoodtogo.com"], ["dm", 'groceries', "dm.de"], ["Rossmann", 'groceries', "rossmann.de"], ["Müller", 'groceries', "mueller.de"],
       ["Apotheke", 'groceries'], ["DocMorris", 'groceries', "docmorris.de"], ["Shop Apotheke", 'groceries', "shop-apotheke.com"], ["Action", 'household', "action.com"],
-      ["TEDi", 'household', "tedi.com"], ["KiK", 'household', "kik.de"], ["Woolworth", 'household', "woolworth.de"], ["KODi", 'household', "kodi.de"],
+      ["TEDi", 'household', "tedi.com"], ["KiK", 'clothing|household', "kik.de"], ["Woolworth", 'household', "woolworth.de"], ["KODi", 'household', "kodi.de"],
       ["Tchibo", 'household', "tchibo.de"], ["Depot", 'household', "depot-online.com"], ["Søstrene Grene", 'household', "sostrenegrene.com"], ["Mäc-Geiz", 'household', "maec-geiz.de"],
-      ["Thomas Philipps", 'household', "thomas-philipps.de"], ["NKD", 'household', "nkd.com"], ["Takko", 'household', "takko.com"], ["Ernsting's family", 'household', "ernstings-family.de"],
-      ["Primark", 'household', "primark.com"], ["H&M", 'household', "hm.com"], ["C&A", 'household', "c-and-a.com"], ["Zara", 'household', "zara.com"],
-      ["New Yorker", 'household', "newyorker.de"], ["Deichmann", 'household', "deichmann.com"], ["Snipes", 'household', "snipes.com"], ["TK Maxx", 'household', "tkmaxx.de"],
+      ["Thomas Philipps", 'household', "thomas-philipps.de"], ["NKD", 'clothing|household', "nkd.com"], ["Takko", 'clothing|household', "takko.com"], ["Ernsting's family", 'clothing|household', "ernstings-family.de"],
+      ["Primark", 'clothing|household', "primark.com"], ["H&M", 'clothing|household', "hm.com"], ["C&A", 'clothing|household', "c-and-a.com"], ["Zara", 'clothing|household', "zara.com"],
+      ["New Yorker", 'clothing|household', "newyorker.de"], ["Deichmann", 'clothing|household', "deichmann.com"], ["Snipes", 'clothing|household', "snipes.com"], ["TK Maxx", 'clothing|household', "tkmaxx.de"],
       ["Decathlon", 'household', "decathlon.de"], ["Intersport", 'household', "intersport.de"], ["IKEA", 'household', "ikea.com"], ["Poco", 'household', "poco.de"],
       ["Roller", 'household', "roller.de"], ["XXXLutz", 'household', "xxxlutz.de"], ["Höffner", 'household', "hoeffner.de"], ["porta", 'household', "porta.de"],
       ["Möbel Boss", 'household', "moebel-boss.de"], ["JYSK", 'household', "jysk.de"], ["OBI", 'household', "obi.de"], ["Bauhaus", 'household', "bauhaus.info"],
@@ -3404,7 +3434,7 @@
       ["Kita-Beitrag", 'kids|family|education|oneoff', null, ["kita", "keta", "kindergarten", "kiga", "kindertagesstätte", "روضة"]], ["Kita Essensgeld", 'kids|family|education|oneoff', null, ["kita", "keta", "mittagessen"]], ["Tagesmutter", 'kids|family|education|oneoff', null, ["tagespflege", "kinderbetreuung"]],
       ["OGS", 'kids|family|education|oneoff', null, ["offene ganztagsschule", "ganztag"]], ["Schulessen", 'kids|family|education|oneoff', null, ["mensa", "mittagessen schule"]], ["Schulbedarf", 'kids|family|education|oneoff', null, ["schulsachen", "hefte", "ranzen"]],
       ["Klassenfahrt", 'kids|family|education|oneoff', null, ["ausflug schule"]], ["Babysitter", 'kids|family|education|oneoff', null, []], ["Windeln", 'kids|family|education|oneoff', null, ["pampers", "diapers"]],
-      ["Babynahrung", 'kids|family|education|oneoff', null, ["hipp", "milupa", "aptamil"]], ["Kinderkleidung", 'kids|family|education|oneoff', null, []], ["Spielzeug", 'kids|family|education|oneoff', null, ["toys", "spielwaren"]],
+      ["Babynahrung", 'kids|family|education|oneoff', null, ["hipp", "milupa", "aptamil"]], ["Kinderkleidung", 'clothing|kids|family|household', null, []], ["Spielzeug", 'kids|family|education|oneoff', null, ["toys", "spielwaren"]],
       ["Smyths Toys", 'kids|family|education|oneoff', "smythstoys.com", ["spielwaren"]], ["myToys", 'kids|family|education|oneoff', "mytoys.de", []], ["BabyOne", 'kids|family|education|oneoff', "babyone.de", ["baby"]],
       ["Kinderarzt", 'kids|family|education|oneoff', null, ["pädiater"]], ["Musikschule", 'kids|family|education|oneoff', null, []], ["Schwimmkurs", 'kids|family|education|oneoff', null, []],
       ["Bürgeramt", 'oneoff|bills', null, ["ausweis", "pass", "meldebescheinigung"]], ["Ausländerbehörde", 'oneoff|bills', null, ["aufenthaltstitel", "visum", "eat"]], ["Standesamt", 'oneoff|bills', null, ["urkunde", "heirat"]],
@@ -3458,7 +3488,8 @@
       return MERCHANTS.filter(e => (type === 'incomes') === (e[1] === 'income') && !known.has(e[0].toLowerCase()) && words(e).some(w => w.includes(n)))
         .sort((a, b) => starts(b) - starts(a) || a[0].localeCompare(b[0]));
     };
-    const resolveGroup = (groups, gid) => (gid || '').split('|').map(id => groups.find(g => g.id === id)).find(Boolean)
+    const resolveGroup = (groups, gid) => (gid || '').split('|').map(id => groups.find(g => g.id === id)
+      || (id === 'clothing' ? groups.find(g => g.kind !== 'fixed' && CLOTHES_RE.test(g.name || '')) : null)).find(Boolean)
       || groups.find(g => g.kind === 'variable') || groups[0];
     // Every shop in the directory that has a website: its name or an alias as a whole word gives its logo
     // (falls back to its initials when the logo can't load). Longest names first, so "Rewe City" beats "Rewe".
