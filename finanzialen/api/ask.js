@@ -100,6 +100,49 @@ async function suggestIcons(body, res) {
   return res.status(200).json({ icons });
 }
 
+const RECEIPT_PROMPT = `You read photos of shop receipts and bills from Germany for a household budgeting app.
+Return the shop or company name as printed (short form, e.g. "Netto", "dm", "Rewe"), the total amount paid in euros (the final "Summe"/"Gesamt"/"zu zahlen" line, after discounts and deposit returns), and the purchase date as YYYY-MM-DD if it is printed, otherwise "".
+For category, choose the best fitting name from the household's item list exactly as written: prefer an item named after this shop; otherwise the item for the kind of purchase (for example groceries, drugstore, clothes). Use "" if nothing fits.
+In note, give at most a few words about what was bought (in the language of the receipt), or "".
+If the image is not a receipt or the total cannot be read, set amount to 0.`;
+
+// Receipt photo: image in, shop / total / date / best item out.
+async function readReceipt(body, res) {
+  const media = ["image/jpeg", "image/png", "image/webp"].includes(body.mediaType) ? body.mediaType : null;
+  const image = typeof body.image === "string" && body.image.length < 6_000_000 && /^[A-Za-z0-9+/=]+$/.test(body.image) ? body.image : null;
+  const items = (Array.isArray(body.items) ? body.items : []).filter((n) => typeof n === "string" && n.length <= 80).slice(0, 200);
+  if (!media || !image) return fail(res, 400, "bad_request");
+  const schema = {
+    type: "object", additionalProperties: false, required: ["shop", "amount", "date", "category", "note"],
+    properties: { shop: { type: "string" }, amount: { type: "number" }, date: { type: "string" }, category: { type: "string" }, note: { type: "string" } },
+  };
+  const response = await anthropic.messages.create({
+    model: pickModel(),
+    max_tokens: 1000,
+    output_config: { effort: "low", format: { type: "json_schema", schema } },
+    system: RECEIPT_PROMPT,
+    messages: [{
+      role: "user",
+      content: [
+        { type: "image", source: { type: "base64", media_type: media, data: image } },
+        { type: "text", text: `Household items:\n${JSON.stringify(items)}` },
+      ],
+    }],
+  });
+  if (response.stop_reason === "refusal") return fail(res, 422, "refused");
+  const text = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+  let r;
+  try { r = JSON.parse(text); } catch { return fail(res, 502, "api_error"); }
+  const amount = Number.isFinite(r.amount) && r.amount > 0 && r.amount < 100000 ? Math.round(r.amount * 100) / 100 : 0;
+  return res.status(200).json({
+    shop: String(r.shop || "").slice(0, 60),
+    amount,
+    date: /^\d{4}-\d{2}-\d{2}$/.test(r.date) ? r.date : "",
+    category: items.includes(r.category) ? r.category : "",
+    note: String(r.note || "").slice(0, 80),
+  });
+}
+
 const fail = (res, status, error) => res.status(status).json({ error });
 
 export default async function handler(req, res) {
@@ -122,6 +165,17 @@ export default async function handler(req, res) {
     .split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
   const email = String(claims.email || "").toLowerCase();
   if (!claims.email_verified || !allowed.includes(email)) return fail(res, 403, "not_allowed");
+
+  if (req.body?.mode === "receipt") {
+    try {
+      return await readReceipt(req.body, res);
+    } catch (error) {
+      if (error instanceof Anthropic.AuthenticationError) return fail(res, 500, "bad_api_key");
+      if (error instanceof Anthropic.RateLimitError) return fail(res, 429, "rate_limited");
+      console.error(error);
+      return fail(res, 502, "api_error");
+    }
+  }
 
   if (req.body?.mode === "icons") {
     try {
