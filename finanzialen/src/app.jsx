@@ -885,6 +885,11 @@
         itemEntries: "Einträge in diesem Monat ({{n}})",
         itemNoEntries: "Noch nichts eingetragen.",
         edPlanCard: "Plan & Wiederholung",
+        pmToggle: "Jeden Monat anders",
+        pmDefault: "Betrag für Monate ohne eigenen Wert (€)",
+        pmList: "{{n}} Monate · zusammen {{total}}",
+        pmUsePaid: "Bezahlte Beträge übernehmen ({{n}})",
+        pmHint: "Jeden Monat einzeln ändern. ✓ = in diesem Monat schon bezahlt.",
         kWhatKind: "Was ist es?",
         kPurchase: "Einkauf",
         kBill: "Rechnung (monatlich)",
@@ -1756,6 +1761,11 @@
         itemEntries: "Entries this month ({{n}})",
         itemNoEntries: "Nothing entered yet.",
         edPlanCard: "Plan & repeat",
+        pmToggle: "Different every month",
+        pmDefault: "Amount for months without their own value (€)",
+        pmList: "{{n}} months · {{total}} in total",
+        pmUsePaid: "Use paid amounts ({{n}})",
+        pmHint: "Change any month on its own. ✓ = already paid that month.",
         kWhatKind: "What is it?",
         kPurchase: "Purchase",
         kBill: "Bill (monthly)",
@@ -2627,6 +2637,11 @@
         itemEntries: "إدخالات هذا الشهر ({{n}})",
         itemNoEntries: "لا شيء مسجل بعد.",
         edPlanCard: "الخطة والتكرار",
+        pmToggle: "مختلف كل شهر",
+        pmDefault: "مبلغ الأشهر التي ليس لها قيمة خاصة (€)",
+        pmList: "{{n}} أشهر · المجموع {{total}}",
+        pmUsePaid: "استخدم المبالغ المدفوعة ({{n}})",
+        pmHint: "غيّر أي شهر وحده. ✓ = دُفع في ذلك الشهر.",
         kWhatKind: "ما نوعه؟",
         kPurchase: "شراء",
         kBill: "فاتورة شهرية",
@@ -4773,6 +4788,13 @@
         });
       };
 
+      // "Different every month": the amount shown (and saved) for a month in the period.
+      const perMonthValue = (form, type, cat, yr, m) => {
+        const k = timelineKey(yr, m);
+        if (form.perMonth && form.perMonth[k] != null && form.perMonth[k] !== '') return parseFloat(String(form.perMonth[k]).replace(',', '.')) || 0;
+        const b = data.values[yr]?.[type]?.[cat]?.[m]?.budget || 0;
+        return b > 0 ? b : (parseFloat(form.amount) || 0);
+      };
       const handleExecuteRecurring = () => {
         const target = recurringModal || activeEditCat;
         if (!target) return;
@@ -4795,7 +4817,8 @@
             const byCat = d.values[yr][type][cat] || (d.values[yr][type][cat] = {});
             const node = byCat[m] || (byCat[m] = emptyNode());
             if (field === 'actual') setActualTx(d, type, cat, yr, m, paymentMonth ? value : 0, 'tick');
-            else node[field] = paymentMonth ? (idx === fromIdx && firstValue !== null ? firstValue : value) : 0;
+            else node[field] = !paymentMonth ? 0 : recurringForm.perMonthOn ? perMonthValue(recurringForm, type, cat, yr, m)
+              : (idx === fromIdx && firstValue !== null ? firstValue : value);
           });
         });
         setRecurringModal(null);
@@ -4840,7 +4863,7 @@
         const node = getNode(type, cat, selectedYear, selectedMonth);
         const sch = detectSchedule(type, cat);
         setRecurringForm(sch
-          ? { field: 'budget', amount: sch.regular, firstAmount: sch.firstDiffers ? sch.first : '', firstOn: sch.firstDiffers, from: sch.from, until: sch.until, every: sch.every, clearOutside: false, sch }
+          ? { field: 'budget', amount: sch.regular, firstAmount: sch.firstDiffers ? sch.first : '', firstOn: sch.firstDiffers && sch.odd === 0, perMonthOn: sch.odd > 0, perMonth: {}, from: sch.from, until: sch.until, every: sch.every, clearOutside: false, sch }
           : { field: 'budget', amount: node.budget || node.actual, firstAmount: '', firstOn: false, from: timelineKey(selectedYear, selectedMonth), until: LAST_KEY, every: 1, clearOutside: false, sch: null });
         setEditTab(tab);
       };
@@ -10671,9 +10694,13 @@
                     );
                   })()}
               <label className="flex items-center justify-between gap-2 cursor-pointer">
+                <span className="text-[11px] text-primary">{t('pmToggle')}</span>
+                <input type="checkbox" checked={!!recurringForm.perMonthOn} onChange={(e) => setRecurringForm(p => ({ ...p, perMonthOn: e.target.checked, firstOn: false, perMonth: p.perMonth || {}, dirty: true }))} className="w-4 h-4 rounded" />
+              </label>
+              {!recurringForm.perMonthOn && <label className="flex items-center justify-between gap-2 cursor-pointer">
                 <span className="text-[11px] text-primary">{t('schFirstToggle')}</span>
                 <input type="checkbox" checked={!!recurringForm.firstOn} onChange={(e) => setRecurringForm(p => ({ ...p, firstOn: e.target.checked, firstAmount: p.firstAmount === '' ? p.amount : p.firstAmount, dirty: true }))} className="w-4 h-4 rounded" />
-              </label>
+              </label>}
               {recurringForm.firstOn && (
                 <div>
                   <label className="text-[10px] text-secondary font-medium block mb-1">{t('schFirstLabel')}</label>
@@ -10681,7 +10708,7 @@
                 </div>
               )}
               <div>
-                <label className="text-[10px] text-secondary font-medium block mb-1">{recurringForm.firstOn ? t('schThenLabel') : t('replicateAmountLabel')}</label>
+                <label className="text-[10px] text-secondary font-medium block mb-1">{recurringForm.perMonthOn ? t('pmDefault') : recurringForm.firstOn ? t('schThenLabel') : t('replicateAmountLabel')}</label>
                 <MoneyInput
                   value={recurringForm.amount}
                   hideZero={false}
@@ -10697,6 +10724,44 @@
                 false,
                 recurringForm.every
               )}
+              {recurringForm.perMonthOn && activeEditCat && (() => {
+                const { type, cat } = activeEditCat;
+                const [a, b] = rangeIndexes(recurringForm.from, recurringForm.until);
+                const every = parseInt(recurringForm.every) || 1;
+                const months = TIMELINE.slice(a, b + 1).filter((_, i) => i % every === 0);
+                const paidMonths = months.filter(({ yr, m }) => getNode(type, cat, yr, m).actual > 0);
+                const total = months.reduce((sum, { yr, m }) => sum + perMonthValue(recurringForm, type, cat, yr, m), 0);
+                const setOne = (k, v) => setRecurringForm(p => ({ ...p, perMonth: { ...(p.perMonth || {}), [k]: v }, dirty: true }));
+                return (
+                  <div className="pop-in space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] text-secondary font-medium">{t('pmList', { n: months.length, total: fmtCents(total) })}</span>
+                      {paidMonths.length > 0 && (
+                        <button type="button" onClick={() => setRecurringForm(p => ({ ...p, dirty: true, perMonth: { ...(p.perMonth || {}),
+                          ...Object.fromEntries(paidMonths.map(({ yr, m }) => [timelineKey(yr, m), String(Math.round(getNode(type, cat, yr, m).actual * 100) / 100)])) } }))}
+                          className="text-[11px] text-notion-blue font-medium">{t('pmUsePaid', { n: paidMonths.length })}</button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5 max-h-[260px] overflow-y-auto pe-1">
+                      {months.map(({ yr, m }) => {
+                        const k = timelineKey(yr, m);
+                        const own = recurringForm.perMonth && recurringForm.perMonth[k] != null;
+                        const v = own ? recurringForm.perMonth[k] : String(perMonthValue(recurringForm, type, cat, yr, m));
+                        const act = getNode(type, cat, yr, m).actual;
+                        return (
+                          <label key={k} className="flex items-center gap-1.5 rounded-lg bg-surface border border-subtle px-2 py-1">
+                            <span className="text-[11px] text-secondary shrink-0 w-[58px]">{formatMonth(m, lang)} {String(yr).slice(2)}{act > 0 && <i className="fa-solid fa-check text-notion-green text-[9px] ms-1"></i>}</span>
+                            <input value={v} onChange={(e) => setOne(k, e.target.value)} inputMode="decimal"
+                              style={{ flex: '1 1 0', minWidth: 0, width: 'auto' }}
+                              className={`bg-transparent text-end font-mono text-[12px] outline-none ${own ? 'text-primary font-semibold' : 'text-secondary'}`} />
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[10px] text-tertiary">{t('pmHint')}</p>
+                  </div>
+                );
+              })()}
 
               {recurringForm.field === 'budget' && (
                 <label className="flex items-start justify-between gap-2 p-2 rounded bg-subtle/50 border border-subtle cursor-pointer">
