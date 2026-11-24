@@ -715,9 +715,9 @@
         importJoint: "Gemeinsames Konto",
         importFrom: "Nur Buchungen ab",
         importFromHint: "Monate, die du schon von Hand eingetragen hast, würden sonst doppelt zählen.",
-        importChoose: "Datei auswählen (CSV oder Excel)",
-        importHowTo: "In der Revolut-App: das Konto öffnen → „…“ → Kontoauszug → Excel oder CSV und den Zeitraum wählen. Für das gemeinsame Konto zuerst das gemeinsame Konto öffnen. Danach die Datei hier auswählen. Ein Export aus Money Manager (Excel) wird ebenfalls erkannt; das Konto wird dann pro Zeile übernommen.",
-        importBadFile: "Diese Datei konnte nicht gelesen werden. Erwartet wird ein Kontoauszug (CSV oder Excel) mit Datum, Beschreibung und Betrag.",
+        importChoose: "Datei auswählen (CSV, Excel oder PDF)",
+        importHowTo: "Revolut: Konto öffnen → „…“ → Kontoauszug → CSV oder Excel (auch der „konsolidierte“ Auszug mit allen Konten). Wise: Konto → Kontoauszüge → CSV. Sparkasse, Volksbank & Co.: den PDF-Kontoauszug aus dem Online-Banking oder die CSV-Umsätze. Money Manager (Excel) geht auch.",
+        importBadFile: "Diese Datei konnte nicht gelesen werden. Erwartet wird ein Kontoauszug (CSV, Excel oder PDF) mit Datum, Beschreibung und Betrag.",
         importSummary: "{{file}}: {{n}} Zeilen · {{ready}} zugeordnet · {{dup}} schon importiert · {{skipped}} übersprungen",
         importSelectAll: "Alle mit Vorschlag auswählen",
         importSelectNone: "Keine auswählen",
@@ -885,6 +885,29 @@
         itemEntries: "Einträge in diesem Monat ({{n}})",
         itemNoEntries: "Noch nichts eingetragen.",
         edPlanCard: "Plan & Wiederholung",
+        kPurchase: "Einkauf",
+        kBill: "Rechnung (monatlich)",
+        kSub: "Abo",
+        kOnebill: "Einmalige Rechnung",
+        kOneoffIn: "Einmalig",
+        kRegularIn: "Regelmäßig",
+        kEvery: "Alle",
+        kMonth1: "Monat",
+        kMonthsN: "{{n}} Monate",
+        kOnDay: "fällig am",
+        kOnDayIn: "kommt am",
+        kDueOn: "Fällig am {{date}} (Datum unten ändern)",
+        kPaidNow: "Schon bezahlt (jetzt eintragen)",
+        kReceivedNow: "Schon erhalten (jetzt eintragen)",
+        kHintRepeatPaid: "Wird ab diesem Monat alle {{every}} geplant und diese Zahlung eingetragen.",
+        kHintRepeatLater: "Wird nur geplant – erscheint unter „Bald fällig“, bis du es abhakst.",
+        kHintOnebillPaid: "Einmal geplant und gleich als bezahlt eingetragen.",
+        kHintOnebillLater: "Einmal geplant – erscheint unter „Bald fällig“ und im Kalender.",
+        kBillCard: "{{month}}: {{plan}} geplant",
+        kDueDay: "fällig am {{d}}.",
+        kAlreadyPaid: "Schon bezahlt ({{amount}}) – nochmal eintragen zählt doppelt.",
+        kPartPaid: "Bisher {{amount}} bezahlt.",
+        bkPlanned: "„{{name}}“ geplant – noch nichts bezahlt.",
         selStart: "Auswählen",
         selDone: "Fertig",
         selMonth: "Dieser Monat ({{n}})",
@@ -1562,9 +1585,9 @@
         importJoint: "Joint account",
         importFrom: "Only entries from",
         importFromHint: "Months you already entered by hand would otherwise count twice.",
-        importChoose: "Choose file (CSV or Excel)",
-        importHowTo: "In the Revolut app: open the account → “…” → Statement → choose Excel or CSV and the period. For the joint account, open the joint account first. Then pick the file here. A Money Manager export (Excel) works too; the account is then taken from each line.",
-        importBadFile: "This file couldn't be read. It should be a bank statement (CSV or Excel) with a date, description and amount.",
+        importChoose: "Choose file (CSV, Excel or PDF)",
+        importHowTo: "Revolut: open the account → “…” → Statement → CSV or Excel (the “consolidated” statement with all accounts works too). Wise: account → Statements → CSV. Sparkasse, Volksbank & co.: the PDF statement from online banking, or the CSV transactions. Money Manager (Excel) works too.",
+        importBadFile: "This file couldn't be read. It should be a bank statement (CSV, Excel or PDF) with a date, description and amount.",
         importSummary: "{{file}}: {{n}} lines · {{ready}} matched · {{dup}} already imported · {{skipped}} skipped",
         importSelectAll: "Select all with a suggestion",
         importSelectNone: "Select none",
@@ -1732,6 +1755,29 @@
         itemEntries: "Entries this month ({{n}})",
         itemNoEntries: "Nothing entered yet.",
         edPlanCard: "Plan & repeat",
+        kPurchase: "Purchase",
+        kBill: "Bill (monthly)",
+        kSub: "Subscription",
+        kOnebill: "One-time bill",
+        kOneoffIn: "One-off",
+        kRegularIn: "Regular",
+        kEvery: "Every",
+        kMonth1: "month",
+        kMonthsN: "{{n}} months",
+        kOnDay: "due on day",
+        kOnDayIn: "arrives on day",
+        kDueOn: "Due on {{date}} (change the date below)",
+        kPaidNow: "Already paid (book it now)",
+        kReceivedNow: "Already received (book it now)",
+        kHintRepeatPaid: "Planned every {{every}} from this month on, and this payment is booked.",
+        kHintRepeatLater: "Only planned – it shows in “Due soon” until you tick it off.",
+        kHintOnebillPaid: "Planned once and booked as paid right away.",
+        kHintOnebillLater: "Planned once – it shows in “Due soon” and in the calendar.",
+        kBillCard: "{{month}}: {{plan}} planned",
+        kDueDay: "due on the {{d}}.",
+        kAlreadyPaid: "Already paid ({{amount}}) – booking again counts twice.",
+        kPartPaid: "{{amount}} paid so far.",
+        bkPlanned: "“{{name}}” planned – nothing paid yet.",
         selStart: "Select",
         selDone: "Done",
         selMonth: "This month ({{n}})",
@@ -2409,9 +2455,9 @@
         importJoint: "الحساب المشترك",
         importFrom: "فقط القيود من تاريخ",
         importFromHint: "الأشهر التي أدخلتها يدويًا ستُحسب مرتين لولا ذلك.",
-        importChoose: "اختر ملفًا (CSV أو Excel)",
-        importHowTo: "في تطبيق Revolut: افتح الحساب ← \"…\" ← كشف حساب ← اختر Excel أو CSV والفترة. للحساب المشترك افتح الحساب المشترك أولًا. ثم اختر الملف هنا. ملف تصدير Money Manager (Excel) يعمل أيضًا، ويُؤخذ الحساب من كل سطر.",
-        importBadFile: "تعذّرت قراءة هذا الملف. يجب أن يكون كشف حساب (CSV أو Excel) فيه تاريخ ووصف ومبلغ.",
+        importChoose: "اختر ملفًا (CSV أو Excel أو PDF)",
+        importHowTo: "Revolut: افتح الحساب ← \"…\" ← كشف حساب ← CSV أو Excel (الكشف الموحّد لكل الحسابات يعمل أيضًا). Wise: الحساب ← كشوف الحساب ← CSV. Sparkasse وVolksbank وغيرها: كشف الحساب PDF من الخدمات المصرفية عبر الإنترنت أو ملف الحركات CSV. ملف Money Manager (Excel) يعمل أيضًا.",
+        importBadFile: "تعذّرت قراءة هذا الملف. يجب أن يكون كشف حساب (CSV أو Excel أو PDF) فيه تاريخ ووصف ومبلغ.",
         importSummary: "{{file}}: {{n}} سطرًا · {{ready}} مطابق · {{dup}} مستورد مسبقًا · {{skipped}} متجاوز",
         importSelectAll: "تحديد كل ما له اقتراح",
         importSelectNone: "إلغاء التحديد",
@@ -2579,6 +2625,29 @@
         itemEntries: "إدخالات هذا الشهر ({{n}})",
         itemNoEntries: "لا شيء مسجل بعد.",
         edPlanCard: "الخطة والتكرار",
+        kPurchase: "شراء",
+        kBill: "فاتورة شهرية",
+        kSub: "اشتراك",
+        kOnebill: "فاتورة لمرة واحدة",
+        kOneoffIn: "لمرة واحدة",
+        kRegularIn: "منتظم",
+        kEvery: "كل",
+        kMonth1: "شهر",
+        kMonthsN: "{{n}} أشهر",
+        kOnDay: "تستحق يوم",
+        kOnDayIn: "يصل يوم",
+        kDueOn: "تستحق في {{date}} (غيّر التاريخ في الأسفل)",
+        kPaidNow: "مدفوعة بالفعل (سجّلها الآن)",
+        kReceivedNow: "تم الاستلام (سجّله الآن)",
+        kHintRepeatPaid: "تُخطط كل {{every}} بدءًا من هذا الشهر، وتُسجّل هذه الدفعة.",
+        kHintRepeatLater: "تُخطط فقط – تظهر في „مستحق قريبًا“ حتى تؤشر عليها.",
+        kHintOnebillPaid: "تُخطط مرة واحدة وتُسجّل كمدفوعة فورًا.",
+        kHintOnebillLater: "تُخطط مرة واحدة – تظهر في „مستحق قريبًا“ وفي التقويم.",
+        kBillCard: "{{month}}: {{plan}} مخطط",
+        kDueDay: "تستحق يوم {{d}}",
+        kAlreadyPaid: "مدفوعة بالفعل ({{amount}}) – التسجيل مرة أخرى يُحسب مرتين.",
+        kPartPaid: "دُفع حتى الآن {{amount}}.",
+        bkPlanned: "„{{name}}“ مُخطط – لم يُدفع شيء بعد.",
         selStart: "تحديد",
         selDone: "تم",
         selMonth: "هذا الشهر ({{n}})",
@@ -5041,7 +5110,7 @@
       // ---- Book: one quick form for every purchase or income, and a calendar of the days ----
       const [bk, setBk] = useState(() => ({
         type: 'expenses', amount: '', cat: null, date: todayISO(), account: safeStorage.get('budget_last_account', ''),
-        who: lastWho, note: '', q: '', newName: '', newGroup: '', all: false, saved: 0, err: '', shop: '', parts: []
+        who: lastWho, note: '', q: '', newName: '', newGroup: '', all: false, saved: 0, err: '', shop: '', parts: [], kind: 'purchase', every: 1, payDay: '', paidNow: true
       }));
       const setB = (patch) => setBk(prev => ({ ...prev, ...patch, err: '' }));
       const [calDay, setCalDay] = useState(null);
@@ -5158,7 +5227,13 @@
         let cat = bk.cat;
         if (cat === '__new') cat = data.categories[type].find(c => c.toLowerCase() === bk.newName.trim().toLowerCase()) || bk.newName.trim().slice(0, 60);
         const isNew = !data.categories[type].includes(cat);
-        const gid = bk.newGroup || (data.groups.find(g => g.kind === 'variable') || data.groups[0]).id;
+        const kind = isNew ? (bk.kind || (type === 'incomes' ? 'oneoff' : 'purchase')) : null;
+        const repeating = kind === 'bill' || kind === 'sub' || kind === 'regular';
+        const planned = repeating || kind === 'onebill';
+        const gid = bk.newGroup || (type === 'expenses' ? groupForKind(kind || 'purchase') : '');
+        const payDayNew = planned ? (parseInt(bk.payDay) >= 1 && parseInt(bk.payDay) <= 31 ? parseInt(bk.payDay) : +bk.date.slice(8, 10)) : null;
+        // A planned item that isn't paid yet gets its plan only, no entry.
+        const book = !planned || bk.paidNow !== false;
         // Split: the other parts go to their items, the rest stays on the main item.
         const parts = type === 'expenses' ? (bk.parts || []).map(p => ({ cat: p.cat, amount: parseAmount(p.amount) })).filter(p => p.cat && p.amount > 0) : [];
         const partSum = Math.round(parts.reduce((a2, p) => a2 + p.amount, 0) * 100) / 100;
@@ -5175,22 +5250,34 @@
             const dir = MERCHANTS.find(([nm]) => nm.toLowerCase() === cat.toLowerCase());
             if (dir && dir[2] && !autoIcon(cat) && !d.icons[cat]) d.icons[cat] = { kind: 'brand', text: cat.replace(/[^A-Za-z0-9ÄÖÜäöü]/g, '').slice(0, 2), bg: '#334155', fg: '#FFFFFF', logo: 'web:' + dir[2] };
             d.categories[type].push(cat);
-            d.meta[type][cat] = type === 'expenses' ? metaForGroup(d.groups, gid, null, false)
+            d.meta[type][cat] = type === 'expenses' ? metaForGroup(d.groups, gid, payDayNew, kind === 'onebill')
+              : repeating ? { bracket: (d.brackets.incomes.find(b => /fix|regular|fest/i.test(b.id)) || d.brackets.incomes[0]).id, mode: 'fixed', oneTime: false, payDay: payDayNew }
               : { bracket: d.brackets.incomes[d.brackets.incomes.length - 1].id, mode: 'variable', oneTime: false, payDay: null };
             TIMELINE.forEach(({ yr, m }) => {
               const byCat = d.values[yr][type][cat] || (d.values[yr][type][cat] = {});
               if (!byCat[m]) byCat[m] = emptyNode();
             });
+            // The plan: every N months from this month on, or just this month for a one-time bill.
+            if (planned) {
+              const p0 = dateToMonth(bk.date), i0 = timelineIndex(p0.yr, p0.m), every = Math.max(1, parseInt(bk.every) || 1);
+              TIMELINE.forEach(({ yr, m }, idx) => {
+                if (idx < i0 || (kind === 'onebill' ? idx !== i0 : (idx - i0) % every !== 0)) return;
+                d.values[yr][type][cat][m].budget = amount;
+              });
+            }
           }
-          d.tx.push(tx);
-          applyTx(d, tx, +1);
+          if (book) {
+            d.tx.push(tx);
+            applyTx(d, tx, +1);
+          }
           partTx.forEach(x => { if (d.categories[type].includes(x.cat)) { d.tx.push(x); applyTx(d, x, +1); } });
         }, t('bkSaved', { amount: fmtCents(amount), name: parts.length ? [cat, ...parts.map(p => p.cat)].join(' + ') : cat, date: new Date(bk.date + 'T12:00').toLocaleDateString(lang === 'en' ? 'en-US' : lang === 'ar' ? 'ar-SY-u-nu-latn' : 'de-DE', { day: 'numeric', month: 'short' }) }));
         haptic(12);
         setLastWho(bk.who);
         safeStorage.set('budget_last_account', bk.account || '');
         setCalDay(bk.date);
-        setBk(prev => ({ ...prev, amount: '', note: '', cat: shop ? null : isNew ? cat : prev.cat, newName: '', q: '', saved: prev.saved + 1, err: '', shop: '', parts: [] }));
+        if (!book) showToast(t('bkPlanned', { name: cat }));
+        setBk(prev => ({ ...prev, amount: '', note: '', cat: shop ? null : isNew ? cat : prev.cat, newName: '', q: '', saved: prev.saved + 1, err: '', shop: '', parts: [], kind: 'purchase', every: 1, payDay: '', paidNow: true }));
       };
 
       const [editingTx, setEditingTx] = useState(null);
@@ -5472,6 +5559,25 @@
 
       // Paid / received toggle: ticking copies the plan, unticking clears the amount.
       // Real amounts are added in one place: the Add tab, prefilled for this item and month.
+      // What a new item is, from its group: bills and subscriptions repeat, one-time bills are planned once.
+      const kindForGroup = (type, gid) => {
+        if (type === 'incomes') return 'regular';
+        const g = data.groups.find(x => x.id === gid);
+        return !g ? 'purchase' : g.kind === 'oneoff' ? 'onebill' : g.kind === 'fixed' ? (g.id === 'subs' ? 'sub' : 'bill') : 'purchase';
+      };
+      const groupForKind = (kind) => kind === 'sub' ? resolveGroup(data.groups, 'subs|bills').id
+        : kind === 'bill' ? (data.groups.find(g => g.id === 'bills' && g.kind === 'fixed') || data.groups.find(g => g.kind === 'fixed') || data.groups[0]).id
+        : kind === 'onebill' ? (data.groups.find(g => g.kind === 'oneoff') || data.groups[0]).id
+        : (data.groups.find(g => g.kind === 'variable') || data.groups[0]).id;
+      // "+ Add item" anywhere opens the one Add screen with a new item started.
+      const startNewItem = (type, gid = null) => {
+        const status = monthStatus(selectedYear, selectedMonth);
+        const date = status === 'current' ? todayISO() : `${selectedYear}-${pad2(ALL_MONTHS.indexOf(selectedMonth) + 1)}-01`;
+        const kind = type === 'incomes' ? 'regular' : gid ? kindForGroup(type, gid) : 'purchase';
+        setB({ type, cat: '__new', newName: '', newGroup: gid || (type === 'expenses' ? groupForKind(kind) : ''), kind, every: 1, payDay: '', paidNow: kind === 'purchase' || kind === 'bill' || kind === 'sub', date, q: '', amount: '', shop: '', parts: [] });
+        setView('book');
+      };
+
       const addFor = (type, cat) => {
         const status = monthStatus(selectedYear, selectedMonth);
         const date = status === 'current' ? todayISO() : `${selectedYear}-${pad2(ALL_MONTHS.indexOf(selectedMonth) + 1)}-${pad2(Math.min(Number.isInteger(getMeta(type, cat).payDay) ? getMeta(type, cat).payDay : 1, getDaysInMonth(selectedYear, selectedMonth)))}`;
@@ -6458,7 +6564,7 @@
                       <i className={`fa-solid ${revealed ? 'fa-eye-slash' : 'fa-eye'} me-1 text-[10px]`}></i>{revealed ? t('hideEmpty') : t('emptyItems', { n: hidden })}
                     </button>
                   ) : <span></span>}
-                  <button onClick={() => handleOpenQuickAdd('expenses', g.id)} className="text-notion-blue font-medium hover:underline">
+                  <button onClick={() => startNewItem('expenses', g.id)} className="text-notion-blue font-medium hover:underline">
                     {t('addItemShort')}
                   </button>
                 </div>
@@ -8003,7 +8109,7 @@
                   {showEmpty.__incomes ? t('hideEmpty') : t('emptyItems', { n: hiddenIncomes })}
                 </button>
               ) : <span></span>}
-              <button onClick={() => handleOpenQuickAdd('incomes')} className="text-notion-blue font-medium hover:underline">{t('addItemShort')}</button>
+              <button onClick={() => startNewItem('incomes')} className="text-notion-blue font-medium hover:underline">{t('addItemShort')}</button>
             </div>
           </section>
         );
@@ -8031,7 +8137,7 @@
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <Segmented size="sm" options={[['all', t('filterAll')], ['fixed', t('filterFixed')], ['variable', t('filterVariable')]]} value={expFilter} onChange={setExpFilter} />
                   <div className="flex items-center gap-1.5">
-                    <button onClick={() => handleOpenQuickAdd('expenses')} className="h-8 px-3 rounded-lg bg-primary text-surface text-[12px] font-semibold">{t('addItemBtn')}</button>
+                    <button onClick={() => startNewItem('expenses')} className="h-8 px-3 rounded-lg bg-primary text-surface text-[12px] font-semibold">{t('addItemBtn')}</button>
                     <button onClick={() => openGroupModal()} title={t('newGroup')} aria-label={t('newGroup')} className={iconBtn}><i className="fa-solid fa-folder-plus text-xs"></i></button>
                     <button onClick={toggleAllBrackets} title={anyGroupClosed ? t('expandAll') : t('collapseAll')} aria-label={anyGroupClosed ? t('expandAll') : t('collapseAll')} className={iconBtn}><i className="fa-solid fa-up-down text-xs"></i></button>
                   </div>
@@ -8358,14 +8464,15 @@
                   {shown.map(c => {
                     const on = bk.cat === c;
                     return (
-                      <button key={c} type="button" onClick={() => setB({ cat: c, shop: '' })}
+                      <button key={c} type="button" onClick={() => { const n0 = dateToMonth(bk.date) ? getNode(type, c, dateToMonth(bk.date).yr, dateToMonth(bk.date).m) : null;
+                        setB({ cat: c, shop: '', ...(n0 && n0.budget > 0 && !bk.amount && !isReceiptItem(c) ? { amount: String(n0.budget).replace('.', lang === 'en' ? '.' : ',') } : {}) }); }}
                         className={`flex flex-col items-center gap-1 rounded-xl px-1.5 py-2 border transition active:scale-95 ${on ? 'border-notion-blue bg-notion-blue/10' : 'border-transparent bg-subtle/50 hover:bg-subtle'}`}>
                         <ItemIcon spec={iconFor(type, c)} tint={tintFor(type, c)} size={30} />
                         <span className={`w-full text-center text-[11px] leading-tight truncate ${on ? 'text-primary font-semibold' : 'text-secondary'}`}>{c}</span>
                       </button>
                     );
                   })}
-                  <button type="button" onClick={() => setB({ cat: '__new' })}
+                  <button type="button" onClick={() => setB({ cat: '__new', newName: bk.q.trim() || bk.newName, kind: type === 'incomes' ? 'oneoff' : 'purchase', newGroup: type === 'expenses' ? groupForKind('purchase') : '', paidNow: true })}
                     className={`flex flex-col items-center gap-1 rounded-xl px-1.5 py-2 border border-dashed transition ${bk.cat === '__new' ? 'border-notion-blue bg-notion-blue/10' : 'border-strong'}`}>
                     <span className="w-[30px] h-[30px] rounded-[9px] bg-subtle flex items-center justify-center text-secondary"><i className="fa-solid fa-plus text-xs"></i></span>
                     <span className="text-[11px] text-secondary">{t('bkNew')}</span>
@@ -8395,7 +8502,7 @@
                           const spec = autoIcon(name) || (dom ? { kind: 'brand', text: name.slice(0, 2), bg: '#334155', fg: '#FFFFFF', logo: 'web:' + dom } : null) || { kind: 'symbol', icon: GROUP_ICONS[g.id] || 'fa-tag' };
                           const on = bk.cat === '__new' && bk.newName === name;
                           return (
-                            <button key={name} type="button" onClick={() => setB({ cat: '__new', newName: name, newGroup: g.id })}
+                            <button key={name} type="button" onClick={() => { const k = kindForGroup(type, g.id); setB({ cat: '__new', newName: name, newGroup: g.id, kind: k, paidNow: k !== 'onebill' }); }}
                               className={`flex items-center gap-2 ps-1.5 pe-3 py-1 rounded-full border transition active:scale-95 ${on ? 'border-notion-blue bg-notion-blue/10' : 'border-subtle bg-subtle/50 hover:bg-subtle'}`}>
                               <ItemIcon spec={spec} tint={type === 'incomes' ? '#10b981' : GROUP_HEX[g.color] || '#64748b'} size={22} />
                               <span className="text-[12px] text-primary">{name}</span>
@@ -8435,6 +8542,74 @@
                       </div>
                       <p dir={L === 'ar' ? 'rtl' : 'ltr'} className={`text-[12.5px] leading-relaxed text-secondary ${L === 'ar' ? 'text-right' : 'text-left'}`}>{text}</p>
                       {dir[2] && <div className="text-[11px] text-tertiary"><i className="fa-solid fa-globe me-1"></i>{dir[2]}</div>}
+                    </div>
+                  );
+                })()}
+                {bk.cat === '__new' && (() => {
+                  const kinds = type === 'incomes'
+                    ? [['oneoff', 'fa-coins', t('kOneoffIn')], ['regular', 'fa-repeat', t('kRegularIn')]]
+                    : [['purchase', 'fa-bag-shopping', t('kPurchase')], ['bill', 'fa-file-invoice', t('kBill')], ['sub', 'fa-rotate', t('kSub')], ['onebill', 'fa-calendar-day', t('kOnebill')]];
+                  const k = bk.kind || kinds[0][0];
+                  const planned = ['bill', 'sub', 'regular', 'onebill'].includes(k);
+                  const due = parseInt(bk.payDay) || +bk.date.slice(8, 10);
+                  return (
+                    <div className="pop-in space-y-2.5">
+                      <div className={`grid gap-1.5 ${kinds.length === 4 ? 'grid-cols-4' : 'grid-cols-2'}`}>
+                        {kinds.map(([id, ic, lbl]) => (
+                          <button key={id} type="button" onClick={() => setB({ kind: id, newGroup: type === 'expenses' ? groupForKind(id) : bk.newGroup, paidNow: id !== 'onebill' || bk.date <= todayIso })}
+                            className={`flex flex-col items-center gap-1 rounded-xl py-2 border transition active:scale-95 ${k === id ? 'border-notion-blue bg-notion-blue/10 text-primary' : 'border-subtle bg-subtle/50 text-secondary'}`}>
+                            <i className={`fa-solid ${ic} text-[14px]`}></i>
+                            <span className="text-[10.5px] leading-tight text-center font-medium">{lbl}</span>
+                          </button>
+                        ))}
+                      </div>
+                      {planned && (
+                        <div className="rounded-xl bg-subtle/60 p-3 space-y-2.5">
+                          <div className="flex flex-wrap items-center gap-2 text-[12.5px] text-primary">
+                            {k === 'onebill' ? (
+                              <span><i className="fa-regular fa-calendar me-1.5 text-secondary"></i>{t('kDueOn', { date: new Date(bk.date + 'T12:00').toLocaleDateString(loc, { day: 'numeric', month: 'long' }) })}</span>
+                            ) : (<>
+                              <span>{t('kEvery')}</span>
+                              <select data-free value={bk.every || 1} onChange={(e) => setB({ every: +e.target.value })} className="bg-surface border border-subtle rounded-lg px-2 py-1 text-[12.5px]">
+                                {[1, 2, 3, 6, 12].map(n => <option key={n} value={n}>{n === 1 ? t('kMonth1') : t('kMonthsN', { n })}</option>)}
+                              </select>
+                              <span>{type === 'incomes' ? t('kOnDayIn') : t('kOnDay')}</span>
+                              <input data-free inputMode="numeric" value={bk.payDay || String(due)} onChange={(e) => setB({ payDay: e.target.value.replace(/\D/g, '').slice(0, 2) })}
+                                style={{ width: 52 }} className="bg-surface border border-subtle rounded-lg px-2 py-1 text-center font-mono" />
+                            </>)}
+                          </div>
+                          <label className="flex items-center justify-between gap-2 cursor-pointer">
+                            <span className="text-[12.5px] text-primary">{type === 'incomes' ? t('kReceivedNow') : t('kPaidNow')}</span>
+                            <input data-free type="checkbox" checked={bk.paidNow !== false} onChange={(e) => setB({ paidNow: e.target.checked })} className="w-4 h-4" />
+                          </label>
+                          <div className="text-[11px] text-tertiary leading-snug">
+                            {k === 'onebill' ? (bk.paidNow !== false ? t('kHintOnebillPaid') : t('kHintOnebillLater'))
+                              : bk.paidNow !== false ? t('kHintRepeatPaid', { every: bk.every > 1 ? t('kMonthsN', { n: bk.every }) : t('kMonth1') }) : t('kHintRepeatLater')}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+                {type !== 'transfer' && bk.cat && bk.cat !== '__new' && !isReceiptItem(bk.cat) && dateToMonth(bk.date) && (() => {
+                  // An existing bill or regular income: what's planned this month and whether it's paid.
+                  const pos = dateToMonth(bk.date);
+                  const n0 = getNode(type, bk.cat, pos.yr, pos.m);
+                  if (!(n0.budget > 0)) return null;
+                  const pd = getMeta(type, bk.cat).payDay;
+                  const paid = n0.actual >= n0.budget - 0.004;
+                  return (
+                    <div className={`pop-in flex items-center gap-2.5 rounded-xl px-3 py-2.5 border ${paid ? 'border-amber-500/40 bg-amber-500/10' : 'border-subtle bg-subtle/60'}`}>
+                      <i className={`fa-solid ${paid ? 'fa-circle-exclamation text-amber-500' : 'fa-file-invoice text-secondary'} text-[14px]`}></i>
+                      <span className="flex-1 min-w-0 text-[12.5px] text-primary leading-snug">
+                        {t('kBillCard', { month: formatMonth(pos.m, lang), plan: fmtCents(n0.budget) })}{Number.isInteger(pd) ? ` · ${t('kDueDay', { d: pd })}` : ''}
+                        {paid ? <span className="block text-[11px] text-amber-600 dark:text-amber-400">{t('kAlreadyPaid', { amount: fmtCents(n0.actual) })}</span>
+                          : n0.actual > 0 ? <span className="block text-[11px] text-tertiary">{t('kPartPaid', { amount: fmtCents(n0.actual) })}</span> : null}
+                      </span>
+                      {!paid && parseAmount(bk.amount) !== n0.budget && (
+                        <button type="button" onClick={() => setB({ amount: String(Math.max(0, n0.budget - n0.actual)).replace('.', lang === 'en' ? '.' : ',') })}
+                          className="shrink-0 px-2.5 py-1 rounded-full bg-notion-blue text-white text-[11.5px] font-semibold">{fmtCents(Math.max(0, n0.budget - n0.actual))}</button>
+                      )}
                     </div>
                   );
                 })()}
