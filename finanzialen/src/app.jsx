@@ -91,11 +91,38 @@
       const str = String(v || '').trim();
       let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(str);
       if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-      m = /^(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})/.exec(str);
+      m = /^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})/.exec(str);
       if (m) return `${m[3].length === 2 ? '20' + m[3] : m[3]}-${pad2(m[2])}-${pad2(m[1])}`;
+      // "Aug 5, 2026" (Revolut statements), "5 Aug 2026", "5. Aug. 2026"
+      const mon = (w) => { const k = w.toLowerCase().slice(0, 3).replace('mä', 'mar').replace('mrz', 'mar').replace('okt', 'oct').replace('dez', 'dec').replace('mai', 'may');
+        const i = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].indexOf(k); return i === -1 ? null : i + 1; };
+      m = /^([A-Za-zäÄ]{3,})\.?\s+(\d{1,2}),?\s+(\d{4})/.exec(str);
+      if (m && mon(m[1])) return `${m[3]}-${pad2(mon(m[1]))}-${pad2(m[2])}`;
+      m = /^(\d{1,2})\.?\s+([A-Za-zäÄ]{3,})\.?\s+(\d{4})/.exec(str);
+      if (m && mon(m[2])) return `${m[3]}-${pad2(mon(m[2]))}-${pad2(m[1])}`;
       return null;
     };
+    // A statement can hold several tables (Revolut's consolidated statement: one per account, each
+    // under a title like "Joint Account (EUR)"). Every row that looks like a table header starts one.
     const readStatement = (rows) => {
+      if (!rows.length) return null;
+      const isHeader = (r) => { const h = (r || []).map(x => String(x ?? '').trim().toLowerCase());
+        return h.some(x => /date|datum|buchungstag/.test(x)) && h.some(x => /^amount$|^betrag|money in\/out/.test(x)) && h.some(x => /description|beschreibung|empfänger|begünstigter|beguenstigter|verwendungszweck|payee/.test(x)); };
+      const starts = rows.map((r, i) => isHeader(r) ? i : -1).filter(i => i !== -1);
+      if (!starts.length) return null;
+      const out = [];
+      starts.forEach((s0, k) => {
+        // The section title: the nearest non-empty single-cell row above the header (skipping "Transaction statement").
+        let section = '';
+        for (let j = s0 - 1; j >= 0 && j >= s0 - 6; j--) { const cells = rows[j].map(x => String(x ?? '').trim()).filter(Boolean);
+          if (cells.length === 1 && !/transaction statement|^-+$/i.test(cells[0])) { section = cells[0]; break; } }
+        const part = readStatementTable(rows.slice(s0, starts[k + 1] ?? rows.length));
+        const cur = /\((usd|gbp|chf|try|pln)\)/i.exec(section);
+        (part || []).forEach(x => out.push({ ...x, section, currency: cur ? cur[1].toUpperCase() : x.currency }));
+      });
+      return out;
+    };
+    const readStatementTable = (rows) => {
       if (!rows.length) return null;
       const header = rows[0].map(h => String(h).trim().toLowerCase());
       const find = (...patterns) => {
@@ -107,22 +134,68 @@
         // Pending lines have no completion date yet; fall back to when they started.
         started: find(/started date|startdatum/),
         desc: find(/^description$|beschreibung|empfänger|beguenstigter|begünstigter|zahlungspflichtiger|payee/, /verwendungszweck|reference/),
-        amount: find(/^amount$|^betrag/),
+        amount: find(/^amount$|^betrag|money in\/out/),
         fee: find(/^fee$|gebühr/),
         currency: find(/currency|währung/),
         state: find(/^state$|^status$|^zustand$/),
-        kind: find(/^type$|^art$|^typ$|umsatzart/)
+        kind: find(/^type$|^art$|^typ$|umsatzart|^category$/),
+        // Wise: the shop's own name is clearer than "Card transaction of … issued by …".
+        merchant: find(/^merchant$/)
       };
       if (col.date === -1 || col.desc === -1 || col.amount === -1) return null;
       return rows.slice(1).map(r => ({
         date: parseBankDate(r[col.date]) || (col.started !== -1 ? parseBankDate(r[col.started]) : null),
-        desc: String(r[col.desc] || '').trim(),
+        desc: (col.merchant !== -1 && String(r[col.merchant] || '').trim()) || String(r[col.desc] || '').trim(),
         amount: parseBankNumber(r[col.amount]),
         fee: col.fee !== -1 ? (parseBankNumber(r[col.fee]) || 0) : 0,
         currency: col.currency !== -1 ? String(r[col.currency] || '').trim().toUpperCase() : 'EUR',
         state: col.state !== -1 ? String(r[col.state] || '').trim().toUpperCase() : '',
         kind: col.kind !== -1 ? String(r[col.kind] || '').trim().toUpperCase() : ''
-      })).filter(x => x.date && x.amount !== null && x.desc);
+      })).filter(x => x.date && x.amount !== null && x.desc && !/^total$/i.test(x.desc));
+    };
+    // ---- PDF statements (Sparkasse, Volksbank and similar German banks) ----
+    // Lines like "17.08.2026 elektr. Überweisung   -79,00" start a booking; the indented lines under it
+    // name who was paid. Balance lines ("Kontostand …") and fee notes without an amount are skipped.
+    const readPdfStatement = (lines) => {
+      const out = [];
+      let cur = null;
+      const amountRe = /(-?\s?[\d.]+,\d{2})\s*([+-])?$/;
+      lines.forEach(raw => {
+        const line = raw.replace(/\s+/g, ' ').trim();
+        if (!line) return;
+        const m = /^(\d{2}\.\d{2}\.\d{2,4})\s+(.*)$/.exec(line);
+        if (m && amountRe.test(m[2])) {
+          const am = amountRe.exec(m[2]);
+          let amount = parseBankNumber(am[1].replace(/\s/g, ''));
+          if (am[2] === '-') amount = -Math.abs(amount);
+          const text = m[2].slice(0, am.index).replace(/\s*\/\s*Wert:.*$/i, '').trim();
+          cur = { date: parseBankDate(m[1]), text, amount, extra: [] };
+          out.push(cur);
+          return;
+        }
+        if (/^(kontostand|der kontostand|anzahl anlagen|seite \d|kontoauszug|girokonto|datum\s|übertrag)/i.test(line)) { cur = null; return; }
+        if (cur && cur.extra.length < 2 && !/siehe anlage/i.test(line)) cur.extra.push(line);
+      });
+      return out.filter(x => x.date && x.amount).map(x => {
+        const who = (x.extra[0] || '').replace(/\bDATUM\b.*$/i, '').replace(/\s\d{6,}.*$/, '').trim();
+        return { date: x.date, desc: [who, x.text].filter(Boolean).join(' · ').slice(0, 120) || x.text, amount: x.amount, fee: 0, currency: 'EUR', state: '',
+          kind: '' };
+      });
+    };
+    const pdfToLines = async (buf) => {
+      const lib = window.pdfjsLib;
+      lib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const doc = await lib.getDocument({ data: buf }).promise;
+      const lines = [];
+      for (let p = 1; p <= doc.numPages; p++) {
+        const page = await doc.getPage(p);
+        const tc = await page.getTextContent();
+        const rowsByY = new Map();
+        tc.items.forEach(it => { if (!it.str) return; const y = Math.round(it.transform[5] / 2); const x = it.transform[4];
+          if (!rowsByY.has(y)) rowsByY.set(y, []); rowsByY.get(y).push([x, it.str]); });
+        [...rowsByY.entries()].sort((a, b) => b[0] - a[0]).forEach(([, parts]) => lines.push(parts.sort((a, b) => a[0] - b[0]).map(p2 => p2[1]).join(' ')));
+      }
+      return lines;
     };
     // ---- Change history ----
     // Every edit is compared with the state before it; changed amounts are written to data.log.
@@ -5271,7 +5344,12 @@
         if (!file) return;
         try {
           let rows;
-          if (/\.xlsx?$/i.test(file.name)) {
+          let pdfLines = null;
+          if (/\.pdf$/i.test(file.name)) {
+            await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+            pdfLines = readPdfStatement(await pdfToLines(await file.arrayBuffer()));
+            rows = [];
+          } else if (/\.xlsx?$/i.test(file.name)) {
             await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
             const wb = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
             const sheet = wb.Sheets[wb.SheetNames[0]];
@@ -5281,14 +5359,16 @@
           } else {
             rows = parseCsv(await file.text());
           }
-          const fromMM = isMoneyManagerSheet(rows);
-          const lines = fromMM ? readMoneyManager(rows) : readStatement(rows);
-          if (!lines) { setImportModal(m => ({ ...m, error: t('importBadFile') })); return; }
+          const fromMM = !pdfLines && isMoneyManagerSheet(rows);
+          const lines = pdfLines || (fromMM ? readMoneyManager(rows) : readStatement(rows));
+          if (!lines || !lines.length) { setImportModal(m => ({ ...m, error: t('importBadFile') })); return; }
           const seen = new Set(data.imported);
           const counts = {};
           const account = importModal.account;
           const today = todayISO();
           const whoOf = (line) => {
+            // Consolidated statements say which account each table is.
+            if (line.section && /joint|gemeinsam/i.test(line.section)) return 'joint';
             if (!line.mm) return account;
             const a = line.mm.account.toLowerCase();
             const partner = (data.members.partner || '').trim().split(/\s+/)[0].toLowerCase();
@@ -5301,7 +5381,7 @@
             && x.type === (line.amount > 0 ? 'incomes' : 'expenses'));
           const prepared = lines.map((line, i) => {
             const who = whoOf(line);
-            const base = line.mm ? `mm|${line.date}|${line.desc}|${line.amount}` : `${account}|${line.date}|${line.desc}|${line.amount}`;
+            const base = line.mm ? `mm|${line.date}|${line.desc}|${line.amount}` : `${line.section && /joint/i.test(line.section) ? 'joint' : account}|${line.date}|${line.desc}|${line.amount}`;
             counts[base] = (counts[base] || 0) + 1;
             const importKey = `${base}|${counts[base]}`;
             const done = !line.state || /COMPLETED|ABGESCHLOSSEN|ERLEDIGT|AUSGEFÜHRT/.test(line.state);
@@ -9146,7 +9226,7 @@
                   <label className="block p-4 rounded-lg border-2 border-dashed border-strong text-center cursor-pointer hover:border-primary text-primary font-medium">
                     <input
                       type="file"
-                      accept=".csv,.xlsx,.xls,text/csv"
+                      accept=".csv,.xlsx,.xls,.pdf,text/csv,application/pdf"
                       className="hidden"
                       onChange={(e) => { const f = e.target.files[0]; e.target.value = ''; handleStatementFile(f); }}
                     />
