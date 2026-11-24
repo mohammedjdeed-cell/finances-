@@ -885,6 +885,7 @@
         itemEntries: "Einträge in diesem Monat ({{n}})",
         itemNoEntries: "Noch nichts eingetragen.",
         edPlanCard: "Plan & Wiederholung",
+        kWhatKind: "Was ist es?",
         kPurchase: "Einkauf",
         kBill: "Rechnung (monatlich)",
         kSub: "Abo",
@@ -1755,6 +1756,7 @@
         itemEntries: "Entries this month ({{n}})",
         itemNoEntries: "Nothing entered yet.",
         edPlanCard: "Plan & repeat",
+        kWhatKind: "What is it?",
         kPurchase: "Purchase",
         kBill: "Bill (monthly)",
         kSub: "Subscription",
@@ -2625,6 +2627,7 @@
         itemEntries: "إدخالات هذا الشهر ({{n}})",
         itemNoEntries: "لا شيء مسجل بعد.",
         edPlanCard: "الخطة والتكرار",
+        kWhatKind: "ما نوعه؟",
         kPurchase: "شراء",
         kBill: "فاتورة شهرية",
         kSub: "اشتراك",
@@ -8357,7 +8360,11 @@
         const items = (data.categories[type] || []).slice().sort((a, b) => (bkUsage[type + '|' + b] || 0) - (bkUsage[type + '|' + a] || 0) || a.localeCompare(b));
         const q = bk.q.trim().toLowerCase();
         const matchRank = (c) => { const n = c.toLowerCase(); return n === q ? 3 : n.startsWith(q) ? 2 : n.split(/[\s/()&-]+/).some(w => w.startsWith(q)) ? 1 : 0; };
-        const filtered = q ? items.filter(c => c.toLowerCase().includes(q)).sort((a, b) => matchRank(b) - matchRank(a)) : items;
+        const kindOf = (c) => type === 'incomes'
+          ? (getMeta('incomes', c).mode === 'fixed' || /fix/.test(getMeta('incomes', c).bracket || '') ? 'regular' : 'oneoff')
+          : getMeta('expenses', c).oneTime ? 'onebill' : kindForGroup('expenses', getMeta('expenses', c).bracket);
+        const curKind = bk.kind || (type === 'incomes' ? 'oneoff' : 'purchase');
+        const filtered = q ? items.filter(c => c.toLowerCase().includes(q)).sort((a, b) => matchRank(b) - matchRank(a)) : items.filter(c => kindOf(c) === curKind);
         let shown = q || bk.all ? filtered : filtered.slice(0, 11);
         // An item picked from elsewhere (e.g. "+" in Month) is always visible and selected.
         if (bk.cat && bk.cat !== '__new' && !shown.includes(bk.cat) && items.includes(bk.cat)) shown = [bk.cat, ...shown.slice(0, 10)];
@@ -8372,7 +8379,7 @@
         return (
           <div className="grid grid-cols-1 gap-4 lg:gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-start">
             <section className="min-w-0 rounded-2xl border border-subtle bg-surface p-4 space-y-4">
-              <Segmented full options={[['expenses', t('bkOut')], ['incomes', t('bkIn')], ...(data.accounts.length > 1 ? [['transfer', t('bkTransfer')]] : [])]} value={type} onChange={(v) => setB({ type: v, cat: null, q: '', all: false })} />
+              <Segmented full options={[['expenses', t('bkOut')], ['incomes', t('bkIn')], ...(data.accounts.length > 1 ? [['transfer', t('bkTransfer')]] : [])]} value={type} onChange={(v) => setB({ type: v, cat: null, q: '', all: false, kind: v === 'incomes' ? 'oneoff' : 'purchase' })} />
               <div className={`flex items-baseline gap-2 rounded-2xl px-4 py-3 ${bk.err === 'amount' ? 'bg-red-500/10' : 'bg-subtle/60'}`}>
                 <input data-free value={bk.amount} onChange={(e) => setB({ amount: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && (type === 'transfer' ? saveTransfer() : saveBooking())}
                   inputMode="decimal" placeholder="0,00" aria-label={t('bkAmount')}
@@ -8442,6 +8449,28 @@
                 );
               })()}
 
+              {type !== 'transfer' && (() => {
+                const kinds = type === 'incomes'
+                  ? [['oneoff', 'fa-coins', t('kOneoffIn')], ['regular', 'fa-repeat', t('kRegularIn')]]
+                  : [['purchase', 'fa-bag-shopping', t('kPurchase')], ['bill', 'fa-file-invoice', t('kBill')], ['sub', 'fa-rotate', t('kSub')], ['onebill', 'fa-calendar-day', t('kOnebill')]];
+                return (
+                  <div className="space-y-2">
+                    {label(t('kWhatKind'))}
+                    <div className={`grid gap-1.5 ${kinds.length === 4 ? 'grid-cols-4' : 'grid-cols-2'}`}>
+                      {kinds.map(([id, ic, lbl]) => (
+                        <button key={id} type="button"
+                          onClick={() => setB({ kind: id, newGroup: type === 'expenses' ? groupForKind(id) : bk.newGroup, paidNow: id !== 'onebill' || bk.date <= todayIso,
+                            ...(bk.cat && bk.cat !== '__new' && kindOf(bk.cat) !== id ? { cat: null } : {}), all: false })}
+                          className={`flex flex-col items-center gap-1 rounded-xl py-2 border transition active:scale-95 ${curKind === id ? 'border-notion-blue bg-notion-blue/10 text-primary' : 'border-subtle bg-subtle/50 text-secondary'}`}>
+                          <i className={`fa-solid ${ic} text-[14px]`}></i>
+                          <span className="text-[10.5px] leading-tight text-center font-medium">{lbl}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div className={`space-y-2 ${type === 'transfer' ? 'hidden' : ''}`}>
                 {label(type === 'incomes' ? t('bkWhereIn') : t('bkWhere'))}
                 {/* Big search field: full width, easy to reach with the thumb, with a clear button. */}
@@ -8465,14 +8494,14 @@
                     const on = bk.cat === c;
                     return (
                       <button key={c} type="button" onClick={() => { const n0 = dateToMonth(bk.date) ? getNode(type, c, dateToMonth(bk.date).yr, dateToMonth(bk.date).m) : null;
-                        setB({ cat: c, shop: '', ...(n0 && n0.budget > 0 && !bk.amount && !isReceiptItem(c) ? { amount: String(n0.budget).replace('.', lang === 'en' ? '.' : ',') } : {}) }); }}
+                        setB({ cat: c, shop: '', kind: kindOf(c), ...(n0 && n0.budget > 0 && !bk.amount && !isReceiptItem(c) ? { amount: String(n0.budget).replace('.', lang === 'en' ? '.' : ',') } : {}) }); }}
                         className={`flex flex-col items-center gap-1 rounded-xl px-1.5 py-2 border transition active:scale-95 ${on ? 'border-notion-blue bg-notion-blue/10' : 'border-transparent bg-subtle/50 hover:bg-subtle'}`}>
                         <ItemIcon spec={iconFor(type, c)} tint={tintFor(type, c)} size={30} />
                         <span className={`w-full text-center text-[11px] leading-tight truncate ${on ? 'text-primary font-semibold' : 'text-secondary'}`}>{c}</span>
                       </button>
                     );
                   })}
-                  <button type="button" onClick={() => setB({ cat: '__new', newName: bk.q.trim() || bk.newName, kind: type === 'incomes' ? 'oneoff' : 'purchase', newGroup: type === 'expenses' ? groupForKind('purchase') : '', paidNow: true })}
+                  <button type="button" onClick={() => setB({ cat: '__new', newName: bk.q.trim() || bk.newName, kind: curKind, newGroup: type === 'expenses' ? groupForKind(curKind) : '', paidNow: curKind !== 'onebill' || bk.date <= todayIso })}
                     className={`flex flex-col items-center gap-1 rounded-xl px-1.5 py-2 border border-dashed transition ${bk.cat === '__new' ? 'border-notion-blue bg-notion-blue/10' : 'border-strong'}`}>
                     <span className="w-[30px] h-[30px] rounded-[9px] bg-subtle flex items-center justify-center text-secondary"><i className="fa-solid fa-plus text-xs"></i></span>
                     <span className="text-[11px] text-secondary">{t('bkNew')}</span>
@@ -8554,15 +8583,6 @@
                   const due = parseInt(bk.payDay) || +bk.date.slice(8, 10);
                   return (
                     <div className="pop-in space-y-2.5">
-                      <div className={`grid gap-1.5 ${kinds.length === 4 ? 'grid-cols-4' : 'grid-cols-2'}`}>
-                        {kinds.map(([id, ic, lbl]) => (
-                          <button key={id} type="button" onClick={() => setB({ kind: id, newGroup: type === 'expenses' ? groupForKind(id) : bk.newGroup, paidNow: id !== 'onebill' || bk.date <= todayIso })}
-                            className={`flex flex-col items-center gap-1 rounded-xl py-2 border transition active:scale-95 ${k === id ? 'border-notion-blue bg-notion-blue/10 text-primary' : 'border-subtle bg-subtle/50 text-secondary'}`}>
-                            <i className={`fa-solid ${ic} text-[14px]`}></i>
-                            <span className="text-[10.5px] leading-tight text-center font-medium">{lbl}</span>
-                          </button>
-                        ))}
-                      </div>
                       {planned && (
                         <div className="rounded-xl bg-subtle/60 p-3 space-y-2.5">
                           <div className="flex flex-wrap items-center gap-2 text-[12.5px] text-primary">
