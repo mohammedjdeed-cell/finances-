@@ -885,6 +885,12 @@
         itemEntries: "Einträge in diesem Monat ({{n}})",
         itemNoEntries: "Noch nichts eingetragen.",
         edPlanCard: "Plan & Wiederholung",
+        loanDupSpare: "doppelt – diese Kopie kann weg",
+        loanSettledList: "Erledigte Darlehen ({{n}})",
+        loanPaidVia: "zurückgezahlt über „{{item}}“: {{amount}}",
+        loanNoLink: "ohne Rückzahlungs-Posten",
+        loanDup: "doppelt?",
+        loanReopen: "Wieder öffnen",
         loanSettledToast: "Darlehen erledigt – offene geplante Rückzahlungen entfernt",
         pmToggle: "Jeden Monat anders",
         pmDefault: "Betrag für Monate ohne eigenen Wert (€)",
@@ -1762,6 +1768,12 @@
         itemEntries: "Entries this month ({{n}})",
         itemNoEntries: "Nothing entered yet.",
         edPlanCard: "Plan & repeat",
+        loanDupSpare: "duplicate – this copy can go",
+        loanSettledList: "Settled loans ({{n}})",
+        loanPaidVia: "paid back via “{{item}}”: {{amount}}",
+        loanNoLink: "no repayment item",
+        loanDup: "duplicate?",
+        loanReopen: "Reopen",
         loanSettledToast: "Loan settled – open planned repayments removed",
         pmToggle: "Different every month",
         pmDefault: "Amount for months without their own value (€)",
@@ -2639,6 +2651,12 @@
         itemEntries: "إدخالات هذا الشهر ({{n}})",
         itemNoEntries: "لا شيء مسجل بعد.",
         edPlanCard: "الخطة والتكرار",
+        loanDupSpare: "مكرر – يمكن حذف هذه النسخة",
+        loanSettledList: "القروض المسوّاة ({{n}})",
+        loanPaidVia: "سُدد عبر „{{item}}“: {{amount}}",
+        loanNoLink: "بدون بند سداد",
+        loanDup: "مكرر؟",
+        loanReopen: "إعادة فتح",
         loanSettledToast: "تمت تسوية القرض – أُزيلت الأقساط المخططة غير المدفوعة",
         pmToggle: "مختلف كل شهر",
         pmDefault: "مبلغ الأشهر التي ليس لها قيمة خاصة (€)",
@@ -9192,6 +9210,48 @@
                       <i className="fa-solid fa-plus text-xs"></i>{t('loanNewBtn')}
                     </button>
                     {activeIous.length === 0 && <p className="text-[12px] text-tertiary">{t('loanNoneOpen')}</p>}
+                    {(() => {
+                      // Settled (and paid-off) loans: kept for history, and so duplicates can be removed.
+                      const done = (data.ious || []).filter(i => !activeIous.includes(i));
+                      if (!done.length) return null;
+                      const key = (i) => `${(i.person || '').trim().toLowerCase()}|${parseFloat(i.amount) || 0}|${i.type}`;
+                      const count = {}; (data.ious || []).forEach(i => { count[key(i)] = (count[key(i)] || 0) + 1; });
+                      return (
+                        <details className="rounded-xl bg-subtle/50 px-3 py-2 group">
+                          <summary className="cursor-pointer text-[12.5px] text-secondary font-medium list-none flex items-center gap-2">
+                            <i className="fa-solid fa-chevron-down text-[10px] transition-transform group-open:rotate-180"></i>{t('loanSettledList', { n: done.length })}
+                          </summary>
+                          <div className="pt-2 space-y-1.5">
+                            {done.map(item => {
+                              const back = item.repayCat ? repayItemOf(item) : null;
+                              const dup = count[key(item)] > 1;
+                              // Of two copies, the one without a link and without money is the spare one.
+                              const spare = dup && !item.repayCat && !(item.booked && item.booked.cat);
+                              return (
+                                <div key={item.id} className={`flex items-center gap-2 rounded-lg px-2.5 py-2 ${spare ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-surface'}`}>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-[12.5px] text-primary truncate">
+                                      {item.person} · <span className="font-mono">{fmtCents(parseFloat(item.amount) || 0)}</span>
+                                      <span className="text-tertiary"> · {item.type === 'borrowed' ? t('loanBorrowed') : t('loanLent')}</span>
+                                    </div>
+                                    <div className="text-[11px] text-tertiary leading-snug">
+                                      {item.date}{back ? ` · ${t('loanPaidVia', { item: back, amount: fmtCents(repaidOf(item)) })}` : ` · ${t('loanNoLink')}`}
+                                      {dup && <span className="text-amber-600 dark:text-amber-400 font-medium"> · {spare ? t('loanDupSpare') : t('loanDup')}</span>}
+                                    </div>
+                                  </div>
+                                  {item.settled && (
+                                    <button onClick={() => mutate(d => { const x = d.ious.find(i => i.id === item.id); if (x) x.settled = false; })}
+                                      className="px-2 py-1 rounded-md text-[11px] bg-subtle text-secondary hover:text-primary">{t('loanReopen')}</button>
+                                  )}
+                                  <button onClick={() => handleDeleteIou(item)} aria-label={t('iouDelete')} title={t('iouDelete')}
+                                    className="w-7 h-7 rounded-md bg-subtle text-secondary hover:text-notion-red"><i className="fa-solid fa-trash-can text-[11px]"></i></button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </details>
+                      );
+                    })()}
 
                     {activeIous.length > 0 && (
                       <div className="grid grid-cols-1 gap-2 pt-1">
