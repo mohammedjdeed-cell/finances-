@@ -885,6 +885,7 @@
         itemEntries: "Einträge in diesem Monat ({{n}})",
         itemNoEntries: "Noch nichts eingetragen.",
         edPlanCard: "Plan & Wiederholung",
+        loanSettledToast: "Darlehen erledigt – offene geplante Rückzahlungen entfernt",
         pmToggle: "Jeden Monat anders",
         pmDefault: "Betrag für Monate ohne eigenen Wert (€)",
         pmList: "{{n}} Monate · zusammen {{total}}",
@@ -1761,6 +1762,7 @@
         itemEntries: "Entries this month ({{n}})",
         itemNoEntries: "Nothing entered yet.",
         edPlanCard: "Plan & repeat",
+        loanSettledToast: "Loan settled – open planned repayments removed",
         pmToggle: "Different every month",
         pmDefault: "Amount for months without their own value (€)",
         pmList: "{{n}} months · {{total}} in total",
@@ -2637,6 +2639,7 @@
         itemEntries: "إدخالات هذا الشهر ({{n}})",
         itemNoEntries: "لا شيء مسجل بعد.",
         edPlanCard: "الخطة والتكرار",
+        loanSettledToast: "تمت تسوية القرض – أُزيلت الأقساط المخططة غير المدفوعة",
         pmToggle: "مختلف كل شهر",
         pmDefault: "مبلغ الأشهر التي ليس لها قيمة خاصة (€)",
         pmList: "{{n}} أشهر · المجموع {{total}}",
@@ -5925,7 +5928,13 @@
       };
 
       const handleSettleIou = (id) => {
-        mutate(d => { d.ious = d.ious.map(i => i.id === id ? { ...i, settled: true, repayCat: i.repayCat || repayItemOf(i) || undefined } : i); });
+        mutateWithUndo(d => {
+          const x = d.ious.find(i => i.id === id);
+          if (!x) return;
+          x.settled = true;
+          x.repayCat = x.repayCat || repayItemOf(x) || undefined;
+          dropLoanPlan(d, x, true);
+        }, t('loanSettledToast'));
       };
 
       // For entries made by mistake: removes the debt record only, not any income or repayments.
@@ -5933,7 +5942,7 @@
         if (!confirm(t('iouDeleteConfirm', { person: item.person, amount: fmt(item.amount) }))) return;
         mutate(d => {
           const x = d.ious.find(i => i.id === item.id);
-          if (x) applyLoanMoney(d, x, -1);
+          if (x) { applyLoanMoney(d, x, -1); dropLoanPlan(d, x, false); }
           d.ious = d.ious.filter(i => i.id !== item.id);
         });
       };
@@ -5988,13 +5997,35 @@
         if (!b || !b.cat || !d.values[b.yr]) return;
         const v = amount ?? b.amount;
         const n = loanNode(d, b.type, b.cat, b.yr, b.m);
-        setActualTx(d, b.type, b.cat, b.yr, b.m, Math.max(0, n.actual + sign * v), 'loan');
+        const own = b.txId ? d.tx.find(x => x.id === b.txId) : null;
+        if (sign > 0 && b.date && amount == null) {
+          // The money arrives (or leaves) on the loan's own day, named after the person.
+          const tx = { id: newTxId(), date: b.date, type: b.type, cat: b.cat, amount: round2(v), who: null, note: iou.person || '', source: 'loan', account: null };
+          d.tx.push(tx); applyTx(d, tx, +1); b.txId = tx.id;
+        } else if (sign < 0 && own && amount == null) {
+          applyTx(d, own, -1); d.tx = d.tx.filter(x => x.id !== own.id); delete b.txId;
+        } else {
+          setActualTx(d, b.type, b.cat, b.yr, b.m, Math.max(0, n.actual + sign * v), 'loan');
+        }
         n.budget = round2(Math.max(0, n.budget + sign * v));
+      };
+      // Planned repayments a loan added; taken back when the loan is deleted, and the unpaid ones when it's settled early.
+      const dropLoanPlan = (d, iou, onlyOpen) => {
+        if (!Array.isArray(iou.plan) || !iou.repayCat) return;
+        const type = iou.repayType === 'incomes' ? 'incomes' : 'expenses';
+        iou.plan = iou.plan.filter(p => {
+          const idx = timelineIndex(p.yr, p.m);
+          const n = d.values[p.yr]?.[type]?.[iou.repayCat]?.[p.m];
+          if (!n) return false;
+          if (onlyOpen && (idx < nowIdx || n.actual > 0.005)) return true;
+          n.budget = round2(Math.max(0, n.budget - p.amount));
+          return false;
+        });
       };
       const bookLoanInto = (d, iou, pos) => {
         const { moneyType, moneyName } = loanItemsFor(iou.person, iou.type);
         const cat = ensureLoanItem(d, moneyType, moneyName);
-        iou.booked = { type: moneyType, cat, yr: pos.yr, m: pos.m, amount: round2(parseFloat(iou.amount) || 0) };
+        iou.booked = { type: moneyType, cat, yr: pos.yr, m: pos.m, amount: round2(parseFloat(iou.amount) || 0), ...(pos.date ? { date: pos.date } : {}) };
         applyLoanMoney(d, iou, 1);
       };
       // 'booked' (we know where), 'earlier' (counted before this was tracked), 'off', or 'unknown' (older loans).
@@ -6027,13 +6058,15 @@
             repayCat: back, repayType: backType, booked: false,
             rate: f.rate ? Math.max(0, Math.min(100, parseFloat(String(f.rate).replace(',', '.')) || 0)) : null
           };
-          if (f.book) bookLoanInto(d, iou, pos);
+          if (f.book) bookLoanInto(d, iou, { ...pos, date: f.date });
+          iou.plan = [];
           // Added to what's already planned there, never overwriting another loan's repayment.
           parts.forEach((part, i) => {
             const p = TIMELINE[startIdx + i];
             if (!p) return;
             const n = loanNode(d, backType, back, p.yr, p.m);
             n.budget = round2(n.budget + part);
+            iou.plan.push({ yr: p.yr, m: p.m, amount: part });
           });
           d.ious.push(iou);
         }, t('loanAdded', { amount: fmtCents(amount), person }));
