@@ -885,6 +885,39 @@
         itemEntries: "Einträge in diesem Monat ({{n}})",
         itemNoEntries: "Noch nichts eingetragen.",
         edPlanCard: "Plan & Wiederholung",
+        labsTitle: "Neue Funktionen (einzeln abschaltbar)",
+        labsNowToday: "„Jetzt“ ohne Einträge nach heute",
+        labsReminders: "Erinnerungen an fällige Rechnungen",
+        labsImportAmount: "Import erkennt Rechnungen am Betrag",
+        labsCloseMonth: "Monatsabschluss-Karte",
+        labsSplitUp: "Wer hat was bezahlt",
+        srchTitle: "Suchen",
+        srchPh: "Laden, Posten, Notiz oder Betrag – z. B. Action",
+        srchAll: "Alle Jahre",
+        srchFound: "{{n}} Einträge",
+        srchHint: "Mindestens 2 Zeichen eingeben.",
+        cmTitle: "{{month}} abschließen",
+        cmSub: "noch {{n}} Tage",
+        cmStepAccounts: "Kontostände eintragen (damit „Jetzt“ stimmt).",
+        cmOpenAccounts: "Konten öffnen",
+        cmStepBillsOpen: "{{n}} Rechnungen noch offen ({{amount}}).",
+        cmStepBillsDone: "Alle Rechnungen bezahlt.",
+        cmStepLeftover: "Übrig in den Einkaufs-Budgets: {{amount}}",
+        cmToGoal: "{{amount}} ins Sparziel",
+        cmNoGoal: "Lege unter „Planung“ ein Sparziel an, um den Rest dorthin zu legen.",
+        suTitle: "Wer hat was bezahlt",
+        suEven: "Ihr habt diesen Monat etwa gleich viel bezahlt.",
+        suOwes: "{{who}} gibt {{to}} {{amount}}, dann seid ihr quitt.",
+        suHint: "Nur Einträge mit „Wer?“ – gemeinsame Ausgaben zählen nicht mit.",
+        remTitle: "Erinnerungen ({{n}})",
+        remAllow: "Handy-Benachrichtigung an",
+        rem_overdue: "überfällig",
+        rem_today: "heute fällig",
+        rem_tomorrow: "morgen fällig",
+        rem_late: "noch nicht eingegangen",
+        acctSince: "Seit {{day}}: {{n}} Einträge, {{delta}}",
+        acctExpected: "→ {{amount}} übernehmen",
+        futureNote: "Gebucht für nach heute – noch nicht auf dem Konto",
         loanDupSpare: "doppelt – diese Kopie kann weg",
         loanSettledList: "Erledigte Darlehen ({{n}})",
         loanPaidVia: "zurückgezahlt über „{{item}}“: {{amount}}",
@@ -1768,6 +1801,39 @@
         itemEntries: "Entries this month ({{n}})",
         itemNoEntries: "Nothing entered yet.",
         edPlanCard: "Plan & repeat",
+        labsTitle: "New features (switch off one by one)",
+        labsNowToday: "“Now” without entries after today",
+        labsReminders: "Reminders for due bills",
+        labsImportAmount: "Import matches bills by amount",
+        labsCloseMonth: "Month-end card",
+        labsSplitUp: "Who paid what",
+        srchTitle: "Search",
+        srchPh: "Shop, item, note or amount – e.g. Action",
+        srchAll: "All years",
+        srchFound: "{{n}} entries",
+        srchHint: "Type at least 2 characters.",
+        cmTitle: "Close {{month}}",
+        cmSub: "{{n}} days left",
+        cmStepAccounts: "Enter your account balances (so “Now” is right).",
+        cmOpenAccounts: "Open accounts",
+        cmStepBillsOpen: "{{n}} bills still open ({{amount}}).",
+        cmStepBillsDone: "All bills paid.",
+        cmStepLeftover: "Left in the shopping budgets: {{amount}}",
+        cmToGoal: "Put {{amount}} into goal",
+        cmNoGoal: "Create a savings goal under “Plan” to put the rest there.",
+        suTitle: "Who paid what",
+        suEven: "You paid about the same this month.",
+        suOwes: "{{who}} gives {{to}} {{amount}} and you’re even.",
+        suHint: "Only entries with “Who?” – joint spending isn’t counted.",
+        remTitle: "Reminders ({{n}})",
+        remAllow: "Turn on phone notifications",
+        rem_overdue: "overdue",
+        rem_today: "due today",
+        rem_tomorrow: "due tomorrow",
+        rem_late: "not arrived yet",
+        acctSince: "Since {{day}}: {{n}} entries, {{delta}}",
+        acctExpected: "→ use {{amount}}",
+        futureNote: "Booked for after today – not in the bank yet",
         loanDupSpare: "duplicate – this copy can go",
         loanSettledList: "Settled loans ({{n}})",
         loanPaidVia: "paid back via “{{item}}”: {{amount}}",
@@ -2651,6 +2717,39 @@
         itemEntries: "إدخالات هذا الشهر ({{n}})",
         itemNoEntries: "لا شيء مسجل بعد.",
         edPlanCard: "الخطة والتكرار",
+        labsTitle: "ميزات جديدة (يمكن إيقاف كل واحدة)",
+        labsNowToday: "„الآن“ بدون إدخالات بعد اليوم",
+        labsReminders: "تذكير بالفواتير المستحقة",
+        labsImportAmount: "الاستيراد يتعرف على الفواتير بالمبلغ",
+        labsCloseMonth: "بطاقة إغلاق الشهر",
+        labsSplitUp: "من دفع ماذا",
+        srchTitle: "بحث",
+        srchPh: "محل أو بند أو ملاحظة أو مبلغ – مثل Action",
+        srchAll: "كل السنوات",
+        srchFound: "{{n}} إدخالات",
+        srchHint: "اكتب حرفين على الأقل.",
+        cmTitle: "إغلاق {{month}}",
+        cmSub: "بقي {{n}} أيام",
+        cmStepAccounts: "أدخل أرصدة الحسابات (ليكون „الآن“ صحيحًا).",
+        cmOpenAccounts: "افتح الحسابات",
+        cmStepBillsOpen: "{{n}} فواتير لم تُدفع بعد ({{amount}}).",
+        cmStepBillsDone: "كل الفواتير مدفوعة.",
+        cmStepLeftover: "المتبقي في ميزانيات التسوق: {{amount}}",
+        cmToGoal: "ضع {{amount}} في هدف الادخار",
+        cmNoGoal: "أنشئ هدف ادخار في „التخطيط“ لتضع الباقي فيه.",
+        suTitle: "من دفع ماذا",
+        suEven: "دفعتما تقريبًا نفس المبلغ هذا الشهر.",
+        suOwes: "{{who}} يعطي {{to}} {{amount}} فتصبحان متعادلين.",
+        suHint: "فقط الإدخالات التي فيها „من؟“ – المصاريف المشتركة لا تُحسب.",
+        remTitle: "تذكيرات ({{n}})",
+        remAllow: "فعّل إشعارات الهاتف",
+        rem_overdue: "متأخرة",
+        rem_today: "تستحق اليوم",
+        rem_tomorrow: "تستحق غدًا",
+        rem_late: "لم يصل بعد",
+        acctSince: "منذ {{day}}: {{n}} إدخالات، {{delta}}",
+        acctExpected: "← اعتمد {{amount}}",
+        futureNote: "مسجّل لما بعد اليوم – ليس في البنك بعد",
         loanDupSpare: "مكرر – يمكن حذف هذه النسخة",
         loanSettledList: "القروض المسوّاة ({{n}})",
         loanPaidVia: "سُدد عبر „{{item}}“: {{amount}}",
@@ -3940,6 +4039,10 @@
       const [hideZeroes, setHideZeroes] = useState(() => safeStorage.get('budget_hide_zeroes', 'true') === 'true');
       const [isBurgerOpen, setIsBurgerOpen] = useState(false);
       const [theme, setTheme] = useState(() => safeStorage.get('budget_app_theme', 'dark'));
+      // New features can be switched off one by one (menu → New features), kept on this device.
+      const LABS_DEFAULT = { nowToday: true, reminders: true, importAmount: true, closeMonth: true, splitUp: true };
+      const [labs, setLabsState] = useState(() => { try { return { ...LABS_DEFAULT, ...JSON.parse(safeStorage.get('budget_labs', '{}')) }; } catch (e) { return LABS_DEFAULT; } });
+      const setLab = (k, v) => setLabsState(prev => { const next = { ...prev, [k]: v }; safeStorage.set('budget_labs', JSON.stringify(next)); return next; });
       const [motion, setMotionState] = useState(() => safeStorage.get('budget_motion', 'on') === 'off' ? 'off' : 'on');
       const setMotion = (v) => { setMotionState(v); safeStorage.set('budget_motion', v); if (v === 'off') document.documentElement.dataset.motion = 'off'; else delete document.documentElement.dataset.motion; };
       const [systemDark, setSystemDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -4003,6 +4106,7 @@
       // Item page (one item's month: its entries as cards) and the entry editor.
       const [itemSheet, setItemSheet] = useState(null);
       const [iconQuery, setIconQuery] = useState('');
+      const [search, setSearch] = useState(null);
       const [entrySheet, setEntrySheet] = useState(null);
       const [recurringForm, setRecurringForm] = useState({ field: 'budget', amount: 0, from: '', until: '', every: 1, clearOutside: false });
 
@@ -4601,6 +4705,40 @@
         });
         return out.sort((a, b) => (b.overdue - a.overdue) || (a.off - b.off) || ((a.day || 99) - (b.day || 99)));
       }, [data, nowIdx]);
+
+      // Reminders: bills due today, tomorrow or overdue, and planned income that should have arrived.
+      const reminders = useMemo(() => {
+        if (!labs.reminders || nowIdx === -1) return [];
+        const p = TIMELINE[nowIdx], today = new Date().getDate();
+        const out = dueSoon.filter(x => x.off === 0 && (x.overdue || x.day === today || x.day === today + 1))
+          .map(x => ({ kind: 'bill', cat: x.cat, amount: x.amount, day: x.day, when: x.overdue ? 'overdue' : x.day === today ? 'today' : 'tomorrow' }));
+        data.categories.incomes.forEach(cat => {
+          const n = getNode('incomes', cat, p.yr, p.m), pd = getMeta('incomes', cat).payDay;
+          if (n.budget > 0 && n.actual < 0.005 && Number.isInteger(pd) && pd < today) out.push({ kind: 'income', cat, amount: n.budget, day: pd, when: 'late' });
+        });
+        return out;
+      }, [dueSoon, data, nowIdx, labs.reminders]);
+      const [notifPerm, setNotifPerm] = useState(() => { try { return window.Notification ? Notification.permission : 'unsupported'; } catch (e) { return 'unsupported'; } });
+      const askNotif = async () => { try { const r = await Notification.requestPermission(); setNotifPerm(r); } catch (e) {} };
+      // One phone notification a day, when the app is opened or comes back to the front.
+      useEffect(() => {
+        if (!labs.reminders || notifPerm !== 'granted' || !reminders.length) return;
+        const fire = async () => {
+          if (document.visibilityState !== 'visible') return;
+          const key = 'budget_notified_' + householdId, today = todayISO();
+          if (safeStorage.get(key, '') === today) return;
+          safeStorage.set(key, today);
+          const body = reminders.slice(0, 4).map(r => `${r.cat} · ${fmtCents(r.amount)} · ${t('rem_' + r.when)}`).join('\n');
+          try {
+            const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
+            if (reg && reg.showNotification) reg.showNotification(t('remTitle', { n: reminders.length }), { body, icon: 'icon-192.png', tag: 'due-' + today });
+            else new Notification(t('remTitle', { n: reminders.length }), { body, icon: 'icon-192.png' });
+          } catch (e) {}
+        };
+        fire();
+        document.addEventListener('visibilitychange', fire);
+        return () => document.removeEventListener('visibilitychange', fire);
+      }, [reminders, notifPerm, labs.reminders, householdId]);
 
       // Regular incomes whose payments stop within the next 12 months (e.g. a blocked account running out).
       const incomeEndings = useMemo(() => {
@@ -5425,6 +5563,19 @@
         const byWord = data.categories[type].find(c => cleanItemName(c).split(' ')
           .some(w => w.length >= 4 && !GENERIC.includes(w) && low.includes(w)));
         if (byWord) return `item:${byWord}`;
+        // Same amount as a bill (or income) planned that month and still open, near its due day.
+        if (labs.importAmount) {
+          const pos = dateToMonth(line.date), amt = Math.abs(line.amount) + (type === 'expenses' ? Math.abs(line.fee || 0) : 0);
+          if (pos) {
+            const day = +line.date.slice(8, 10);
+            const hits = data.categories[type].filter(c => {
+              if (type === 'expenses' && isReceiptItem(c)) return false;
+              const n = getNode(type, c, pos.yr, pos.m), pd = getMeta(type, c).payDay;
+              return n.budget > 0 && Math.abs(n.budget - amt) < 0.01 && n.actual < 0.005 && (!Number.isInteger(pd) || Math.abs(pd - day) <= 4);
+            });
+            if (hits.length === 1) return `item:${hits[0]}`;
+          }
+        }
         if (line.mm) {
           if (type === 'incomes') {
             const partner = (data.members.partner || '').trim().split(/\s+/)[0].toLowerCase();
@@ -6904,7 +7055,24 @@
       const removeAccount = (id) => mutateWithUndo(d => { d.accounts = d.accounts.filter(x => x.id !== id); }, t('accountRemoved'));
       const accountsTotal = round2(data.accounts.reduce((sum, a) => sum + (a.balance || 0), 0));
       const nowRow = nowIdx >= 0 ? forwardTimeline[nowIdx] : null;
-      const appNow = nowRow && nowRow.startBal != null ? round2(nowRow.startBal + nowRow.actualIn - nowRow.actualEx) : null;
+      // Entries dated after today (a salary ticked early, a bill booked ahead) aren't in the bank yet.
+      const futureNet = useMemo(() => {
+        if (!labs.nowToday) return 0;
+        const today = todayISO(), prefix = today.slice(0, 8);
+        return round2((data.tx || []).filter(x => x.date.startsWith(prefix) && x.date > today)
+          .reduce((sum, x) => sum + (x.type === 'incomes' ? x.amount : -x.amount), 0));
+      }, [data.tx, labs.nowToday]);
+      const appNow = nowRow && nowRow.startBal != null ? round2(nowRow.startBal + nowRow.actualIn - nowRow.actualEx - futureNet) : null;
+      // Each account: the balance you last typed in, plus what was booked to it since that day.
+      const accountCheck = useMemo(() => {
+        const today = todayISO();
+        return data.accounts.map(a => {
+          if (!a.updated) return { a, since: null };
+          const since = (data.tx || []).filter(x => x.account === a.id && x.date > a.updated && x.date <= today);
+          const delta = round2(since.reduce((sum, x) => sum + (x.type === 'incomes' ? x.amount : -x.amount), 0));
+          return { a, since, delta, expected: round2((a.balance || 0) + delta) };
+        });
+      }, [data.accounts, data.tx]);
 
       // ---- Money health: emergency fund, savings rate, needs vs wants, yearly costs, debts ----
       const DEFAULT_WANTS = { leisure: true, subs: true };
@@ -7016,7 +7184,7 @@
       // Work back from today's real total to the start of this month, using what's recorded so far.
       const useAccountsAsReal = () => {
         if (!nowRow) return;
-        const start = round2(accountsTotal - nowRow.actualIn + nowRow.actualEx);
+        const start = round2(accountsTotal - nowRow.actualIn + nowRow.actualEx + futureNet);
         mutateWithUndo(d => { d.startingCapital = start; d.startingMonth = timelineKey(nowRow.year, nowRow.month); },
           t('accountsUsed', { amount: fmtCents(accountsTotal) }));
       };
@@ -7274,7 +7442,7 @@
         ];
         // What should be in the accounts right now, according to what's recorded so far.
         const availableNow = !beforeStart && monthStatus(selectedYear, selectedMonth) === 'current'
-          ? cm.startBal + cm.actualIn - cm.actualEx : null;
+          ? cm.startBal + cm.actualIn - cm.actualEx - futureNet : null;
         const incomeHasAmount = (cat) => { const n = getNode('incomes', cat, selectedYear, selectedMonth); return n.budget > 0 || n.actual > 0; };
         const visibleIncomes = data.categories.incomes.filter(cat => incomeHasAmount(cat) || (showEmpty.__incomes && !getMeta('incomes', cat).oneTime));
         const hiddenIncomes = data.categories.incomes.filter(cat => !incomeHasAmount(cat) && !getMeta('incomes', cat).oneTime).length;
@@ -7998,16 +8166,93 @@
         </div>
       );
 
-      const OV_DEFAULT = ['review', 'afterBills', 'aiTips', 'due', 'dataCheck', 'meters', 'incomeEnd', 'forecast', 'healthLink'];
+      const OV_DEFAULT = ['closeMonth', 'review', 'afterBills', 'splitUp', 'aiTips', 'due', 'dataCheck', 'meters', 'incomeEnd', 'forecast', 'healthLink'];
       const [ovOrder, setOvOrderState] = useState(() => {
-        try { const v = JSON.parse(safeStorage.get('budget_ov_order', 'null')); if (Array.isArray(v)) return [...v.filter(k => OV_DEFAULT.includes(k)), ...OV_DEFAULT.filter(k => !v.includes(k))]; } catch (e) {}
+        try { const v = JSON.parse(safeStorage.get('budget_ov_order', 'null')); if (Array.isArray(v)) {
+          // New cards slot in where they sit by default, without disturbing the saved order.
+          const out = v.filter(k => OV_DEFAULT.includes(k));
+          OV_DEFAULT.forEach((k, i) => { if (!out.includes(k)) out.splice(Math.min(i, out.length), 0, k); });
+          return out;
+        } } catch (e) {}
         return OV_DEFAULT;
       });
       const [ovHidden, setOvHiddenState] = useState(() => { try { return JSON.parse(safeStorage.get('budget_ov_hidden', '{}')) || {}; } catch (e) { return {}; } });
       const setOvOrder = (v) => { setOvOrderState(v); safeStorage.set('budget_ov_order', JSON.stringify(v)); };
       const setOvHidden = (v) => { setOvHiddenState(v); safeStorage.set('budget_ov_hidden', JSON.stringify(v)); };
       const [arrangeOpen, setArrangeOpen] = useState(false);
-      const OV_NAMES = { review: 'ovN_review', aiTips: 'tipsTitle', afterBills: 'abTitle', due: 'dueTitle', dataCheck: 'dcTitle', meters: 'thisMonth', incomeEnd: 'incomeEndTitle', forecast: 'forecastTitle', healthLink: 'healthTitle' };
+      const OV_NAMES = { closeMonth: 'cmTitle', splitUp: 'suTitle', review: 'ovN_review', aiTips: 'tipsTitle', afterBills: 'abTitle', due: 'dueTitle', dataCheck: 'dcTitle', meters: 'thisMonth', incomeEnd: 'incomeEndTitle', forecast: 'forecastTitle', healthLink: 'healthTitle' };
+
+      // ---- Month-end ritual: shown in the last 4 days of the month ----
+      const [cmGoal, setCmGoal] = useState('');
+      const renderCloseMonth = () => {
+        if (!labs.closeMonth || nowIdx === -1) return null;
+        const p = TIMELINE[nowIdx], dim = getDaysInMonth(p.yr, p.m), today = new Date().getDate();
+        if (today < dim - 3) return null;
+        const left = data.groups.filter(g => g.kind === 'variable').map(g => {
+          const spent = data.categories.expenses.filter(c => getMeta('expenses', c).bracket === g.id && isReceiptItem(c)).reduce((sum, c) => sum + getNode('expenses', c, p.yr, p.m).actual, 0);
+          const target = getTarget(g.id, p.yr, p.m);
+          return { g, spent, target, left: round2(target - spent) };
+        }).filter(x => x.target > 0);
+        const leftover = round2(left.reduce((sum, x) => sum + Math.max(0, x.left), 0));
+        const openBills = dueSoon.filter(x => x.off === 0);
+        const checked = data.accounts.length && data.accounts.every(a => a.updated && a.updated >= todayISO().slice(0, 8) + pad2(Math.max(1, dim - 3)));
+        const goal = data.goals.find(g => g.id === cmGoal) || data.goals[0];
+        const step = (ok, text, action) => (
+          <div className="flex items-start gap-2.5">
+            <i className={`fa-solid ${ok ? 'fa-circle-check text-notion-green' : 'fa-circle text-tertiary'} text-[15px] mt-0.5`}></i>
+            <div className="flex-1 min-w-0 text-[12.5px] text-primary leading-snug">{text}{action}</div>
+          </div>
+        );
+        return panel({ id: 'closeMonth', icon: 'fa-flag-checkered', title: t('cmTitle', { month: formatMonth(p.m, lang) }), sub: t('cmSub', { n: dim - today }) }, (
+          <div className="space-y-3">
+            {step(checked, t('cmStepAccounts'), <button onClick={() => setView('more')} className="block text-notion-blue font-medium mt-0.5">{t('cmOpenAccounts')}</button>)}
+            {step(!openBills.length, openBills.length ? t('cmStepBillsOpen', { n: openBills.length, amount: fmt(openBills.reduce((a2, b2) => a2 + b2.amount, 0)) }) : t('cmStepBillsDone'),
+              openBills.length ? <span className="block text-[11px] text-tertiary">{openBills.slice(0, 4).map(x => x.cat).join(', ')}</span> : null)}
+            {step(false, t('cmStepLeftover', { amount: fmt(leftover) }), (
+              <div className="mt-1.5 space-y-1.5">
+                {left.map(x => (
+                  <div key={x.g.id} className="flex items-center justify-between text-[11.5px]">
+                    <span className="text-secondary">{groupName(x.g)}</span>
+                    <span className={`font-mono ${x.left < 0 ? 'text-notion-red' : 'text-primary'}`}>{x.left < 0 ? '−' : ''}{fmt(Math.abs(x.left))}</span>
+                  </div>
+                ))}
+                {leftover > 0 && data.goals.length > 0 && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <select data-free value={goal?.id || ''} onChange={(e) => setCmGoal(e.target.value)} style={{ flex: '1 1 0', minWidth: 0, width: 'auto' }}
+                      className="bg-subtle border border-subtle rounded-lg px-2 py-1.5 text-[12px] text-primary">
+                      {data.goals.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                    </select>
+                    <button onClick={() => mutateWithUndo(d => { const g = d.goals.find(x => x.id === goal.id); if (g) g.saved = round2(g.saved + leftover); }, t('goalDeposited', { amount: fmtCents(leftover), name: goal.name }))}
+                      className="shrink-0 px-3 py-1.5 rounded-lg bg-notion-blue text-white text-[12px] font-semibold">{t('cmToGoal', { amount: fmt(leftover) })}</button>
+                  </div>
+                )}
+                {leftover > 0 && !data.goals.length && <span className="block text-[11px] text-tertiary">{t('cmNoGoal')}</span>}
+              </div>
+            ))}
+          </div>
+        ));
+      };
+      // ---- Who paid what between the two of you (this month, shared spending) ----
+      const renderSplitUp = () => {
+        if (!labs.splitUp || nowIdx === -1) return null;
+        const p = TIMELINE[nowIdx], prefix = `${p.yr}-${pad2(ALL_MONTHS.indexOf(p.m) + 1)}-`;
+        const mine = (w) => round2((data.tx || []).filter(x => x.type === 'expenses' && x.who === w && x.date.startsWith(prefix) && x.date <= todayISO()).reduce((sum, x) => sum + x.amount, 0));
+        const me = mine('me'), partner = mine('partner'), joint = mine('joint');
+        if (me + partner < 1) return null;
+        const diff = round2((me - partner) / 2);
+        const nameMe = whoLabel('me'), namePartner = whoLabel('partner');
+        return panel({ id: 'splitUp', icon: 'fa-people-arrows', title: t('suTitle'), sub: formatMonth(p.m, lang) }, (
+          <div className="space-y-2.5">
+            {[[nameMe, me], [namePartner, partner], [t('whoJoint'), joint]].map(([n, v]) => (
+              <div key={n} className="flex items-center justify-between text-[13px]"><span className="text-secondary">{n}</span><span className="font-mono text-primary">{fmt(v)}</span></div>
+            ))}
+            <div className="rounded-xl bg-subtle/60 px-3 py-2.5 text-[13px] text-primary">
+              {Math.abs(diff) < 1 ? t('suEven') : t('suOwes', { who: diff > 0 ? namePartner : nameMe, to: diff > 0 ? nameMe : namePartner, amount: fmt(Math.abs(diff)) })}
+              <span className="block text-[11px] text-tertiary mt-0.5">{t('suHint')}</span>
+            </div>
+          </div>
+        ));
+      };
 
       const renderOverview = () => {
         const { cm, carriedLabel, lines, availableNow, beforeStart, isPast, meters } = MB;
@@ -8020,7 +8265,8 @@
           ? [
               { label: carriedLabel, text: fmtBalance(cm.startBal), cls: 'text-primary' },
               { label: t('nowReceived'), text: `+ ${fmt(cm.actualIn)}`, cls: 'text-notion-green' },
-              { label: t('nowPaid'), text: `− ${fmt(cm.actualEx)}`, cls: 'text-notion-red' }
+              { label: t('nowPaid'), text: `− ${fmt(cm.actualEx)}`, cls: 'text-notion-red' },
+              ...(futureNet ? [{ label: t('futureNote'), text: `${futureNet > 0 ? '−' : '+'} ${fmt(Math.abs(futureNet))}`, cls: 'text-tertiary' }] : [])
             ]
           : lines;
         const quick = [
@@ -8048,13 +8294,36 @@
                   ))}
                 </div>
               )),
-          incomeEnd: () => renderIncomeEnd(true), forecast: () => renderForecast(), healthLink: () => renderHealthLink()
+          incomeEnd: () => renderIncomeEnd(true), forecast: () => renderForecast(), healthLink: () => renderHealthLink(),
+          closeMonth: () => renderCloseMonth(), splitUp: () => renderSplitUp()
         };
         const shown = ovOrder.filter(k => cards[k] && !ovHidden[k]);
         const col = (rest) => shown.filter((_, i) => i % 2 === rest).map(k => <React.Fragment key={k}>{cards[k]()}</React.Fragment>);
         return (
           <div className="grid grid-cols-1 gap-4 lg:gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] items-start">
             <div className="space-y-4 min-w-0">
+              {labs.reminders && reminders.length > 0 && (
+                <section className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3.5 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <i className="fa-solid fa-bell text-amber-500 text-[13px]"></i>
+                    <span className="flex-1 text-[13.5px] font-semibold text-primary">{t('remTitle', { n: reminders.length })}</span>
+                    {notifPerm === 'default' && <button onClick={askNotif} className="text-[11.5px] text-notion-blue font-medium">{t('remAllow')}</button>}
+                  </div>
+                  {reminders.map(r => (
+                    <div key={r.kind + r.cat} className="flex items-center gap-2.5 rounded-xl bg-surface/80 px-2.5 py-2">
+                      <ItemIcon spec={iconFor(r.kind === 'bill' ? 'expenses' : 'incomes', r.cat)} tint={tintFor(r.kind === 'bill' ? 'expenses' : 'incomes', r.cat)} size={26} />
+                      <button onClick={() => showItem(r.kind === 'bill' ? 'expenses' : 'incomes', r.cat)} className="flex-1 min-w-0 text-start">
+                        <span className="block text-[13px] text-primary truncate">{r.cat}</span>
+                        <span className={`block text-[11px] ${r.when === 'overdue' || r.when === 'late' ? 'text-notion-red' : 'text-secondary'}`}>{t('rem_' + r.when)}{r.day ? ` · ${t('kDueDay', { d: r.day })}` : ''}</span>
+                      </button>
+                      <span className="font-mono text-[13px] text-primary">{fmtCents(r.amount)}</span>
+                      <button onClick={() => toggleDone(r.kind === 'bill' ? 'expenses' : 'incomes', r.cat)} className="shrink-0 px-2.5 py-1 rounded-full bg-notion-blue text-white text-[11.5px] font-semibold">
+                        {t(r.kind === 'bill' ? 'itemMarkPaid' : 'itemMarkReceived')}
+                      </button>
+                    </div>
+                  ))}
+                </section>
+              )}
               {noAccess && (
                 <section className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 space-y-2">
                   <div className="text-[14px] font-semibold text-primary"><i className="fa-solid fa-lock me-2 text-amber-500"></i>{t('noAccessTitle')}</div>
@@ -9130,8 +9399,8 @@
                       return (
                         <div key={kind} className="space-y-1.5">
                           <div className="text-[11px] font-semibold text-tertiary uppercase tracking-wide">{t(labelKey)}</div>
-                          {list.map(a => (
-                            <div key={a.id} className="flex items-center gap-2 rounded-xl bg-subtle/60 ps-3 pe-1 py-1.5">
+                          {list.map(a => (<div key={a.id} className="space-y-0.5">
+                            <div className="flex items-center gap-2 rounded-xl bg-subtle/60 ps-3 pe-1 py-1.5">
                               <input value={a.name} onChange={(e) => updateAccount(a.id, { name: e.target.value })} aria-label={t('accountName')}
                                 className="flex-1 min-w-0 bg-transparent text-[13px] text-primary outline-none" />
                               {a.updated && <span className="hidden sm:inline text-[10px] text-tertiary shrink-0">{t('accountsUpdated', { day: fmtDay(a.updated) })}</span>}
@@ -9142,7 +9411,17 @@
                                 <i className="fa-solid fa-xmark text-[11px]"></i>
                               </button>
                             </div>
-                          ))}
+                            {(() => {
+                              const c = accountCheck.find(x => x.a.id === a.id);
+                              if (!c || !c.since || !c.since.length) return null;
+                              return (
+                                <div className="flex items-center gap-2 ps-3 pe-2 text-[11px] text-tertiary">
+                                  <span className="flex-1 min-w-0">{t('acctSince', { day: fmtDay(a.updated), n: c.since.length, delta: `${c.delta >= 0 ? '+' : '−'}${fmtCents(Math.abs(c.delta))}` })}</span>
+                                  <button onClick={() => updateAccount(a.id, { balance: c.expected, updated: todayISO() })} className="shrink-0 text-notion-blue font-medium">{t('acctExpected', { amount: fmtCents(c.expected) })}</button>
+                                </div>
+                              );
+                            })()}
+                          </div>))}
                         </div>
                       );
                     })}
@@ -9391,6 +9670,9 @@
                 <div className="flex items-center gap-1 shrink-0">
                   {showMonthNav && monthNav}
                   {view === 'plan' && <Segmented size="sm" options={YEARS.map(y => [y, String(y)])} value={selectedYear} onChange={selectYear} />}
+                  <button onClick={() => setSearch({ q: '', yr: 'all' })} aria-label={t('srchTitle')} title={t('srchTitle')} className="w-8 h-8 rounded-full hover:bg-subtle text-secondary">
+                    <i className="fa-solid fa-magnifying-glass text-xs"></i>
+                  </button>
                   <button onClick={() => setIsBurgerOpen(true)} aria-label={syncLabel} title={syncLabel} className={`lg:hidden w-8 h-8 rounded-full hover:bg-subtle ${syncColor}`}>
                     <i className={`fa-solid ${syncIcon} text-xs`}></i>
                   </button>
@@ -9888,6 +10170,49 @@
                   >
                     {t('fixBalanceSave')}
                   </button>
+                </div>
+              </Modal>
+            );
+          })()}
+
+          {search && (() => {
+            const ql = search.q.trim().toLowerCase();
+            const years = [...new Set((data.tx || []).map(x => x.date.slice(0, 4)))].sort();
+            const hits = ql.length < 2 ? [] : (data.tx || []).filter(x => (search.yr === 'all' || x.date.startsWith(search.yr))
+              && (x.cat.toLowerCase().includes(ql) || (x.note || '').toLowerCase().includes(ql) || String(x.amount).replace('.', ',').includes(ql) || String(x.amount).includes(ql)))
+              .sort((a, b) => b.date.localeCompare(a.date));
+            const out = round2(hits.filter(x => x.type === 'expenses').reduce((a2, x) => a2 + x.amount, 0));
+            const inn = round2(hits.filter(x => x.type === 'incomes').reduce((a2, x) => a2 + x.amount, 0));
+            const loc = lang === 'en' ? 'en-US' : lang === 'ar' ? 'ar-SY-u-nu-latn' : 'de-DE';
+            return (
+              <Modal size="max-w-lg" onClose={() => setSearch(null)} title={<><i className="fa-solid fa-magnifying-glass"></i><span>{t('srchTitle')}</span></>}>
+                <input data-free type="search" autoFocus value={search.q} onChange={(e) => setSearch(p => ({ ...p, q: e.target.value }))} placeholder={t('srchPh')}
+                  className="w-full bg-subtle border border-subtle rounded-xl px-3.5 py-2.5 text-[14px] text-primary outline-none focus:border-notion-blue" />
+                <div className="flex flex-wrap gap-1.5">
+                  {['all', ...years].map(y => (
+                    <button key={y} onClick={() => setSearch(p => ({ ...p, yr: y }))}
+                      className={`px-3 py-1 rounded-full text-[12px] border ${search.yr === y ? 'border-notion-blue bg-notion-blue/10 text-primary font-semibold' : 'border-subtle text-secondary'}`}>{y === 'all' ? t('srchAll') : y}</button>
+                  ))}
+                </div>
+                {ql.length >= 2 && (
+                  <div className="rounded-xl bg-subtle/60 px-3 py-2.5 text-[13px] flex flex-wrap gap-x-4 gap-y-1">
+                    <span className="text-secondary">{t('srchFound', { n: hits.length })}</span>
+                    {out > 0 && <span className="font-mono text-primary">− {fmtCents(out)}</span>}
+                    {inn > 0 && <span className="font-mono text-notion-green">+ {fmtCents(inn)}</span>}
+                  </div>
+                )}
+                <div className="space-y-1.5 stagger">
+                  {hits.slice(0, 150).map(x => (
+                    <button key={x.id} onClick={() => { setSearch(null); openEntry(x.id); }} className="w-full text-start flex items-center gap-2.5 rounded-xl bg-subtle/50 hover:bg-subtle px-2.5 py-2">
+                      <ItemIcon spec={(x.note && autoIcon(x.note.split(' · ')[0])?.kind === 'brand') ? autoIcon(x.note.split(' · ')[0]) : iconFor(x.type, x.cat)} tint={tintFor(x.type, x.cat)} size={28} />
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-[13px] text-primary truncate">{x.cat}{x.note ? ` · ${x.note}` : ''}</span>
+                        <span className="block text-[11px] text-tertiary">{new Date(x.date + 'T12:00').toLocaleDateString(loc, { day: 'numeric', month: 'short', year: 'numeric' })}{x.who ? ` · ${whoLabel(x.who)}` : ''}</span>
+                      </span>
+                      <span className={`font-mono text-[13px] ${x.type === 'incomes' ? 'text-notion-green' : 'text-primary'}`}>{x.type === 'incomes' ? '+' : '−'}{fmtCents(x.amount)}</span>
+                    </button>
+                  ))}
+                  {ql.length < 2 && <p className="text-[12.5px] text-tertiary text-center py-4">{t('srchHint')}</p>}
                 </div>
               </Modal>
             );
@@ -11124,6 +11449,16 @@
                         </button>
                       ))}
                     </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-secondary block mb-1">{t('labsTitle')}</label>
+                    {[['nowToday', 'labsNowToday'], ['reminders', 'labsReminders'], ['importAmount', 'labsImportAmount'], ['closeMonth', 'labsCloseMonth'], ['splitUp', 'labsSplitUp']].map(([k, lbl]) => (
+                      <label key={k} className="flex items-center justify-between gap-2 rounded bg-subtle/60 px-2 py-1.5 cursor-pointer">
+                        <span className="text-[11px] text-primary">{t(lbl)}</span>
+                        <input type="checkbox" checked={!!labs[k]} onChange={(e) => setLab(k, e.target.checked)} className="w-4 h-4" />
+                      </label>
+                    ))}
                   </div>
 
                   <div className="space-y-1.5 pt-2 border-t border-subtle">

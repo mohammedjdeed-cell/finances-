@@ -6,7 +6,10 @@ import { createRequire } from "node:module";
 
 const Babel = createRequire(import.meta.url)("@babel/standalone");
 const src = readFileSync(new URL("./src/app.jsx", import.meta.url), "utf8");
-const { code } = Babel.transform(src, { presets: ["react"], sourceType: "script", compact: true, comments: false });
+const { code: jsx } = Babel.transform(src, { presets: ["react"], sourceType: "script", compact: true, comments: false });
+// Minified: a smaller file starts faster on phones and weak connections.
+const { minify } = await import("terser");
+const { code } = await minify(jsx, { compress: { passes: 2 }, mangle: true, format: { comments: false } });
 writeFileSync(new URL("./app.js", import.meta.url), code);
 
 // Point index.html at this exact build, so browsers and the offline cache pick up new versions.
