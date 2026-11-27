@@ -885,6 +885,10 @@
         itemEntries: "Einträge in diesem Monat ({{n}})",
         itemNoEntries: "Noch nichts eingetragen.",
         edPlanCard: "Plan & Wiederholung",
+        fixTitle: "{{n}} Einträge von dir stehen auch in diesem Auszug",
+        fixHint: "Wer bezahlt hat und welches Konto, so wie es im Auszug steht. Häkchen entfernen, was so bleiben soll.",
+        fixBtn: "{{n}} Einträge korrigieren",
+        fixDone: "{{n}} Einträge korrigiert",
         labsTitle: "Neue Funktionen (einzeln abschaltbar)",
         labsNowToday: "„Jetzt“ ohne Einträge nach heute",
         labsReminders: "Erinnerungen an fällige Rechnungen",
@@ -1801,6 +1805,10 @@
         itemEntries: "Entries this month ({{n}})",
         itemNoEntries: "Nothing entered yet.",
         edPlanCard: "Plan & repeat",
+        fixTitle: "{{n}} of your entries are also in this statement",
+        fixHint: "Who paid and which account, as the statement says. Untick what should stay as it is.",
+        fixBtn: "Fix {{n}} entries",
+        fixDone: "{{n}} entries fixed",
         labsTitle: "New features (switch off one by one)",
         labsNowToday: "“Now” without entries after today",
         labsReminders: "Reminders for due bills",
@@ -2717,6 +2725,10 @@
         itemEntries: "إدخالات هذا الشهر ({{n}})",
         itemNoEntries: "لا شيء مسجل بعد.",
         edPlanCard: "الخطة والتكرار",
+        fixTitle: "{{n}} من إدخالاتك موجودة أيضًا في هذا الكشف",
+        fixHint: "من دفع وأي حساب، كما في الكشف. أزل العلامة عمّا يجب أن يبقى كما هو.",
+        fixBtn: "تصحيح {{n}} إدخالات",
+        fixDone: "صُحّحت {{n}} إدخالات",
         labsTitle: "ميزات جديدة (يمكن إيقاف كل واحدة)",
         labsNowToday: "„الآن“ بدون إدخالات بعد اليوم",
         labsReminders: "تذكير بالفواتير المستحقة",
@@ -5608,8 +5620,8 @@
       const escapeRe = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const isOwnTransfer = (line) => {
         if (line.mm) return line.kind === 'TRANSFER';
-        if (/TOPUP|TOP-UP|AUFLADUNG/.test(line.kind) || /top-?up|aufladung/i.test(line.desc)) return true;
-        if (line.kind && !/TRANSFER|ÜBERWEISUNG|UEBERWEISUNG|UMBUCHUNG/.test(line.kind)) return false;
+        if (/TOPUP|TOP-UP|TOP UP|AUFLADUNG/.test(line.kind) || /top-?up|aufladung/i.test(line.desc)) return true;
+        if (line.kind && !/TRANSFER|ÜBERWEISUNG|UEBERWEISUNG|UMBUCHUNG|^OTHERS?$|^SONSTIGE/.test(line.kind)) return false;
         const names = [data.members.me, data.members.partner]
           .map(n => (n || '').trim().split(/\s+/)[0])
           .filter(n => n && n.length >= 2)
@@ -5664,8 +5676,27 @@
           // Already in the app as an entry with the same day and amount (typed in by hand)?
           const entered = (line) => data.tx.some(x => x.date === line.date && Math.abs(x.amount - Math.abs(line.amount)) < 0.005
             && x.type === (line.amount > 0 ? 'incomes' : 'expenses'));
+          // Entries typed by hand that this statement also contains (same amount, within 2 days):
+          // offered for fixing who paid and which account, from the statement.
+          const claimed = new Set();
+          const dayDiff = (a, b) => Math.abs((new Date(a + 'T12:00') - new Date(b + 'T12:00')) / 864e5);
+          const typedMatch = (line) => {
+            const type = line.amount > 0 ? 'incomes' : 'expenses', amt = Math.abs(line.amount);
+            const c = data.tx.filter(x => !claimed.has(x.id) && x.type === type && x.source !== 'import' && Math.abs(x.amount - amt) < 0.005 && dayDiff(x.date, line.date) <= 2)
+              .sort((a, b) => dayDiff(a.date, line.date) - dayDiff(b.date, line.date))[0];
+            if (c) claimed.add(c.id);
+            return c ? c.id : null;
+          };
+          const bankRe = /wise/i.test(file.name) ? /wise/i : /sparkasse|konto_\d/i.test(file.name) ? /sparkasse/i : /volksbank|vr/i.test(file.name) ? /volksbank|\bvr\b/i : /revolut/i;
+          const first = (n) => (n || '').trim().split(/\s+/)[0].toLowerCase();
+          const acctFor = (who) => {
+            const personRe = who === 'joint' ? /joint|gemeinsam|مشترك/i : new RegExp(escapeRe(first(who === 'me' ? data.members.me : data.members.partner)) || '^$', 'i');
+            return (data.accounts.find(a => bankRe.test(a.name) && personRe.test(a.name)) || data.accounts.find(a => personRe.test(a.name) && a.kind !== 'cash') || {}).id || '';
+          };
           const prepared = lines.map((line, i) => {
             const who = whoOf(line);
+            const matchId = !line.mm && !isOwnTransfer(line) && !/EXCHANGE|UMTAUSCH|TOP.?UP/.test(line.kind || '') ? typedMatch(line) : null;
+            const fixAcct = acctFor(who);
             const base = line.mm ? `mm|${line.date}|${line.desc}|${line.amount}` : `${line.section && /joint/i.test(line.section) ? 'joint' : account}|${line.date}|${line.desc}|${line.amount}`;
             counts[base] = (counts[base] || 0) + 1;
             const importKey = `${base}|${counts[base]}`;
@@ -5682,7 +5713,7 @@
             // Money moved between your own accounts is neither income nor spending for the household.
             const ownTransfer = !skip && isOwnTransfer(line);
             const target = skip || ownTransfer ? '' : suggestFor(line);
-            return { ...line, i, who, importKey, skip, ownTransfer, target, include: !skip && !ownTransfer && !!target };
+            return { ...line, i, who, importKey, skip, ownTransfer, target, include: !skip && !ownTransfer && !!target, matchId, fixAcct, fix: true };
           }).sort((a, b) => a.date < b.date ? 1 : -1);
           setImportModal(m => ({ ...m, step: 'review', fileName: file.name, rows: prepared, error: '' }));
         } catch (e) {
@@ -9843,6 +9874,36 @@
                   {t('importSummary', { file: m.fileName, n: rows.length, ready: chosen.length, dup, skipped: skipped.length - dup })}
                 </p>
                 {transfers > 0 && <p className="text-[11px] text-notion-blue">{t('importTransfersNote', { n: transfers })}</p>}
+                {(() => {
+                  // Typed-in entries this statement confirms, whose "who" or account differ from it.
+                  const fixes = m.rows.filter(r => r.matchId).map(r => ({ r, x: data.tx.find(x => x.id === r.matchId) }))
+                    .filter(({ r, x }) => x && (x.who !== r.who || (r.fixAcct && x.account !== r.fixAcct)));
+                  if (!fixes.length) return null;
+                  const on = fixes.filter(f => f.r.fix);
+                  const acctName = (id) => data.accounts.find(a => a.id === id)?.name || '—';
+                  return (
+                    <div className="rounded-xl border border-notion-blue/30 bg-notion-blue/5 p-3 space-y-2">
+                      <div className="text-[12.5px] font-semibold text-primary"><i className="fa-solid fa-user-pen me-1.5 text-notion-blue"></i>{t('fixTitle', { n: fixes.length })}</div>
+                      <p className="text-[11px] text-secondary">{t('fixHint')}</p>
+                      <div className="max-h-56 overflow-y-auto space-y-1">
+                        {fixes.map(({ r, x }) => (
+                          <label key={r.i} className="flex items-start gap-2 rounded-lg bg-surface px-2 py-1.5 cursor-pointer">
+                            <input type="checkbox" checked={!!r.fix} onChange={(e) => setImportRow(r.i, { fix: e.target.checked })} className="mt-0.5 w-4 h-4" />
+                            <span className="flex-1 min-w-0 text-[11.5px] leading-snug">
+                              <span className="text-primary">{fmtDay(x.date)} · {x.cat} · {fmtCents(x.amount)}</span>
+                              <span className="block text-tertiary">{whoLabel(x.who) || '—'} · {acctName(x.account)} <span className="text-notion-blue">→ {whoLabel(r.who)} · {acctName(r.fixAcct || x.account)}</span></span>
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                      <button disabled={!on.length} onClick={() => {
+                          mutateWithUndo(d => on.forEach(({ r }) => { const x = d.tx.find(y => y.id === r.matchId); if (x) { x.who = r.who; if (r.fixAcct) x.account = r.fixAcct; } }), t('fixDone', { n: on.length }));
+                          setImportModal(mm => ({ ...mm, rows: mm.rows.map(r => r.matchId ? { ...r, fix: false, matchId: null } : r) }));
+                        }}
+                        className="w-full py-2 rounded-lg bg-notion-blue text-white text-[12.5px] font-semibold disabled:opacity-40">{t('fixBtn', { n: on.length })}</button>
+                    </div>
+                  );
+                })()}
                 {chosen.length > 0 && (() => {
                   const inSum = chosen.filter(r => directionOf(r) === 'incomes').reduce((a, r) => a + Math.abs(r.amount), 0);
                   const outSum = chosen.filter(r => directionOf(r) === 'expenses').reduce((a, r) => a + Math.abs(r.amount) + Math.abs(r.fee || 0), 0);
