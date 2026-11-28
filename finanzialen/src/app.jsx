@@ -885,6 +885,8 @@
         itemEntries: "Einträge in diesem Monat ({{n}})",
         itemNoEntries: "Noch nichts eingetragen.",
         edPlanCard: "Plan & Wiederholung",
+        stillIn: "Kommt bis Monatsende noch rein",
+        stillOut: "Geht bis Monatsende noch raus",
         accountSavings: "Sparkonten",
         savingsOutItem: "Ersparnisse",
         savingsInItem: "Aus Ersparnissen",
@@ -1809,6 +1811,8 @@
         itemEntries: "Entries this month ({{n}})",
         itemNoEntries: "Nothing entered yet.",
         edPlanCard: "Plan & repeat",
+        stillIn: "Still coming in this month",
+        stillOut: "Still going out this month",
         accountSavings: "Savings",
         savingsOutItem: "Savings",
         savingsInItem: "From savings",
@@ -2733,6 +2737,8 @@
         itemEntries: "إدخالات هذا الشهر ({{n}})",
         itemNoEntries: "لا شيء مسجل بعد.",
         edPlanCard: "الخطة والتكرار",
+        stillIn: "ما زال سيدخل هذا الشهر",
+        stillOut: "ما زال سيخرج هذا الشهر",
         accountSavings: "حسابات الادخار",
         savingsOutItem: "ادخار",
         savingsInItem: "من الادخار",
@@ -7134,12 +7140,13 @@
       const savingsTotal = round2(data.accounts.filter(a => a.kind === 'savings').reduce((sum, a) => sum + (a.balance || 0), 0));
       const nowRow = nowIdx >= 0 ? forwardTimeline[nowIdx] : null;
       // Entries dated after today (a salary ticked early, a bill booked ahead) aren't in the bank yet.
-      const futureNet = useMemo(() => {
-        if (!labs.nowToday) return 0;
+      const futureSplit = useMemo(() => {
+        if (!labs.nowToday) return { inn: 0, out: 0 };
         const today = todayISO(), prefix = today.slice(0, 8);
-        return round2((data.tx || []).filter(x => x.date.startsWith(prefix) && x.date > today)
-          .reduce((sum, x) => sum + (x.type === 'incomes' ? x.amount : -x.amount), 0));
+        const later = (data.tx || []).filter(x => x.date.startsWith(prefix) && x.date > today);
+        return { inn: round2(later.filter(x => x.type === 'incomes').reduce((a2, x) => a2 + x.amount, 0)), out: round2(later.filter(x => x.type === 'expenses').reduce((a2, x) => a2 + x.amount, 0)) };
       }, [data.tx, labs.nowToday]);
+      const futureNet = round2(futureSplit.inn - futureSplit.out);
       const appNow = nowRow && nowRow.startBal != null ? round2(nowRow.startBal + nowRow.actualIn - nowRow.actualEx - futureNet) : null;
       // Each account: the balance you last typed in, plus what was booked to it since that day.
       const accountCheck = useMemo(() => {
@@ -8338,15 +8345,16 @@
         const { cm, carriedLabel, lines, availableNow, beforeStart, isPast, meters } = MB;
         const nowMode = availableNow !== null && balanceView === 'now';
         const hero = nowMode ? availableNow : cm.endProjectedBalance;
+        // "So far" means up to today: entries booked for later days this month wait for their day.
+        const inSoFar = round2(cm.actualIn - futureSplit.inn), outSoFar = round2(cm.actualEx - futureSplit.out);
         const stats = nowMode
-          ? [[t('heroStart'), cm.startBal, ''], [t('nowReceived'), cm.actualIn, '+'], [t('nowPaid'), cm.actualEx, '−']]
+          ? [[t('heroStart'), cm.startBal, ''], [t('nowReceived'), inSoFar, '+'], [t('nowPaid'), outSoFar, '−']]
           : [[t('heroStart'), cm.startBal, ''], [t('heroIn'), cm.projectedIn, '+'], [t('heroOut'), cm.projectedEx, '−']];
         const detailRows = nowMode
           ? [
               { label: carriedLabel, text: fmtBalance(cm.startBal), cls: 'text-primary' },
-              { label: t('nowReceived'), text: `+ ${fmt(cm.actualIn)}`, cls: 'text-notion-green' },
-              { label: t('nowPaid'), text: `− ${fmt(cm.actualEx)}`, cls: 'text-notion-red' },
-              ...(futureNet ? [{ label: t('futureNote'), text: `${futureNet > 0 ? '−' : '+'} ${fmt(Math.abs(futureNet))}`, cls: 'text-tertiary' }] : [])
+              { label: t('nowReceived'), text: `+ ${fmt(inSoFar)}`, cls: 'text-notion-green' },
+              { label: t('nowPaid'), text: `− ${fmt(outSoFar)}`, cls: 'text-notion-red' }
             ]
           : lines;
         const quick = [
@@ -8474,9 +8482,11 @@
                       <span className={hero < 0 ? 'text-notion-red' : 'text-primary'}>{fmtBalance(hero)}</span>
                     </div>
                     {nowMode ? (
-                      <div className="flex items-center justify-between gap-3 text-tertiary pt-1">
-                        <span className="font-sans">{t('endOfMonthTitle', { month: monthLabel(selectedYear, selectedMonth) })}</span>
-                        <span>{fmtBalance(cm.endProjectedBalance)}</span>
+                      // From now to month end: what's still coming in and still going out.
+                      <div className="space-y-1 text-tertiary pt-1">
+                        <div className="flex items-center justify-between gap-3"><span className="font-sans">{t('stillIn')}</span><span>+ {fmt(Math.max(0, cm.projectedIn - inSoFar))}</span></div>
+                        <div className="flex items-center justify-between gap-3"><span className="font-sans">{t('stillOut')}</span><span>− {fmt(Math.max(0, cm.projectedEx - outSoFar))}</span></div>
+                        <div className="flex items-center justify-between gap-3"><span className="font-sans">{t('endOfMonthTitle', { month: monthLabel(selectedYear, selectedMonth) })}</span><span>{fmtBalance(cm.endProjectedBalance)}</span></div>
                       </div>
                     ) : availableNow !== null && (
                       <div className="flex items-center justify-between gap-3 text-tertiary pt-1">
