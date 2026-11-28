@@ -885,6 +885,17 @@
         itemEntries: "Einträge in diesem Monat ({{n}})",
         itemNoEntries: "Noch nichts eingetragen.",
         edPlanCard: "Plan & Wiederholung",
+        cuOver: "Im {{month}} {{amount}} über dem Ziel von {{target}}. Hier ausgleichen?",
+        cuSpread: "Verteilen auf",
+        cuOneMonth: "1 Monat",
+        cuMonths: "{{n}} Monate",
+        cuTarget: "Ziel {{month}}",
+        cuPerMonth: "für {{n}} Monate",
+        cuLeft: "Bleibt davon noch",
+        cuEnd: "Stand Ende {{month}}",
+        cuApply: "Ausgleichen",
+        cuSkip: "Nicht jetzt",
+        cuApplied: "{{group}}: {{amount}} werden ausgeglichen",
         stillIn: "Kommt bis Monatsende noch rein",
         stillOut: "Geht bis Monatsende noch raus",
         accountSavings: "Sparkonten",
@@ -1811,6 +1822,17 @@
         itemEntries: "Entries this month ({{n}})",
         itemNoEntries: "Nothing entered yet.",
         edPlanCard: "Plan & repeat",
+        cuOver: "{{amount}} over the {{target}} target in {{month}}. Balance it here?",
+        cuSpread: "Spread over",
+        cuOneMonth: "1 month",
+        cuMonths: "{{n}} months",
+        cuTarget: "{{month}} target",
+        cuPerMonth: "for {{n}} months",
+        cuLeft: "Still left of it",
+        cuEnd: "Balance end of {{month}}",
+        cuApply: "Balance it",
+        cuSkip: "Not now",
+        cuApplied: "{{group}}: {{amount}} will be balanced",
         stillIn: "Still coming in this month",
         stillOut: "Still going out this month",
         accountSavings: "Savings",
@@ -2737,6 +2759,17 @@
         itemEntries: "إدخالات هذا الشهر ({{n}})",
         itemNoEntries: "لا شيء مسجل بعد.",
         edPlanCard: "الخطة والتكرار",
+        cuOver: "تجاوزت الهدف {{target}} بمقدار {{amount}} في {{month}}. هل تعوّضه هنا؟",
+        cuSpread: "وزّع على",
+        cuOneMonth: "شهر واحد",
+        cuMonths: "{{n}} أشهر",
+        cuTarget: "هدف {{month}}",
+        cuPerMonth: "لمدة {{n}} أشهر",
+        cuLeft: "المتبقي منه",
+        cuEnd: "الرصيد آخر {{month}}",
+        cuApply: "عوّض",
+        cuSkip: "ليس الآن",
+        cuApplied: "{{group}}: سيُعوَّض {{amount}}",
         stillIn: "ما زال سيدخل هذا الشهر",
         stillOut: "ما زال سيخرج هذا الشهر",
         accountSavings: "حسابات الادخار",
@@ -4058,6 +4091,7 @@
       const [monthPicker, setMonthPicker] = useState(false);
       const [heroDetails, setHeroDetails] = useState(false);
       const [showEmpty, setShowEmpty] = useState({});
+      const [cuSpread, setCuSpread] = useState({});
       const readJson = (k) => { try { return JSON.parse(safeStorage.get(k, '{}')) || {}; } catch (e) { return {}; } };
       const [collapsed, setCollapsed] = useState(() => readJson('budget_collapsed'));
       const [dismissed, setDismissed] = useState(() => readJson('budget_dismissed'));
@@ -6847,6 +6881,59 @@
                     />
                   </div>
                 )}
+                {isVar && (() => {
+                  // Over budget last month? Preview taking it back from this month's target (or spread over 2–3 months).
+                  const prev = prevMonthOf(selectedYear, selectedMonth);
+                  if (!prev || monthStatus(selectedYear, selectedMonth) === 'past') return null;
+                  const prevSpent = data.categories.expenses.filter(c => getMeta('expenses', c).bracket === g.id && isReceiptItem(c)).reduce((sum, c) => sum + getNode('expenses', c, prev.yr, prev.m).actual, 0);
+                  const prevTarget = getTarget(g.id, prev.yr, prev.m);
+                  const over = round2(prevSpent - prevTarget);
+                  const key = `cu_${g.id}_${prev.yr}_${prev.m}`;
+                  if (prevTarget <= 0 || over < 1 || dismissed[key]) return null;
+                  const n = cuSpread[g.id] || 1;
+                  const cut = round2(over / n);
+                  const newTarget = Math.max(0, round2(gv.target - cut));
+                  const effect = round2(Math.max(gv.spent, gv.target) - Math.max(gv.spent, newTarget));
+                  const row = forwardTimeline[timelineIndex(selectedYear, selectedMonth)];
+                  const end = row?.endProjectedBalance;
+                  const apply = () => {
+                    const i0 = timelineIndex(selectedYear, selectedMonth);
+                    mutateWithUndo(d => {
+                      for (let k = 0; k < n; k++) {
+                        const p = TIMELINE[i0 + k]; if (!p) break;
+                        if (!d.targets[g.id]) d.targets[g.id] = {};
+                        if (!d.targets[g.id][p.yr]) d.targets[g.id][p.yr] = {};
+                        const cur = getTarget(g.id, p.yr, p.m);
+                        d.targets[g.id][p.yr][p.m] = Math.max(0, round2(cur - cut));
+                      }
+                    }, t('cuApplied', { group: groupName(g), amount: fmt(over) }));
+                    dismiss(key);
+                  };
+                  return (
+                    <div className="mx-1 my-1 rounded-xl border border-amber-500/40 bg-amber-500/10 p-2.5 space-y-2">
+                      <div className="text-[12px] text-primary leading-snug">
+                        <i className="fa-solid fa-scale-balanced text-amber-500 me-1.5"></i>
+                        {t('cuOver', { month: formatMonth(prev.m, lang), amount: fmt(over), target: fmt(prevTarget) })}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[11px]">
+                        <span className="text-secondary">{t('cuSpread')}</span>
+                        {[1, 2, 3].map(k => (
+                          <button key={k} onClick={() => setCuSpread(sp => ({ ...sp, [g.id]: k }))}
+                            className={`px-2 py-0.5 rounded-full border ${n === k ? 'border-notion-blue bg-notion-blue/10 text-primary font-semibold' : 'border-subtle text-secondary'}`}>{k === 1 ? t('cuOneMonth') : t('cuMonths', { n: k })}</button>
+                        ))}
+                      </div>
+                      <div className="rounded-lg bg-surface/80 px-2.5 py-2 text-[11.5px] space-y-1">
+                        <div className="flex justify-between"><span className="text-secondary">{t('cuTarget', { month: formatMonth(selectedMonth, lang) })}</span><span className="font-mono text-primary">{fmt(gv.target)} → <b>{fmt(newTarget)}</b>{n > 1 ? ` · ${t('cuPerMonth', { n })}` : ''}</span></div>
+                        <div className="flex justify-between"><span className="text-secondary">{t('cuLeft')}</span><span className={`font-mono ${newTarget - gv.spent < 0 ? 'text-notion-red' : 'text-primary'}`}>{fmt(newTarget - gv.spent)}</span></div>
+                        {end != null && <div className="flex justify-between"><span className="text-secondary">{t('cuEnd', { month: formatMonth(selectedMonth, lang) })}</span><span className="font-mono text-primary">{fmtBalance(end)} → <b className="text-notion-green">{fmtBalance(end + effect)}</b></span></div>}
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={apply} className="flex-1 py-1.5 rounded-lg bg-notion-blue text-white text-[12px] font-semibold">{t('cuApply')}</button>
+                        <button onClick={() => dismiss(key)} className="px-3 py-1.5 rounded-lg bg-subtle text-secondary text-[12px]">{t('cuSkip')}</button>
+                      </div>
+                    </div>
+                  );
+                })()}
                 {visible.map(i => renderItemRow('expenses', i.cat, g.kind))}
                 {visible.length === 0 && hidden === 0 && <p className="px-2 py-1.5 text-[11px] text-tertiary">{t('groupNothingPlanned')}</p>}
                 {isVar && revealed && (() => {
