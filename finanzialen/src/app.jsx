@@ -885,6 +885,10 @@
         itemEntries: "Einträge in diesem Monat ({{n}})",
         itemNoEntries: "Noch nichts eingetragen.",
         edPlanCard: "Plan & Wiederholung",
+        accountSavings: "Sparkonten",
+        savingsOutItem: "Ersparnisse",
+        savingsInItem: "Aus Ersparnissen",
+        savingsHint: "Geld auf Sparkonten zählt nicht als ausgebbar. Überweise mit „Hinzufügen → Überweisung“ dorthin oder zurück.",
         fixTitle: "{{n}} Einträge von dir stehen auch in diesem Auszug",
         fixHint: "Wer bezahlt hat und welches Konto, so wie es im Auszug steht. Häkchen entfernen, was so bleiben soll.",
         fixBtn: "{{n}} Einträge korrigieren",
@@ -1805,6 +1809,10 @@
         itemEntries: "Entries this month ({{n}})",
         itemNoEntries: "Nothing entered yet.",
         edPlanCard: "Plan & repeat",
+        accountSavings: "Savings",
+        savingsOutItem: "Savings",
+        savingsInItem: "From savings",
+        savingsHint: "Money in savings accounts doesn’t count as spendable. Move money there or back with Add → Transfer.",
         fixTitle: "{{n}} of your entries are also in this statement",
         fixHint: "Who paid and which account, as the statement says. Untick what should stay as it is.",
         fixBtn: "Fix {{n}} entries",
@@ -2725,6 +2733,10 @@
         itemEntries: "إدخالات هذا الشهر ({{n}})",
         itemNoEntries: "لا شيء مسجل بعد.",
         edPlanCard: "الخطة والتكرار",
+        accountSavings: "حسابات الادخار",
+        savingsOutItem: "ادخار",
+        savingsInItem: "من الادخار",
+        savingsHint: "المال في حسابات الادخار لا يُحسب قابلًا للصرف. انقل المال إليها أو منها عبر إضافة ← تحويل.",
         fixTitle: "{{n}} من إدخالاتك موجودة أيضًا في هذا الكشف",
         fixHint: "من دفع وأي حساب، كما في الكشف. أزل العلامة عمّا يجب أن يبقى كما هو.",
         fixBtn: "تصحيح {{n}} إدخالات",
@@ -3425,7 +3437,7 @@
           .filter(a => a && typeof a.id === 'string' && typeof a.name === 'string')
           .map(a => ({
             id: a.id, name: a.name,
-            kind: ['main', 'gateway', 'cash'].includes(a.kind) ? a.kind : 'main',
+            kind: ['main', 'gateway', 'cash', 'savings'].includes(a.kind) ? a.kind : 'main',
             balance: typeof a.balance === 'number' ? a.balance : 0,
             updated: typeof a.updated === 'string' ? a.updated : null
           })),
@@ -5395,6 +5407,7 @@
         const tr = { id: 'tr' + Date.now().toString(36), date: bk.date, amount, from: bk.from, to: bk.to, note: bk.note.trim(), moved: bk.moveBal !== false };
         const name = (id) => data.accounts.find(a => a.id === id)?.name || '';
         mutateWithUndo(d => {
+          bookSavingsMove(d, tr);
           d.transfers.push(tr);
           if (tr.moved) {
             const a = d.accounts.find(x => x.id === tr.from), b2 = d.accounts.find(x => x.id === tr.to);
@@ -5406,8 +5419,33 @@
         setCalDay(bk.date);
         setBk(prev => ({ ...prev, amount: '', note: '', saved: prev.saved + 1, err: '' }));
       };
+      // The savings item for moves into a savings account (expense) and back out (income).
+      const ensureSavingsItem = (d, type) => {
+        const existing = d.categories[type].find(c => SAVINGS_RE.test(c));
+        if (existing) return existing;
+        const name = type === 'expenses' ? t('savingsOutItem') : t('savingsInItem');
+        d.categories[type].push(name);
+        d.meta[type][name] = type === 'expenses' ? metaForGroup(d.groups, resolveGroup(d.groups, 'savings|oneoff').id, null, false)
+          : { bracket: d.brackets.incomes[d.brackets.incomes.length - 1].id, mode: 'variable', oneTime: false, payDay: null };
+        TIMELINE.forEach(({ yr, m }) => { const byCat = d.values[yr][type][name] || (d.values[yr][type][name] = {}); if (!byCat[m]) byCat[m] = emptyNode(); });
+        return name;
+      };
+      const bookSavingsMove = (d, tr) => {
+        const from = d.accounts.find(x => x.id === tr.from), to = d.accounts.find(x => x.id === tr.to);
+        const intoSav = to?.kind === 'savings' && from?.kind !== 'savings', outOfSav = from?.kind === 'savings' && to?.kind !== 'savings';
+        if (!intoSav && !outOfSav) return;
+        const type = intoSav ? 'expenses' : 'incomes';
+        const cat = ensureSavingsItem(d, type);
+        const acct = intoSav ? from : to;
+        const tx = { id: newTxId(), date: tr.date, type, cat, amount: tr.amount, who: acctWho(acct), note: (intoSav ? to : from).name, source: 'manual', account: acct?.id || null };
+        d.tx.push(tx); applyTx(d, tx, +1); tr.txId = tx.id;
+      };
+      const acctWho = (a) => { if (!a) return null; const n = a.name.toLowerCase(), first = (x) => (x || '').trim().split(/\s+/)[0].toLowerCase();
+        return /joint|gemeinsam|مشترك/.test(n) ? 'joint' : first(data.members.partner) && n.includes(first(data.members.partner)) ? 'partner' : first(data.members.me) && n.includes(first(data.members.me)) ? 'me' : null; };
       const deleteTransfer = (id) => mutateWithUndo(d => {
         const tr = d.transfers.find(x => x.id === id);
+        const own = tr && tr.txId ? d.tx.find(x => x.id === tr.txId) : null;
+        if (own) { applyTx(d, own, -1); d.tx = d.tx.filter(x => x.id !== own.id); }
         if (tr && tr.moved) {
           const a = d.accounts.find(x => x.id === tr.from), b2 = d.accounts.find(x => x.id === tr.to);
           if (a) a.balance = round2((a.balance || 0) + tr.amount);
@@ -5711,8 +5749,15 @@
             else if (line.date > today) skip = 'future';
             else if (entered(line)) skip = 'entered';
             // Money moved between your own accounts is neither income nor spending for the household.
-            const ownTransfer = !skip && isOwnTransfer(line);
-            const target = skip || ownTransfer ? '' : suggestFor(line);
+            let ownTransfer = !skip && isOwnTransfer(line);
+            // Money into or out of a savings pocket isn't a transfer between spending accounts: it's saving.
+            let savTarget = '';
+            if (ownTransfer && /saving|vault|pocket|spartasche|tagesgeld|\bfunds?\b|ersparnis|sparen/i.test(line.desc)) {
+              const sType = line.amount < 0 ? 'expenses' : 'incomes';
+              const sCat = data.categories[sType].find(c => SAVINGS_RE.test(c));
+              if (sCat) { ownTransfer = false; savTarget = `item:${sCat}`; }
+            }
+            const target = skip || ownTransfer ? '' : savTarget || suggestFor(line);
             return { ...line, i, who, importKey, skip, ownTransfer, target, include: !skip && !ownTransfer && !!target, matchId, fixAcct, fix: true };
           }).sort((a, b) => a.date < b.date ? 1 : -1);
           setImportModal(m => ({ ...m, step: 'review', fileName: file.name, rows: prepared, error: '' }));
@@ -7084,7 +7129,9 @@
       const addAccount = (kind) => mutate(d => { d.accounts.push({ id: newAccountId(), name: t('accountName'), kind, balance: 0, updated: null }); });
       const updateAccount = (id, patch) => mutate(d => { const a = d.accounts.find(x => x.id === id); if (a) Object.assign(a, patch); });
       const removeAccount = (id) => mutateWithUndo(d => { d.accounts = d.accounts.filter(x => x.id !== id); }, t('accountRemoved'));
-      const accountsTotal = round2(data.accounts.reduce((sum, a) => sum + (a.balance || 0), 0));
+      // Savings accounts (Revolut Savings, Tagesgeld …) hold money set aside: not part of what you can spend.
+      const accountsTotal = round2(data.accounts.filter(a => a.kind !== 'savings').reduce((sum, a) => sum + (a.balance || 0), 0));
+      const savingsTotal = round2(data.accounts.filter(a => a.kind === 'savings').reduce((sum, a) => sum + (a.balance || 0), 0));
       const nowRow = nowIdx >= 0 ? forwardTimeline[nowIdx] : null;
       // Entries dated after today (a salary ticked early, a bill booked ahead) aren't in the bank yet.
       const futureNet = useMemo(() => {
@@ -7128,7 +7175,7 @@
         const recent = past.slice(-3);
         const core = recent.length ? recent.reduce((s, p) => s + coreOf(p), 0) / recent.length : coreOf(pos);
         const hasAccounts = data.accounts.some(a => a.updated);
-        const money = hasAccounts ? accountsTotal : appNow;
+        const money = hasAccounts ? accountsTotal + savingsTotal : appNow;
         const months = core > 0 && money != null ? money / core : null;
         // Savings rate per finished month (plus this month so far).
         const rates = [...past.slice(-5), pos].map(p => {
@@ -9413,13 +9460,13 @@
         </div>
       );
 
-      const ACCOUNT_KINDS = [['main', 'accountMain'], ['gateway', 'accountGateway'], ['cash', 'accountCash']];
+      const ACCOUNT_KINDS = [['main', 'accountMain'], ['gateway', 'accountGateway'], ['cash', 'accountCash'], ['savings', 'accountSavings']];
       const renderMore = () => (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 items-start">
           <div className="space-y-4 min-w-0">
             <div className="lg:hidden">{renderHealthLink()}</div>
             {panel({ id: 'accounts', icon: 'fa-building-columns', title: t('accountsTitle'), collapsible: false,
-              sub: data.accounts.length ? `${t('accountsTotal')} ${fmtCents(accountsTotal)}` : null }, (
+              sub: data.accounts.length ? `${t('accountsTotal')} ${fmtCents(accountsTotal)}${savingsTotal ? ` · ${t('accountSavings')} ${fmtCents(savingsTotal)}` : ''}` : null }, (
               <div className="space-y-3">
                 <p className="text-[12px] text-secondary leading-relaxed">{t('accountsIntro')}</p>
                 {data.accounts.length === 0 ? (
@@ -9432,6 +9479,7 @@
                       return (
                         <div key={kind} className="space-y-1.5">
                           <div className="text-[11px] font-semibold text-tertiary uppercase tracking-wide">{t(labelKey)}</div>
+                          {kind === 'savings' && <p className="text-[11px] text-tertiary leading-snug">{t('savingsHint')}</p>}
                           {list.map(a => (<div key={a.id} className="space-y-0.5">
                             <div className="flex items-center gap-2 rounded-xl bg-subtle/60 ps-3 pe-1 py-1.5">
                               <input value={a.name} onChange={(e) => updateAccount(a.id, { name: e.target.value })} aria-label={t('accountName')}
