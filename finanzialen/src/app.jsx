@@ -1067,7 +1067,7 @@
         dcDupLoan: "„{{person}}“ · {{amount}} ist {{n}}× als Darlehen eingetragen – vielleicht doppelt?",
         dcReview: "Ansehen",
         dcLoanMoney: "{{n}} ältere Darlehen sind noch nicht im Kontostand geprüft.",
-        dcNoDate: "{{n}} Einkäufe in diesem Monat ohne Datum ({{amount}}) – sie fehlen im Kalender. Neue Einkäufe am besten über „Buchen“ eintragen.",
+        dcNoDate: "{{n}} Einkäufe in diesem Monat haben keinen Tag ({{amount}}) und fehlen deshalb im Kalender. Tippe einen an, wähle den Tag und speichere.",
         dcOpenAdd: "Zu „Buchen“",
         bkRepeat: "Zuletzt – tippen zum Wiederholen",
         bkLeft: "Danach noch {{amount}} übrig",
@@ -1987,7 +1987,7 @@
         dcDupLoan: "\"{{person}}\" · {{amount}} is entered {{n}}× as a loan – a duplicate?",
         dcReview: "Review",
         dcLoanMoney: "{{n}} older loans aren't checked against your balance yet.",
-        dcNoDate: "{{n}} purchases this month have no date ({{amount}}) – they are missing from the calendar. Best add new ones through \"Add\".",
+        dcNoDate: "{{n}} purchases this month have no day ({{amount}}), so they are missing from the calendar. Tap one, pick its day and save.",
         dcOpenAdd: "Go to Add",
         bkRepeat: "Recent – tap to repeat",
         bkLeft: "{{amount}} left after this",
@@ -2907,7 +2907,7 @@
         dcDupLoan: "\"{{person}}\" · {{amount}} مسجّل {{n}} مرات كدين – ربما مكرر؟",
         dcReview: "مراجعة",
         dcLoanMoney: "{{n}} ديون قديمة لم تُفحص في الرصيد بعد.",
-        dcNoDate: "{{n}} مشتريات هذا الشهر بلا تاريخ ({{amount}}) – لا تظهر في التقويم. الأفضل تسجيل الجديدة عبر \"تسجيل\".",
+        dcNoDate: "{{n}} مشتريات هذا الشهر بلا يوم ({{amount}})، لذلك لا تظهر في التقويم. اضغط على واحدة واختر يومها واحفظ.",
         dcOpenAdd: "إلى تسجيل",
         bkRepeat: "الأخيرة – اضغط للتكرار",
         bkLeft: "يبقى {{amount}} بعد هذا",
@@ -5857,7 +5857,7 @@
           others.forEach(id => { const o = d.tx.find(x => x.id === id); if (o) { applyTx(d, o, -1); o.cat = cat; applyTx(d, o, +1); } });
           applyTx(d, cur, -1);
           Object.assign(cur, { amount, date: f.date, cat, who: f.who, note: f.note.trim(), account: f.account || null,
-            undated: f.undated && f.date === cur.date, source: cur.source === 'legacy' || cur.source === 'tick' ? 'manual' : cur.source });
+            undated: false, source: cur.source === 'legacy' || cur.source === 'tick' ? 'manual' : cur.source });
           applyTx(d, cur, +1);
         }, t('entrySaved'));
         setEntrySheet(null);
@@ -7973,9 +7973,11 @@
         const unbooked = (data.ious || []).filter(i => !i.settled && loanMoneyState(i) === 'unknown');
         if (unbooked.length) out.push({ id: 'loanmoney', icon: 'fa-hand-holding-dollar', text: t('dcLoanMoney', { n: unbooked.length }), actions: [[t('dcReview'), () => setView('more')]] });
         const prefix = `${pos.yr}-${pad2(ALL_MONTHS.indexOf(pos.m) + 1)}-`;
-        const undatedSpend = (data.tx || []).filter(x => x.undated && x.type === 'expenses' && x.date.startsWith(prefix)).map(x => x.amount);
-        if (undatedSpend.length) out.push({ id: 'nodate' + pos.m, icon: 'fa-receipt', soft: true, text: t('dcNoDate', { n: undatedSpend.length, amount: fmt(undatedSpend.reduce((a2, b2) => a2 + b2, 0)) }),
-          actions: [[t('dcOpenAdd'), () => setView('book')]] });
+        // Purchases saved with a month but no day: listed, each opens its entry to set the day.
+        const undatedTx = (data.tx || []).filter(x => x.undated && x.type === 'expenses' && x.date.startsWith(prefix));
+        if (undatedTx.length) out.push({ id: 'nodate' + pos.m + undatedTx.length, icon: 'fa-receipt', soft: true,
+          text: t('dcNoDate', { n: undatedTx.length, amount: fmt(undatedTx.reduce((a2, x) => a2 + x.amount, 0)) }),
+          items: undatedTx.map(x => ({ label: `${x.cat} · ${fmtCents(x.amount)}`, fix: () => openEntry(x.id) })) });
         ['expenses', 'incomes'].forEach(type => lookAlikes(type).forEach(([a, b]) => {
           const [keep, drop] = itemWeight(type, a) >= itemWeight(type, b) ? [a, b] : [b, a];
           out.push({ id: 'same|' + type + '|' + [a, b].sort().join('|'), icon: 'fa-object-group', soft: true, text: t('dcSame', { a: drop, b: keep }),
