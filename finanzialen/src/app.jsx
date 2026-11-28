@@ -4498,7 +4498,7 @@
           const days = getDaysInMonth(yr, m);
           const status = monthStatus(yr, m);
           const today = new Date().getDate();
-          const day = Number.isInteger(pd) ? Math.min(Math.max(pd, 1), days) : status === 'current' ? today : 1;
+          const day = Number.isInteger(pd) ? Math.min(Math.max(pd, 1), days, status === 'current' ? today : days) : status === 'current' ? today : 1;
           d.tx.push({ id: newTxId(), date: prefix + pad2(day), type, cat, amount: diff, who: null, note: '', source, account: null,
             undated: !Number.isInteger(pd) && status !== 'current' });
         } else if (diff < -0.005) {
@@ -7143,7 +7143,7 @@
       const futureSplit = useMemo(() => {
         if (!labs.nowToday) return { inn: 0, out: 0 };
         const today = todayISO(), prefix = today.slice(0, 8);
-        const later = (data.tx || []).filter(x => x.date.startsWith(prefix) && x.date > today);
+        const later = (data.tx || []).filter(x => x.date.startsWith(prefix) && x.date > today && x.source !== 'tick');
         return { inn: round2(later.filter(x => x.type === 'incomes').reduce((a2, x) => a2 + x.amount, 0)), out: round2(later.filter(x => x.type === 'expenses').reduce((a2, x) => a2 + x.amount, 0)) };
       }, [data.tx, labs.nowToday]);
       const futureNet = round2(futureSplit.inn - futureSplit.out);
